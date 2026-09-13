@@ -103,6 +103,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">정산 완료<i id="cntSettled"></i></button>
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
+    <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
   </div>
 
   <div class="panel" id="panel"></div>
@@ -276,6 +277,16 @@ let DB = {
       hours:'11:00~18:00', closed_days:null, phone:null, link:null, intro:null, active:false },
   ],
   purchaseCounts: { 1: 3, 2: 2, 3: 0 },
+  quotes: [
+    { id:101, quote:'밤에는 바다가 더 크게 들렸다. 그 소리를 혼자 듣는 게 싫지 않았다.',
+      book_title:'속초에서의 겨울', created_at:'2026-09-12', quote_public:true },
+    { id:102, quote:'나는 내가 좋아하는 것을 아주 늦게 알았다.',
+      book_title:'아무튼, 메모', created_at:'2026-09-11', quote_public:true },
+    { id:103, quote:'천천히 걷는 사람에게만 보이는 것이 있다.',
+      book_title:'느리게 걷는 법', created_at:'2026-09-10', quote_public:true },
+    { id:104, quote:'오늘은 집중이 안 돼서 세 쪽밖에 못 읽었다.',
+      book_title:'완득이', created_at:'2026-09-10', quote_public:false },
+  ],
   purchases: [
     { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:19500,
       status:'pending', created_at:'2026-09-11' },
@@ -339,6 +350,7 @@ function renderSummary() {
   document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
   document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
   document.getElementById('cntStores').textContent = ` ${(DB.bookstores || []).length}`;
+  document.getElementById('cntQuotes').textContent = ` ${(DB.quotes || []).filter(q => q.quote_public).length}`;
 }
 
 function renderPanel() {
@@ -346,7 +358,44 @@ function renderPanel() {
   if (tab === 'pending')  return el.innerHTML = viewPending();
   if (tab === 'settled')  return el.innerHTML = viewSettled();
   if (tab === 'stores')   return el.innerHTML = viewStores();
+  if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   el.innerHTML = viewCharges();
+}
+
+// 후원자 화면에 내보낼 문장 고르기.
+// 아이가 문장 대신 개인적인 이야기를 적었을 수 있어 자동 노출하지 않는다
+function viewQuotes() {
+  const rows = DB.quotes || [];
+  const on = rows.filter(q => q.quote_public).length;
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">문장 고르기</div>
+    <div class="panel-d">공개로 켠 문장만 후원자 화면에 보여요. 지금 ${on}개 공개 중이에요.</div></div>
+  </div>
+  ${rows.length ? `<div class="tbl"><table>
+    <tr><th>문장</th><th>책</th><th>날짜</th><th class="right">공개</th></tr>
+    ${rows.map(q => `<tr>
+      <td style="max-width:420px;">${esc(q.quote)}</td>
+      <td class="muted">${esc(q.book_title) || '-'}</td>
+      <td class="num muted">${fmtDate(q.created_at)}</td>
+      <td class="right">
+        <button class="btn ${q.quote_public ? 'btn-dark' : 'btn-line'}" onclick="toggleQuote(${q.id})">
+          ${q.quote_public ? '공개 중' : '공개하기'}</button>
+      </td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">아직 올라온 문장이 없습니다.</div>`}`;
+}
+
+async function toggleQuote(id) {
+  const q = (DB.quotes || []).find(x => x.id === id);
+  if (!q) return;
+  const next = !q.quote_public;
+  if (LIVE) {
+    const { error } = await sb.from('certifications').update({ quote_public: next }).eq('id', id);
+    if (error) { alert('변경 실패: ' + error.message); return; }
+  }
+  q.quote_public = next;
+  render();
 }
 
 function viewStores() {
@@ -599,17 +648,22 @@ async function submitCharge() {
 
 // ── LIVE 데이터 로드 ────────────────────────────────────
 async function loadLive() {
-  const [settings, sponsors, charges, purchases, stores] = await Promise.all([
+  const [settings, sponsors, charges, purchases, stores, quotes] = await Promise.all([
     sb.from('dokseo_settings').select('book_fund_rate').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
     sb.from('book_purchases').select('*, profiles:user_id(name), routines:routine_id(title), bookstores:bookstore_id(name), consumption_allocations(charge_id, amount)'),
     sb.from('bookstores').select('*').order('name'),
+    // 문장 검수 목록 — 독서루틴 인증 중 문장이 있는 것만
+    sb.from('certifications').select('id, quote, book_title, quote_public, created_at, routines!inner(dokseo)')
+      .eq('routines.dokseo', true).not('quote', 'is', null)
+      .order('created_at', { ascending: false }).limit(200),
   ]);
   DB.settings = settings.data || DB.settings;
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];
   DB.bookstores = stores.data || [];
+  DB.quotes = quotes.data || [];
 
   DB.purchases = (purchases.data || []).map(p => ({
     id: p.id, user_id: p.user_id, routine_id: p.routine_id,

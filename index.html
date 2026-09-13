@@ -124,6 +124,25 @@ section { margin-top: 44px; }
 .notice { margin-top: 16px; background: #f7f5f0; border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: var(--ink-2); line-height: 1.65; }
 .notice b { color: var(--ink); }
 
+/* ── 읽기 집계 ── */
+.rstat { display: flex; gap: 1px; background: var(--line); border-radius: 14px; overflow: hidden; }
+.rstat > div { flex: 1; background: var(--card); padding: 16px 10px; text-align: center; }
+.rstat b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.7px; }
+.rstat b small { font-size: 12px; margin-left: 1px; }
+.rstat span { font-size: 11.5px; color: var(--ink-3); font-weight: 600; }
+
+/* ── 문장 ── */
+.quote { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--green);
+         border-radius: 4px 16px 16px 4px; padding: 18px 20px; margin-bottom: 10px; }
+.quote p { font-size: 15.5px; line-height: 1.75; color: var(--ink); }
+.quote cite { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+
+/* ── 읽는 책 ── */
+.books { display: flex; flex-wrap: wrap; gap: 7px; }
+.books span { background: #f7f5f0; border-radius: 10px; padding: 8px 13px; font-size: 13px; color: var(--ink-2); }
+.books span b { color: var(--ink); font-weight: 700; }
+.books span i { font-style: normal; color: var(--ink-3); font-size: 11.5px; margin-left: 5px; }
+
 /* ── 후원자 벽 ── */
 .wall { display: flex; flex-wrap: wrap; gap: 7px; }
 .wall span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
@@ -182,6 +201,19 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
     <div class="sec-title">오늘의 기록</div>
     <div class="sec-desc">참여 청소년의 인증 활동입니다. 누구인지는 표시되지 않아요.</div>
     <div class="card" id="feedCard"></div>
+    <div class="card" id="readingStats"></div>
+  </section>
+
+  <section id="quotesSection">
+    <div class="sec-title">아이들이 멈춰 선 문장</div>
+    <div class="sec-desc">읽다가 옮겨 적은 문장이에요. 운영진이 확인한 것만 보여드려요.</div>
+    <div id="quotes"></div>
+  </section>
+
+  <section id="booksSection">
+    <div class="sec-title">요즘 읽고 있는 책</div>
+    <div class="sec-desc">아이들이 동네책방에서 직접 고른 책들이에요.</div>
+    <div class="card"><div class="books" id="books"></div></div>
   </section>
 
   <section>
@@ -244,6 +276,17 @@ const DEMO = {
     { day: '2026-09-05', cert_count: 12, student_count: 12 },
     { day: '2026-09-04', cert_count: 10, student_count: 10 },
   ],
+  stats: { pages_read: 3_240, books_titles: 19, cert_total: 412, students_total: 31 },
+  quotes: [
+    { quote: '밤에는 바다가 더 크게 들렸다. 그 소리를 혼자 듣는 게 싫지 않았다.', book_title: '속초에서의 겨울', day: '2026-09-12' },
+    { quote: '나는 내가 좋아하는 것을 아주 늦게 알았다.', book_title: '아무튼, 메모', day: '2026-09-11' },
+    { quote: '천천히 걷는 사람에게만 보이는 것이 있다.', book_title: '느리게 걷는 법', day: '2026-09-10' },
+  ],
+  books: [
+    { book_title: '속초에서의 겨울', readers: 3 }, { book_title: '아무튼, 메모', readers: 2 },
+    { book_title: '느리게 걷는 법', readers: 2 }, { book_title: '완득이', readers: 4 },
+    { book_title: '나는 나로 살기로 했다', readers: 2 }, { book_title: '시옷의 세계', readers: 1 },
+  ],
   wall: ['도서관지기', '이OO', '책읽는고래', '유스보이스 직원일동', 'ㅎㅈㅇ', '동네책방단골',
          '민들레', 'K.S.H', '한끗팬', '조용한후원자', '서점러버', 'JY'],
   myCharges: [
@@ -265,18 +308,25 @@ async function loadPublic() {
   if (!LIVE) {
     state.pool = DEMO.pool; state.settings = DEMO.settings;
     state.feed = DEMO.feed; state.wall = DEMO.wall;
+    state.stats = DEMO.stats; state.quotes = DEMO.quotes; state.books = DEMO.books;
     return;
   }
-  const [pool, settings, feed, wall] = await Promise.all([
+  const [pool, settings, feed, wall, stats, quotes, books] = await Promise.all([
     sb.rpc('dokseo_pool_status'),
     sb.from('dokseo_settings').select('book_fund_rate').single(),
     sb.rpc('dokseo_activity_feed', { p_days: 10 }),
     sb.rpc('dokseo_sponsor_wall', { p_limit: 40 }),
+    sb.rpc('dokseo_reading_stats'),
+    sb.rpc('dokseo_public_quotes', { p_limit: 8 }),
+    sb.rpc('dokseo_books_reading', { p_limit: 18 }),
   ]);
   state.pool = pool.data || DEMO.pool;
   state.settings = settings.data || DEMO.settings;
   state.feed = feed.data || [];
   state.wall = (wall.data || []).map(w => w.nickname);
+  state.stats = stats.data || DEMO.stats;
+  state.quotes = quotes.data || [];
+  state.books = books.data || [];
 }
 
 async function loadMine() {
@@ -400,6 +450,30 @@ function renderSteps() {
      책은 15일을 채운 자신에 대한 선물로만 전해집니다.`;
 }
 
+function renderReading() {
+  const s = state.stats || {};
+  document.getElementById('readingStats').innerHTML = `
+    <div class="rstat">
+      <div><b>${won(s.pages_read || 0)}<small>쪽</small></b><span>함께 읽은 쪽수</span></div>
+      <div><b>${s.books_titles || 0}<small>권</small></b><span>읽은 책 종류</span></div>
+      <div><b>${won(s.cert_total || 0)}<small>번</small></b><span>누적 인증</span></div>
+    </div>`;
+
+  // 문장은 운영진이 공개로 고른 것만 내려옴 (dokseo_public_quotes)
+  const q = state.quotes || [];
+  document.getElementById('quotesSection').style.display = q.length ? '' : 'none';
+  document.getElementById('quotes').innerHTML = q.map(x => `
+    <div class="quote">
+      <p>“${esc(x.quote)}”</p>
+      <cite>${x.book_title ? esc(x.book_title) + ' · ' : ''}${fmtDate(x.day)}</cite>
+    </div>`).join('');
+
+  const b = state.books || [];
+  document.getElementById('booksSection').style.display = b.length ? '' : 'none';
+  document.getElementById('books').innerHTML = b.map(x =>
+    `<span><b>${esc(x.book_title)}</b>${x.readers > 1 ? `<i>${x.readers}명</i>` : ''}</span>`).join('');
+}
+
 function renderWall() {
   document.getElementById('wall').innerHTML =
     state.wall.length ? state.wall.map(n => `<span>${esc(n)}</span>`).join('')
@@ -427,7 +501,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 (async function init() {
   if (LIVE) document.getElementById('demoFlag').style.display = 'none';
   await loadPublic();
-  renderPool(); renderFeed(); renderSteps(); renderWall();
+  renderPool(); renderFeed(); renderReading(); renderSteps(); renderWall();
 })();
 </script>
 </body>

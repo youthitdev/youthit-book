@@ -85,6 +85,10 @@ ALTER TABLE certifications ADD COLUMN IF NOT EXISTS quote      text;
 ALTER TABLE certifications ADD COLUMN IF NOT EXISTS book_title text;
 ALTER TABLE certifications ADD COLUMN IF NOT EXISTS page_end   int;
 
+-- 후원자에게 보여줄 문장은 운영진이 고른 것만. 아이가 문장 대신 개인적인
+-- 이야기를 적었을 수 있어 자동 노출하지 않는다
+ALTER TABLE certifications ADD COLUMN IF NOT EXISTS quote_public boolean NOT NULL DEFAULT false;
+
 
 -- ────────────────────────────────────────────────────────────────────
 -- 4. 책 구매 기록 — 정산의 단위
@@ -396,6 +400,57 @@ RETURNS TABLE (day date, cert_count bigint, student_count bigint) AS $$
    ORDER BY 1 DESC;
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
+-- 11-2-b. 읽기 기록 집계 — 후원이 산 게 "시간"이라는 걸 숫자로 보여주기 위함
+--   누적 쪽수: page_end 는 "그날까지 읽은 쪽"이라 누적이 아니므로,
+--   (사람 × 루틴 × 책)별 최댓값을 더해야 실제로 읽은 양이 된다
+CREATE OR REPLACE FUNCTION dokseo_reading_stats() RETURNS jsonb AS $$
+  SELECT jsonb_build_object(
+    'pages_read', COALESCE((
+      SELECT sum(mx) FROM (
+        SELECT max(c.page_end) AS mx
+          FROM certifications c
+          JOIN routines r ON r.id = c.routine_id AND r.dokseo
+         WHERE c.page_end IS NOT NULL
+         GROUP BY c.user_id, c.routine_id, c.book_title
+      ) t), 0),
+    'books_titles', COALESCE((
+      SELECT count(DISTINCT c.book_title)
+        FROM certifications c
+        JOIN routines r ON r.id = c.routine_id AND r.dokseo
+       WHERE c.book_title IS NOT NULL AND c.book_title <> ''), 0),
+    'cert_total', COALESCE((
+      SELECT count(*) FROM certifications c
+        JOIN routines r ON r.id = c.routine_id AND r.dokseo), 0),
+    'students_total', COALESCE((
+      SELECT count(DISTINCT c.user_id) FROM certifications c
+        JOIN routines r ON r.id = c.routine_id AND r.dokseo), 0)
+  );
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- 11-2-c. 아이들이 옮겨 적은 문장 — 운영진이 공개로 고른 것만.
+--   ⚠️ user_id 를 절대 반환하지 않는다. 문장과 책 제목만 나간다
+CREATE OR REPLACE FUNCTION dokseo_public_quotes(p_limit int DEFAULT 12)
+RETURNS TABLE (quote text, book_title text, day date) AS $$
+  SELECT c.quote, c.book_title, (c.created_at AT TIME ZONE 'Asia/Seoul')::date
+    FROM certifications c
+    JOIN routines r ON r.id = c.routine_id AND r.dokseo
+   WHERE c.quote_public AND c.quote IS NOT NULL AND c.quote <> ''
+   ORDER BY c.created_at DESC
+   LIMIT p_limit;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+-- 11-2-d. 요즘 읽고 있는 책 — 제목만. 누가 읽는지는 반환하지 않는다
+CREATE OR REPLACE FUNCTION dokseo_books_reading(p_limit int DEFAULT 20)
+RETURNS TABLE (book_title text, readers bigint) AS $$
+  SELECT c.book_title, count(DISTINCT c.user_id)
+    FROM certifications c
+    JOIN routines r ON r.id = c.routine_id AND r.dokseo
+   WHERE c.book_title IS NOT NULL AND c.book_title <> ''
+   GROUP BY c.book_title
+   ORDER BY max(c.created_at) DESC
+   LIMIT p_limit;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
 -- 11-3. 함께하는 후원자 — 노출 동의한 사람의 닉네임만
 CREATE OR REPLACE FUNCTION dokseo_sponsor_wall(p_limit int DEFAULT 50)
 RETURNS TABLE (nickname text, joined_at timestamptz) AS $$
@@ -410,6 +465,9 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 GRANT EXECUTE ON FUNCTION dokseo_pool_status()      TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION dokseo_activity_feed(int) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION dokseo_reading_stats()    TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION dokseo_public_quotes(int) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION dokseo_books_reading(int) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION dokseo_sponsor_wall(int)  TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION settle_book_purchase(bigint, int, text, text) TO authenticated;
 
