@@ -102,6 +102,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab on" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">정산 완료<i id="cntSettled"></i></button>
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
+    <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
   </div>
 
   <div class="panel" id="panel"></div>
@@ -135,6 +136,62 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('settleOverlay')">취소</button>
       <button class="btn btn-pink" id="settleBtn" onclick="submitSettle()">정산 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 서점 등록/수정 -->
+<div class="overlay" id="storeOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t" id="storeModalTitle">서점 등록</div>
+      <div class="modal-d">여기 적은 내용이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.</div>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <div class="label">서점 이름 <span>*</span></div>
+        <input type="text" id="sName" placeholder="예) OO서점">
+      </div>
+      <div class="field">
+        <div class="label">지역</div>
+        <input type="text" id="sRegion" placeholder="예) 강원 속초">
+      </div>
+      <div class="field">
+        <div class="label">주소</div>
+        <input type="text" id="sAddress" placeholder="도로명 주소">
+        <div class="hint">이 주소로 카카오맵 길찾기 버튼이 만들어져요.</div>
+      </div>
+      <div class="field">
+        <div class="label">영업시간</div>
+        <input type="text" id="sHours" placeholder="예) 평일 11:00~19:00">
+      </div>
+      <div class="field">
+        <div class="label">휴무일</div>
+        <input type="text" id="sClosed" placeholder="예) 매주 월요일 휴무">
+      </div>
+      <div class="field">
+        <div class="label">전화번호</div>
+        <input type="text" id="sPhone" placeholder="예) 033-000-0000">
+      </div>
+      <div class="field">
+        <div class="label">인스타그램 · 홈페이지</div>
+        <input type="url" id="sLink" placeholder="https://">
+      </div>
+      <div class="field">
+        <div class="label">한 줄 소개</div>
+        <textarea id="sIntro" rows="2" placeholder="어떤 서점인지 짧게 소개해 주세요."></textarea>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;">
+          <input type="checkbox" id="sActive" checked style="width:16px;height:16px;">
+          현재 파트너 서점
+        </label>
+        <div class="hint">체크를 풀면 새 루틴을 만들 때 목록에서 빠져요. 기존 루틴은 그대로 유지돼요.</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('storeOverlay')">취소</button>
+      <button class="btn btn-dark" onclick="submitStore()">저장</button>
     </div>
   </div>
 </div>
@@ -207,6 +264,18 @@ let DB = {
     { id:3, sponsor_id:'s3', amount:100000, book_fund_amount:80000,  operation_fee_amount:20000,
       remaining_amount:80000,  status:'active',    charged_at:'2026-09-02', source:'manual' },
   ],
+  bookstores: [
+    { id:1, name:'OO서점', region:'강원 속초', address:'강원특별자치도 속초시 OO로 12',
+      hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
+      phone:'033-000-0000', link:'https://instagram.com/example',
+      intro:'바다 곁에서 오래 책을 팔아온 동네책방이에요.', active:true },
+    { id:2, name:'△△책방', region:'부산', address:'부산광역시 △△구 △△로 34',
+      hours:'12:00~20:00', closed_days:'매주 화요일 휴무', phone:null, link:null,
+      intro:'청소년이 편하게 머물 수 있는 골목 책방이에요.', active:true },
+    { id:3, name:'□□책방', region:'강릉', address:'강원특별자치도 강릉시 □□길 5',
+      hours:'11:00~18:00', closed_days:null, phone:null, link:null, intro:null, active:false },
+  ],
+  routineCounts: { 1: 2, 2: 2, 3: 1 },
   gifts: [
     { id:11, name:'김OO', routine:'OO서점과 읽는 15일', bookstore:'OO서점',
       status:'pending', created_at:'2026-09-11', photo:true },
@@ -269,13 +338,71 @@ function renderSummary() {
   document.getElementById('cntPending').textContent = ` ${p.pending}`;
   document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
   document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
+  document.getElementById('cntStores').textContent = ` ${(DB.bookstores || []).length}`;
 }
 
 function renderPanel() {
   const el = document.getElementById('panel');
   if (tab === 'pending')  return el.innerHTML = viewPending();
   if (tab === 'settled')  return el.innerHTML = viewSettled();
+  if (tab === 'stores')   return el.innerHTML = viewStores();
   el.innerHTML = viewCharges();
+}
+
+function viewStores() {
+  const rows = DB.bookstores || [];
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">파트너 서점</div>
+    <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.</div></div>
+    <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
+  </div>
+  ${rows.length ? `<div class="tbl"><table>
+    <tr><th>서점</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
+    ${rows.map(s => `<tr>
+      <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}</td>
+      <td class="muted">${esc(s.address) || '-'}</td>
+      <td class="muted">${esc(s.hours) || '-'}${s.closed_days ? `<div>${esc(s.closed_days)}</div>` : ''}</td>
+      <td class="num">${(DB.routineCounts || {})[s.id] || 0}개</td>
+      <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">비활성</span>'}</td>
+      <td class="right"><button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">등록된 서점이 없습니다. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
+}
+
+let storeEditId = null;
+const STORE_FIELDS = { sName:'name', sRegion:'region', sAddress:'address', sHours:'hours',
+                       sClosed:'closed_days', sPhone:'phone', sLink:'link', sIntro:'intro' };
+
+function openStore(id) {
+  storeEditId = id || null;
+  const s = id ? (DB.bookstores || []).find(x => x.id === id) : null;
+  document.getElementById('storeModalTitle').textContent = s ? '서점 수정' : '서점 등록';
+  Object.entries(STORE_FIELDS).forEach(([el, key]) => document.getElementById(el).value = s ? (s[key] || '') : '');
+  document.getElementById('sActive').checked = s ? !!s.active : true;
+  document.getElementById('storeOverlay').classList.add('on');
+}
+
+async function submitStore() {
+  const payload = {};
+  Object.entries(STORE_FIELDS).forEach(([el, key]) => payload[key] = document.getElementById(el).value.trim() || null);
+  payload.active = document.getElementById('sActive').checked;
+  if (!payload.name) { alert('서점 이름은 필수예요.'); return; }
+
+  if (LIVE) {
+    const q = storeEditId
+      ? sb.from('bookstores').update(payload).eq('id', storeEditId)
+      : sb.from('bookstores').insert(payload);
+    const { error } = await q;
+    if (error) { alert('저장 실패: ' + error.message); return; }
+    await loadLive();
+  } else if (storeEditId) {
+    Object.assign((DB.bookstores || []).find(x => x.id === storeEditId), payload);
+  } else {
+    DB.bookstores.push({ id: Math.max(0, ...DB.bookstores.map(s => s.id)) + 1, ...payload });
+  }
+  closeModal('storeOverlay');
+  render();
 }
 
 function viewPending() {
@@ -471,18 +598,23 @@ async function submitCharge() {
 
 // ── LIVE 데이터 로드 ────────────────────────────────────
 async function loadLive() {
-  const [settings, sponsors, charges, gifts] = await Promise.all([
+  const [settings, sponsors, charges, gifts, stores, routines] = await Promise.all([
     sb.from('dokseo_settings').select('book_fund_rate, book_price_cap').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
-    sb.from('book_gifts').select('*, profiles:user_id(name), routines:routine_id(title, partner_org), consumption_allocations(charge_id, amount)'),
+    sb.from('book_gifts').select('*, profiles:user_id(name), routines:routine_id(title, partner_org, bookstores:bookstore_id(name)), consumption_allocations(charge_id, amount)'),
+    sb.from('bookstores').select('*').order('name'),
+    sb.from('routines').select('bookstore_id').not('bookstore_id', 'is', null),
   ]);
   DB.settings = settings.data || DB.settings;
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];
+  DB.bookstores = stores.data || [];
+  DB.routineCounts = {};
+  (routines.data || []).forEach(r => DB.routineCounts[r.bookstore_id] = (DB.routineCounts[r.bookstore_id] || 0) + 1);
   DB.gifts    = (gifts.data || []).map(g => ({
     id: g.id, name: g.profiles?.name || '-', routine: g.routines?.title || '-',
-    bookstore: g.routines?.partner_org || '-', status: g.status, created_at: g.created_at,
+    bookstore: g.routines?.bookstores?.name || g.routines?.partner_org || '-', status: g.status, created_at: g.created_at,
     settled_at: g.settled_at, gift_amount: g.gift_amount, photo_path: g.proof_photo_url || null,
     allocs: g.consumption_allocations || [],
   }));

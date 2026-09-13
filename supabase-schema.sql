@@ -125,9 +125,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS book_gifts_once_idx
 CREATE INDEX IF NOT EXISTS book_gifts_status_idx ON book_gifts (status, created_at);
 
 
+-- ────────────────────────────────────────────────────────────────────
+-- 4-0. 파트너 독립서점
+--      청소년이 책을 받으러 갈 곳. 위치·영업시간을 앱에서 바로 보여줘서
+--      담당자가 매번 수기로 방문 안내를 보내지 않아도 되게 함
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS bookstores (
+  id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name        text NOT NULL,
+  region      text,                       -- 예) 강원 속초
+  address     text,                       -- 길찾기 링크에 그대로 쓰임
+  hours       text,                       -- 예) 평일 11:00~19:00
+  closed_days text,                       -- 예) 매주 월요일 휴무
+  phone       text,
+  link        text,                       -- 인스타그램 또는 홈페이지
+  intro       text,                       -- 한 줄 소개
+  active      boolean NOT NULL DEFAULT true,
+  created_at  timestamptz DEFAULT now()
+);
+
 -- 4-1. 한끗루틴의 어떤 루틴이 한끗독서 루틴인지 표시
 --      (체크된 루틴에서만 청소년에게 "책 받았어요" 기록 화면이 열림)
 ALTER TABLE routines ADD COLUMN IF NOT EXISTS dokseo boolean NOT NULL DEFAULT false;
+
+-- 루틴 하나가 서점 한 곳. partner_org(자유 텍스트)는 일반 기관용으로 그대로 두고,
+-- 독서루틴은 이 연결을 써서 서점의 주소·영업시간까지 가져온다
+ALTER TABLE routines ADD COLUMN IF NOT EXISTS bookstore_id bigint REFERENCES bookstores(id) ON DELETE SET NULL;
 
 -- 4-1-b. 독서루틴 인증에 딸리는 기록 — 필사 문장과 진도
 --   quote      : 오늘 읽은 곳에서 옮겨 적은 문장 (필사). 독서루틴 인증의 필수 항목
@@ -352,12 +375,20 @@ GRANT EXECUTE ON FUNCTION settle_book_gift(bigint, int, text, text) TO authentic
 -- ════════════════════════════════════════════════════════════════════
 -- 9. RLS — 청소년 개인정보가 후원자에게 넘어가지 않도록 강제
 -- ════════════════════════════════════════════════════════════════════
+ALTER TABLE bookstores              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sponsors                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE charges                 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE book_gifts              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE consumption_allocations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE completion_events       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dokseo_settings         ENABLE ROW LEVEL SECURITY;
+
+-- 서점: 가게 정보라 조회는 열어두고, 등록·수정은 관리자만
+DROP POLICY IF EXISTS bookstores_read ON bookstores;
+CREATE POLICY bookstores_read ON bookstores FOR SELECT USING (true);
+DROP POLICY IF EXISTS bookstores_admin ON bookstores;
+CREATE POLICY bookstores_admin ON bookstores FOR ALL
+  USING (is_admin()) WITH CHECK (is_admin());
 
 -- 후원자: 본인 행만
 DROP POLICY IF EXISTS sponsors_self ON sponsors;
