@@ -1,16 +1,25 @@
 -- ════════════════════════════════════════════════════════════════════
--- 한끗독서 — 청소년 독서 후원 레이어 스키마
+-- 한끗독서 — 청소년 독서 적립금 + 후원 정산 스키마
 -- ════════════════════════════════════════════════════════════════════
 --
 -- 【전제】 한끗루틴과 "같은" Supabase 프로젝트에 추가하는 스키마입니다.
---   15일 연속 인증 판별을 위해 profiles / routines / certifications 를
---   그대로 조회해야 하므로 별도 프로젝트로 분리하면 조인이 불가능합니다.
---   → 실행 전 반드시 백업하고, 스테이징에서 먼저 돌려보세요.
+--   적립금을 인증 기록에서 계산하므로 certifications / routines 와 같은
+--   DB 안에 있어야 합니다. → 실행 전 반드시 백업하고 스테이징에서 먼저.
+--
+-- 【프로그램 구조】
+--   청소년이 끗짱과 매일 책을 읽고 인증한다
+--     → 인증 1회마다 그 루틴에 정해진 금액이 적립된다
+--     → 쌓인 적립금으로 인근 파트너 책방에 가서 책을 산다
+--     → 책 산 기록(사진)을 올리면 "정산 대기"
+--     → 담당자가 영수증 금액을 입력하면 후원금에서 FIFO로 차감된다
+--
+--   끗짱과 책방은 별개다. 책방은 책을 살 수 있는 허브 역할만 하며,
+--   어느 책방에서 살지는 청소년이 목록에서 고른다.
 --
 -- 【핵심 규칙】
---   1. 후원금은 입금 즉시 80% 도서기금 / 20% 운영비로 분리 (비율은 dokseo_settings)
+--   1. 후원금은 입금 즉시 도서기금/운영비로 분리 (비율은 dokseo_settings)
 --   2. 차감은 FIFO — 가장 오래된 후원 건부터 소진
---   3. "책 받음(정산 대기)" 과 "정산 완료(영수증 금액 확정)" 는 분리된 상태
+--   3. 책 구매와 정산 완료는 분리된 상태 (영수증 확인 전에는 차감되지 않음)
 --   4. 청소년 개인 식별 정보는 후원자에게 절대 노출되지 않음 (RLS로 강제)
 -- ════════════════════════════════════════════════════════════════════
 
@@ -28,17 +37,145 @@ $$ LANGUAGE sql SECURITY DEFINER STABLE;
 --    기부금품법상 운영비 비율 상한 확인 결과에 따라 바뀔 수 있어 테이블로 둠
 -- ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS dokseo_settings (
-  id                 int PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-  book_fund_rate     numeric(4,3) NOT NULL DEFAULT 0.800 CHECK (book_fund_rate > 0 AND book_fund_rate <= 1),
-  book_price_cap     int NOT NULL DEFAULT 20000,   -- 1인당 도서 지급 상한
-  milestone_amount   int NOT NULL DEFAULT 100000,  -- "10만원 = 루틴 1개" 마일스톤 (해석 A)
-  updated_at         timestamptz DEFAULT now()
+  id               int PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  book_fund_rate   numeric(4,3) NOT NULL DEFAULT 0.800 CHECK (book_fund_rate > 0 AND book_fund_rate <= 1),
+  milestone_amount int NOT NULL DEFAULT 100000,  -- "10만원 = 루틴 1개" 마일스톤 (해석 보류 중)
+  updated_at       timestamptz DEFAULT now()
 );
 INSERT INTO dokseo_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 
 
 -- ────────────────────────────────────────────────────────────────────
--- 2. 후원자
+-- 2. 파트너 책방 — 적립금을 쓸 수 있는 허브
+--    끗짱이 아니어도 된다. 책을 살 수 있는 곳이면 된다.
+--    위치·영업시간을 앱에서 바로 보여줘서, 담당자가 매 회차 수기로
+--    방문 안내를 보내지 않아도 되게 함
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS bookstores (
+  id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name        text NOT NULL,
+  region      text,                       -- 예) 강원 속초 — 청소년이 내 동네를 찾는 기준
+  address     text,                       -- 길찾기 링크에 그대로 쓰임
+  hours       text,                       -- 예) 평일 11:00~19:00
+  closed_days text,                       -- 예) 매주 월요일 휴무
+  phone       text,
+  link        text,                       -- 인스타그램 또는 홈페이지
+  intro       text,                       -- 한 줄 소개
+  active      boolean NOT NULL DEFAULT true,
+  created_at  timestamptz DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS bookstores_region_idx ON bookstores (region) WHERE active;
+
+
+-- ────────────────────────────────────────────────────────────────────
+-- 3. 한끗루틴 테이블에 붙는 컬럼
+-- ────────────────────────────────────────────────────────────────────
+
+-- 어떤 루틴이 한끗독서 루틴인지. 체크된 루틴에서만 적립·구매 화면이 열린다
+ALTER TABLE routines ADD COLUMN IF NOT EXISTS dokseo boolean NOT NULL DEFAULT false;
+
+-- 인증 1회당 적립액(원). 루틴마다 기간·성격이 달라 루틴별로 정한다
+ALTER TABLE routines ADD COLUMN IF NOT EXISTS dokseo_amount_per_cert int NOT NULL DEFAULT 0;
+
+-- 독서루틴 인증에 딸리는 기록
+--   quote      : 옮겨 적고 싶은 문장 (필사) — 선택
+--   book_title : 지금 읽는 책. 다음 인증에서 자동으로 채워짐 — 선택
+--   page_end   : 오늘까지 읽은 쪽. 전날보다 줄면 앱이 부드럽게 물어보되 막지는 않음 — 선택
+ALTER TABLE certifications ADD COLUMN IF NOT EXISTS quote      text;
+ALTER TABLE certifications ADD COLUMN IF NOT EXISTS book_title text;
+ALTER TABLE certifications ADD COLUMN IF NOT EXISTS page_end   int;
+
+
+-- ────────────────────────────────────────────────────────────────────
+-- 4. 책 구매 기록 — 정산의 단위
+--    청소년이 책방에서 적립금으로 책을 사고, 책으로 얼굴을 가린 사진을
+--    올리면 여기에 'pending' 으로 생성된다
+--    ⚠️ 개인 식별 정보(user_id, 사진)를 담으므로 후원자는 조회 불가
+-- ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS book_purchases (
+  id              bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id         uuid   NOT NULL REFERENCES auth.users ON DELETE CASCADE,
+  routine_id      bigint NOT NULL REFERENCES routines(id) ON DELETE CASCADE,  -- 적립금이 쌓인 루틴
+  bookstore_id    bigint REFERENCES bookstores(id) ON DELETE SET NULL,        -- 어디서 샀는지
+  proof_photo_url text,                                  -- 책+얼굴가림 사진 (내부 확인용)
+  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','settled','void')),
+  amount          int CHECK (amount IS NULL OR amount > 0),  -- 영수증 기준 실제 금액
+  receipt_url     text,
+  note            text,
+  settled_by      uuid REFERENCES auth.users ON DELETE SET NULL,
+  settled_at      timestamptz,
+  created_at      timestamptz DEFAULT now(),
+  CONSTRAINT book_purchases_settled_needs_amount
+    CHECK (status <> 'settled' OR (amount IS NOT NULL AND settled_at IS NOT NULL))
+);
+CREATE INDEX IF NOT EXISTS book_purchases_status_idx ON book_purchases (status, created_at);
+CREATE INDEX IF NOT EXISTS book_purchases_user_idx   ON book_purchases (user_id, routine_id);
+-- 정산 대기 건은 1인 1루틴에 하나만 (앞 건이 정산돼야 다음 구매를 기록)
+CREATE UNIQUE INDEX IF NOT EXISTS book_purchases_one_pending_idx
+  ON book_purchases (user_id, routine_id) WHERE status = 'pending';
+
+
+-- ────────────────────────────────────────────────────────────────────
+-- 5. 적립금 잔액
+--    따로 저장하지 않고 인증 기록에서 계산한다. 저장된 잔액과 실제 인증이
+--    어긋날 여지를 아예 없애기 위함.
+--      잔액 = (그 루틴의 내 인증 수 × 인증당 적립액) − (정산 완료된 구매 합계)
+--    정산 대기 중인 건은 금액이 아직 없으므로 잔액에서 빼지 않는다.
+--    대신 대기 건이 있으면 새 구매를 기록할 수 없다(위 유니크 인덱스).
+-- ────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION dokseo_balance(p_user uuid, p_routine bigint)
+RETURNS int AS $$
+  SELECT GREATEST(0,
+    COALESCE((SELECT count(*) FROM certifications c
+               WHERE c.routine_id = p_routine AND c.user_id = p_user), 0)
+    * COALESCE((SELECT r.dokseo_amount_per_cert FROM routines r
+                 WHERE r.id = p_routine AND r.dokseo), 0)
+    - COALESCE((SELECT sum(p.amount) FROM book_purchases p
+                 WHERE p.user_id = p_user AND p.routine_id = p_routine
+                   AND p.status = 'settled'), 0)
+  )::int;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+GRANT EXECUTE ON FUNCTION dokseo_balance(uuid, bigint) TO authenticated;
+
+
+-- 청소년이 직접 올리는 구매 기록의 자격·값 검증
+--   자격: 독서루틴이고, 적립금 잔액이 남아 있을 것
+--   청소년이 올린 행은 금액·정산 관련 값을 절대 담을 수 없게 강제로 비움
+CREATE OR REPLACE FUNCTION check_book_purchase_insert() RETURNS trigger AS $$
+DECLARE
+  v_dokseo  boolean;
+  v_balance int;
+BEGIN
+  IF is_admin() THEN RETURN NEW; END IF;
+
+  NEW.status      := 'pending';
+  NEW.amount      := NULL;
+  NEW.receipt_url := NULL;
+  NEW.settled_by  := NULL;
+  NEW.settled_at  := NULL;
+
+  SELECT dokseo INTO v_dokseo FROM routines WHERE id = NEW.routine_id;
+  IF NOT COALESCE(v_dokseo, false) THEN
+    RAISE EXCEPTION '한끗독서 루틴이 아닙니다';
+  END IF;
+
+  v_balance := dokseo_balance(NEW.user_id, NEW.routine_id);
+  IF v_balance <= 0 THEN
+    RAISE EXCEPTION '아직 쓸 수 있는 적립금이 없습니다';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS book_purchases_check ON book_purchases;
+CREATE TRIGGER book_purchases_check BEFORE INSERT ON book_purchases
+  FOR EACH ROW EXECUTE FUNCTION check_book_purchase_insert();
+
+
+-- ────────────────────────────────────────────────────────────────────
+-- 6. 후원자
 --    도너스를 통해 들어온 후원자는 우리 앱 계정이 없을 수 있으므로
 --    user_id 는 nullable, email 을 동기화 매칭 키로 사용
 -- ────────────────────────────────────────────────────────────────────
@@ -53,7 +190,7 @@ CREATE TABLE IF NOT EXISTS sponsors (
 
 
 -- ────────────────────────────────────────────────────────────────────
--- 3. 후원 내역
+-- 7. 후원 내역
 --    도너스 연동 방식(API/웹훅 vs CSV) 확정 전까지는 source='manual' 로 수기 입력
 -- ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS charges (
@@ -76,7 +213,7 @@ CREATE INDEX IF NOT EXISTS charges_fifo_idx ON charges (charged_at, id) WHERE re
 CREATE INDEX IF NOT EXISTS charges_sponsor_idx ON charges (sponsor_id, charged_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS charges_external_ref_idx ON charges (external_ref) WHERE external_ref IS NOT NULL;
 
--- 후원 입력 시 80/20 자동 분리 (금액은 원 단위 내림, 잔돈은 도서기금 쪽으로)
+-- 후원 입력 시 자동 분리 (원 단위 내림, 잔돈은 도서기금 쪽으로)
 CREATE OR REPLACE FUNCTION split_charge_amounts() RETURNS trigger AS $$
 DECLARE
   v_rate numeric;
@@ -97,133 +234,27 @@ CREATE TRIGGER charges_split BEFORE INSERT ON charges
 
 
 -- ────────────────────────────────────────────────────────────────────
--- 4. 책 선물 지급 건 — 정산의 단위
---    15일 연속 인증을 채운 청소년이 독립서점에서 책을 받고,
---    책으로 얼굴을 가린 사진을 올리면 여기에 'pending' 으로 생성됨
---    ⚠️ 개인 식별 정보(청소년 user_id, 사진)를 담으므로 후원자는 조회 불가
--- ────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS book_gifts (
-  id              bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  user_id         uuid   NOT NULL REFERENCES auth.users ON DELETE CASCADE,
-  routine_id      bigint REFERENCES routines(id) ON DELETE SET NULL,
-  -- 서점은 따로 받지 않는다. 루틴 하나가 서점 한 곳이라 routines.partner_org 로 따라옴
-  proof_photo_url text,                                  -- 책+얼굴가림 사진 (내부 확인용)
-  proof_cert_id   bigint REFERENCES certifications(id) ON DELETE SET NULL,
-  status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','settled','void')),
-  gift_amount     int CHECK (gift_amount IS NULL OR gift_amount > 0),  -- 영수증 기준 실제 금액
-  receipt_url     text,
-  note            text,
-  settled_by      uuid REFERENCES auth.users ON DELETE SET NULL,
-  settled_at      timestamptz,
-  created_at      timestamptz DEFAULT now(),
-  CONSTRAINT book_gifts_settled_needs_amount
-    CHECK (status <> 'settled' OR (gift_amount IS NOT NULL AND settled_at IS NOT NULL))
-);
--- 한 루틴당 1인 1회 지급
-CREATE UNIQUE INDEX IF NOT EXISTS book_gifts_once_idx
-  ON book_gifts (user_id, routine_id) WHERE status <> 'void';
-CREATE INDEX IF NOT EXISTS book_gifts_status_idx ON book_gifts (status, created_at);
-
-
--- ────────────────────────────────────────────────────────────────────
--- 4-0. 파트너 독립서점
---      청소년이 책을 받으러 갈 곳. 위치·영업시간을 앱에서 바로 보여줘서
---      담당자가 매번 수기로 방문 안내를 보내지 않아도 되게 함
--- ────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS bookstores (
-  id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  name        text NOT NULL,
-  region      text,                       -- 예) 강원 속초
-  address     text,                       -- 길찾기 링크에 그대로 쓰임
-  hours       text,                       -- 예) 평일 11:00~19:00
-  closed_days text,                       -- 예) 매주 월요일 휴무
-  phone       text,
-  link        text,                       -- 인스타그램 또는 홈페이지
-  intro       text,                       -- 한 줄 소개
-  active      boolean NOT NULL DEFAULT true,
-  created_at  timestamptz DEFAULT now()
-);
-
--- 4-1. 한끗루틴의 어떤 루틴이 한끗독서 루틴인지 표시
---      (체크된 루틴에서만 청소년에게 "책 받았어요" 기록 화면이 열림)
-ALTER TABLE routines ADD COLUMN IF NOT EXISTS dokseo boolean NOT NULL DEFAULT false;
-
--- 루틴 하나가 서점 한 곳. partner_org(자유 텍스트)는 일반 기관용으로 그대로 두고,
--- 독서루틴은 이 연결을 써서 서점의 주소·영업시간까지 가져온다
-ALTER TABLE routines ADD COLUMN IF NOT EXISTS bookstore_id bigint REFERENCES bookstores(id) ON DELETE SET NULL;
-
--- 4-1-b. 독서루틴 인증에 딸리는 기록 — 필사 문장과 진도
---   quote      : 오늘 읽은 곳에서 옮겨 적은 문장 (필사). 독서루틴 인증의 필수 항목
---   book_title : 지금 읽는 책. 다음 인증에서 자동으로 채워짐
---   page_end   : 오늘까지 읽은 페이지. 전날보다 줄면 앱이 부드럽게 물어보되 막지는 않음
-ALTER TABLE certifications ADD COLUMN IF NOT EXISTS quote      text;
-ALTER TABLE certifications ADD COLUMN IF NOT EXISTS book_title text;
-ALTER TABLE certifications ADD COLUMN IF NOT EXISTS page_end   int;
-
--- 4-2. 청소년이 직접 올리는 "책 받았어요" 기록의 자격·값 검증
---      자격: 그 루틴의 전체 일수만큼 인증을 채웠을 것 (15일 루틴이면 15일 전부)
---      청소년이 올린 행은 금액·정산 관련 값을 절대 담을 수 없게 강제로 비움
-CREATE OR REPLACE FUNCTION check_book_gift_insert() RETURNS trigger AS $$
-DECLARE
-  v_dokseo boolean;
-  v_days   int;
-  v_certs  int;
-BEGIN
-  IF is_admin() THEN RETURN NEW; END IF;
-
-  NEW.status      := 'pending';
-  NEW.gift_amount := NULL;
-  NEW.receipt_url := NULL;
-  NEW.settled_by  := NULL;
-  NEW.settled_at  := NULL;
-
-  SELECT dokseo, (end_date - start_date) + 1
-    INTO v_dokseo, v_days
-    FROM routines WHERE id = NEW.routine_id;
-
-  IF NOT COALESCE(v_dokseo, false) THEN
-    RAISE EXCEPTION '한끗독서 루틴이 아닙니다';
-  END IF;
-
-  SELECT count(*) INTO v_certs
-    FROM certifications
-   WHERE routine_id = NEW.routine_id AND user_id = NEW.user_id;
-
-  IF v_certs < COALESCE(v_days, 15) THEN
-    RAISE EXCEPTION '인증 일수가 부족합니다 (%일 / %일)', v_certs, COALESCE(v_days, 15);
-  END IF;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS book_gifts_check ON book_gifts;
-CREATE TRIGGER book_gifts_check BEFORE INSERT ON book_gifts
-  FOR EACH ROW EXECUTE FUNCTION check_book_gift_insert();
-
-
--- ────────────────────────────────────────────────────────────────────
--- 5. FIFO 차감 매핑 — 어느 후원 건에서 얼마가 빠져나갔는지
+-- 8. FIFO 차감 매핑 — 어느 후원 건에서 얼마가 빠져나갔는지
 -- ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS consumption_allocations (
-  id            bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  book_gift_id  bigint NOT NULL REFERENCES book_gifts(id) ON DELETE RESTRICT,
-  charge_id     bigint NOT NULL REFERENCES charges(id)    ON DELETE RESTRICT,
-  amount        int    NOT NULL CHECK (amount > 0),
-  created_at    timestamptz DEFAULT now()
+  id          bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  purchase_id bigint NOT NULL REFERENCES book_purchases(id) ON DELETE RESTRICT,
+  charge_id   bigint NOT NULL REFERENCES charges(id)        ON DELETE RESTRICT,
+  amount      int    NOT NULL CHECK (amount > 0),
+  created_at  timestamptz DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS alloc_charge_idx ON consumption_allocations (charge_id);
-CREATE INDEX IF NOT EXISTS alloc_gift_idx   ON consumption_allocations (book_gift_id);
+CREATE INDEX IF NOT EXISTS alloc_charge_idx   ON consumption_allocations (charge_id);
+CREATE INDEX IF NOT EXISTS alloc_purchase_idx ON consumption_allocations (purchase_id);
 
 
 -- ────────────────────────────────────────────────────────────────────
--- 6. 후원 소진 완료 이벤트 — 후원자 대시보드의 "완료 카드"
+-- 9. 후원 소진 완료 이벤트 — 후원자 대시보드의 "완료 카드"
 -- ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS completion_events (
   id             bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   charge_id      bigint NOT NULL UNIQUE REFERENCES charges(id) ON DELETE CASCADE,
   students_count int NOT NULL,
-  gifts_count    int NOT NULL,
+  purchases_count int NOT NULL,
   total_amount   int NOT NULL,
   message        text,
   created_at     timestamptz DEFAULT now()
@@ -231,22 +262,24 @@ CREATE TABLE IF NOT EXISTS completion_events (
 
 
 -- ════════════════════════════════════════════════════════════════════
--- 7. 정산 함수 — 관리자가 영수증 금액을 입력하면 FIFO로 차감
---    금액 확정과 차감이 한 트랜잭션에서 원자적으로 처리됨
+-- 10. 정산 함수 — 관리자가 영수증 금액을 입력하면 FIFO로 차감
+--     금액 확정과 차감이 한 트랜잭션에서 원자적으로 처리됨
 -- ════════════════════════════════════════════════════════════════════
-CREATE OR REPLACE FUNCTION settle_book_gift(
-  p_gift_id     bigint,
+CREATE OR REPLACE FUNCTION settle_book_purchase(
+  p_purchase_id bigint,
   p_amount      int,
   p_receipt_url text DEFAULT NULL,
   p_note        text DEFAULT NULL
 ) RETURNS jsonb AS $$
 DECLARE
-  v_cap        int;
-  v_left       int := p_amount;
-  v_take       int;
-  v_charge     record;
-  v_allocs     jsonb := '[]'::jsonb;
-  v_pool       int;
+  v_left    int := p_amount;
+  v_take    int;
+  v_charge  record;
+  v_allocs  jsonb := '[]'::jsonb;
+  v_pool    int;
+  v_user    uuid;
+  v_routine bigint;
+  v_balance int;
 BEGIN
   IF NOT is_admin() THEN
     RAISE EXCEPTION '정산 권한이 없습니다';
@@ -255,15 +288,17 @@ BEGIN
     RAISE EXCEPTION '정산 금액이 올바르지 않습니다';
   END IF;
 
-  SELECT book_price_cap INTO v_cap FROM dokseo_settings WHERE id = 1;
-  IF p_amount > v_cap THEN
-    RAISE EXCEPTION '1인당 도서 지급 상한(%원)을 넘습니다', v_cap;
+  -- 대상 건 잠금 + 상태 확인
+  SELECT user_id, routine_id INTO v_user, v_routine
+    FROM book_purchases WHERE id = p_purchase_id AND status = 'pending' FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION '정산 대기 상태의 건이 아닙니다 (id=%)', p_purchase_id;
   END IF;
 
-  -- 대상 건 잠금 + 상태 확인
-  PERFORM 1 FROM book_gifts WHERE id = p_gift_id AND status = 'pending' FOR UPDATE;
-  IF NOT FOUND THEN
-    RAISE EXCEPTION '정산 대기 상태의 건이 아닙니다 (id=%)', p_gift_id;
+  -- 적립금을 넘겨 쓸 수는 없다
+  v_balance := dokseo_balance(v_user, v_routine);
+  IF p_amount > v_balance THEN
+    RAISE EXCEPTION '적립금 잔액을 넘습니다 (잔액 %원 / 입력 %원)', v_balance, p_amount;
   END IF;
 
   SELECT COALESCE(sum(remaining_amount), 0) INTO v_pool FROM charges WHERE remaining_amount > 0;
@@ -281,8 +316,8 @@ BEGIN
     EXIT WHEN v_left <= 0;
     v_take := LEAST(v_charge.remaining_amount, v_left);
 
-    INSERT INTO consumption_allocations (book_gift_id, charge_id, amount)
-    VALUES (p_gift_id, v_charge.id, v_take);
+    INSERT INTO consumption_allocations (purchase_id, charge_id, amount)
+    VALUES (p_purchase_id, v_charge.id, v_take);
 
     UPDATE charges
        SET remaining_amount = remaining_amount - v_take,
@@ -294,67 +329,69 @@ BEGIN
     v_left := v_left - v_take;
 
     -- 소진 완료된 후원 건은 완료 카드 생성
-    INSERT INTO completion_events (charge_id, students_count, gifts_count, total_amount, message)
+    INSERT INTO completion_events (charge_id, students_count, purchases_count, total_amount, message)
     SELECT c.id,
-           count(DISTINCT g.user_id),
-           count(DISTINCT g.id),
+           count(DISTINCT p.user_id),
+           count(DISTINCT p.id),
            c.book_fund_amount,
            NULL
       FROM charges c
       JOIN consumption_allocations a ON a.charge_id = c.id
-      JOIN book_gifts g ON g.id = a.book_gift_id
+      JOIN book_purchases p ON p.id = a.purchase_id
      WHERE c.id = v_charge.id AND c.remaining_amount = 0
      GROUP BY c.id, c.book_fund_amount
     ON CONFLICT (charge_id) DO NOTHING;
   END LOOP;
 
-  UPDATE book_gifts
+  UPDATE book_purchases
      SET status      = 'settled',
-         gift_amount = p_amount,
+         amount      = p_amount,
          receipt_url = COALESCE(p_receipt_url, receipt_url),
          note        = COALESCE(p_note, note),
          settled_by  = auth.uid(),
          settled_at  = now()
-   WHERE id = p_gift_id;
+   WHERE id = p_purchase_id;
 
-  RETURN jsonb_build_object('gift_id', p_gift_id, 'amount', p_amount, 'allocations', v_allocs);
+  RETURN jsonb_build_object('purchase_id', p_purchase_id, 'amount', p_amount, 'allocations', v_allocs);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- ════════════════════════════════════════════════════════════════════
--- 8. 공개 집계 — 후원자 대시보드용
---    개별 청소년을 식별할 수 없는 형태로만 반환 (SECURITY DEFINER)
+-- 11. 공개 집계 — 후원자 대시보드용
+--     개별 청소년을 식별할 수 없는 형태로만 반환 (SECURITY DEFINER)
 -- ════════════════════════════════════════════════════════════════════
 
--- 8-1. 도서기금 풀 현황
+-- 11-1. 도서기금 풀 현황
 CREATE OR REPLACE FUNCTION dokseo_pool_status() RETURNS jsonb AS $$
   SELECT jsonb_build_object(
-    'total_donated',   COALESCE((SELECT sum(amount) FROM charges), 0),
-    'book_fund',       COALESCE((SELECT sum(book_fund_amount) FROM charges), 0),
-    'operation_fee',   COALESCE((SELECT sum(operation_fee_amount) FROM charges), 0),
-    'remaining',       COALESCE((SELECT sum(remaining_amount) FROM charges), 0),
-    'spent',           COALESCE((SELECT sum(amount) FROM consumption_allocations), 0),
-    'books_delivered', COALESCE((SELECT count(*) FROM book_gifts WHERE status = 'settled'), 0),
-    'books_pending',   COALESCE((SELECT count(*) FROM book_gifts WHERE status = 'pending'), 0),
-    'students_reached',COALESCE((SELECT count(DISTINCT user_id) FROM book_gifts WHERE status <> 'void'), 0),
-    'sponsors_count',  COALESCE((SELECT count(DISTINCT sponsor_id) FROM charges), 0)
+    'total_donated',    COALESCE((SELECT sum(amount) FROM charges), 0),
+    'book_fund',        COALESCE((SELECT sum(book_fund_amount) FROM charges), 0),
+    'operation_fee',    COALESCE((SELECT sum(operation_fee_amount) FROM charges), 0),
+    'remaining',        COALESCE((SELECT sum(remaining_amount) FROM charges), 0),
+    'spent',            COALESCE((SELECT sum(amount) FROM consumption_allocations), 0),
+    'books_bought',     COALESCE((SELECT count(*) FROM book_purchases WHERE status = 'settled'), 0),
+    'books_pending',    COALESCE((SELECT count(*) FROM book_purchases WHERE status = 'pending'), 0),
+    'students_reached', COALESCE((SELECT count(DISTINCT user_id) FROM book_purchases WHERE status <> 'void'), 0),
+    'sponsors_count',   COALESCE((SELECT count(DISTINCT sponsor_id) FROM charges), 0),
+    'bookstores_count', COALESCE((SELECT count(*) FROM bookstores WHERE active), 0)
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- 8-2. 익명 인증 피드 — 날짜별 인증 수·인원 수만 (누가 했는지는 반환하지 않음)
+-- 11-2. 익명 인증 피드 — 날짜별 인증 수·인원 수만 (누가 했는지는 반환하지 않음)
 CREATE OR REPLACE FUNCTION dokseo_activity_feed(p_days int DEFAULT 14)
 RETURNS TABLE (day date, cert_count bigint, student_count bigint) AS $$
-  SELECT (created_at AT TIME ZONE 'Asia/Seoul')::date AS day,
-         count(*)                  AS cert_count,
-         count(DISTINCT user_id)   AS student_count
-    FROM certifications
-   WHERE created_at >= now() - make_interval(days => p_days)
+  SELECT (c.created_at AT TIME ZONE 'Asia/Seoul')::date AS day,
+         count(*)                    AS cert_count,
+         count(DISTINCT c.user_id)   AS student_count
+    FROM certifications c
+    JOIN routines r ON r.id = c.routine_id AND r.dokseo
+   WHERE c.created_at >= now() - make_interval(days => p_days)
    GROUP BY 1
    ORDER BY 1 DESC;
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
--- 8-3. 함께하는 후원자 — 노출 동의한 사람의 닉네임만
+-- 11-3. 함께하는 후원자 — 노출 동의한 사람의 닉네임만
 CREATE OR REPLACE FUNCTION dokseo_sponsor_wall(p_limit int DEFAULT 50)
 RETURNS TABLE (nickname text, joined_at timestamptz) AS $$
   SELECT s.nickname, min(c.charged_at)
@@ -366,29 +403,38 @@ RETURNS TABLE (nickname text, joined_at timestamptz) AS $$
    LIMIT p_limit;
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
-GRANT EXECUTE ON FUNCTION dokseo_pool_status()          TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION dokseo_activity_feed(int)     TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION dokseo_sponsor_wall(int)      TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION settle_book_gift(bigint, int, text, text) TO authenticated;
+GRANT EXECUTE ON FUNCTION dokseo_pool_status()      TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION dokseo_activity_feed(int) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION dokseo_sponsor_wall(int)  TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION settle_book_purchase(bigint, int, text, text) TO authenticated;
 
 
 -- ════════════════════════════════════════════════════════════════════
--- 9. RLS — 청소년 개인정보가 후원자에게 넘어가지 않도록 강제
+-- 12. RLS — 청소년 개인정보가 후원자에게 넘어가지 않도록 강제
 -- ════════════════════════════════════════════════════════════════════
 ALTER TABLE bookstores              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE book_purchases          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE sponsors                ENABLE ROW LEVEL SECURITY;
 ALTER TABLE charges                 ENABLE ROW LEVEL SECURITY;
-ALTER TABLE book_gifts              ENABLE ROW LEVEL SECURITY;
 ALTER TABLE consumption_allocations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE completion_events       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dokseo_settings         ENABLE ROW LEVEL SECURITY;
 
--- 서점: 가게 정보라 조회는 열어두고, 등록·수정은 관리자만
+-- 책방: 가게 정보라 조회는 열어두고, 등록·수정은 관리자만
 DROP POLICY IF EXISTS bookstores_read ON bookstores;
 CREATE POLICY bookstores_read ON bookstores FOR SELECT USING (true);
 DROP POLICY IF EXISTS bookstores_admin ON bookstores;
 CREATE POLICY bookstores_admin ON bookstores FOR ALL
   USING (is_admin()) WITH CHECK (is_admin());
+
+-- 구매 기록: 관리자 전체, 청소년은 자기 것만 (후원자는 접근 불가)
+DROP POLICY IF EXISTS book_purchases_admin ON book_purchases;
+CREATE POLICY book_purchases_admin ON book_purchases FOR ALL
+  USING (is_admin()) WITH CHECK (is_admin());
+DROP POLICY IF EXISTS book_purchases_own ON book_purchases;
+CREATE POLICY book_purchases_own ON book_purchases FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS book_purchases_own_insert ON book_purchases;
+CREATE POLICY book_purchases_own_insert ON book_purchases FOR INSERT WITH CHECK (user_id = auth.uid());
 
 -- 후원자: 본인 행만
 DROP POLICY IF EXISTS sponsors_self ON sponsors;
@@ -407,18 +453,7 @@ CREATE POLICY charges_own ON charges FOR SELECT
 DROP POLICY IF EXISTS charges_admin_write ON charges;
 CREATE POLICY charges_admin_write ON charges FOR INSERT WITH CHECK (is_admin());
 
--- 책 선물 건: 관리자 전용 (청소년 식별 정보·사진 포함)
-DROP POLICY IF EXISTS book_gifts_admin ON book_gifts;
-CREATE POLICY book_gifts_admin ON book_gifts FOR ALL
-  USING (is_admin()) WITH CHECK (is_admin());
--- 청소년 본인은 자기 건만 조회 가능 (앱에서 "책 받음" 상태 표시용 — 후원 관련 문구는 노출하지 않음)
-DROP POLICY IF EXISTS book_gifts_own ON book_gifts;
-CREATE POLICY book_gifts_own ON book_gifts FOR SELECT USING (user_id = auth.uid());
--- 청소년 본인이 "책 받았어요" 기록 생성 (자격·값 검증은 book_gifts_check 트리거가 담당)
-DROP POLICY IF EXISTS book_gifts_own_insert ON book_gifts;
-CREATE POLICY book_gifts_own_insert ON book_gifts FOR INSERT WITH CHECK (user_id = auth.uid());
-
--- 차감 매핑: 본인 후원 건에 달린 것만 (금액만 보이고, book_gifts 는 읽을 수 없으므로 신원 노출 없음)
+-- 차감 매핑: 본인 후원 건에 달린 것만 (금액만 보이고, book_purchases 는 읽을 수 없어 신원 노출 없음)
 DROP POLICY IF EXISTS alloc_own ON consumption_allocations;
 CREATE POLICY alloc_own ON consumption_allocations FOR SELECT
   USING (is_admin() OR charge_id IN (
@@ -432,7 +467,7 @@ CREATE POLICY completion_own ON completion_events FOR SELECT
     SELECT c.id FROM charges c JOIN sponsors s ON s.id = c.sponsor_id WHERE s.user_id = auth.uid()
   ));
 
--- 설정: 누구나 조회(80/20 비율 공개), 수정은 관리자
+-- 설정: 누구나 조회(분리 비율 공개), 수정은 관리자
 DROP POLICY IF EXISTS settings_read ON dokseo_settings;
 CREATE POLICY settings_read ON dokseo_settings FOR SELECT USING (true);
 DROP POLICY IF EXISTS settings_admin ON dokseo_settings;
@@ -440,10 +475,10 @@ CREATE POLICY settings_admin ON dokseo_settings FOR UPDATE USING (is_admin());
 
 
 -- ════════════════════════════════════════════════════════════════════
--- 10. 스토리지 버킷 — 둘 다 비공개
+-- 13. 스토리지 버킷 — 둘 다 비공개
 -- ════════════════════════════════════════════════════════════════════
 
--- 10-1. 영수증 (관리자 전용)
+-- 13-1. 영수증 (관리자 전용)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('dokseo-receipts', 'dokseo-receipts', false)
 ON CONFLICT (id) DO NOTHING;
@@ -453,7 +488,7 @@ CREATE POLICY "dokseo_receipts_admin" ON storage.objects FOR ALL
   USING (bucket_id = 'dokseo-receipts' AND is_admin())
   WITH CHECK (bucket_id = 'dokseo-receipts' AND is_admin());
 
--- 10-2. 책 수령 사진 (청소년이 올리고, 관리자만 열람)
+-- 13-2. 책 구매 사진 (청소년이 올리고, 관리자만 열람)
 --   ⚠️ 절대 public 으로 바꾸지 말 것. 얼굴을 가려도 배경·의상으로 간접 식별될 수 있어
 --   후원자 화면에는 어떤 형태로도 내보내지 않는다.
 INSERT INTO storage.buckets (id, name, public)

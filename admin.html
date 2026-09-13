@@ -120,7 +120,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <div class="field">
         <div class="label">실제 지급 금액 <span>*</span></div>
         <input type="number" id="settleAmount" placeholder="예) 18000" oninput="renderPreview()">
-        <div class="hint">1인당 상한 <b id="capHint"></b>원</div>
+        <div class="hint">이 참여자의 적립금 잔액 <b id="capHint"></b>원</div>
       </div>
       <div class="field">
         <div class="label">영수증 첨부</div>
@@ -250,7 +250,7 @@ const fmtDate = d => d ? d.slice(0,10).replace(/-/g,'.') : '-';
 
 // ── 데모 데이터 (LIVE 전환 시 Supabase 조회로 대체) ─────
 let DB = {
-  settings: { book_fund_rate: 0.8, book_price_cap: 20000 },
+  settings: { book_fund_rate: 0.8 },
   sponsors: [
     { id:'s1', nickname:'책읽는고래', email:'whale@example.com' },
     { id:'s2', nickname:'민들레',     email:'dan@example.com' },
@@ -275,20 +275,20 @@ let DB = {
     { id:3, name:'□□책방', region:'강릉', address:'강원특별자치도 강릉시 □□길 5',
       hours:'11:00~18:00', closed_days:null, phone:null, link:null, intro:null, active:false },
   ],
-  routineCounts: { 1: 2, 2: 2, 3: 1 },
-  gifts: [
-    { id:11, name:'김OO', routine:'OO서점과 읽는 15일', bookstore:'OO서점',
-      status:'pending', created_at:'2026-09-11', photo:true },
-    { id:12, name:'이OO', routine:'OO서점과 읽는 15일', bookstore:'OO서점',
-      status:'pending', created_at:'2026-09-11', photo:true },
-    { id:13, name:'박OO', routine:'△△책방과 읽는 15일', bookstore:'△△책방',
-      status:'pending', created_at:'2026-09-09', photo:true },
-    { id:9,  name:'최OO', routine:'△△책방과 읽는 15일', bookstore:'△△책방',
+  purchaseCounts: { 1: 3, 2: 2, 3: 0 },
+  purchases: [
+    { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:19500,
+      status:'pending', created_at:'2026-09-11' },
+    { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:14300,
+      status:'pending', created_at:'2026-09-11' },
+    { id:13, name:'박OO', routine:'책방에서 만나요', bookstore:'△△책방', balance:20000,
+      status:'pending', created_at:'2026-09-09' },
+    { id:9,  name:'최OO', routine:'책방에서 만나요', bookstore:'△△책방', balance:2500,
       status:'settled', created_at:'2026-08-28', settled_at:'2026-09-01',
-      gift_amount:17500, photo:true, allocs:[{charge_id:2, amount:17500}] },
-    { id:8,  name:'정OO', routine:'□□책방과 읽는 15일', bookstore:'□□책방',
+      amount:17500, allocs:[{charge_id:2, amount:17500}] },
+    { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:500,
       status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
-      gift_amount:19000, photo:true, allocs:[{charge_id:1, amount:12000},{charge_id:2, amount:7000}] },
+      amount:19000, allocs:[{charge_id:1, amount:12000},{charge_id:2, amount:7000}] },
   ],
 };
 
@@ -298,19 +298,19 @@ let settleTargetId = null;
 // ── 집계 ────────────────────────────────────────────────
 function pool() {
   const c = DB.charges;
-  const spent = DB.gifts.filter(g => g.status === 'settled').reduce((s,g) => s + (g.gift_amount||0), 0);
+  const spent = DB.purchases.filter(g => g.status === 'settled').reduce((s,g) => s + (g.amount||0), 0);
   return {
     total:      c.reduce((s,x) => s + x.amount, 0),
     fund:       c.reduce((s,x) => s + x.book_fund_amount, 0),
     ops:        c.reduce((s,x) => s + x.operation_fee_amount, 0),
     remaining:  c.reduce((s,x) => s + x.remaining_amount, 0),
     spent,
-    pending:    DB.gifts.filter(g => g.status === 'pending').length,
-    delivered:  DB.gifts.filter(g => g.status === 'settled').length,
+    pending:    DB.purchases.filter(g => g.status === 'pending').length,
+    delivered:  DB.purchases.filter(g => g.status === 'settled').length,
   };
 }
 
-// FIFO 차감 계산 — SQL settle_book_gift() 와 같은 순서로 동작
+// FIFO 차감 계산 — SQL settle_book_purchase() 와 같은 순서로 동작
 function fifoPlan(amount) {
   let left = amount, out = [];
   const queue = DB.charges.filter(c => c.remaining_amount > 0)
@@ -363,7 +363,7 @@ function viewStores() {
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}</td>
       <td class="muted">${esc(s.address) || '-'}</td>
       <td class="muted">${esc(s.hours) || '-'}${s.closed_days ? `<div>${esc(s.closed_days)}</div>` : ''}</td>
-      <td class="num">${(DB.routineCounts || {})[s.id] || 0}개</td>
+      <td class="num">${(DB.purchaseCounts || {})[s.id] || 0}건</td>
       <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">비활성</span>'}</td>
       <td class="right"><button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
     </tr>`).join('')}
@@ -406,12 +406,12 @@ async function submitStore() {
 }
 
 function viewPending() {
-  const rows = DB.gifts.filter(g => g.status === 'pending')
+  const rows = DB.purchases.filter(g => g.status === 'pending')
                        .sort((a,b) => a.created_at.localeCompare(b.created_at));
   return `
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
-    <div class="panel-d">15일 인증을 채우고 책 사진을 올린 건입니다. 영수증 금액을 입력하면 도서기금에서 차감됩니다.</div></div>
+    <div class="panel-d">적립금으로 책을 사고 사진을 올린 건입니다. 영수증 금액을 입력하면 도서기금에서 차감됩니다.</div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>상태</th><th class="right">정산</th></tr>
@@ -427,7 +427,7 @@ function viewPending() {
 }
 
 function viewSettled() {
-  const rows = DB.gifts.filter(g => g.status === 'settled')
+  const rows = DB.purchases.filter(g => g.status === 'settled')
                        .sort((a,b) => (b.settled_at||'').localeCompare(a.settled_at||''));
   return `
   <div class="panel-hd">
@@ -439,7 +439,7 @@ function viewSettled() {
     ${rows.map(g => `<tr>
       <td><b>${esc(g.name)}</b></td>
       <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
-      <td class="right num"><b>${won(g.gift_amount)}원</b></td>
+      <td class="right num"><b>${won(g.amount)}원</b></td>
       <td class="muted">${(g.allocs||[]).map(a => `#${a.charge_id} ${won(a.amount)}원`).join(' · ')}</td>
       <td class="num">${fmtDate(g.settled_at)}</td>
     </tr>`).join('')}
@@ -471,11 +471,11 @@ function viewCharges() {
 // ── 정산 ────────────────────────────────────────────────
 function openSettle(id) {
   settleTargetId = id;
-  const g = DB.gifts.find(x => x.id === id);
+  const g = DB.purchases.find(x => x.id === id);
   document.getElementById('settleTarget').innerHTML =
     `<div><b>${esc(g.name)}</b> · ${esc(g.routine)}</div>
-     <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 수령</div>`;
-  document.getElementById('capHint').textContent = won(DB.settings.book_price_cap);
+     <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 구매</div>`;
+  document.getElementById('capHint').textContent = won(g.balance);
   document.getElementById('settleAmount').value = '';
   document.getElementById('settleNote').value = '';
   document.getElementById('settleReceipt').value = '';
@@ -489,8 +489,9 @@ function renderPreview() {
   const btn = document.getElementById('settleBtn');
   if (!amt) { box.innerHTML = ''; btn.disabled = false; return; }
 
-  if (amt > DB.settings.book_price_cap) {
-    box.innerHTML = `<div class="warn">1인당 상한 ${won(DB.settings.book_price_cap)}원을 넘습니다.</div>`;
+  const target = DB.purchases.find(x => x.id === settleTargetId);
+  if (target && amt > target.balance) {
+    box.innerHTML = `<div class="warn">이 참여자의 적립금 잔액 ${won(target.balance)}원을 넘습니다. 초과분은 후원금에서 나갈 수 없어요.</div>`;
     btn.disabled = true; return;
   }
   const plan = fifoPlan(amt);
@@ -518,8 +519,8 @@ async function submitSettle() {
 
   if (LIVE) {
     // TODO: 영수증 파일을 dokseo-receipts 버킷에 먼저 업로드하고 URL을 넘기기
-    const { error } = await sb.rpc('settle_book_gift',
-      { p_gift_id: settleTargetId, p_amount: amt, p_receipt_url: null, p_note: note || null });
+    const { error } = await sb.rpc('settle_book_purchase',
+      { p_purchase_id: settleTargetId, p_amount: amt, p_receipt_url: null, p_note: note || null });
     if (error) { alert('정산 실패: ' + error.message); return; }
     await loadLive();
   } else {
@@ -530,8 +531,8 @@ async function submitSettle() {
       c.remaining_amount = a.after;
       if (a.after === 0) c.status = 'completed';
     });
-    const g = DB.gifts.find(x => x.id === settleTargetId);
-    Object.assign(g, { status:'settled', gift_amount:amt, note,
+    const g = DB.purchases.find(x => x.id === settleTargetId);
+    Object.assign(g, { status:'settled', amount:amt, note,
                        settled_at:new Date().toISOString().slice(0,10),
                        allocs: plan.allocs.map(a => ({ charge_id:a.charge_id, amount:a.amount })) });
   }
@@ -598,29 +599,40 @@ async function submitCharge() {
 
 // ── LIVE 데이터 로드 ────────────────────────────────────
 async function loadLive() {
-  const [settings, sponsors, charges, gifts, stores, routines] = await Promise.all([
-    sb.from('dokseo_settings').select('book_fund_rate, book_price_cap').single(),
+  const [settings, sponsors, charges, purchases, stores] = await Promise.all([
+    sb.from('dokseo_settings').select('book_fund_rate').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
-    sb.from('book_gifts').select('*, profiles:user_id(name), routines:routine_id(title, partner_org, bookstores:bookstore_id(name)), consumption_allocations(charge_id, amount)'),
+    sb.from('book_purchases').select('*, profiles:user_id(name), routines:routine_id(title), bookstores:bookstore_id(name), consumption_allocations(charge_id, amount)'),
     sb.from('bookstores').select('*').order('name'),
-    sb.from('routines').select('bookstore_id').not('bookstore_id', 'is', null),
   ]);
   DB.settings = settings.data || DB.settings;
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];
   DB.bookstores = stores.data || [];
-  DB.routineCounts = {};
-  (routines.data || []).forEach(r => DB.routineCounts[r.bookstore_id] = (DB.routineCounts[r.bookstore_id] || 0) + 1);
-  DB.gifts    = (gifts.data || []).map(g => ({
-    id: g.id, name: g.profiles?.name || '-', routine: g.routines?.title || '-',
-    bookstore: g.routines?.bookstores?.name || g.routines?.partner_org || '-', status: g.status, created_at: g.created_at,
-    settled_at: g.settled_at, gift_amount: g.gift_amount, photo_path: g.proof_photo_url || null,
-    allocs: g.consumption_allocations || [],
+
+  DB.purchases = (purchases.data || []).map(p => ({
+    id: p.id, user_id: p.user_id, routine_id: p.routine_id,
+    name: p.profiles?.name || '-', routine: p.routines?.title || '-',
+    bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
+    settled_at: p.settled_at, amount: p.amount, photo_path: p.proof_photo_url || null,
+    allocs: p.consumption_allocations || [], balance: 0,
+  }));
+
+  // 책방별 구매 건수
+  DB.purchaseCounts = {};
+  (purchases.data || []).forEach(p => {
+    if (p.bookstore_id) DB.purchaseCounts[p.bookstore_id] = (DB.purchaseCounts[p.bookstore_id] || 0) + 1;
+  });
+
+  // 정산 대기 건의 적립금 잔액 — 금액을 넘겨 정산하지 않도록 대기 건만 조회
+  await Promise.all(DB.purchases.filter(p => p.status === 'pending').map(async p => {
+    const { data } = await sb.rpc('dokseo_balance', { p_user: p.user_id, p_routine: p.routine_id });
+    p.balance = data || 0;
   }));
 }
 
-// 책 수령 사진은 비공개 버킷에 있어서 볼 때마다 짧은 서명 URL을 새로 발급받음
+// 책 구매 사진은 비공개 버킷에 있어서 볼 때마다 짧은 서명 URL을 새로 발급받음
 async function viewProof(path) {
   if (!LIVE) { alert('데모 모드에서는 사진이 없어요.'); return; }
   const { data, error } = await sb.storage.from('dokseo-proofs').createSignedUrl(path, 60);
