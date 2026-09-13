@@ -251,13 +251,16 @@ CREATE INDEX IF NOT EXISTS alloc_purchase_idx ON consumption_allocations (purcha
 -- 9. 후원 소진 완료 이벤트 — 후원자 대시보드의 "완료 카드"
 -- ────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS completion_events (
-  id             bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  charge_id      bigint NOT NULL UNIQUE REFERENCES charges(id) ON DELETE CASCADE,
-  students_count int NOT NULL,
+  id              bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  charge_id       bigint NOT NULL UNIQUE REFERENCES charges(id) ON DELETE CASCADE,
+  students_count  int NOT NULL,
   purchases_count int NOT NULL,
-  total_amount   int NOT NULL,
-  message        text,
-  created_at     timestamptz DEFAULT now()
+  -- 이 후원이 받쳐준 독서 일수. 차감액 ÷ 인증당 적립액으로 환산한다.
+  -- 후원자에게 "책 몇 권"이 아니라 "며칠의 독서"를 보여주기 위한 값
+  reading_days    int NOT NULL DEFAULT 0,
+  total_amount    int NOT NULL,
+  message         text,
+  created_at      timestamptz DEFAULT now()
 );
 
 
@@ -329,15 +332,17 @@ BEGIN
     v_left := v_left - v_take;
 
     -- 소진 완료된 후원 건은 완료 카드 생성
-    INSERT INTO completion_events (charge_id, students_count, purchases_count, total_amount, message)
+    INSERT INTO completion_events (charge_id, students_count, purchases_count, reading_days, total_amount, message)
     SELECT c.id,
            count(DISTINCT p.user_id),
            count(DISTINCT p.id),
+           COALESCE(sum(a.amount::numeric / NULLIF(r.dokseo_amount_per_cert, 0)), 0)::int,
            c.book_fund_amount,
            NULL
       FROM charges c
       JOIN consumption_allocations a ON a.charge_id = c.id
       JOIN book_purchases p ON p.id = a.purchase_id
+      JOIN routines r ON r.id = p.routine_id
      WHERE c.id = v_charge.id AND c.remaining_amount = 0
      GROUP BY c.id, c.book_fund_amount
     ON CONFLICT (charge_id) DO NOTHING;

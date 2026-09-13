@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>한끗독서 · 후원자 공간</title>
 <meta name="theme-color" content="#2E33BC">
-<meta name="description" content="당신의 후원이, 한 아이의 책이 됩니다">
+<meta name="description" content="책 한 권이 아니라, 매일 읽는 습관을 선물합니다">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -128,6 +128,12 @@ section { margin-top: 44px; }
 .wall { display: flex; flex-wrap: wrap; gap: 7px; }
 .wall span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
 
+/* ── 마무리 후원 유도 ── */
+.closing { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 36px 24px; text-align: center; }
+.closing-msg { font-size: 21px; font-weight: 800; line-height: 1.5; letter-spacing: -0.5px; }
+.closing-msg b { color: var(--blue); }
+.closing .btn-primary { margin-top: 22px; }
+
 .empty { text-align: center; padding: 34px 20px; color: var(--ink-3); font-size: 13.5px; }
 footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); text-align: center; line-height: 1.8; }
 .demo-flag { background: var(--gold); color: #3d3000; font-size: 11.5px; font-weight: 700; text-align: center; padding: 7px; }
@@ -152,8 +158,8 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
 
   <div class="hero">
     <div class="hero-eyebrow">청소년 독서 후원</div>
-    <h1>당신의 후원이,<br><em>한 아이의 책</em>이 됩니다</h1>
-    <p>15일 동안 매일 책을 읽어낸 청소년에게<br>동네 독립서점의 책 한 권이 선물로 전해집니다.</p>
+    <h1>책 한 권이 아니라,<br><em>매일 읽는 습관</em>을 선물합니다</h1>
+    <p>읽은 날마다 적립금이 쌓이고,<br>그 돈으로 동네책방에서 직접 고른 책이 손에 남습니다.</p>
     <!-- TODO: 도너스 후원 페이지 URL 확정되면 교체 -->
     <a class="btn-primary" href="#" onclick="return notReady()">후원하기</a>
     <div class="hero-note">결제와 기부금영수증은 도너스를 통해 처리됩니다</div>
@@ -193,6 +199,12 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
     <div class="wall" id="wall"></div>
   </section>
 
+  <section class="closing">
+    <div class="closing-msg">후원으로 청소년들에게<br><b>책 읽는 습관</b>을 선물해주세요</div>
+    <!-- TODO: 도너스 후원 페이지 URL 확정되면 교체 -->
+    <a class="btn-primary" href="#" onclick="return notReady()">후원하기</a>
+  </section>
+
   <footer>
     사단법인 유스보이스 · 한끗독서<br>
     문의 soon@youthvoice.or.kr
@@ -217,9 +229,9 @@ const manwon = n => (n >= 10000 ? (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) :
 // ── 데모 데이터 ─────────────────────────────────────────
 const DEMO = {
   pool: { total_donated: 1_850_000, book_fund: 1_480_000, operation_fee: 370_000,
-          remaining: 622_000, spent: 858_000, books_delivered: 47, books_pending: 5,
+          remaining: 622_000, spent: 858_000, books_bought: 47, books_pending: 5,
           students_reached: 47, sponsors_count: 23 },
-  settings: { book_fund_rate: 0.8, book_price_cap: 20000 },
+  settings: { book_fund_rate: 0.8 },
   feed: [
     { day: '2026-09-13', cert_count: 12, student_count: 12 },
     { day: '2026-09-12', cert_count: 15, student_count: 14 },
@@ -239,10 +251,10 @@ const DEMO = {
       remaining_amount: 34000, status: 'active', charged_at: '2026-09-02' },
     { id: 2, amount: 50000, book_fund_amount: 40000, operation_fee_amount: 10000,
       remaining_amount: 0, status: 'completed', charged_at: '2026-07-18',
-      completion: { students_count: 2, gifts_count: 2, total_amount: 40000 } },
+      completion: { students_count: 2, purchases_count: 2, reading_days: 31, total_amount: 40000 } },
     { id: 1, amount: 30000, book_fund_amount: 24000, operation_fee_amount: 6000,
       remaining_amount: 0, status: 'completed', charged_at: '2026-06-05',
-      completion: { students_count: 1, gifts_count: 1, total_amount: 24000 } },
+      completion: { students_count: 1, purchases_count: 1, reading_days: 18, total_amount: 24000 } },
   ],
 };
 
@@ -257,7 +269,7 @@ async function loadPublic() {
   }
   const [pool, settings, feed, wall] = await Promise.all([
     sb.rpc('dokseo_pool_status'),
-    sb.from('dokseo_settings').select('book_fund_rate, book_price_cap').single(),
+    sb.from('dokseo_settings').select('book_fund_rate').single(),
     sb.rpc('dokseo_activity_feed', { p_days: 10 }),
     sb.rpc('dokseo_sponsor_wall', { p_limit: 40 }),
   ]);
@@ -272,7 +284,7 @@ async function loadMine() {
   const { data: sponsor } = await sb.from('sponsors').select('id').maybeSingle();
   if (!sponsor) { state.charges = []; return; }
   const { data } = await sb.from('charges')
-    .select('*, completion_events(students_count, gifts_count, total_amount)')
+    .select('*, completion_events(students_count, purchases_count, reading_days, total_amount)')
     .eq('sponsor_id', sponsor.id).order('charged_at', { ascending: false });
   state.charges = (data || []).map(c => ({ ...c, completion: (c.completion_events || [])[0] }));
 }
@@ -286,8 +298,8 @@ function renderPool() {
       <div class="pool-label">남은 도서기금</div>
     </div>
     <div class="pool-item">
-      <div class="pool-num">${p.books_delivered}<small>권</small></div>
-      <div class="pool-label">전해진 책</div>
+      <div class="pool-num">${p.books_bought}<small>권</small></div>
+      <div class="pool-label">손에 남은 책</div>
     </div>
     <div class="pool-item">
       <div class="pool-num">${p.sponsors_count}<small>명</small></div>
@@ -306,8 +318,8 @@ function renderPool() {
       <span><i class="dot" style="background:#dfeeb8;"></i>기다리는 금액 ${won(p.remaining)}원</span>
     </div>
     ${p.books_pending ? `<div class="notice" style="margin-top:14px;">
-      지금 <b>${p.books_pending}명</b>이 책을 받고 정산을 기다리고 있어요.
-      서점 영수증이 확인되면 도서기금에서 차감됩니다.</div>` : ''}`;
+      지금 <b>${p.books_pending}명</b>이 책을 사고 정산을 기다리고 있어요.
+      책방 영수증이 확인되면 도서기금에서 차감됩니다.</div>` : ''}`;
 }
 
 function renderCharges() {
@@ -320,11 +332,11 @@ function renderCharges() {
     if (c.status === 'completed' && c.completion) {
       const k = c.completion;
       return `<div class="card done-card">
-        <div class="done-msg">당신이 채워준 마음이,<br><b>${k.students_count}명</b>의 아이에게<br>책이 되어 전해졌어요.</div>
+        <div class="done-msg">당신이 채워준 마음이,<br><b>${k.students_count}명</b>의 아이에게<br><b>${k.reading_days}일</b>의 독서가 되었어요.</div>
         <div class="done-meta">
           <div>후원일<b>${fmtDate(c.charged_at)}</b></div>
           <div>후원금<b>${won(c.amount)}원</b></div>
-          <div>전해진 책<b>${k.gifts_count}권</b></div>
+          <div>손에 남은 책<b>${k.purchases_count}권</b></div>
         </div>
       </div>`;
     }
@@ -374,9 +386,9 @@ function renderSteps() {
   const rate = Math.round(s.book_fund_rate * 100);
   document.getElementById('stepsBox').innerHTML = [
     ['후원금이 들어오면', `즉시 ${rate}%는 도서기금, ${100 - rate}%는 운영비로 나뉩니다.`],
-    ['청소년이 15일을 채우면', '매일 책을 읽고 인증한 청소년에게 자격이 생깁니다.'],
-    ['독립서점에서 책을 고르면', `${won(s.book_price_cap)}원 이내에서 원하는 책을 직접 고릅니다.`],
-    ['서점 영수증이 확인되면', '실제 결제된 금액만 도서기금에서, 오래된 후원부터 차감됩니다.'],
+    ['청소년이 하루를 읽으면', '읽고 인증할 때마다 그날의 적립금이 쌓입니다.'],
+    ['쌓인 적립금으로', '동네책방에 직접 가서 읽고 싶은 책을 고릅니다.'],
+    ['책방 영수증이 확인되면', '실제 결제된 금액만 도서기금에서, 오래된 후원부터 차감됩니다.'],
   ].map(([t, d], i) => `<div class="step">
       <div class="step-n">${i + 1}</div>
       <div><div class="step-t">${t}</div><div class="step-d">${d}</div></div>
