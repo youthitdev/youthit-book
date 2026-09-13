@@ -1,0 +1,8 @@
+# Supabase CLI 로컬 메타데이터 (link 시 생성)
+supabase/.temp/
+
+# Claude Code 세션 설정
+.claude/
+
+# 로컬 압축 백업
+files.zip

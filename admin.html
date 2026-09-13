@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한끗독서 · 정산 관리자</title>
+<link rel="icon" href="icon-admin-pink.svg">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --ink:#16161a; --ink-2:#5a5a66; --ink-3:#9a9aa6; --bg:#f5f5f7; --card:#fff; --line:#e5e5ea; --pink:#FF006C; --blue:#2E33BC; --green:#83CA00; }
+body { font-family:-apple-system, BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--ink); line-height:1.55; font-size:14px; word-break:keep-all; overflow-wrap:break-word; }
+.wrap { max-width:1080px; margin:0 auto; padding:0 20px 70px; }
+header { background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
+.hd { max-width:1080px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-size:16px; font-weight:800; letter-spacing:-0.4px; }
+.logo b { color:var(--pink); }
+.demo-flag { background:#FFD600; color:#3d3000; font-size:11.5px; font-weight:700; text-align:center; padding:7px; }
+
+/* 요약 */
+.sum { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:22px; }
+.sum-c { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+.sum-l { font-size:11.5px; color:var(--ink-3); font-weight:600; }
+.sum-v { font-size:20px; font-weight:800; letter-spacing:-0.6px; margin-top:3px; }
+.sum-v small { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:2px; }
+.sum-c.hl { border-color:var(--pink); }
+.sum-c.hl .sum-v { color:var(--pink); }
+
+/* 탭 */
+.tabs { display:flex; gap:6px; margin:26px 0 14px; }
+.tab { padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:var(--card); font-size:13.5px; font-weight:600; color:var(--ink-2); cursor:pointer; font-family:inherit; }
+.tab.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+.tab i { font-style:normal; opacity:.6; margin-left:4px; }
+
+/* 테이블 */
+.panel { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+.panel-hd { padding:16px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; }
+.panel-t { font-size:15px; font-weight:700; }
+.panel-d { font-size:12.5px; color:var(--ink-3); margin-top:1px; }
+.tbl { overflow-x:auto; }
+table { width:100%; min-width:720px; border-collapse:collapse; }
+th { text-align:left; font-size:11.5px; color:var(--ink-3); font-weight:600; padding:10px 20px; background:#fafafa; border-bottom:1px solid var(--line); }
+td { padding:13px 20px; border-bottom:1px solid #f1f1f4; font-size:13.5px; vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:#fcfcfd; }
+.num { font-variant-numeric:tabular-nums; }
+.right { text-align:right; }
+.muted { color:var(--ink-3); font-size:12.5px; }
+.thumb { width:40px; height:40px; border-radius:8px; background:#ececed; display:flex; align-items:center; justify-content:center; font-size:9.5px; color:var(--ink-3); font-weight:600; }
+.chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
+.c-wait { background:#fff4e5; color:#a86400; }
+.c-done { background:#f2f9e5; color:#4e7a00; }
+.c-act  { background:#eef0ff; color:var(--blue); }
+.btn { border:none; border-radius:9px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn-pink { background:var(--pink); color:#fff; }
+.btn-dark { background:var(--ink); color:#fff; }
+.btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
+.empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
+
+/* 모달 */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
+.overlay.on { display:flex; }
+.modal { background:var(--card); border-radius:18px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; }
+.modal-hd { padding:20px 22px 14px; border-bottom:1px solid var(--line); }
+.modal-t { font-size:16.5px; font-weight:800; letter-spacing:-0.3px; }
+.modal-d { font-size:12.5px; color:var(--ink-3); margin-top:2px; }
+.modal-bd { padding:20px 22px; }
+.modal-ft { padding:14px 22px 20px; display:flex; gap:8px; }
+.modal-ft .btn { flex:1; padding:12px; }
+.field { margin-bottom:16px; }
+.label { font-size:12.5px; font-weight:700; margin-bottom:6px; }
+.label span { color:var(--pink); }
+input, select, textarea { width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px; font-size:14px; font-family:inherit; color:var(--ink); background:#fff; }
+input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink-3); }
+.hint { font-size:11.5px; color:var(--ink-3); margin-top:5px; }
+.target { background:#fafafa; border-radius:12px; padding:13px 15px; margin-bottom:18px; font-size:13px; }
+.target b { font-weight:700; }
+.target div + div { margin-top:3px; color:var(--ink-2); font-size:12.5px; }
+.preview { background:#f7f9ff; border:1px solid #dfe3ff; border-radius:12px; padding:14px 16px; margin-bottom:16px; }
+.preview-t { font-size:12px; font-weight:700; color:var(--blue); margin-bottom:8px; }
+.preview-row { display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; }
+.preview-row.out { color:var(--green); font-weight:700; }
+.warn { background:#fff1f4; border:1px solid #ffd3de; color:#b00038; border-radius:12px; padding:12px 15px; font-size:12.5px; margin-bottom:16px; }
+@media (max-width:820px){ .sum { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+
+<div class="demo-flag" id="demoFlag">데모 데이터로 동작 중 — 실제 정산이 아닙니다 (새로고침하면 초기화)</div>
+
+<header>
+  <div class="hd">
+    <div class="logo">한끗독서 <b>정산 관리자</b></div>
+    <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sum" id="summary"></div>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
+    <button class="tab" data-tab="settled" onclick="switchTab('settled')">정산 완료<i id="cntSettled"></i></button>
+    <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
+  </div>
+
+  <div class="panel" id="panel"></div>
+</div>
+
+<!-- 정산 입력 -->
+<div class="overlay" id="settleOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">정산 입력</div>
+      <div class="modal-d">서점 영수증에 찍힌 실제 금액을 입력하세요.</div>
+    </div>
+    <div class="modal-bd">
+      <div class="target" id="settleTarget"></div>
+      <div class="field">
+        <div class="label">실제 지급 금액 <span>*</span></div>
+        <input type="number" id="settleAmount" placeholder="예) 18000" oninput="renderPreview()">
+        <div class="hint">1인당 상한 <b id="capHint"></b>원</div>
+      </div>
+      <div class="field">
+        <div class="label">영수증 첨부</div>
+        <input type="file" id="settleReceipt" accept="image/*,application/pdf">
+        <div class="hint">서점에서 받은 영수증 사진 또는 스캔본</div>
+      </div>
+      <div class="field">
+        <div class="label">메모</div>
+        <textarea id="settleNote" rows="2" placeholder="특이사항이 있으면 적어주세요."></textarea>
+      </div>
+      <div id="previewBox"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('settleOverlay')">취소</button>
+      <button class="btn btn-pink" id="settleBtn" onclick="submitSettle()">정산 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 후원 입력 -->
+<div class="overlay" id="chargeOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">후원 입력</div>
+      <div class="modal-d">도너스 연동 전까지는 여기서 수기로 입력합니다.</div>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <div class="label">후원자 닉네임 <span>*</span></div>
+        <input type="text" id="cNick" placeholder="후원자 공간에 표시될 이름">
+      </div>
+      <div class="field">
+        <div class="label">이메일 <span>*</span></div>
+        <input type="email" id="cEmail" placeholder="donor@example.com">
+        <div class="hint">도너스 데이터와 맞추는 기준값입니다.</div>
+      </div>
+      <div class="field">
+        <div class="label">후원 금액 <span>*</span></div>
+        <input type="number" id="cAmount" placeholder="예) 50000" oninput="renderSplit()">
+        <div id="splitBox"></div>
+      </div>
+      <div class="field">
+        <div class="label">후원일 <span>*</span></div>
+        <input type="date" id="cDate">
+        <div class="hint">차감은 후원일이 이른 순서(FIFO)로 진행됩니다.</div>
+      </div>
+      <div class="field">
+        <div class="label">도너스 거래번호</div>
+        <input type="text" id="cRef" placeholder="선택">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('chargeOverlay')">취소</button>
+      <button class="btn btn-dark" onclick="submitCharge()">등록</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// Supabase — 한끗루틴과 같은 프로젝트 (supabase-schema.sql 적용 후 값 입력)
+// ════════════════════════════════════════════════════════
+const SB_URL = '';
+const SB_KEY = '';
+const LIVE = !!(SB_URL && SB_KEY);
+const sb = LIVE ? supabase.createClient(SB_URL, SB_KEY) : null;
+
+const won = n => Number(n || 0).toLocaleString('ko-KR');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtDate = d => d ? d.slice(0,10).replace(/-/g,'.') : '-';
+
+// ── 데모 데이터 (LIVE 전환 시 Supabase 조회로 대체) ─────
+let DB = {
+  settings: { book_fund_rate: 0.8, book_price_cap: 20000 },
+  sponsors: [
+    { id:'s1', nickname:'책읽는고래', email:'whale@example.com' },
+    { id:'s2', nickname:'민들레',     email:'dan@example.com' },
+    { id:'s3', nickname:'조용한후원자', email:'quiet@example.com' },
+  ],
+  charges: [
+    { id:1, sponsor_id:'s1', amount:300000, book_fund_amount:240000, operation_fee_amount:60000,
+      remaining_amount:0,      status:'completed', charged_at:'2026-06-05', source:'donus' },
+    { id:2, sponsor_id:'s2', amount:500000, book_fund_amount:400000, operation_fee_amount:100000,
+      remaining_amount:118000, status:'active',    charged_at:'2026-07-18', source:'donus' },
+    { id:3, sponsor_id:'s3', amount:100000, book_fund_amount:80000,  operation_fee_amount:20000,
+      remaining_amount:80000,  status:'active',    charged_at:'2026-09-02', source:'manual' },
+  ],
+  gifts: [
+    { id:11, name:'김OO', routine:'속초 밤바다 책방 15일', bookstore:'동아서점',
+      status:'pending', created_at:'2026-09-11', photo:true },
+    { id:12, name:'이OO', routine:'속초 밤바다 책방 15일', bookstore:'동아서점',
+      status:'pending', created_at:'2026-09-11', photo:true },
+    { id:13, name:'박OO', routine:'부산 골목책방 15일', bookstore:'책과아이들',
+      status:'pending', created_at:'2026-09-09', photo:true },
+    { id:9,  name:'최OO', routine:'부산 골목책방 15일', bookstore:'책과아이들',
+      status:'settled', created_at:'2026-08-28', settled_at:'2026-09-01',
+      gift_amount:17500, photo:true, allocs:[{charge_id:2, amount:17500}] },
+    { id:8,  name:'정OO', routine:'강릉 한낮의책방 15일', bookstore:'한낮의책방',
+      status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
+      gift_amount:19000, photo:true, allocs:[{charge_id:1, amount:12000},{charge_id:2, amount:7000}] },
+  ],
+};
+
+let tab = 'pending';
+let settleTargetId = null;
+
+// ── 집계 ────────────────────────────────────────────────
+function pool() {
+  const c = DB.charges;
+  const spent = DB.gifts.filter(g => g.status === 'settled').reduce((s,g) => s + (g.gift_amount||0), 0);
+  return {
+    total:      c.reduce((s,x) => s + x.amount, 0),
+    fund:       c.reduce((s,x) => s + x.book_fund_amount, 0),
+    ops:        c.reduce((s,x) => s + x.operation_fee_amount, 0),
+    remaining:  c.reduce((s,x) => s + x.remaining_amount, 0),
+    spent,
+    pending:    DB.gifts.filter(g => g.status === 'pending').length,
+    delivered:  DB.gifts.filter(g => g.status === 'settled').length,
+  };
+}
+
+// FIFO 차감 계산 — SQL settle_book_gift() 와 같은 순서로 동작
+function fifoPlan(amount) {
+  let left = amount, out = [];
+  const queue = DB.charges.filter(c => c.remaining_amount > 0)
+                          .sort((a,b) => a.charged_at.localeCompare(b.charged_at) || a.id - b.id);
+  for (const c of queue) {
+    if (left <= 0) break;
+    const take = Math.min(c.remaining_amount, left);
+    out.push({ charge_id:c.id, amount:take, after:c.remaining_amount - take });
+    left -= take;
+  }
+  return { allocs: out, shortfall: left };
+}
+
+const sponsorOf = id => DB.sponsors.find(s => s.id === id)?.nickname || '-';
+
+// ── 렌더 ────────────────────────────────────────────────
+function renderSummary() {
+  const p = pool();
+  document.getElementById('summary').innerHTML = `
+    <div class="sum-c"><div class="sum-l">누적 후원</div><div class="sum-v num">${won(p.total)}<small>원</small></div></div>
+    <div class="sum-c"><div class="sum-l">도서기금 (80%)</div><div class="sum-v num">${won(p.fund)}<small>원</small></div></div>
+    <div class="sum-c"><div class="sum-l">책이 된 금액</div><div class="sum-v num">${won(p.spent)}<small>원</small></div></div>
+    <div class="sum-c"><div class="sum-l">남은 도서기금</div><div class="sum-v num">${won(p.remaining)}<small>원</small></div></div>
+    <div class="sum-c ${p.pending ? 'hl' : ''}"><div class="sum-l">정산 대기</div><div class="sum-v num">${p.pending}<small>건</small></div></div>`;
+  document.getElementById('cntPending').textContent = ` ${p.pending}`;
+  document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
+  document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
+}
+
+function renderPanel() {
+  const el = document.getElementById('panel');
+  if (tab === 'pending')  return el.innerHTML = viewPending();
+  if (tab === 'settled')  return el.innerHTML = viewSettled();
+  el.innerHTML = viewCharges();
+}
+
+function viewPending() {
+  const rows = DB.gifts.filter(g => g.status === 'pending')
+                       .sort((a,b) => a.created_at.localeCompare(b.created_at));
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">정산 대기</div>
+    <div class="panel-d">15일 인증을 채우고 책 사진을 올린 건입니다. 영수증 금액을 입력하면 도서기금에서 차감됩니다.</div></div>
+  </div>
+  ${rows.length ? `<div class="tbl"><table>
+    <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>상태</th><th class="right">정산</th></tr>
+    ${rows.map(g => `<tr>
+      <td>${g.photo_path ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="사진 보기">보기</div>` : `<div class="thumb">사진</div>`}</td>
+      <td><b>${esc(g.name)}</b></td>
+      <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
+      <td class="num">${fmtDate(g.created_at)}</td>
+      <td><span class="chip c-wait">정산 대기</span></td>
+      <td class="right"><button class="btn btn-pink" onclick="openSettle(${g.id})">금액 입력</button></td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">정산 대기 중인 건이 없습니다.</div>`}`;
+}
+
+function viewSettled() {
+  const rows = DB.gifts.filter(g => g.status === 'settled')
+                       .sort((a,b) => (b.settled_at||'').localeCompare(a.settled_at||''));
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">정산 완료</div>
+    <div class="panel-d">영수증 금액이 확정되어 도서기금에서 차감된 건입니다.</div></div>
+  </div>
+  ${rows.length ? `<div class="tbl"><table>
+    <tr><th>청소년</th><th>루틴 / 서점</th><th class="right">지급액</th><th>차감된 후원</th><th>정산일</th></tr>
+    ${rows.map(g => `<tr>
+      <td><b>${esc(g.name)}</b></td>
+      <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
+      <td class="right num"><b>${won(g.gift_amount)}원</b></td>
+      <td class="muted">${(g.allocs||[]).map(a => `#${a.charge_id} ${won(a.amount)}원`).join(' · ')}</td>
+      <td class="num">${fmtDate(g.settled_at)}</td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">아직 정산 완료된 건이 없습니다.</div>`}`;
+}
+
+function viewCharges() {
+  const rows = [...DB.charges].sort((a,b) => a.charged_at.localeCompare(b.charged_at));
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">후원 내역</div>
+    <div class="panel-d">위에서부터 먼저 차감됩니다 (FIFO). 잔액이 0이 되면 후원자에게 완료 카드가 보입니다.</div></div>
+    <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>후원자</th><th>후원일</th><th class="right">후원금</th><th class="right">도서기금</th><th class="right">잔액</th><th>상태</th></tr>
+    ${rows.map(c => `<tr>
+      <td class="muted num">${c.id}</td>
+      <td><b>${esc(sponsorOf(c.sponsor_id))}</b><div class="muted">${c.source === 'donus' ? '도너스' : '수기 입력'}</div></td>
+      <td class="num">${fmtDate(c.charged_at)}</td>
+      <td class="right num">${won(c.amount)}원</td>
+      <td class="right num">${won(c.book_fund_amount)}원<div class="muted">운영비 ${won(c.operation_fee_amount)}원</div></td>
+      <td class="right num"><b>${won(c.remaining_amount)}원</b></td>
+      <td>${c.status === 'completed' ? '<span class="chip c-done">소진 완료</span>' : '<span class="chip c-act">전달 중</span>'}</td>
+    </tr>`).join('')}
+  </table></div>`;
+}
+
+// ── 정산 ────────────────────────────────────────────────
+function openSettle(id) {
+  settleTargetId = id;
+  const g = DB.gifts.find(x => x.id === id);
+  document.getElementById('settleTarget').innerHTML =
+    `<div><b>${esc(g.name)}</b> · ${esc(g.routine)}</div>
+     <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 수령</div>`;
+  document.getElementById('capHint').textContent = won(DB.settings.book_price_cap);
+  document.getElementById('settleAmount').value = '';
+  document.getElementById('settleNote').value = '';
+  document.getElementById('settleReceipt').value = '';
+  renderPreview();
+  document.getElementById('settleOverlay').classList.add('on');
+}
+
+function renderPreview() {
+  const amt = parseInt(document.getElementById('settleAmount').value || '0', 10);
+  const box = document.getElementById('previewBox');
+  const btn = document.getElementById('settleBtn');
+  if (!amt) { box.innerHTML = ''; btn.disabled = false; return; }
+
+  if (amt > DB.settings.book_price_cap) {
+    box.innerHTML = `<div class="warn">1인당 상한 ${won(DB.settings.book_price_cap)}원을 넘습니다.</div>`;
+    btn.disabled = true; return;
+  }
+  const plan = fifoPlan(amt);
+  if (plan.shortfall > 0) {
+    box.innerHTML = `<div class="warn">도서기금 잔액이 ${won(plan.shortfall)}원 부족합니다. 후원 입력 후 다시 시도하세요.</div>`;
+    btn.disabled = true; return;
+  }
+  btn.disabled = false;
+  box.innerHTML = `<div class="preview">
+    <div class="preview-t">이렇게 차감됩니다 (오래된 후원부터)</div>
+    ${plan.allocs.map(a => {
+      const c = DB.charges.find(x => x.id === a.charge_id);
+      return `<div class="preview-row">
+        <span>#${a.charge_id} ${esc(sponsorOf(c.sponsor_id))} (${fmtDate(c.charged_at)})</span>
+        <span class="num">−${won(a.amount)}원 → 잔액 ${won(a.after)}원</span>
+      </div>${a.after === 0 ? `<div class="preview-row out"><span>↳ 이 후원이 모두 전달되어 완료 카드가 생성됩니다</span><span></span></div>` : ''}`;
+    }).join('')}
+  </div>`;
+}
+
+async function submitSettle() {
+  const amt = parseInt(document.getElementById('settleAmount').value || '0', 10);
+  if (!amt) { alert('금액을 입력해 주세요.'); return; }
+  const note = document.getElementById('settleNote').value.trim();
+
+  if (LIVE) {
+    // TODO: 영수증 파일을 dokseo-receipts 버킷에 먼저 업로드하고 URL을 넘기기
+    const { error } = await sb.rpc('settle_book_gift',
+      { p_gift_id: settleTargetId, p_amount: amt, p_receipt_url: null, p_note: note || null });
+    if (error) { alert('정산 실패: ' + error.message); return; }
+    await loadLive();
+  } else {
+    const plan = fifoPlan(amt);
+    if (plan.shortfall > 0) { alert('도서기금 잔액이 부족합니다.'); return; }
+    plan.allocs.forEach(a => {
+      const c = DB.charges.find(x => x.id === a.charge_id);
+      c.remaining_amount = a.after;
+      if (a.after === 0) c.status = 'completed';
+    });
+    const g = DB.gifts.find(x => x.id === settleTargetId);
+    Object.assign(g, { status:'settled', gift_amount:amt, note,
+                       settled_at:new Date().toISOString().slice(0,10),
+                       allocs: plan.allocs.map(a => ({ charge_id:a.charge_id, amount:a.amount })) });
+  }
+  closeModal('settleOverlay');
+  render();
+}
+
+// ── 후원 입력 ───────────────────────────────────────────
+function openCharge() {
+  ['cNick','cEmail','cAmount','cRef'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('cDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('splitBox').innerHTML = '';
+  document.getElementById('chargeOverlay').classList.add('on');
+}
+
+function renderSplit() {
+  const amt = parseInt(document.getElementById('cAmount').value || '0', 10);
+  const box = document.getElementById('splitBox');
+  if (!amt) { box.innerHTML = ''; return; }
+  const ops = Math.floor(amt * (1 - DB.settings.book_fund_rate));
+  box.innerHTML = `<div class="preview" style="margin-top:10px;margin-bottom:0;">
+    <div class="preview-row"><span>도서기금</span><span class="num"><b>${won(amt - ops)}원</b></span></div>
+    <div class="preview-row"><span>운영비</span><span class="num">${won(ops)}원</span></div>
+  </div>`;
+}
+
+async function submitCharge() {
+  const nick = document.getElementById('cNick').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  const amount = parseInt(document.getElementById('cAmount').value || '0', 10);
+  const date = document.getElementById('cDate').value;
+  const ref = document.getElementById('cRef').value.trim();
+  if (!nick || !email || !amount || !date) { alert('필수 항목을 모두 입력해 주세요.'); return; }
+
+  if (LIVE) {
+    let { data: sp } = await sb.from('sponsors').select('id').eq('email', email).maybeSingle();
+    if (!sp) {
+      const ins = await sb.from('sponsors').insert({ email, nickname: nick }).select('id').single();
+      if (ins.error) { alert('후원자 등록 실패: ' + ins.error.message); return; }
+      sp = ins.data;
+    }
+    // book_fund/operation_fee/remaining 은 charges_split 트리거가 채움
+    const { error } = await sb.from('charges').insert({
+      sponsor_id: sp.id, amount, charged_at: date,
+      source: ref ? 'donus' : 'manual', external_ref: ref || null,
+      book_fund_amount: 0, operation_fee_amount: 0, remaining_amount: 0,
+    });
+    if (error) { alert('후원 등록 실패: ' + error.message); return; }
+    await loadLive();
+  } else {
+    let sp = DB.sponsors.find(s => s.email === email);
+    if (!sp) { sp = { id:'s' + (DB.sponsors.length + 1), nickname:nick, email }; DB.sponsors.push(sp); }
+    const ops = Math.floor(amount * (1 - DB.settings.book_fund_rate));
+    DB.charges.push({
+      id: Math.max(0, ...DB.charges.map(c => c.id)) + 1,
+      sponsor_id: sp.id, amount, book_fund_amount: amount - ops, operation_fee_amount: ops,
+      remaining_amount: amount - ops, status:'active', charged_at: date,
+      source: ref ? 'donus' : 'manual',
+    });
+  }
+  closeModal('chargeOverlay');
+  render();
+}
+
+// ── LIVE 데이터 로드 ────────────────────────────────────
+async function loadLive() {
+  const [settings, sponsors, charges, gifts] = await Promise.all([
+    sb.from('dokseo_settings').select('book_fund_rate, book_price_cap').single(),
+    sb.from('sponsors').select('id, nickname, email'),
+    sb.from('charges').select('*'),
+    sb.from('book_gifts').select('*, profiles:user_id(name), routines:routine_id(title), consumption_allocations(charge_id, amount)'),
+  ]);
+  DB.settings = settings.data || DB.settings;
+  DB.sponsors = sponsors.data || [];
+  DB.charges  = charges.data || [];
+  DB.gifts    = (gifts.data || []).map(g => ({
+    id: g.id, name: g.profiles?.name || '-', routine: g.routines?.title || '-',
+    bookstore: g.bookstore_name || '-', status: g.status, created_at: g.created_at,
+    settled_at: g.settled_at, gift_amount: g.gift_amount, photo_path: g.proof_photo_url || null,
+    allocs: g.consumption_allocations || [],
+  }));
+}
+
+// 책 수령 사진은 비공개 버킷에 있어서 볼 때마다 짧은 서명 URL을 새로 발급받음
+async function viewProof(path) {
+  if (!LIVE) { alert('데모 모드에서는 사진이 없어요.'); return; }
+  const { data, error } = await sb.storage.from('dokseo-proofs').createSignedUrl(path, 60);
+  if (error) { alert('사진을 열지 못했어요: ' + error.message); return; }
+  window.open(data.signedUrl, '_blank', 'noopener');
+}
+
+// ── 공통 ────────────────────────────────────────────────
+function switchTab(t) {
+  tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  renderPanel();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+function render() { renderSummary(); renderPanel(); }
+
+document.querySelectorAll('.overlay').forEach(o =>
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('on'); }));
+
+(async function init() {
+  if (LIVE) { document.getElementById('demoFlag').style.display = 'none'; await loadLive(); }
+  render();
+})();
+</script>
+</body>
+</html>

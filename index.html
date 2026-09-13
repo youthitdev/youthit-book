@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>한끗독서 · 후원자 공간</title>
+<meta name="theme-color" content="#2E33BC">
+<meta name="description" content="당신의 후원이, 한 아이의 책이 됩니다">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --ink: #16161a;
+  --ink-2: #5a5a66;
+  --ink-3: #9a9aa6;
+  --paper: #faf7f2;
+  --card: #ffffff;
+  --line: #ebe6dd;
+  --blue: #2E33BC;
+  --green: #83CA00;
+  --pink: #FF006C;
+  --gold: #FFD600;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--paper); color: var(--ink);
+  line-height: 1.6; -webkit-font-smoothing: antialiased;
+  word-break: keep-all; overflow-wrap: break-word;  /* 한글은 단어 단위로 줄바꿈 */
+}
+.wrap { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* ── 헤더 ── */
+header {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(250,247,242,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+.hd-inner { max-width: 680px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; color: var(--blue); }
+.logo span { color: var(--ink-3); font-weight: 600; font-size: 12px; margin-left: 6px; letter-spacing: 0; }
+.btn-ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; }
+.btn-ghost:hover { border-color: var(--ink-3); }
+
+/* ── 히어로 ── */
+.hero { padding: 56px 0 36px; text-align: center; }
+.hero-eyebrow { font-size: 12.5px; font-weight: 700; color: var(--green); letter-spacing: 1.2px; margin-bottom: 16px; }
+.hero h1 { font-size: 33px; line-height: 1.35; font-weight: 800; letter-spacing: -1px; }
+.hero h1 em { font-style: normal; color: var(--blue); }
+.hero p { margin-top: 16px; color: var(--ink-2); font-size: 15px; }
+.btn-primary {
+  display: inline-block; margin-top: 26px; background: var(--blue); color: #fff;
+  font-size: 15.5px; font-weight: 700; padding: 15px 34px; border-radius: 14px;
+  border: none; cursor: pointer; font-family: inherit; text-decoration: none;
+  box-shadow: 0 6px 20px rgba(46,51,188,0.24);
+}
+.btn-primary:hover { transform: translateY(-1px); }
+.hero-note { margin-top: 12px; font-size: 12px; color: var(--ink-3); }
+
+/* ── 공용 ── */
+section { margin-top: 44px; }
+.sec-title { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
+.sec-desc { font-size: 13.5px; color: var(--ink-2); margin-bottom: 18px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+.card + .card { margin-top: 12px; }
+
+/* ── 풀 현황 ── */
+.pool { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.pool-item { background: var(--card); padding: 20px 14px; text-align: center; }
+.pool-num { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; }
+.pool-num small { font-size: 13px; font-weight: 700; margin-left: 1px; }
+.pool-label { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; font-weight: 600; }
+.pool-bar-wrap { margin-top: 12px; }
+.pool-bar { height: 10px; background: #eeeae2; border-radius: 99px; overflow: hidden; display: flex; }
+.pool-bar i { display: block; height: 100%; }
+.pool-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; margin-top: 10px; font-size: 11.5px; color: var(--ink-2); }
+.pool-legend span { white-space: nowrap; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 5px; vertical-align: 0px; }
+
+/* ── 후원 카드 ── */
+.chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 7px; }
+.chip-active { background: #eef0ff; color: var(--blue); }
+.chip-done { background: #f2f9e5; color: #4e7a00; }
+.chip-wait { background: #fff4e5; color: #a86400; }
+.charge-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.charge-amt { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; }
+.charge-date { font-size: 12px; color: var(--ink-3); }
+.split { display: flex; gap: 8px; margin-top: 14px; font-size: 12px; }
+.split div { flex: 1; background: #f7f5f0; border-radius: 10px; padding: 9px 12px; }
+.split b { display: block; font-size: 14px; font-weight: 700; margin-top: 2px; }
+.prog { margin-top: 16px; }
+.prog-bar { height: 8px; background: #eeeae2; border-radius: 99px; overflow: hidden; }
+.prog-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #a8e02a); }
+.prog-txt { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+
+/* ── 완료 카드 ── */
+.done-card { background: linear-gradient(150deg, #2E33BC, #4a4fd6); color: #fff; border: none; }
+.done-card .done-msg { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -0.4px; }
+.done-card .done-msg b { color: var(--gold); }
+.done-meta { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.18); display: flex; gap: 22px; font-size: 12.5px; color: rgba(255,255,255,0.8); }
+.done-meta b { display: block; font-size: 17px; color: #fff; font-weight: 700; }
+
+/* ── 활동 피드 ── */
+.today { text-align: center; padding: 26px 20px 22px; }
+.today-big { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
+.today-big span { color: var(--green); }
+.today-sub { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
+.chart { display: flex; align-items: flex-end; gap: 5px; height: 86px; margin-top: 22px; padding-top: 8px; }
+.chart-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.chart-col i { display: block; background: #dfeeb8; border-radius: 4px 4px 2px 2px; min-height: 3px; }
+.chart-col.on i { background: var(--green); }
+.chart-x { display: flex; gap: 5px; margin-top: 6px; }
+.chart-x span { flex: 1; text-align: center; font-size: 9.5px; color: var(--ink-3); }
+
+/* ── 프로세스 ── */
+.steps { counter-reset: s; }
+.step { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px dashed var(--line); }
+.step:last-child { border-bottom: none; padding-bottom: 0; }
+.step-n { flex-shrink: 0; width: 26px; height: 26px; border-radius: 9px; background: #eef0ff; color: var(--blue); font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.step-t { font-size: 14.5px; font-weight: 700; }
+.step-d { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+.notice { margin-top: 16px; background: #f7f5f0; border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: var(--ink-2); line-height: 1.65; }
+.notice b { color: var(--ink); }
+
+/* ── 후원자 벽 ── */
+.wall { display: flex; flex-wrap: wrap; gap: 7px; }
+.wall span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+
+.empty { text-align: center; padding: 34px 20px; color: var(--ink-3); font-size: 13.5px; }
+footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); text-align: center; line-height: 1.8; }
+.demo-flag { background: var(--gold); color: #3d3000; font-size: 11.5px; font-weight: 700; text-align: center; padding: 7px; }
+@media (max-width: 480px) {
+  .hero h1 { font-size: 27px; }
+  .pool-num { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="demo-flag" id="demoFlag">데모 데이터로 보는 중 — 실제 후원 내역이 아닙니다</div>
+
+<header>
+  <div class="hd-inner">
+    <div class="logo">한끗독서<span>후원자 공간</span></div>
+    <button class="btn-ghost" id="authBtn" onclick="toggleAuth()">로그인</button>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-eyebrow">청소년 독서 후원</div>
+    <h1>당신의 후원이,<br><em>한 아이의 책</em>이 됩니다</h1>
+    <p>15일 동안 매일 책을 읽어낸 청소년에게<br>동네 독립서점의 책 한 권이 선물로 전해집니다.</p>
+    <!-- TODO: 도너스 후원 페이지 URL 확정되면 교체 -->
+    <a class="btn-primary" href="#" onclick="return notReady()">후원하기</a>
+    <div class="hero-note">결제와 기부금영수증은 도너스를 통해 처리됩니다</div>
+  </div>
+
+  <section>
+    <div class="sec-title">지금 도서기금</div>
+    <div class="sec-desc">후원금은 들어온 순서대로 책이 되어 나갑니다.</div>
+    <div class="pool" id="poolGrid"></div>
+    <div class="card pool-bar-wrap" id="poolBarCard"></div>
+  </section>
+
+  <section id="mySection" style="display:none;">
+    <div class="sec-title">내 후원</div>
+    <div class="sec-desc">후원하신 금액이 어디까지 전해졌는지 보여드려요.</div>
+    <div id="myCharges"></div>
+  </section>
+
+  <section>
+    <div class="sec-title">오늘의 기록</div>
+    <div class="sec-desc">참여 청소년의 인증 활동입니다. 누구인지는 표시되지 않아요.</div>
+    <div class="card" id="feedCard"></div>
+  </section>
+
+  <section>
+    <div class="sec-title">후원금은 이렇게 쓰입니다</div>
+    <div class="sec-desc">추정이 아니라, 서점 영수증으로 확인된 금액만 차감합니다.</div>
+    <div class="card">
+      <div class="steps" id="stepsBox"></div>
+      <div class="notice" id="policyNotice"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-title">함께하는 후원자</div>
+    <div class="sec-desc">공개에 동의하신 분들만 표시됩니다.</div>
+    <div class="wall" id="wall"></div>
+  </section>
+
+  <footer>
+    사단법인 유스보이스 · 한끗독서<br>
+    문의 soon@youthvoice.or.kr
+  </footer>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// Supabase — 한끗루틴과 같은 프로젝트를 사용합니다
+// (15일 연속 인증 데이터를 조인해야 하므로 분리 불가)
+// 아래 값을 채우면 데모 모드가 꺼지고 실제 데이터로 동작합니다.
+// ⚠️ 채우기 전에 supabase-schema.sql 을 먼저 적용하세요.
+// ════════════════════════════════════════════════════════
+const SB_URL = '';
+const SB_KEY = '';
+const LIVE = !!(SB_URL && SB_KEY);
+const sb = LIVE ? supabase.createClient(SB_URL, SB_KEY) : null;
+
+const won = n => n.toLocaleString('ko-KR');
+const manwon = n => (n >= 10000 ? (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) : n / 10000);
+
+// ── 데모 데이터 ─────────────────────────────────────────
+const DEMO = {
+  pool: { total_donated: 1_850_000, book_fund: 1_480_000, operation_fee: 370_000,
+          remaining: 622_000, spent: 858_000, books_delivered: 47, books_pending: 5,
+          students_reached: 47, sponsors_count: 23 },
+  settings: { book_fund_rate: 0.8, book_price_cap: 20000 },
+  feed: [
+    { day: '2026-09-13', cert_count: 12, student_count: 12 },
+    { day: '2026-09-12', cert_count: 15, student_count: 14 },
+    { day: '2026-09-11', cert_count: 11, student_count: 11 },
+    { day: '2026-09-10', cert_count: 16, student_count: 15 },
+    { day: '2026-09-09', cert_count: 14, student_count: 13 },
+    { day: '2026-09-08', cert_count: 9,  student_count: 9  },
+    { day: '2026-09-07', cert_count: 13, student_count: 12 },
+    { day: '2026-09-06', cert_count: 17, student_count: 16 },
+    { day: '2026-09-05', cert_count: 12, student_count: 12 },
+    { day: '2026-09-04', cert_count: 10, student_count: 10 },
+  ],
+  wall: ['도서관지기', '이OO', '책읽는고래', '유스보이스 직원일동', 'ㅎㅈㅇ', '속초책방단골',
+         '민들레', 'K.S.H', '한끗팬', '조용한후원자', '서점러버', 'JY'],
+  myCharges: [
+    { id: 3, amount: 100000, book_fund_amount: 80000, operation_fee_amount: 20000,
+      remaining_amount: 34000, status: 'active', charged_at: '2026-09-02' },
+    { id: 2, amount: 50000, book_fund_amount: 40000, operation_fee_amount: 10000,
+      remaining_amount: 0, status: 'completed', charged_at: '2026-07-18',
+      completion: { students_count: 2, gifts_count: 2, total_amount: 40000 } },
+    { id: 1, amount: 30000, book_fund_amount: 24000, operation_fee_amount: 6000,
+      remaining_amount: 0, status: 'completed', charged_at: '2026-06-05',
+      completion: { students_count: 1, gifts_count: 1, total_amount: 24000 } },
+  ],
+};
+
+let state = { signedIn: false, pool: null, settings: null, feed: [], wall: [], charges: [] };
+
+// ── 데이터 로드 ─────────────────────────────────────────
+async function loadPublic() {
+  if (!LIVE) {
+    state.pool = DEMO.pool; state.settings = DEMO.settings;
+    state.feed = DEMO.feed; state.wall = DEMO.wall;
+    return;
+  }
+  const [pool, settings, feed, wall] = await Promise.all([
+    sb.rpc('dokseo_pool_status'),
+    sb.from('dokseo_settings').select('book_fund_rate, book_price_cap').single(),
+    sb.rpc('dokseo_activity_feed', { p_days: 10 }),
+    sb.rpc('dokseo_sponsor_wall', { p_limit: 40 }),
+  ]);
+  state.pool = pool.data || DEMO.pool;
+  state.settings = settings.data || DEMO.settings;
+  state.feed = feed.data || [];
+  state.wall = (wall.data || []).map(w => w.nickname);
+}
+
+async function loadMine() {
+  if (!LIVE) { state.charges = DEMO.myCharges; return; }
+  const { data: sponsor } = await sb.from('sponsors').select('id').maybeSingle();
+  if (!sponsor) { state.charges = []; return; }
+  const { data } = await sb.from('charges')
+    .select('*, completion_events(students_count, gifts_count, total_amount)')
+    .eq('sponsor_id', sponsor.id).order('charged_at', { ascending: false });
+  state.charges = (data || []).map(c => ({ ...c, completion: (c.completion_events || [])[0] }));
+}
+
+// ── 렌더 ────────────────────────────────────────────────
+function renderPool() {
+  const p = state.pool;
+  document.getElementById('poolGrid').innerHTML = `
+    <div class="pool-item">
+      <div class="pool-num">${manwon(p.remaining)}<small>만원</small></div>
+      <div class="pool-label">남은 도서기금</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-num">${p.books_delivered}<small>권</small></div>
+      <div class="pool-label">전해진 책</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-num">${p.sponsors_count}<small>명</small></div>
+      <div class="pool-label">함께한 후원자</div>
+    </div>`;
+
+  const fund = p.book_fund || 1;
+  const spentPct = Math.min(100, (p.spent / fund) * 100);
+  document.getElementById('poolBarCard').innerHTML = `
+    <div class="pool-bar">
+      <i style="width:${spentPct}%;background:var(--green);"></i>
+      <i style="width:${100 - spentPct}%;background:#dfeeb8;"></i>
+    </div>
+    <div class="pool-legend">
+      <span><i class="dot" style="background:var(--green);"></i>책이 된 금액 ${won(p.spent)}원</span>
+      <span><i class="dot" style="background:#dfeeb8;"></i>기다리는 금액 ${won(p.remaining)}원</span>
+    </div>
+    ${p.books_pending ? `<div class="notice" style="margin-top:14px;">
+      지금 <b>${p.books_pending}명</b>이 책을 받고 정산을 기다리고 있어요.
+      서점 영수증이 확인되면 도서기금에서 차감됩니다.</div>` : ''}`;
+}
+
+function renderCharges() {
+  const box = document.getElementById('myCharges');
+  if (!state.charges.length) {
+    box.innerHTML = `<div class="card empty">아직 후원 내역이 없어요.</div>`;
+    return;
+  }
+  box.innerHTML = state.charges.map(c => {
+    if (c.status === 'completed' && c.completion) {
+      const k = c.completion;
+      return `<div class="card done-card">
+        <div class="done-msg">당신이 채워준 마음이,<br><b>${k.students_count}명</b>의 아이에게<br>책이 되어 전해졌어요.</div>
+        <div class="done-meta">
+          <div>후원일<b>${fmtDate(c.charged_at)}</b></div>
+          <div>후원금<b>${won(c.amount)}원</b></div>
+          <div>전해진 책<b>${k.gifts_count}권</b></div>
+        </div>
+      </div>`;
+    }
+    const used = c.book_fund_amount - c.remaining_amount;
+    const pct = Math.round((used / c.book_fund_amount) * 100);
+    return `<div class="card">
+      <div class="charge-top">
+        <div class="charge-amt">${won(c.amount)}원</div>
+        <div class="charge-date">${fmtDate(c.charged_at)} · <span class="chip chip-active">전달 중</span></div>
+      </div>
+      <div class="split">
+        <div>도서기금<b>${won(c.book_fund_amount)}원</b></div>
+        <div>운영비<b>${won(c.operation_fee_amount)}원</b></div>
+      </div>
+      <div class="prog">
+        <div class="prog-bar"><i style="width:${pct}%"></i></div>
+        <div class="prog-txt">
+          <span>책이 된 금액 ${won(used)}원</span>
+          <span>${pct}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderFeed() {
+  const f = state.feed;
+  const card = document.getElementById('feedCard');
+  if (!f.length) { card.innerHTML = `<div class="empty">아직 기록이 없어요.</div>`; return; }
+  const today = f[0];
+  const max = Math.max(...f.map(d => d.cert_count));
+  const cols = [...f].reverse();
+  card.innerHTML = `
+    <div class="today">
+      <div class="today-big">오늘 <span>${today.student_count}명</span>이 책을 읽었어요</div>
+      <div class="today-sub">인증 ${today.cert_count}건 · 최근 10일 동안 ${f.reduce((s, d) => s + d.cert_count, 0)}건</div>
+    </div>
+    <div class="chart">
+      ${cols.map((d, i) => `<div class="chart-col ${i === cols.length - 1 ? 'on' : ''}">
+        <i style="height:${Math.round((d.cert_count / max) * 100)}%"></i></div>`).join('')}
+    </div>
+    <div class="chart-x">${cols.map(d => `<span>${d.day.slice(8)}</span>`).join('')}</div>`;
+}
+
+function renderSteps() {
+  const s = state.settings;
+  const rate = Math.round(s.book_fund_rate * 100);
+  document.getElementById('stepsBox').innerHTML = [
+    ['후원금이 들어오면', `즉시 ${rate}%는 도서기금, ${100 - rate}%는 운영비로 나뉩니다.`],
+    ['청소년이 15일을 채우면', '매일 책을 읽고 인증한 청소년에게 자격이 생깁니다.'],
+    ['독립서점에서 책을 고르면', `${won(s.book_price_cap)}원 이내에서 원하는 책을 직접 고릅니다.`],
+    ['서점 영수증이 확인되면', '실제 결제된 금액만 도서기금에서, 오래된 후원부터 차감됩니다.'],
+  ].map(([t, d], i) => `<div class="step">
+      <div class="step-n">${i + 1}</div>
+      <div><div class="step-t">${t}</div><div class="step-d">${d}</div></div>
+    </div>`).join('');
+
+  document.getElementById('policyNotice').innerHTML =
+    `운영비 ${100 - rate}%는 사진 확인, 영수증 정산, 프로그램 운영에 쓰이는 실비입니다.<br>
+     <b>참여 청소년에게는 후원 사실을 안내하지 않습니다.</b> 후원받는 아이로 비치지 않도록,
+     책은 15일을 채운 자신에 대한 선물로만 전해집니다.`;
+}
+
+function renderWall() {
+  document.getElementById('wall').innerHTML =
+    state.wall.length ? state.wall.map(n => `<span>${esc(n)}</span>`).join('')
+                      : `<div class="empty">첫 후원자를 기다리고 있어요.</div>`;
+}
+
+// ── 로그인 (데모: 토글) ─────────────────────────────────
+async function toggleAuth() {
+  if (LIVE) { alert('로그인 연동은 도너스 연동 방식 확정 후 붙입니다.'); return; }
+  state.signedIn = !state.signedIn;
+  if (state.signedIn) await loadMine();
+  document.getElementById('authBtn').textContent = state.signedIn ? '로그아웃' : '로그인';
+  document.getElementById('mySection').style.display = state.signedIn ? '' : 'none';
+  if (state.signedIn) { renderCharges(); document.getElementById('mySection').scrollIntoView({ behavior: 'smooth' }); }
+}
+
+function notReady() {
+  alert('후원 페이지(도너스) 연결은 결제 연동 방식이 확정되면 붙습니다.');
+  return false;
+}
+
+const fmtDate = d => { const [y, m, dd] = d.slice(0, 10).split('-'); return `${y}.${m}.${dd}`; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+(async function init() {
+  if (LIVE) document.getElementById('demoFlag').style.display = 'none';
+  await loadPublic();
+  renderPool(); renderFeed(); renderSteps(); renderWall();
+})();
+</script>
+</body>
+</html>
