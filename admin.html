@@ -654,9 +654,9 @@ async function loadLive() {
     sb.from('charges').select('*'),
     sb.from('book_purchases').select('*, profiles:user_id(name), routines:routine_id(title), bookstores:bookstore_id(name), consumption_allocations(charge_id, amount)'),
     sb.from('bookstores').select('*').order('name'),
-    // 문장 검수 목록 — 독서루틴 인증 중 문장이 있는 것만
-    sb.from('certifications').select('id, quote, book_title, quote_public, created_at, routines!inner(dokseo)')
-      .eq('routines.dokseo', true).not('quote', 'is', null)
+    // 문장 검수 목록 — 문장이 달린 인증만
+    sb.from('certifications').select('id, quote, book_title, quote_public, created_at')
+      .not('quote', 'is', null)
       .order('created_at', { ascending: false }).limit(200),
   ]);
   DB.settings = settings.data || DB.settings;
