@@ -56,9 +56,6 @@ CREATE TABLE IF NOT EXISTS profiles (
   created_at timestamptz DEFAULT now()
 );
 
--- 이름만 공개하는 뷰 (인증 피드에서 작성자 이름을 보여주기 위함)
-CREATE OR REPLACE VIEW profiles_public AS SELECT id, name, role FROM profiles;
-
 
 -- ────────────────────────────────────────────────────────────────────
 -- 3. 독서루틴
@@ -107,6 +104,9 @@ CREATE TABLE IF NOT EXISTS certifications (
   -- 후원자에게 보여줄 문장은 운영진이 고른 것만. 아이가 문장 대신 개인적인
   -- 이야기를 적었을 수 있어 자동 노출하지 않는다
   quote_public boolean NOT NULL DEFAULT false,
+  -- 하루 1회 제약에 쓰는 한국 날짜. AT TIME ZONE 은 STABLE 이라 인덱스 식에
+  -- 직접 못 쓰기 때문에, 넣을 때 값으로 굳혀서 컬럼에 담는다
+  cert_date    date NOT NULL DEFAULT ((now() AT TIME ZONE 'Asia/Seoul')::date),
   created_at   timestamptz DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS certs_routine_user_idx ON certifications (routine_id, user_id);
@@ -114,7 +114,7 @@ CREATE INDEX IF NOT EXISTS certs_created_idx      ON certifications (created_at 
 
 -- 하루에 한 번만 인증
 CREATE UNIQUE INDEX IF NOT EXISTS certs_once_a_day_idx
-  ON certifications (routine_id, user_id, ((created_at AT TIME ZONE 'Asia/Seoul')::date));
+  ON certifications (routine_id, user_id, cert_date);
 
 CREATE TABLE IF NOT EXISTS cert_comments (
   id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
@@ -454,13 +454,20 @@ GRANT EXECUTE ON FUNCTION settle_book_purchase(bigint, int, text, text) TO authe
 -- ════════════════════════════════════════════════════════════════════
 -- 11. 가입 시 프로필 자동 생성
 -- ════════════════════════════════════════════════════════════════════
+-- 이 트리거가 실패해도 가입 자체는 막지 않는다.
+-- 한끗루틴에서 같은 트리거가 500 에러를 내 가입이 통째로 막혔던 적이 있어서,
+-- 실패하면 조용히 넘기고 앱이 프로필을 직접 만들도록 둔다
 CREATE OR REPLACE FUNCTION handle_new_user() RETURNS trigger AS $$
 BEGIN
-  INSERT INTO profiles (id, name, role)
-  VALUES (NEW.id,
-          COALESCE(NEW.raw_user_meta_data->>'name', '이름없음'),
-          COALESCE(NEW.raw_user_meta_data->>'role', 'youth'))
-  ON CONFLICT (id) DO NOTHING;
+  BEGIN
+    INSERT INTO profiles (id, name, role)
+    VALUES (NEW.id,
+            COALESCE(NEW.raw_user_meta_data->>'name', '이름없음'),
+            COALESCE(NEW.raw_user_meta_data->>'role', 'youth'))
+    ON CONFLICT (id) DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE WARNING '프로필 자동 생성 실패 (가입은 계속): %', SQLERRM;
+  END;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
