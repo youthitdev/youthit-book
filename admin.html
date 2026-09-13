@@ -240,8 +240,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 // ════════════════════════════════════════════════════════
 // Supabase — 한끗루틴과 같은 프로젝트 (supabase-schema.sql 적용 후 값 입력)
 // ════════════════════════════════════════════════════════
-const SB_URL = '';
-const SB_KEY = '';
+const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGFod3ZpaHZrYXNyem5ib2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzY4OTcsImV4cCI6MjEwNDg1Mjg5N30.aCVtuxfVTApo7-bQW0NPiBDZw-9vXHeCgyNgx5pdFqw';
 const LIVE = !!(SB_URL && SB_KEY);
 const sb = LIVE ? supabase.createClient(SB_URL, SB_KEY) : null;
 
@@ -652,7 +652,9 @@ async function loadLive() {
     sb.from('dokseo_settings').select('book_fund_rate').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
-    sb.from('book_purchases').select('*, profiles:user_id(name), routines:routine_id(title), bookstores:bookstore_id(name), consumption_allocations(charge_id, amount)'),
+    // profiles 는 book_purchases.user_id(→auth.users)와 FK로 직접 안 엮여서
+    // PostgREST embed가 안 먹음 — 이름은 아래서 따로 조회해 매칭한다
+    sb.from('book_purchases').select('*, routines:routine_id(title), bookstores:bookstore_id(name), consumption_allocations(charge_id, amount)'),
     sb.from('bookstores').select('*').order('name'),
     // 문장 검수 목록 — 문장이 달린 인증만
     sb.from('certifications').select('id, quote, book_title, quote_public, created_at')
@@ -665,9 +667,16 @@ async function loadLive() {
   DB.bookstores = stores.data || [];
   DB.quotes = quotes.data || [];
 
+  const purchaseUserIds = [...new Set((purchases.data || []).map(p => p.user_id))];
+  const nameByUserId = {};
+  if (purchaseUserIds.length) {
+    const { data: profs } = await sb.from('profiles').select('id, name').in('id', purchaseUserIds);
+    (profs || []).forEach(pr => nameByUserId[pr.id] = pr.name);
+  }
+
   DB.purchases = (purchases.data || []).map(p => ({
     id: p.id, user_id: p.user_id, routine_id: p.routine_id,
-    name: p.profiles?.name || '-', routine: p.routines?.title || '-',
+    name: nameByUserId[p.user_id] || '(탈퇴 또는 프로필 없음)', routine: p.routines?.title || '-',
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     allocs: p.consumption_allocations || [], balance: 0,

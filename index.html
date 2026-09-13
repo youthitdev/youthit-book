@@ -250,8 +250,8 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
 // 아래 값을 채우면 데모 모드가 꺼지고 실제 데이터로 동작합니다.
 // ⚠️ 채우기 전에 supabase-schema.sql 을 먼저 적용하세요.
 // ════════════════════════════════════════════════════════
-const SB_URL = '';
-const SB_KEY = '';
+const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGFod3ZpaHZrYXNyem5ib2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzY4OTcsImV4cCI6MjEwNDg1Mjg5N30.aCVtuxfVTApo7-bQW0NPiBDZw-9vXHeCgyNgx5pdFqw';
 const LIVE = !!(SB_URL && SB_KEY);
 const sb = LIVE ? supabase.createClient(SB_URL, SB_KEY) : null;
 
