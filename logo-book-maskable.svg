@@ -1,0 +1,15 @@
+<!-- 안드로이드 maskable용: 모서리를 깎지 않고 꽉 채우고, 내용은 안전영역 안으로 줄여 배치 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3A40D6"/>
+      <stop offset="1" stop-color="#2A2FA8"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" fill="url(#g)"/>
+  <g transform="translate(26.88 26.88) scale(0.72)">
+    <path d="M96 62 C82 52, 60 50, 44 54 L44 134 C60 130, 82 132, 96 142 Z" fill="#ffffff"/>
+    <path d="M96 62 C110 52, 132 50, 148 54 L148 134 C132 130, 110 132, 96 142 Z" fill="#ffffff" opacity="0.82"/>
+    <circle cx="140" cy="48" r="15" fill="#FFD600"/>
+  </g>
+</svg>
