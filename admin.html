@@ -475,14 +475,14 @@ async function loadLive() {
     sb.from('dokseo_settings').select('book_fund_rate, book_price_cap').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
-    sb.from('book_gifts').select('*, profiles:user_id(name), routines:routine_id(title), consumption_allocations(charge_id, amount)'),
+    sb.from('book_gifts').select('*, profiles:user_id(name), routines:routine_id(title, partner_org), consumption_allocations(charge_id, amount)'),
   ]);
   DB.settings = settings.data || DB.settings;
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];
   DB.gifts    = (gifts.data || []).map(g => ({
     id: g.id, name: g.profiles?.name || '-', routine: g.routines?.title || '-',
-    bookstore: g.bookstore_name || '-', status: g.status, created_at: g.created_at,
+    bookstore: g.routines?.partner_org || '-', status: g.status, created_at: g.created_at,
     settled_at: g.settled_at, gift_amount: g.gift_amount, photo_path: g.proof_photo_url || null,
     allocs: g.consumption_allocations || [],
   }));

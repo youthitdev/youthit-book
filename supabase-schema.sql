@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS book_gifts (
   id              bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   user_id         uuid   NOT NULL REFERENCES auth.users ON DELETE CASCADE,
   routine_id      bigint REFERENCES routines(id) ON DELETE SET NULL,
-  bookstore_name  text,
+  -- 서점은 따로 받지 않는다. 루틴 하나가 서점 한 곳이라 routines.partner_org 로 따라옴
   proof_photo_url text,                                  -- 책+얼굴가림 사진 (내부 확인용)
   proof_cert_id   bigint REFERENCES certifications(id) ON DELETE SET NULL,
   status          text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','settled','void')),
