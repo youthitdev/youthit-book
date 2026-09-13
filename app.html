@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>한끗독서</title>
+<meta name="theme-color" content="#2E33BC">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="한끗독서">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --ink:#16161a; --ink-2:#5a5a66; --ink-3:#9a9aa6;
+  --bg:#f5f5f7; --card:#fff; --line:#ebebf0;
+  --blue:#2E33BC; --green:#83CA00; --green-d:#5d8a2a; --gold:#FFD600; --pink:#FF006C;
+}
+body {
+  font-family:-apple-system, BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.6; font-size:14px;
+  word-break:keep-all; overflow-wrap:break-word; -webkit-font-smoothing:antialiased;
+  display:flex; justify-content:center; min-height:100vh; align-items:flex-start;
+}
+.app { width:100%; max-width:480px; background:var(--bg); min-height:100vh; position:relative; padding-bottom:76px; }
+input, select, textarea, button { font-family:inherit; }
+input[type=text], input[type=email], input[type=password], input[type=number], select, textarea {
+  width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px;
+  font-size:15px; color:var(--ink); background:#fff; outline:none;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--blue); }
+textarea { resize:none; line-height:1.6; }
+.btn { width:100%; padding:15px; border:none; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
+.btn-primary { background:var(--blue); color:#fff; }
+.btn-primary:disabled { background:#c9cbe8; cursor:default; }
+.btn-green { background:var(--green); color:#fff; }
+.btn-line { background:#fff; border:1px solid var(--line); color:var(--ink-2); }
+.field-label { font-size:13px; font-weight:700; margin-bottom:7px; }
+.req { color:var(--pink); font-size:11px; font-weight:700; }
+.opt { color:var(--ink-3); font-size:11px; font-weight:400; }
+.hint { font-size:11.5px; color:var(--ink-3); margin-top:6px; }
+
+/* 로그인 */
+.auth { min-height:100vh; background:linear-gradient(160deg,#3A40D6,#2A2FA8); color:#fff; padding:0 26px; display:flex; flex-direction:column; justify-content:center; }
+.auth h1 { font-size:27px; font-weight:800; letter-spacing:-1px; line-height:1.35; }
+.auth .sub { font-size:14px; color:rgba(255,255,255,.72); margin-top:10px; margin-bottom:30px; }
+.auth input { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); color:#fff; margin-bottom:10px; }
+.auth input::placeholder { color:rgba(255,255,255,.5); }
+.auth input:focus { border-color:rgba(255,255,255,.6); }
+.auth .btn-primary { background:#fff; color:var(--blue); margin-top:6px; }
+.auth .swap { text-align:center; margin-top:18px; font-size:13px; color:rgba(255,255,255,.7); }
+.auth .swap b { color:#fff; cursor:pointer; text-decoration:underline; }
+.role-row { display:flex; gap:8px; margin-bottom:10px; }
+.role-btn { flex:1; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.22); background:transparent; color:rgba(255,255,255,.6); font-size:14px; cursor:pointer; }
+.role-btn.on { background:#fff; color:var(--blue); font-weight:700; border-color:#fff; }
+.auth-err { background:rgba(255,0,108,.18); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; }
+
+/* 헤더/탭 */
+header { position:sticky; top:0; z-index:20; background:var(--green); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+header.k { background:var(--pink); }
+.h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
+.h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
+.body { padding:18px; }
+nav { position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; background:#fff; border-top:1px solid var(--line); display:flex; z-index:30; }
+nav div { flex:1; padding:9px 0 10px; text-align:center; color:var(--ink-3); cursor:pointer; font-size:10.5px; font-weight:600; }
+nav div.on { color:var(--blue); }
+nav i { display:block; font-size:21px; margin-bottom:1px; }
+
+.card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
+.sec-t { font-size:15px; font-weight:800; margin:22px 0 10px; letter-spacing:-.3px; }
+.sec-t:first-child { margin-top:0; }
+.empty { text-align:center; padding:40px 16px; color:var(--ink-3); font-size:13.5px; line-height:1.7; }
+.chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:8px; }
+.c-recruit { background:#FBEAF0; color:#993556; }
+.c-active { background:#EAF3DE; color:#3B6D11; }
+.c-done { background:#eee; color:#888; }
+.c-wait { background:#FFF4E5; color:#A86400; }
+
+/* 루틴 카드 */
+.r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; }
+.r-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
+.r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
+.r-desc { font-size:13px; color:var(--ink-2); margin-top:8px; line-height:1.6; }
+
+/* 적립금 */
+.bal { background:#f7fbf0; border:1px solid #d8ebb8; border-radius:16px; padding:18px; margin-bottom:12px; }
+.bal-l { font-size:12px; color:var(--green-d); font-weight:700; }
+.bal-n { font-size:30px; font-weight:800; letter-spacing:-1.2px; margin-top:3px; }
+.bal-n small { font-size:15px; font-weight:700; margin-left:2px; }
+.bal-s { font-size:12.5px; color:var(--ink-2); margin-top:3px; }
+.bal-btns { display:flex; gap:8px; margin-top:14px; }
+.bal-btns button { flex:1; padding:11px; border-radius:11px; font-size:13.5px; font-weight:700; cursor:pointer; border:none; }
+
+/* 인증 */
+.ph-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:8px; }
+.ph-box { aspect-ratio:1; border-radius:12px; background:#f0f0f4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--ink-3); font-size:11px; cursor:pointer; border:1.5px dashed #ddd; }
+.ph-box img { width:100%; height:100%; object-fit:cover; border-radius:12px; }
+.ph-wrap { position:relative; }
+.ph-del { position:absolute; top:5px; right:5px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; border:none; font-size:13px; cursor:pointer; line-height:1; }
+
+/* 피드 */
+.f-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; }
+.f-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.f-av { width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
+.f-name { font-size:13.5px; font-weight:700; }
+.f-time { font-size:11.5px; color:var(--ink-3); }
+.f-photos { display:grid; gap:5px; margin-bottom:10px; border-radius:12px; overflow:hidden; }
+.f-photos img { width:100%; display:block; object-fit:cover; max-height:320px; }
+.f-quote { border-left:3px solid var(--green); background:#f7fbf0; border-radius:0 10px 10px 0; padding:11px 13px; margin-bottom:8px; }
+.f-quote p { font-size:14px; line-height:1.7; }
+.f-quote cite { display:block; font-style:normal; font-size:11.5px; color:var(--green-d); margin-top:6px; }
+.f-text { font-size:14px; line-height:1.7; white-space:pre-wrap; }
+.f-cmts { margin-top:12px; padding-top:12px; border-top:1px solid #f1f1f4; }
+.f-cmt { font-size:13px; margin-bottom:7px; line-height:1.6; }
+.f-cmt b { font-weight:700; margin-right:5px; }
+.f-cmt-in { display:flex; gap:7px; margin-top:9px; }
+.f-cmt-in input { padding:9px 12px; font-size:13.5px; border-radius:10px; }
+.f-cmt-in button { flex-shrink:0; padding:0 15px; border:none; border-radius:10px; background:var(--blue); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+
+/* 책방 */
+.store { background:var(--card); border-radius:14px; padding:15px 16px; margin-bottom:9px; }
+.store-n { font-size:15px; font-weight:700; }
+.store-i { font-size:13px; color:var(--ink-2); line-height:1.6; margin-top:5px; }
+.store-row { display:flex; gap:7px; align-items:flex-start; font-size:13px; color:#444; line-height:1.5; margin-top:5px; }
+.store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
+.store-btns { display:flex; gap:8px; margin-top:12px; }
+.store-btns a { flex:1; text-align:center; padding:9px; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
+.region-t { font-size:13px; font-weight:700; color:var(--green-d); margin:16px 0 8px; }
+
+/* 오버레이 */
+.ov { position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; max-width:480px; margin:0 auto; }
+.ov.on { display:flex; }
+.ov-h { background:var(--green); color:#fff; padding:13px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.ov-h.b { background:var(--blue); }
+.ov-h button { background:none; border:none; color:#fff; font-size:21px; cursor:pointer; padding:0; line-height:1; }
+.ov-h .t { font-size:16px; font-weight:700; }
+.ov-h .s { font-size:11px; opacity:.78; }
+.ov-b { flex:1; overflow-y:auto; padding:18px; }
+.ov-b > div:not(:last-child) { margin-bottom:16px; }
+
+.toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.86); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; z-index:100; display:none; max-width:88%; text-align:center; line-height:1.5; }
+.toast.on { display:block; }
+.spin { text-align:center; padding:60px 20px; color:var(--ink-3); font-size:13px; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div class="auth" id="authScr">
+  <h1>매일 한 장,<br>책과 가까워지는 습관</h1>
+  <div class="sub">끗짱과 함께 15일, 읽은 만큼 적립돼요</div>
+  <div id="authErr" class="auth-err" style="display:none;"></div>
+  <div id="signupOnly" style="display:none;">
+    <div class="role-row">
+      <button type="button" class="role-btn on" id="roleYouth" onclick="pickRole('youth')">청소년</button>
+      <button type="button" class="role-btn" id="roleK" onclick="pickRole('kkutjjang')">끗짱</button>
+    </div>
+    <input type="text" id="auName" placeholder="이름">
+  </div>
+  <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
+  <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+  <button class="btn btn-primary" id="auBtn" onclick="submitAuth()">로그인</button>
+  <div class="swap" id="auSwap">처음이신가요? <b onclick="toggleMode()">회원가입</b></div>
+</div>
+
+<!-- 앱 -->
+<div class="app" id="appScr" style="display:none;">
+  <header id="hdr">
+    <div><span class="h-title">한끗독서</span><span class="h-badge" id="hdrRole"></span></div>
+    <button onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+  </header>
+  <div class="body" id="tabBody"><div class="spin">불러오는 중…</div></div>
+  <nav>
+    <div class="on" data-tab="home" onclick="go('home')"><i class="ti ti-home"></i>홈</div>
+    <div data-tab="cert" onclick="go('cert')"><i class="ti ti-camera"></i>인증</div>
+    <div data-tab="feed" onclick="go('feed')"><i class="ti ti-book"></i>기록</div>
+    <div data-tab="my" onclick="go('my')"><i class="ti ti-user"></i>MY</div>
+  </nav>
+</div>
+
+<!-- 루틴 상세 -->
+<div class="ov" id="ovRoutine">
+  <div class="ov-h"><button onclick="closeOv('ovRoutine')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">루틴</div><div class="t" id="ovRTitle"></div></div></div>
+  <div class="ov-b" id="ovRBody"></div>
+</div>
+
+<!-- 인증 작성 -->
+<div class="ov" id="ovCert">
+  <div class="ov-h"><button onclick="closeOv('ovCert')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">오늘의 인증</div><div class="t" id="ovCTitle"></div></div></div>
+  <div class="ov-b">
+    <div id="certGuide"></div>
+    <div>
+      <div class="field-label">책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span></div>
+      <div class="ph-grid" id="phGrid"></div>
+      <input type="file" id="phInput" accept="image/*" multiple style="display:none;" onchange="pickPhotos(event)">
+      <div class="hint" id="camHint">읽고 있는 순간을 사진으로 담아주세요</div>
+    </div>
+    <div>
+      <div class="field-label">마음에 남은 문장 <span class="opt">선택</span></div>
+      <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div class="field-label">읽는 책 <span class="opt">선택</span></div>
+        <input type="text" id="cBook" placeholder="책 제목" maxlength="60">
+      </div>
+      <div style="width:112px;flex-shrink:0;">
+        <div class="field-label">읽은 쪽 <span class="opt">선택</span></div>
+        <input type="number" id="cPage" min="1" max="9999" placeholder="쪽수" oninput="pageHint()">
+      </div>
+    </div>
+    <div id="cPageHint" style="display:none;font-size:12.5px;line-height:1.6;padding:10px 13px;border-radius:11px;"></div>
+    <div>
+      <div class="field-label">더 남기고 싶은 말 <span class="opt">선택</span></div>
+      <textarea id="cMemo" rows="3" placeholder="오늘 읽으면서 든 생각이 있다면." maxlength="1000"></textarea>
+    </div>
+    <button class="btn btn-primary" id="cSubmit" disabled onclick="submitCert()">인증하기</button>
+  </div>
+</div>
+
+<!-- 책방 목록 -->
+<div class="ov" id="ovStores">
+  <div class="ov-h"><button onclick="closeOv('ovStores')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">책 사러 가기</div><div class="t">함께하는 동네책방</div></div></div>
+  <div class="ov-b" id="ovStoresBody"></div>
+</div>
+
+<!-- 책 샀어요 -->
+<div class="ov" id="ovBuy">
+  <div class="ov-h"><button onclick="closeOv('ovBuy')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">책 샀어요</div><div class="t" id="ovBuyTitle"></div></div></div>
+  <div class="ov-b">
+    <div id="buyBal"></div>
+    <div>
+      <div class="field-label">어느 책방에서 샀나요? <span class="req">* 필수</span></div>
+      <select id="buyStore" onchange="checkBuy()"></select>
+    </div>
+    <div style="background:#f0f0f4;border-radius:12px;padding:13px 15px;">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
+      <div style="font-size:13.5px;line-height:1.6;">산 책으로 얼굴을 가리고 찍어주세요.<br>얼굴이 나오지 않게 책을 들어올리면 돼요.</div>
+    </div>
+    <div>
+      <div class="field-label">책 사진 <span class="req">* 필수</span></div>
+      <div id="buyPhPrev" style="margin-bottom:8px;"></div>
+      <button class="btn btn-line" onclick="document.getElementById('buyPhInput').click()">사진 고르기</button>
+      <input type="file" id="buyPhInput" accept="image/*" style="display:none;" onchange="pickBuyPhoto(event)">
+      <div class="hint">이 사진은 기록에 올라가지 않아요. 운영진만 확인해요.</div>
+    </div>
+    <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════════
+const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGFod3ZpaHZrYXNyem5ib2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzY4OTcsImV4cCI6MjEwNDg1Mjg5N30.aCVtuxfVTApo7-bQW0NPiBDZw-9vXHeCgyNgx5pdFqw';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let me = null;                 // profiles row
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[] };
+let tab = 'home';
+let authMode = 'login', signupRole = 'youth';
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const won = n => Number(n||0).toLocaleString('ko-KR');
+const todayKST = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10);
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('on'), 2600);
+}
+function timeAgo(iso) {
+  const m = Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
+  if (m < 1) return '방금';
+  if (m < 60) return `${m}분 전`;
+  if (m < 1440) return `${Math.floor(m/60)}시간 전`;
+  return `${Math.floor(m/1440)}일 전`;
+}
+function fmtPeriod(s, e) {
+  const f = d => d ? d.slice(2).replace(/-/g,'.') : '';
+  return s && e ? `${f(s)}–${f(e)}` : (s ? f(s)+'~' : '기간 미정');
+}
+
+// ── 로그인 ─────────────────────────────────────────────
+function pickRole(r) {
+  signupRole = r;
+  $('roleYouth').classList.toggle('on', r === 'youth');
+  $('roleK').classList.toggle('on', r === 'kkutjjang');
+}
+function toggleMode() {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  const up = authMode === 'signup';
+  $('signupOnly').style.display = up ? '' : 'none';
+  $('auBtn').textContent = up ? '가입하기' : '로그인';
+  $('auSwap').innerHTML = up
+    ? `이미 계정이 있나요? <b onclick="toggleMode()">로그인</b>`
+    : `처음이신가요? <b onclick="toggleMode()">회원가입</b>`;
+  $('authErr').style.display = 'none';
+}
+function authError(msg) { const e = $('authErr'); e.textContent = msg; e.style.display = ''; }
+
+async function submitAuth() {
+  const email = $('auEmail').value.trim(), pw = $('auPw').value;
+  if (!email || !pw) return authError('이메일과 비밀번호를 입력해주세요.');
+  const btn = $('auBtn'); btn.disabled = true; btn.textContent = '잠시만요…';
+
+  if (authMode === 'signup') {
+    const name = $('auName').value.trim();
+    if (!name) { btn.disabled=false; btn.textContent='가입하기'; return authError('이름을 입력해주세요.'); }
+    const { error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: signupRole } } });
+    if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(error.message); }
+  } else {
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    if (error) { btn.disabled=false; btn.textContent='로그인'; return authError('이메일 또는 비밀번호를 다시 확인해주세요.'); }
+  }
+  await enter();
+}
+
+async function doLogout() {
+  if (!confirm('로그아웃할까요?')) return;
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// 프로필은 가입 트리거가 만들지만, 트리거가 실패해도 가입은 되도록 해뒀으므로
+// 없으면 앱이 직접 만든다
+async function loadMe(user) {
+  let { data } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+  if (!data) {
+    const meta = user.user_metadata || {};
+    const ins = await sb.from('profiles')
+      .insert({ id: user.id, name: meta.name || '이름없음', role: meta.role || 'youth' })
+      .select().single();
+    data = ins.data;
+  }
+  return data;
+}
+
+async function enter() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { $('authScr').style.display = ''; $('appScr').style.display = 'none'; return; }
+  me = await loadMe(user);
+  if (!me) { authError('프로필을 불러오지 못했어요. 다시 시도해주세요.'); return; }
+
+  $('authScr').style.display = 'none';
+  $('appScr').style.display = '';
+  const isK = me.role === 'kkutjjang';
+  $('hdr').classList.toggle('k', isK);
+  $('hdrRole').textContent = isK ? '끗짱' : '청소년';
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
+  await loadAll();
+  render();
+}
+
+// ── 데이터 ─────────────────────────────────────────────
+async function loadAll() {
+  const [r, p, c, s, bp, cm] = await Promise.all([
+    sb.from('routines').select('*').order('created_at', { ascending:false }),
+    sb.from('routine_participants').select('*'),
+    sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
+    sb.from('bookstores').select('*').order('name'),
+    sb.from('book_purchases').select('*'),
+    sb.from('cert_comments').select('*').order('created_at'),
+  ]);
+  state.routines = r.data || [];
+  state.parts = p.data || [];
+  state.certs = c.data || [];
+  state.stores = s.data || [];
+  state.purchases = bp.data || [];
+  state.comments = cm.data || [];
+
+  const ids = [...new Set([...state.certs.map(x=>x.user_id), ...state.parts.map(x=>x.user_id),
+                           ...state.comments.map(x=>x.user_id)])];
+  if (ids.length) {
+    const { data } = await sb.from('profiles').select('id,name').in('id', ids);
+    state.names = {};
+    (data||[]).forEach(p => state.names[p.id] = p.name);
+  }
+}
+
+const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
+const myPart    = rid => state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
+const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
+const myCerts   = rid => certsOf(rid).filter(c => c.user_id === me.id);
+const nameOf    = uid => state.names[uid] || '익명';
+const myRoutines = () => state.routines.filter(r => {
+  const p = myPart(r.id);
+  return me.role === 'kkutjjang' ? r.led_by === me.id : (p && p.status === 'approved');
+});
+const didToday = rid => myCerts(rid).some(c => c.cert_date === todayKST());
+
+// 잔액 = (내 인증 수 × 인증당 적립액) − 정산 완료된 구매 합계
+// 서버 dokseo_balance() 와 같은 식. 대기 중인 구매는 금액이 없어 빼지 않는다
+function balance(r) {
+  const earned = myCerts(r.id).length * (r.amount_per_cert || 0);
+  const used = state.purchases
+    .filter(p => p.routine_id === r.id && p.user_id === me.id && p.status === 'settled')
+    .reduce((s,p) => s + (p.amount||0), 0);
+  return Math.max(0, earned - used);
+}
+const pendingBuy = rid => state.purchases.find(p =>
+  p.routine_id === rid && p.user_id === me.id && p.status === 'pending');
+
+// ── 화면 ───────────────────────────────────────────────
+function go(t) {
+  tab = t;
+  document.querySelectorAll('nav div').forEach(d => d.classList.toggle('on', d.dataset.tab === t));
+  render();
+  window.scrollTo(0,0);
+}
+function render() {
+  const b = $('tabBody');
+  if (tab === 'home') b.innerHTML = viewHome();
+  else if (tab === 'cert') b.innerHTML = viewCert();
+  else if (tab === 'feed') b.innerHTML = viewFeed();
+  else b.innerHTML = viewMy();
+}
+
+function routineCard(r) {
+  const st = r.status === 'recruit' ? ['c-recruit','모집 중']
+           : r.status === 'active'  ? ['c-active','진행 중'] : ['c-done','종료'];
+  const p = myPart(r.id);
+  const mine = p && p.status === 'approved';
+  const waiting = p && p.status === 'pending';
+  return `<div class="r-card" onclick="openRoutine(${r.id})">
+    <div class="r-top">
+      <div style="min-width:0;">
+        <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
+        <div class="r-meta">${fmtPeriod(r.start_date, r.end_date)} · ${partsOf(r.id).length}/${r.max_people}명</div>
+      </div>
+      <span class="chip ${st[0]}">${st[1]}</span>
+    </div>
+    ${r.description ? `<div class="r-desc">${esc(r.description).slice(0,70)}${r.description.length>70?'…':''}</div>` : ''}
+    ${waiting ? `<div style="margin-top:9px;"><span class="chip c-wait">승인 기다리는 중</span></div>` : ''}
+    ${mine && r.amount_per_cert ? `<div style="margin-top:9px;font-size:12.5px;color:var(--green-d);font-weight:700;">적립금 ${won(balance(r))}원</div>` : ''}
+  </div>`;
+}
+
+function viewHome() {
+  const mine = myRoutines();
+  const others = state.routines.filter(r => !mine.includes(r) && r.status !== 'done');
+  let h = '';
+
+  if (me.role === 'kkutjjang') {
+    const pend = state.parts.filter(p => p.status === 'pending' &&
+      state.routines.some(r => r.id === p.routine_id && r.led_by === me.id));
+    if (pend.length) {
+      h += `<div class="sec-t">신청을 기다리고 있어요</div>`;
+      h += pend.map(p => {
+        const r = state.routines.find(x => x.id === p.routine_id);
+        return `<div class="card">
+          <div style="font-weight:700;">${esc(nameOf(p.user_id))}</div>
+          <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${esc(r?.title||'')}</div>
+          ${p.note ? `<div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.6;">“${esc(p.note)}”</div>` : ''}
+          <div style="display:flex;gap:8px;margin-top:12px;">
+            <button class="btn btn-green" style="padding:10px;font-size:13.5px;" onclick="decide(${p.routine_id},'${p.user_id}','approved')">승인</button>
+            <button class="btn btn-line" style="padding:10px;font-size:13.5px;" onclick="decide(${p.routine_id},'${p.user_id}','rejected')">거절</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+
+  h += `<div class="sec-t">${me.role==='kkutjjang'?'내가 이끄는 루틴':'참여 중인 루틴'}</div>`;
+  h += mine.length ? mine.map(routineCard).join('')
+     : `<div class="empty">${me.role==='kkutjjang'?'아직 맡은 루틴이 없어요':'아직 참여 중인 루틴이 없어요.<br>아래에서 모집 중인 루틴을 찾아보세요.'}</div>`;
+
+  if (others.length) {
+    h += `<div class="sec-t">모집 중인 루틴</div>` + others.map(routineCard).join('');
+  }
+  return h;
+}
+
+function viewCert() {
+  if (me.role === 'kkutjjang') {
+    const mine = myRoutines();
+    if (!mine.length) return `<div class="empty">맡은 루틴이 없어요</div>`;
+    return mine.map(r => {
+      const ps = partsOf(r.id);
+      const today = certsOf(r.id).filter(c => c.cert_date === todayKST());
+      return `<div class="card">
+        <div style="font-weight:700;">${r.emoji||'📚'} ${esc(r.title)}</div>
+        <div style="font-size:12.5px;color:var(--ink-3);margin-top:3px;">오늘 ${today.length}/${ps.length}명 인증</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px;">
+          ${ps.map(p => {
+            const done = today.some(c => c.user_id === p.user_id);
+            const n = certsOf(r.id).filter(c => c.user_id === p.user_id).length;
+            return `<div style="display:flex;align-items:center;justify-content:space-between;font-size:13.5px;">
+              <span>${done?'✅':'⬜️'} ${esc(nameOf(p.user_id))}</span>
+              <span style="color:var(--ink-3);font-size:12px;">${n}회</span></div>`;
+          }).join('') || '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  const mine = myRoutines();
+  if (!mine.length) return `<div class="empty">참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 신청해주세요.</div>`;
+  return mine.map(r => {
+    const done = didToday(r.id);
+    return `<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="min-width:0;">
+          <div style="font-weight:700;">${r.emoji||'📚'} ${esc(r.title)}</div>
+          <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${myCerts(r.id).length}번째 인증까지 했어요</div>
+        </div>
+        ${done ? `<span class="chip c-active">오늘 완료</span>`
+               : `<button class="btn btn-green" style="width:auto;padding:10px 16px;font-size:13.5px;" onclick="openCert(${r.id})">인증하기</button>`}
+      </div>
+    </div>`;
+  }).join('') + balanceBlock();
+}
+
+function balanceBlock() {
+  return myRoutines().filter(r => r.amount_per_cert > 0).map(r => {
+    const bal = balance(r), pend = pendingBuy(r.id);
+    return `<div class="bal">
+      <div class="bal-l">📚 내 독서 적립금</div>
+      <div class="bal-n">${won(bal)}<small>원</small></div>
+      <div class="bal-s">${esc(r.title)} · 인증 ${myCerts(r.id).length}회 · 1회당 ${won(r.amount_per_cert)}원</div>
+      ${pend
+        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 책 산 기록을 확인하고 있어요. 확인이 끝나면 적립금에 반영돼요.</div>`
+        : `<div class="bal-btns">
+            <button class="btn-line" onclick="openStores()">책방 찾기</button>
+            ${bal > 0 ? `<button class="btn-green" onclick="openBuy(${r.id})">책 샀어요</button>` : ''}
+          </div>`}
+    </div>`;
+  }).join('');
+}
+
+function viewFeed() {
+  const rids = myRoutines().map(r => r.id);
+  const list = state.certs.filter(c => rids.includes(c.routine_id)).slice(0, 60);
+  if (!list.length) return `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`;
+  return list.map(c => {
+    const cms = state.comments.filter(x => x.cert_id === c.id);
+    return `<div class="f-card">
+      <div class="f-head">
+        <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
+        <div><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
+      </div>
+      ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
+      ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
+        ${(c.book_title||c.page_end) ? `<cite>📖 ${[esc(c.book_title||''), c.page_end?c.page_end+'쪽':''].filter(Boolean).join(' · ')}</cite>` : ''}</div>` : ''}
+      ${c.content ? `<div class="f-text">${esc(c.content)}</div>` : ''}
+      <div class="f-cmts">
+        ${cms.map(m => `<div class="f-cmt"><b>${esc(nameOf(m.user_id))}</b>${esc(m.content)}</div>`).join('')}
+        <div class="f-cmt-in">
+          <input type="text" id="cm_${c.id}" placeholder="응원 한마디" maxlength="200"
+                 onkeydown="if(event.key==='Enter')addComment(${c.id})">
+          <button onclick="addComment(${c.id})">남기기</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function viewMy() {
+  const total = state.certs.filter(c => c.user_id === me.id).length;
+  const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
+  return `<div class="card" style="text-align:center;padding:26px 18px;">
+      <div class="f-av" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px;">${esc(me.name[0]||'?')}</div>
+      <div style="font-size:17px;font-weight:800;">${esc(me.name)}</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${me.role==='kkutjjang'?'끗짱':'청소년'}</div>
+    </div>
+    <div class="card" style="display:flex;text-align:center;">
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">참여 루틴</div></div>
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
+    </div>
+    ${books.length ? `<div class="sec-t">내가 읽은 책</div><div class="card">${books.map(b=>`<div style="font-size:14px;padding:6px 0;">📖 ${esc(b)}</div>`).join('')}</div>` : ''}
+    <div class="sec-t">책방</div>
+    <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:700;">함께하는 동네책방 보기</span><i class="ti ti-chevron-right" style="color:var(--ink-3);"></i>
+    </div>`;
+}
+
+// ── 루틴 상세 ──────────────────────────────────────────
+function openRoutine(id) {
+  const r = state.routines.find(x => x.id === id); if (!r) return;
+  const p = myPart(id), ps = partsOf(id);
+  const full = ps.length >= r.max_people;
+  $('ovRTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
+  $('ovRBody').innerHTML = `
+    <div class="card">
+      <div style="font-size:12.5px;color:var(--ink-3);">기간</div>
+      <div style="font-weight:700;margin-bottom:10px;">${fmtPeriod(r.start_date,r.end_date)}</div>
+      <div style="font-size:12.5px;color:var(--ink-3);">참여</div>
+      <div style="font-weight:700;margin-bottom:10px;">${ps.length} / ${r.max_people}명</div>
+      ${r.amount_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당 적립</div>
+        <div style="font-weight:700;color:var(--green-d);">${won(r.amount_per_cert)}원</div>` : ''}
+    </div>
+    ${r.description ? `<div class="sec-t">루틴 소개</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
+    ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
+    ${p && p.status==='approved' ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">참여 중이에요 🌱</div>`
+      : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">승인을 기다리고 있어요</div>`
+      : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
+      : me.role==='kkutjjang' ? ''
+      : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
+      : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
+      : `<div><div class="field-label">참여 각오 <span class="opt">선택</span></div>
+          <textarea id="applyNote" rows="3" placeholder="이 루틴을 신청하는 이유를 적어주세요." maxlength="300"></textarea>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="apply(${r.id})">신청하기</button></div>`}`;
+  openOv('ovRoutine');
+}
+
+async function apply(rid) {
+  const note = $('applyNote')?.value.trim() || null;
+  const { error } = await sb.from('routine_participants').insert({ routine_id: rid, user_id: me.id, note });
+  if (error) return toast('신청에 실패했어요: ' + error.message);
+  await loadAll(); closeOv('ovRoutine'); render();
+  toast('신청했어요! 끗짱의 승인을 기다려주세요.');
+}
+
+async function decide(rid, uid, status) {
+  const { error } = await sb.from('routine_participants').update({ status })
+    .eq('routine_id', rid).eq('user_id', uid);
+  if (error) return toast('처리에 실패했어요: ' + error.message);
+  await loadAll(); render();
+  toast(status === 'approved' ? '승인했어요' : '거절했어요');
+}
+
+// ── 인증 ───────────────────────────────────────────────
+let certRid = null, photos = [];
+
+function openCert(rid) {
+  const r = state.routines.find(x => x.id === rid); if (!r) return;
+  certRid = rid; photos = [];
+  $('ovCTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
+  $('certGuide').innerHTML = r.cert_guide
+    ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
+         <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
+         <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
+  $('camHint').textContent = r.camera_only
+    ? '이 루틴은 그 자리에서 찍은 사진만 올릴 수 있어요'
+    : '읽고 있는 순간을 사진으로 담아주세요';
+  $('phInput').toggleAttribute('capture', !!r.camera_only);
+  // 지난 인증에서 읽던 책을 이어받아 매번 다시 치지 않게 함
+  const last = myCerts(rid).find(c => c.book_title || c.page_end);
+  $('cQuote').value = ''; $('cMemo').value = '';
+  $('cBook').value = last?.book_title || '';
+  $('cPage').value = '';
+  $('cPageHint').style.display = 'none';
+  drawPhotos(); pageHint(); openOv('ovCert');
+}
+
+async function pickPhotos(e) {
+  const files = [...e.target.files].slice(0, 3 - photos.length);
+  for (const f of files) {
+    try { photos.push(await resize(f, 1280, .82)); }
+    catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+  }
+  e.target.value = ''; drawPhotos();
+}
+function drawPhotos() {
+  const g = $('phGrid');
+  g.innerHTML = photos.map((p,i) => `<div class="ph-wrap"><img src="${p}">
+      <button class="ph-del" onclick="delPhoto(${i})">×</button></div>`).join('')
+    + (photos.length < 3 ? `<div class="ph-box" onclick="document.getElementById('phInput').click()">
+        <i class="ti ti-plus" style="font-size:20px;"></i>${photos.length}/3</div>` : '');
+  $('cSubmit').disabled = photos.length === 0;
+}
+function delPhoto(i) { photos.splice(i,1); drawPhotos(); }
+
+// 진도가 뒤로 가거나 하루에 너무 많이 뛰면 물어보되, 막지는 않는다
+// (다른 책을 시작했거나 몰아 읽은 날일 수 있어서 — 판단은 사람이 한다)
+function pageHint() {
+  const h = $('cPageHint'), page = parseInt($('cPage').value||'0',10);
+  const book = $('cBook').value.trim();
+  const last = myCerts(certRid).find(c => c.page_end && c.book_title === book);
+  if (!last) { h.style.display = 'none'; return; }
+  h.style.display = '';
+  if (!page) { h.style.background='#f0f0f4'; h.style.color='#666'; h.textContent=`지난 인증에서 ${last.page_end}쪽까지 읽었어요.`; return; }
+  if (page < last.page_end) {
+    h.style.background='#FFFBE6'; h.style.color='#7A5C00';
+    h.textContent = `지난번엔 ${last.page_end}쪽까지였는데 숫자가 줄었어요. 다른 책이라면 책 제목을 바꿔주세요. 그대로 올려도 괜찮아요.`;
+  } else if (page - last.page_end > 200) {
+    h.style.background='#FFFBE6'; h.style.color='#7A5C00';
+    h.textContent = `오늘 ${page-last.page_end}쪽이나 읽었네요! 맞다면 그대로 올려주세요.`;
+  } else {
+    h.style.background='#f2f9e5'; h.style.color='#4e7a00';
+    h.textContent = `오늘 ${page-last.page_end}쪽 읽었어요 📖`;
+  }
+}
+
+async function submitCert() {
+  if (!photos.length) return;
+  const btn = $('cSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
+  const urls = [];
+  for (let i = 0; i < photos.length; i++) {
+    const blob = toBlob(photos[i]);
+    const path = `${me.id}/${certRid}_${Date.now()}_${i}.jpg`;
+    const { error } = await sb.storage.from('cert-photos').upload(path, blob, { contentType:'image/jpeg' });
+    if (error) { btn.disabled=false; btn.textContent='인증하기'; return toast('사진 업로드 실패: '+error.message); }
+    urls.push(sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl);
+  }
+  const { error } = await sb.from('certifications').insert({
+    routine_id: certRid, user_id: me.id, photo_urls: urls,
+    quote: $('cQuote').value.trim() || null,
+    book_title: $('cBook').value.trim() || null,
+    page_end: parseInt($('cPage').value||'0',10) || null,
+    content: $('cMemo').value.trim() || null,
+  });
+  btn.disabled = false; btn.textContent = '인증하기';
+  if (error) {
+    return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증 저장에 실패했어요: ' + error.message);
+  }
+  await loadAll(); closeOv('ovCert'); render();
+  toast('인증 완료! 오늘도 한 장 읽었어요 🌱');
+}
+
+// ── 책방 ───────────────────────────────────────────────
+function openStores() {
+  const list = state.stores.filter(s => s.active);
+  const b = $('ovStoresBody');
+  if (!list.length) { b.innerHTML = `<div class="empty">아직 등록된 책방이 없어요</div>`; openOv('ovStores'); return; }
+  const byRegion = {};
+  list.forEach(s => { const k = s.region || '그 외'; (byRegion[k] = byRegion[k]||[]).push(s); });
+  b.innerHTML = `<div style="font-size:13px;color:var(--ink-3);line-height:1.6;">적립금으로 책을 살 수 있는 동네책방이에요. 가까운 곳으로 가면 돼요.</div>`
+    + Object.keys(byRegion).sort().map(rg => `<div class="region-t">${esc(rg)}</div>`
+      + byRegion[rg].map(storeCard).join('')).join('');
+  openOv('ovStores');
+}
+function storeCard(b) {
+  const rows = [
+    b.address && ['ti-map-pin', esc(b.address)],
+    b.hours && ['ti-clock', esc(b.hours)],
+    b.closed_days && ['ti-calendar-off', esc(b.closed_days)],
+    b.phone && ['ti-phone', esc(b.phone)],
+  ].filter(Boolean);
+  // 길찾기는 지도 API 대신 카카오맵 링크로 넘긴다 (키·도메인 등록 불필요)
+  const map = b.address ? `https://map.kakao.com/link/search/${encodeURIComponent(b.address)}` : null;
+  return `<div class="store">
+    <div class="store-n">${esc(b.name)}</div>
+    ${b.intro ? `<div class="store-i">${esc(b.intro)}</div>` : ''}
+    ${rows.map(([i,t]) => `<div class="store-row"><i class="ti ${i}"></i><span>${t}</span></div>`).join('')}
+    ${(map||b.link) ? `<div class="store-btns">
+      ${map ? `<a href="${map}" target="_blank" rel="noopener" style="background:var(--green);color:#fff;">길찾기</a>` : ''}
+      ${b.link ? `<a href="${esc(b.link)}" target="_blank" rel="noopener" style="background:#f7fbf0;color:var(--green-d);border:1px solid #d8ebb8;">책방 소식</a>` : ''}
+    </div>` : ''}
+  </div>`;
+}
+
+// ── 책 샀어요 ──────────────────────────────────────────
+let buyRid = null, buyPhoto = null;
+
+function openBuy(rid) {
+  const r = state.routines.find(x => x.id === rid); if (!r) return;
+  buyRid = rid; buyPhoto = null;
+  $('ovBuyTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
+  $('buyBal').innerHTML = `<div style="background:#f7fbf0;border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--green-d);line-height:1.6;">
+      쓸 수 있는 적립금 <b style="font-size:16px;">${won(balance(r))}원</b><br>
+      <span style="font-size:12px;">영수증을 확인한 뒤 실제 쓴 금액만큼 차감돼요.</span></div>`;
+  $('buyStore').innerHTML = `<option value="">책방을 골라주세요</option>` +
+    state.stores.filter(s=>s.active).map(s =>
+      `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
+  $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = '';
+  checkBuy(); openOv('ovBuy');
+}
+async function pickBuyPhoto(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    buyPhoto = await resize(f, 1280, .82);
+    $('buyPhPrev').innerHTML = `<img src="${buyPhoto}" style="width:100%;border-radius:12px;display:block;">`;
+  } catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+  checkBuy();
+}
+function checkBuy() { $('buySubmit').disabled = !(buyPhoto && $('buyStore').value); }
+
+async function submitBuy() {
+  if (!buyPhoto) return;
+  const btn = $('buySubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
+  const blob = toBlob(buyPhoto);
+  const path = `${me.id}/book_${buyRid}_${Date.now()}.jpg`;
+  const { error: up } = await sb.storage.from('dokseo-proofs').upload(path, blob, { contentType:'image/jpeg' });
+  if (up) { btn.disabled=false; btn.textContent='기록하기'; return toast('사진 업로드 실패: '+up.message); }
+
+  const { error } = await sb.from('book_purchases').insert({
+    user_id: me.id, routine_id: buyRid,
+    bookstore_id: parseInt($('buyStore').value,10), proof_photo_url: path,
+  });
+  btn.disabled = false; btn.textContent = '기록하기';
+  if (error) return toast('기록에 실패했어요: ' + error.message);
+  await loadAll(); closeOv('ovBuy'); render();
+  toast('기록했어요! 잘 어울리는 책이길 바라요 🌱');
+}
+
+// ── 댓글 ───────────────────────────────────────────────
+async function addComment(certId) {
+  const el = $('cm_'+certId), text = el.value.trim();
+  if (!text) return;
+  el.value = '';
+  const { error } = await sb.from('cert_comments').insert({ cert_id: certId, user_id: me.id, content: text });
+  if (error) return toast('댓글 저장에 실패했어요');
+  await loadAll(); render();
+}
+
+// ── 공용 ───────────────────────────────────────────────
+function openOv(id) { $(id).classList.add('on'); }
+function closeOv(id) { $(id).classList.remove('on'); }
+
+// 사진은 올리기 전에 적당한 해상도로 줄인다 (업로드 속도·용량)
+function resize(file, maxDim, q) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onerror = () => rej(new Error('파일을 읽지 못했어요'));
+    r.onload = ev => {
+      const img = new Image();
+      img.onerror = () => rej(new Error('사진을 불러오지 못했어요'));
+      img.onload = () => {
+        let { width:w, height:h } = img;
+        if (w > maxDim || h > maxDim) { const s = maxDim/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        res(cv.toDataURL('image/jpeg', q));
+      };
+      img.src = ev.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+function toBlob(dataUrl) {
+  const [head, b64] = dataUrl.split(',');
+  const bin = atob(b64), arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], { type: head.match(/:(.*?);/)[1] });
+}
+
+(async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) await enter();
+  else { $('authScr').style.display = ''; $('appScr').style.display = 'none'; }
+})();
+</script>
+</body>
+</html>

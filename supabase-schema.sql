@@ -498,6 +498,9 @@ DROP POLICY IF EXISTS profiles_read ON profiles;
 CREATE POLICY profiles_read ON profiles FOR SELECT TO authenticated USING (true);
 DROP POLICY IF EXISTS profiles_self_update ON profiles;
 CREATE POLICY profiles_self_update ON profiles FOR UPDATE USING (id = auth.uid() OR is_admin());
+-- 위 트리거가 실패했을 때 앱이 직접 프로필을 만들 수 있어야 한다
+DROP POLICY IF EXISTS profiles_self_insert ON profiles;
+CREATE POLICY profiles_self_insert ON profiles FOR INSERT WITH CHECK (id = auth.uid());
 
 -- 루틴: 조회는 공개(모집 홍보), 생성·수정은 관리자
 DROP POLICY IF EXISTS routines_read ON routines;
