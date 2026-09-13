@@ -223,6 +223,59 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   </div>
 </div>
 
+<!-- 루틴 만들기 (끗짱) -->
+<div class="ov" id="ovMake">
+  <div class="ov-h"><button onclick="closeOv('ovMake')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">끗짱</div><div class="t" id="ovMakeTitle">루틴 만들기</div></div></div>
+  <div class="ov-b">
+    <div>
+      <div class="field-label">루틴 이름 <span class="req">* 필수</span></div>
+      <input type="text" id="mTitle" placeholder="예) 밤바다 곁에서 읽는 15일" maxlength="40">
+    </div>
+    <div>
+      <div class="field-label">이모지 <span class="opt">선택</span></div>
+      <input type="text" id="mEmoji" placeholder="📚" maxlength="4" style="width:90px;text-align:center;font-size:20px;">
+    </div>
+    <div>
+      <div class="field-label">루틴 소개 <span class="req">* 필수</span></div>
+      <textarea id="mDesc" rows="4" placeholder="어떤 책을 어떻게 읽는 루틴인지 알려주세요." maxlength="300"></textarea>
+    </div>
+    <div>
+      <div class="field-label">이렇게 인증해 주세요 <span class="opt">선택</span></div>
+      <textarea id="mGuide" rows="3" placeholder="예) 책 읽는 자리를 그대로 한 장 찍어주세요." maxlength="200"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div class="field-label">시작일 <span class="req">*</span></div>
+        <input type="date" id="mStart" onchange="makeHint()">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="field-label">종료일 <span class="req">*</span></div>
+        <input type="date" id="mEnd" onchange="makeHint()">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div style="flex:1;min-width:0;">
+        <div class="field-label">모집 인원 <span class="req">*</span></div>
+        <input type="number" id="mPeople" min="1" max="50" value="8">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="field-label">인증 1회당 적립 <span class="req">*</span></div>
+        <input type="number" id="mAmount" min="0" step="100" value="1300" oninput="makeHint()">
+      </div>
+    </div>
+    <div id="mHint" style="font-size:12.5px;line-height:1.6;padding:11px 13px;border-radius:11px;background:#f7fbf0;color:var(--green-d);"></div>
+    <div>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
+        <input type="checkbox" id="mCamera" style="width:17px;height:17px;">
+        그 자리에서 찍은 사진만 받기
+      </label>
+      <div class="hint">체크하면 갤러리에 저장된 사진을 못 올리고, 카메라로 바로 찍어야 해요</div>
+    </div>
+    <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
+  </div>
+</div>
+
 <!-- 책방 목록 -->
 <div class="ov" id="ovStores">
   <div class="ov-h"><button onclick="closeOv('ovStores')"><i class="ti ti-arrow-left"></i></button>
@@ -264,7 +317,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[] };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], settings:{} };
 let tab = 'home';
 let authMode = 'login', signupRole = 'youth';
 
@@ -362,14 +415,16 @@ async function enter() {
 
 // ── 데이터 ─────────────────────────────────────────────
 async function loadAll() {
-  const [r, p, c, s, bp, cm] = await Promise.all([
+  const [r, p, c, s, bp, cm, st] = await Promise.all([
     sb.from('routines').select('*').order('created_at', { ascending:false }),
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('bookstores').select('*').order('name'),
     sb.from('book_purchases').select('*'),
     sb.from('cert_comments').select('*').order('created_at'),
+    sb.from('dokseo_settings').select('*').maybeSingle(),
   ]);
+  state.settings = st.data || {};
   state.routines = r.data || [];
   state.parts = p.data || [];
   state.certs = c.data || [];
@@ -469,9 +524,18 @@ function viewHome() {
     }
   }
 
-  h += `<div class="sec-t">${me.role==='kkutjjang'?'내가 이끄는 루틴':'참여 중인 루틴'}</div>`;
-  h += mine.length ? mine.map(routineCard).join('')
-     : `<div class="empty">${me.role==='kkutjjang'?'아직 맡은 루틴이 없어요':'아직 참여 중인 루틴이 없어요.<br>아래에서 모집 중인 루틴을 찾아보세요.'}</div>`;
+  if (me.role === 'kkutjjang') {
+    h += `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
+      <span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>
+      <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
+    </div>`;
+    h += mine.length ? mine.map(routineCard).join('')
+       : `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
+  } else {
+    h += `<div class="sec-t">참여 중인 루틴</div>`;
+    h += mine.length ? mine.map(routineCard).join('')
+       : `<div class="empty">아직 참여 중인 루틴이 없어요.<br>아래에서 모집 중인 루틴을 찾아보세요.</div>`;
+  }
 
   if (others.length) {
     h += `<div class="sec-t">모집 중인 루틴</div>` + others.map(routineCard).join('');
@@ -600,6 +664,7 @@ function openRoutine(id) {
     </div>
     ${r.description ? `<div class="sec-t">루틴 소개</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
+    ${r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
     ${p && p.status==='approved' ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">참여 중이에요 🌱</div>`
       : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">승인을 기다리고 있어요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
@@ -626,6 +691,82 @@ async function decide(rid, uid, status) {
   if (error) return toast('처리에 실패했어요: ' + error.message);
   await loadAll(); render();
   toast(status === 'approved' ? '승인했어요' : '거절했어요');
+}
+
+// ── 루틴 만들기 (끗짱) ──────────────────────────────────
+// 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는 구조라
+// 적립액은 관리자가 정한 상한(dokseo_settings.max_amount_per_cert) 안에서만 고를 수 있다.
+// 서버에도 같은 검증이 트리거로 걸려 있다.
+let makeId = null;
+
+function openMake(id) {
+  makeId = id || null;
+  const r = id ? state.routines.find(x => x.id === id) : null;
+  $('ovMakeTitle').textContent = r ? '루틴 수정' : '루틴 만들기';
+  $('mSubmit').textContent = r ? '수정하기' : '루틴 만들기';
+  $('mTitle').value  = r?.title || '';
+  $('mEmoji').value  = r?.emoji || '📚';
+  $('mDesc').value   = r?.description || '';
+  $('mGuide').value  = r?.cert_guide || '';
+  $('mStart').value  = r?.start_date || '';
+  $('mEnd').value    = r?.end_date || '';
+  $('mPeople').value = r?.max_people ?? 8;
+  const max = state.settings.max_amount_per_cert ?? 1500;
+  $('mAmount').value = r?.amount_per_cert ?? Math.min(1300, max);
+  $('mAmount').max = max;
+  $('mCamera').checked = !!r?.camera_only;
+  makeHint(); openOv('ovMake');
+}
+
+function makeHint() {
+  const amt = parseInt($('mAmount').value||'0',10);
+  const max = state.settings.max_amount_per_cert ?? 1500;
+  const s = $('mStart').value, e = $('mEnd').value;
+  let days = 0;
+  if (s && e) days = Math.round((new Date(e) - new Date(s)) / 86400e3) + 1;
+  const h = $('mHint');
+  if (amt > max) {
+    h.style.background = '#fff1f4'; h.style.color = '#b00038';
+    h.textContent = `인증당 적립액은 ${won(max)}원까지만 정할 수 있어요. 더 필요하면 운영진에게 얘기해주세요.`;
+  } else if (days > 0) {
+    h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
+    h.textContent = `${days}일 동안 매일 인증하면 한 사람당 ${won(amt*days)}원이 쌓여요.`;
+  } else {
+    h.style.background = '#f0f0f4'; h.style.color = '#666';
+    h.textContent = `인증할 때마다 참여자에게 이 금액이 쌓여요. (최대 ${won(max)}원)`;
+  }
+}
+
+async function submitMake() {
+  const title = $('mTitle').value.trim(), desc = $('mDesc').value.trim();
+  const s = $('mStart').value, e = $('mEnd').value;
+  const amt = parseInt($('mAmount').value||'0',10);
+  const max = state.settings.max_amount_per_cert ?? 1500;
+  if (!title) return toast('루틴 이름을 적어주세요');
+  if (!desc) return toast('루틴 소개를 적어주세요');
+  if (!s || !e) return toast('시작일과 종료일을 골라주세요');
+  if (e < s) return toast('종료일이 시작일보다 빨라요');
+  if (amt > max) return toast(`적립액은 ${won(max)}원까지만 가능해요`);
+
+  const btn = $('mSubmit'); const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '저장 중…';
+  const row = {
+    title, emoji: $('mEmoji').value.trim() || '📚', description: desc,
+    cert_guide: $('mGuide').value.trim() || null,
+    start_date: s, end_date: e,
+    max_people: parseInt($('mPeople').value||'8',10),
+    amount_per_cert: amt,
+    camera_only: $('mCamera').checked,
+    led_by: me.id,
+  };
+  const { error } = makeId
+    ? await sb.from('routines').update(row).eq('id', makeId)
+    : await sb.from('routines').insert(row);
+  btn.disabled = false; btn.textContent = label;
+  if (error) return toast('저장에 실패했어요: ' + error.message);
+
+  await loadAll(); closeOv('ovMake'); render();
+  toast(makeId ? '수정했어요' : '루틴을 만들었어요! 이제 청소년이 신청할 수 있어요');
 }
 
 // ── 인증 ───────────────────────────────────────────────
