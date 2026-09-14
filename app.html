@@ -317,6 +317,8 @@ const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGFod3ZpaHZrYXNyem5ib2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzY4OTcsImV4cCI6MjEwNDg1Mjg5N30.aCVtuxfVTApo7-bQW0NPiBDZw-9vXHeCgyNgx5pdFqw';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
+// ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
+const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
 let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], settings:{} };
 let tab = 'home';
@@ -715,7 +717,7 @@ function viewMy() {
     </div>
     <div class="card" style="display:flex;text-align:center;">
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
-      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">참여 루틴</div></div>
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">${me.role==='kkutjjang'?'이끄는 루틴':'참여 루틴'}</div></div>
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${books.length ? `<div class="sec-t">내가 읽은 책</div><div class="card">${books.map(b=>`<div style="font-size:14px;padding:6px 0;">📖 ${esc(b)}</div>`).join('')}</div>` : ''}
@@ -758,6 +760,8 @@ function openRoutine(id) {
 }
 
 async function apply(rid) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+
   const note = $('applyNote')?.value.trim() || null;
   const { error } = await sb.from('routine_participants').insert({ routine_id: rid, user_id: me.id, note });
   if (error) return toast('신청에 실패했어요: ' + error.message);
@@ -766,6 +770,8 @@ async function apply(rid) {
 }
 
 async function decide(rid, uid, status) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+
   const { error } = await sb.from('routine_participants').update({ status })
     .eq('routine_id', rid).eq('user_id', uid);
   if (error) return toast('처리에 실패했어요: ' + error.message);
@@ -818,6 +824,8 @@ function makeHint() {
 }
 
 async function submitMake() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+
   const title = $('mTitle').value.trim(), desc = $('mDesc').value.trim();
   const s = $('mStart').value, e = $('mEnd').value;
   const amt = parseInt($('mAmount').value||'0',10);
@@ -913,6 +921,8 @@ function pageHint() {
 }
 
 async function submitCert() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+
   if (!photos.length) return;
   const btn = $('cSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
   const urls = [];
@@ -997,6 +1007,8 @@ async function pickBuyPhoto(e) {
 function checkBuy() { $('buySubmit').disabled = !(buyPhoto && $('buyStore').value); }
 
 async function submitBuy() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+
   if (!buyPhoto) return;
   const btn = $('buySubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
   const blob = toBlob(buyPhoto);
@@ -1016,6 +1028,8 @@ async function submitBuy() {
 
 // ── 댓글 ───────────────────────────────────────────────
 async function addComment(certId) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+
   const el = $('cm_'+certId), text = el.value.trim();
   if (!text) return;
   el.value = '';
@@ -1056,7 +1070,90 @@ function toBlob(dataUrl) {
   return new Blob([arr], { type: head.match(/:(.*?);/)[1] });
 }
 
+// ── 데모 모드 ───────────────────────────────────────────
+// 주소에 ?demo=1 을 붙이면 로그인 없이 모든 화면을 샘플 데이터로 볼 수 있다.
+// 내부에서 화면을 함께 검토하려고 만든 것. 끗짱 화면은 ?demo=1&role=kkutjjang
+//
+// DB를 건드리지 않는다 — 아래 데이터는 전부 이 파일 안의 가짜 값이고,
+// 서버로는 아무것도 나가지 않는다. 그래서 실제 청소년 정보가 노출될 일이 없다.
+function enterDemo(role) {
+  const uid = 'demo-me', today = todayKST();
+  const day = n => new Date(Date.now() - n*86400e3).toISOString();
+  const dstr = n => new Date(Date.now() - n*86400e3 + 9*3600e3).toISOString().slice(0,10);
+
+  const isK = role === 'kkutjjang';
+  me = { id: uid, name: isK ? '민지' : '서연', role, region: '강원 속초' };
+  const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
+  const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
+
+  state.settings = { book_fund_rate: 0.8, max_amount_per_cert: 1500 };
+  state.stores = [
+    { id:1, name:'완벽한날들', region:'강원 속초', address:'강원특별자치도 속초시 동해대로 4344',
+      hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
+      phone:'033-000-0000', link:'https://instagram.com/', intro:'바다 곁에서 책을 파는 동네책방이에요.', active:true },
+    { id:2, name:'당신의강릉', region:'강원 강릉', address:'강원특별자치도 강릉시 경강로 2024',
+      hours:'12:00~20:00', closed_days:'매주 화요일 휴무', active:true },
+    { id:3, name:'책방채움', region:'대전', address:'대전광역시 중구 대종로 480',
+      hours:'11:00~19:00', active:true },
+  ];
+  state.routines = [
+    { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
+      cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
+      max_people:8, amount_per_cert:1300, camera_only:false, status:'active', led_by: kid },
+    { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
+      cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
+      max_people:10, amount_per_cert:1000, camera_only:false, status:'recruit', led_by:'demo-k2' },
+  ];
+  state.parts = [
+    { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },
+    { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
+    { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
+    { routine_id:901, user_id:'u4', status:'pending', note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
+  ];
+  state.names = { [uid]: me.name, [y1]:'서연', [kid]:'민지', u2:'하준', u3:'지우', u4:'예린' };
+  state.certs = [
+    { id:1, routine_id:901, user_id:y1, photo_urls:[], quote:'밤에는 바다가 더 크게 들렸다. 그 소리를 혼자 듣는 게 싫지 않았다.',
+      book_title:'속초에서의 겨울', page_end:132, content:'', cert_date:dstr(1), created_at:day(1) },
+    { id:2, routine_id:901, user_id:'u2', photo_urls:[], quote:'나는 내가 좋아하는 것을 아주 늦게 알았다.',
+      book_title:'아무튼, 메모', page_end:64, content:'오늘은 짧게 읽었다.', cert_date:dstr(1), created_at:day(1) },
+    { id:3, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:104,
+      content:'버스에서 읽었다.', cert_date:dstr(2), created_at:day(2) },
+    { id:4, routine_id:901, user_id:'u3', photo_urls:[], quote:'천천히 걷는 사람에게만 보이는 것이 있다.',
+      book_title:'느리게 걷는 법', page_end:88, content:'', cert_date:dstr(2), created_at:day(2) },
+    { id:5, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:70,
+      content:'', cert_date:dstr(3), created_at:day(3) },
+    { id:6, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:41,
+      content:'', cert_date:dstr(4), created_at:day(4) },
+    { id:7, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:22,
+      content:'', cert_date:dstr(5), created_at:day(5) },
+  ];
+  state.comments = [
+    { id:1, cert_id:1, user_id:kid, content:'그 문장 저도 좋아해요. 오늘도 고생했어요!', created_at:day(1) },
+    { id:2, cert_id:2, user_id:kid, content:'짧게라도 읽은 게 대단해요 🌱', created_at:day(1) },
+  ];
+  state.purchases = [];
+  state.counts = { 901:3, 902:0 };
+
+  $('authScr').style.display = 'none';
+  $('appScr').style.display = '';
+  $('hdr').classList.toggle('k', isK);
+  $('hdrRole').textContent = (isK ? '끗짱' : '청소년') + ' · 데모';
+  $('hdrBtn').textContent = '나가기';
+  $('hdrBtn').onclick = () => { location.href = location.pathname; };
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
+
+  const b = document.createElement('div');
+  b.style.cssText = 'background:var(--gold);color:#3d3000;font-size:11.5px;font-weight:700;text-align:center;padding:7px 12px;line-height:1.5';
+  b.textContent = '데모 데이터로 보는 중 — 실제 기록이 아니고, 저장되지 않아요';
+  $('appScr').insertBefore(b, $('hdr'));
+
+  go('home');
+}
+
 (async function init() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('demo') === '1') { enterDemo(q.get('role') === 'kkutjjang' ? 'kkutjjang' : 'youth'); return; }
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) await enter();
   else await browseAsGuest();   // 로그인 없이 바로 둘러보기
