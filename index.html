@@ -101,6 +101,12 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
   font-size:16px;line-height:1.9;margin:26px 0}
 .essay .thesis b{color:#a8d94a}
 .essay .sign{font-size:13px;color:var(--ink-3);text-align:right;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+.essay .qnote{font-size:13.5px;color:var(--ink-3);text-align:center;margin:-14px 0 26px;line-height:1.75}
+.loss{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0}
+.loss div{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 16px}
+.loss b{display:block;font-size:14.5px;color:var(--ink);margin-bottom:7px;font-weight:800}
+.loss span{font-size:13px;color:var(--ink-2);line-height:1.75}
+@media(max-width:640px){.loss{grid-template-columns:1fr}}
 .finding{max-width:600px;margin:26px auto 0;background:var(--green-l);border:1px solid #dcecc0;
   border-radius:16px;padding:20px 24px;font-size:14px;color:var(--ink-2);line-height:1.85;text-align:center}
 .finding b{color:var(--green-d)}
@@ -242,38 +248,39 @@ footer a{color:var(--ink-3)}
   </div>
 </section>
 
-<!-- AI 시대에 왜 읽기인가 -->
+<!-- AI 시대의 역설 -->
 <section class="why">
   <div class="wrap">
-    <div class="sec-label">현장에서 본 것</div>
-    <h2>AI가 다 써주는데,<br>왜 읽어야 하나요?</h2>
+    <div class="sec-label">AI 시대의 역설</div>
+    <h2>딸깍 한 번이면 되는 시대,<br>무너지는 건 기초체력입니다</h2>
 
     <div class="essay">
-      <p>
-        지원서를 읽다 보면 요즘은 분량도 늘고 문장도 매끄럽습니다.
-        그런데 <b>그 안에 자기만의 이야기가 있는지 없는지</b>는 오히려 더 선명하게 드러납니다.
-        마음을 움직이는 지원서는 예전보다 줄었습니다.
-      </p>
-      <p>
-        예전 청소년들은 짧은 신청서를 쓰면서도 스스로 고민하고 약간의 성장통을 겪으며 글을 채웠습니다.
-        그 과정에서 '내가 왜 이걸 하고 싶은지' 스스로 동기를 발견하곤 했습니다.
-        지금은 '딸깍' 한 번이면 완성되는 문장에 자신을 맞춥니다.
-      </p>
-      <p>
-        창작에서도 같은 일이 벌어집니다. 늦은 밤 글을 쓰던 청소년에게
-        "그렇게 빨리 쓸 수 있어?"라고 물었더니 이런 답이 돌아왔습니다.
-      </p>
       <blockquote>"ChatGPT로 쓰면 돼요."</blockquote>
-      <p class="thesis">
-        AI는 <b>무엇을 알고, 무엇을 원하고 말하고 싶은지 아는 사람에게</b> 더 효과적으로 작동하는 도구입니다.
-        그런데 그 질문을 스스로에게 해볼 기회도 갖지 못한 채,
-        결과부터 만들어내는 데 점점 익숙해지고 있습니다.
-      </p>
+      <p class="qnote">늦은 밤 창작 공모전에 낼 글을 쓰던 청소년에게<br>"그렇게 빨리 쓸 수 있어?"라고 묻자 돌아온 답이었습니다.</p>
+
       <p>
-        모든 것이 자동화되는 시대에 진짜 필요한 힘은, 역설적이게도
-        스스로 깊이 고민하며 <b>읽고 쓰는 행위 그 자체</b>에 있습니다.
-        영상을 보는 대신 책을 읽는 것, 끌려가는 대신 스스로 이끌어가는 것.
-        그런 능동적 행위를 반복하다 보면 비로소 '내 것'이 만들어집니다.
+        결과물은 오히려 좋아졌습니다. 분량도 늘고 문장도 매끄럽습니다.
+        사라진 것은 결과가 아니라 <b>그 사이의 과정</b>입니다.
+        무엇을 말하고 싶은지 스스로에게 묻고, 막히고, 고쳐 쓰던 시간이요.
+      </p>
+
+      <div class="loss">
+        <div><b>스스로 묻는 시간</b><span>'내가 왜 이걸 하고 싶은지' 발견하던 자리를 딸깍 한 번으로 건너뜁니다.</span></div>
+        <div><b>자기 목소리</b><span>글은 매끄러운데, 그 안에 자기만의 이야기가 남아 있지 않습니다.</span></div>
+        <div><b>견디는 힘</b><span>막히는 순간을 통과해본 경험이 쌓이지 않습니다.</span></div>
+      </div>
+
+      <p class="thesis">
+        읽기와 쓰기는 특기가 아니라 <b>기초체력</b>입니다.
+        AI는 무엇을 알고, 무엇을 원하고 말하고 싶은지 <b>아는 사람에게</b> 더 효과적으로 작동하는 도구입니다.
+        그 질문을 스스로에게 던져본 적 없는 아이에게 AI는 도구가 아니라,
+        <b>자기 목소리를 대신 만들어주는 기계</b>가 됩니다.
+      </p>
+
+      <p>
+        체력은 설명해서 길러지지 않습니다. 매일 조금씩 쓰는 수밖에 없습니다.
+        영상을 보는 대신 책을 펴는 것, 끌려가는 대신 스스로 이끌어가는 것.
+        한끗독서가 화려한 프로그램 대신 <b>매일 한 장, 10분</b>을 고집하는 이유입니다.
       </p>
       <div class="sign">김재순 · 사단법인 유스보이스 대표</div>
     </div>
@@ -410,7 +417,7 @@ footer a{color:var(--ink-3)}
 <!-- 마무리 -->
 <section class="final" style="background:#fff;border-top:1px solid var(--line)">
   <div class="wrap">
-    <h2>문해력은 학습 도구가 아니라,<br>세상을 해석하고 스스로를 지키는<br><span style="color:var(--green-d)">시민의 기초 체력</span>입니다</h2>
+    <h2>문해력은 학습 도구가 아니라,<br>세상을 해석하고 스스로를 지키는<br><span style="color:var(--green-d)">시민의 기초체력</span>입니다</h2>
     <p class="sec-lead" style="max-width:600px;margin-left:auto;margin-right:auto">
       미디어 교육, 코딩 교육, 4차 산업혁명, 그리고 AI 교육까지.
       시대는 늘 변했고 그때마다 청소년을 가만히 두지 않았습니다.
