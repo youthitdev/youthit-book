@@ -164,13 +164,14 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
   <button class="btn btn-primary" id="auBtn" onclick="submitAuth()">로그인</button>
   <div class="swap" id="auSwap">처음이신가요? <b onclick="toggleMode()">회원가입</b></div>
+  <div class="swap" style="margin-top:22px;"><b onclick="browseAsGuest()">로그인 없이 둘러보기</b></div>
 </div>
 
 <!-- 앱 -->
 <div class="app" id="appScr" style="display:none;">
   <header id="hdr">
     <div><span class="h-title">한끗독서</span><span class="h-badge" id="hdrRole"></span></div>
-    <button onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+    <button id="hdrBtn" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
   </header>
   <div class="body" id="tabBody"><div class="spin">불러오는 중…</div></div>
   <nav>
@@ -397,6 +398,35 @@ async function loadMe(user) {
   return data;
 }
 
+// 로그인 없이도 루틴을 둘러볼 수 있다. 청소년의 이름·사진·인증 기록은
+// RLS가 익명에게 막고 있으므로, 게스트에게는 루틴과 책방만 보인다.
+const isGuest = () => !me;
+
+async function browseAsGuest() {
+  me = null;
+  $('authScr').style.display = 'none';
+  $('appScr').style.display = '';
+  $('hdr').classList.remove('k');
+  $('hdrRole').textContent = '둘러보는 중';
+  $('hdrBtn').textContent = '로그인';
+  $('hdrBtn').onclick = showAuth;
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--green)');
+  await loadAll();
+  go('home');
+}
+
+function showAuth() {
+  $('authScr').style.display = '';
+  $('appScr').style.display = 'none';
+  $('authErr').style.display = 'none';
+}
+
+// 로그인해야 할 수 있는 동작을 눌렀을 때
+function needLogin(msg) {
+  toast(msg || '로그인하면 함께할 수 있어요');
+  setTimeout(showAuth, 700);
+}
+
 async function enter() {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) { $('authScr').style.display = ''; $('appScr').style.display = 'none'; return; }
@@ -408,27 +438,41 @@ async function enter() {
   const isK = me.role === 'kkutjjang';
   $('hdr').classList.toggle('k', isK);
   $('hdrRole').textContent = isK ? '끗짱' : '청소년';
+  $('hdrBtn').textContent = '로그아웃';
+  $('hdrBtn').onclick = doLogout;
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
   await loadAll();
-  render();
+  go('home');
 }
 
 // ── 데이터 ─────────────────────────────────────────────
 async function loadAll() {
-  const [r, p, c, s, bp, cm, st] = await Promise.all([
+  // 익명에게 열려 있는 것: 루틴, 책방, 설정, 참여 "인원 수"
+  const pub = await Promise.all([
     sb.from('routines').select('*').order('created_at', { ascending:false }),
+    sb.from('bookstores').select('*').order('name'),
+    sb.from('dokseo_settings').select('*').maybeSingle(),
+    sb.rpc('routine_people_count'),
+  ]);
+  state.routines = pub[0].data || [];
+  state.stores   = pub[1].data || [];
+  state.settings = pub[2].data || {};
+  state.counts   = {};
+  (pub[3].data || []).forEach(x => state.counts[x.routine_id] = Number(x.people));
+
+  if (isGuest()) {
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.names = {};
+    return;
+  }
+
+  const [p, c, bp, cm] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
-    sb.from('bookstores').select('*').order('name'),
     sb.from('book_purchases').select('*'),
     sb.from('cert_comments').select('*').order('created_at'),
-    sb.from('dokseo_settings').select('*').maybeSingle(),
   ]);
-  state.settings = st.data || {};
-  state.routines = r.data || [];
   state.parts = p.data || [];
   state.certs = c.data || [];
-  state.stores = s.data || [];
   state.purchases = bp.data || [];
   state.comments = cm.data || [];
 
@@ -441,27 +485,31 @@ async function loadAll() {
   }
 }
 
+// 참여 인원 수는 로그인 여부와 무관하게 보여준다.
+// 비로그인은 참여자 목록을 못 읽으므로 공개 집계(state.counts)를 쓴다.
+const peopleOf = rid => isGuest() ? (state.counts[rid] || 0) : partsOf(rid).length;
 const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
-const myPart    = rid => state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
+const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
-const myCerts   = rid => certsOf(rid).filter(c => c.user_id === me.id);
+const myCerts   = rid => me ? certsOf(rid).filter(c => c.user_id === me.id) : [];
 const nameOf    = uid => state.names[uid] || '익명';
-const myRoutines = () => state.routines.filter(r => {
+const myRoutines = () => me ? state.routines.filter(r => {
   const p = myPart(r.id);
   return me.role === 'kkutjjang' ? r.led_by === me.id : (p && p.status === 'approved');
-});
+}) : [];
 const didToday = rid => myCerts(rid).some(c => c.cert_date === todayKST());
 
 // 잔액 = (내 인증 수 × 인증당 적립액) − 정산 완료된 구매 합계
 // 서버 dokseo_balance() 와 같은 식. 대기 중인 구매는 금액이 없어 빼지 않는다
 function balance(r) {
+  if (!me) return 0;
   const earned = myCerts(r.id).length * (r.amount_per_cert || 0);
   const used = state.purchases
     .filter(p => p.routine_id === r.id && p.user_id === me.id && p.status === 'settled')
     .reduce((s,p) => s + (p.amount||0), 0);
   return Math.max(0, earned - used);
 }
-const pendingBuy = rid => state.purchases.find(p =>
+const pendingBuy = rid => me && state.purchases.find(p =>
   p.routine_id === rid && p.user_id === me.id && p.status === 'pending');
 
 // ── 화면 ───────────────────────────────────────────────
@@ -473,10 +521,22 @@ function go(t) {
 }
 function render() {
   const b = $('tabBody');
+  // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
+  if (isGuest() && tab !== 'home') { b.innerHTML = guestWall(); return; }
   if (tab === 'home') b.innerHTML = viewHome();
   else if (tab === 'cert') b.innerHTML = viewCert();
   else if (tab === 'feed') b.innerHTML = viewFeed();
   else b.innerHTML = viewMy();
+}
+
+function guestWall() {
+  const t = { cert:'인증은 참여자만 할 수 있어요', feed:'기록은 참여자끼리만 볼 수 있어요', my:'내 정보를 보려면 로그인이 필요해요' }[tab];
+  return `<div class="empty" style="padding:60px 24px;">
+    <div style="font-size:36px;margin-bottom:14px;">🌱</div>
+    <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px;">${t}</div>
+    <div style="margin-bottom:22px;">로그인하고 끗짱과 함께 읽어보세요</div>
+    <button class="btn btn-primary" style="max-width:220px;margin:0 auto;" onclick="showAuth()">로그인 · 회원가입</button>
+  </div>`;
 }
 
 function routineCard(r) {
@@ -489,7 +549,7 @@ function routineCard(r) {
     <div class="r-top">
       <div style="min-width:0;">
         <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
-        <div class="r-meta">${fmtPeriod(r.start_date, r.end_date)} · ${partsOf(r.id).length}/${r.max_people}명</div>
+        <div class="r-meta">${fmtPeriod(r.start_date, r.end_date)} · ${peopleOf(r.id)}/${r.max_people}명</div>
       </div>
       <span class="chip ${st[0]}">${st[1]}</span>
     </div>
@@ -502,6 +562,24 @@ function routineCard(r) {
 function viewHome() {
   const mine = myRoutines();
   const others = state.routines.filter(r => !mine.includes(r) && r.status !== 'done');
+
+  if (isGuest()) {
+    return `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
+        <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
+          읽은 만큼 적립금이 쌓이고, 그 돈으로 동네책방에서 직접 책을 골라요.</div>
+        <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth()">시작하기</button>
+      </div>
+      <div class="sec-t">지금 모집 중인 루틴</div>
+      ${others.length ? others.map(routineCard).join('')
+        : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}
+      <div class="sec-t">함께하는 동네책방</div>
+      <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-weight:700;">책방 ${state.stores.filter(s=>s.active).length}곳 보기</span>
+        <i class="ti ti-chevron-right" style="color:var(--ink-3);"></i>
+      </div>`;
+  }
+
   let h = '';
 
   if (me.role === 'kkutjjang') {
@@ -650,22 +728,24 @@ function viewMy() {
 // ── 루틴 상세 ──────────────────────────────────────────
 function openRoutine(id) {
   const r = state.routines.find(x => x.id === id); if (!r) return;
-  const p = myPart(id), ps = partsOf(id);
-  const full = ps.length >= r.max_people;
+  const p = myPart(id), people = peopleOf(id);
+  const full = people >= r.max_people;
   $('ovRTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('ovRBody').innerHTML = `
     <div class="card">
       <div style="font-size:12.5px;color:var(--ink-3);">기간</div>
       <div style="font-weight:700;margin-bottom:10px;">${fmtPeriod(r.start_date,r.end_date)}</div>
       <div style="font-size:12.5px;color:var(--ink-3);">참여</div>
-      <div style="font-weight:700;margin-bottom:10px;">${ps.length} / ${r.max_people}명</div>
+      <div style="font-weight:700;margin-bottom:10px;">${people} / ${r.max_people}명</div>
       ${r.amount_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당 적립</div>
         <div style="font-weight:700;color:var(--green-d);">${won(r.amount_per_cert)}원</div>` : ''}
     </div>
     ${r.description ? `<div class="sec-t">루틴 소개</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
-    ${r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
-    ${p && p.status==='approved' ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">참여 중이에요 🌱</div>`
+    ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
+    ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
+        : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 신청할 수 있어요')">로그인하고 신청하기</button>`)
+      : p && p.status==='approved' ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">참여 중이에요 🌱</div>`
       : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">승인을 기다리고 있어요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : me.role==='kkutjjang' ? ''
@@ -979,7 +1059,7 @@ function toBlob(dataUrl) {
 (async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (session) await enter();
-  else { $('authScr').style.display = ''; $('appScr').style.display = 'none'; }
+  else await browseAsGuest();   // 로그인 없이 바로 둘러보기
 })();
 </script>
 </body>
