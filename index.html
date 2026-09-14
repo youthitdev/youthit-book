@@ -3,506 +3,436 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>한끗독서 · 후원자 공간</title>
-<meta name="theme-color" content="#2E33BC">
-<meta name="description" content="매일 읽는 습관과 책을 선물합니다">
+<title>한끗독서 — 매일 한 장, 읽는 습관과 책을 선물합니다</title>
+<meta name="theme-color" content="#83CA00">
+<meta name="description" content="청소년의 정서적 자립과 문해력 향상을 위한 독서루틴 프로그램. 매일 한 장 읽고, 동네책방에서 책을 고르고, 나만의 글을 씁니다.">
+<meta property="og:title" content="한끗독서 — 매일 한 장, 읽는 습관과 책을 선물합니다">
+<meta property="og:description" content="AI가 정보를 대신 소비하는 시대, 스스로 읽고 사유하는 힘의 공백이 청소년의 고립을 심화하고 있습니다.">
+<meta property="og:type" content="website">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-:root {
-  --ink: #16161a;
-  --ink-2: #5a5a66;
-  --ink-3: #9a9aa6;
-  --paper: #faf7f2;
-  --card: #ffffff;
-  --line: #ebe6dd;
-  --blue: #2E33BC;
-  --green: #83CA00;
-  --pink: #FF006C;
-  --gold: #FFD600;
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --ink:#14161a; --ink-2:#4d525c; --ink-3:#8d939e;
+  --paper:#fbfaf7; --card:#fff; --line:#e9e6e0;
+  --green:#83CA00; --green-d:#4e7a00; --green-l:#f4faea;
+  --blue:#2E33BC; --pink:#FF006C; --gold:#FFD600;
 }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--paper); color: var(--ink);
-  line-height: 1.6; -webkit-font-smoothing: antialiased;
-  word-break: keep-all; overflow-wrap: break-word;  /* 한글은 단어 단위로 줄바꿈 */
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--paper); color:var(--ink); line-height:1.65;
+  word-break:keep-all; overflow-wrap:break-word; -webkit-font-smoothing:antialiased;
 }
-.wrap { max-width: 680px; margin: 0 auto; padding: 0 20px 80px; }
+.wrap{max-width:860px;margin:0 auto;padding:0 22px}
+section{padding:72px 0}
+@media(max-width:640px){section{padding:52px 0}}
 
-/* ── 헤더 ── */
-header {
-  position: sticky; top: 0; z-index: 20;
-  background: rgba(250,247,242,0.92); backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--line);
-}
-.hd-inner { max-width: 680px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
-.logo { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; color: var(--blue); }
-.logo span { color: var(--ink-3); font-weight: 600; font-size: 12px; margin-left: 6px; letter-spacing: 0; }
-.btn-ghost { border: 1px solid var(--line); background: var(--card); color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-family: inherit; }
-.btn-ghost:hover { border-color: var(--ink-3); }
+/* 헤더 */
+header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.hd{max-width:860px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.logo span{color:var(--green-d)}
+.hd-btns{display:flex;gap:8px;align-items:center}
+.hd-btns a{font-size:13px;font-weight:700;text-decoration:none;padding:9px 15px;border-radius:11px;white-space:nowrap}
+.hd-ghost{color:var(--ink-2);border:1px solid var(--line);background:#fff}
+.hd-cta{color:#fff;background:var(--blue)}
+@media(max-width:520px){.hd-ghost{display:none}}
 
-/* ── 히어로 ── */
-.hero { padding: 56px 0 36px; text-align: center; }
-.hero-eyebrow { font-size: 12.5px; font-weight: 700; color: var(--green); letter-spacing: 1.2px; margin-bottom: 16px; }
-.hero h1 { font-size: 33px; line-height: 1.35; font-weight: 800; letter-spacing: -1px; }
-.hero h1 em { font-style: normal; color: var(--blue); }
-.hero p { margin-top: 16px; color: var(--ink-2); font-size: 15px; }
-.btn-primary {
-  display: inline-block; margin-top: 26px; background: var(--blue); color: #fff;
-  font-size: 15.5px; font-weight: 700; padding: 15px 34px; border-radius: 14px;
-  border: none; cursor: pointer; font-family: inherit; text-decoration: none;
-  box-shadow: 0 6px 20px rgba(46,51,188,0.24);
-}
-.btn-primary:hover { transform: translateY(-1px); }
-.hero-note { margin-top: 12px; font-size: 12px; color: var(--ink-3); }
+/* 히어로 */
+.hero{padding:76px 0 60px;text-align:center}
+.eyebrow{display:inline-block;font-size:12.5px;font-weight:700;color:var(--green-d);background:var(--green-l);
+  border:1px solid #dcecc0;padding:7px 15px;border-radius:99px;letter-spacing:.2px}
+.hero h1{font-size:clamp(30px,6.4vw,46px);line-height:1.3;font-weight:800;letter-spacing:-1.6px;margin-top:22px}
+.hero h1 em{font-style:normal;color:var(--green-d)}
+.hero .lead{margin-top:20px;font-size:clamp(15px,2.2vw,17px);color:var(--ink-2);line-height:1.8}
+.hero-cta{display:flex;gap:10px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+.btn{display:inline-block;text-decoration:none;font-weight:700;border-radius:14px;padding:15px 30px;font-size:15.5px;border:none;cursor:pointer}
+.btn-blue{background:var(--blue);color:#fff;box-shadow:0 7px 22px rgba(46,51,188,.22)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 7px 22px rgba(131,202,0,.26)}
+.btn-line{background:#fff;color:var(--ink-2);border:1px solid var(--line)}
+.hero-note{margin-top:14px;font-size:12.5px;color:var(--ink-3)}
 
-/* ── 공용 ── */
-section { margin-top: 44px; }
-.sec-title { font-size: 19px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 4px; }
-.sec-desc { font-size: 13.5px; color: var(--ink-2); margin-bottom: 18px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
-.card + .card { margin-top: 12px; }
+/* 공통 */
+.sec-label{font-size:12.5px;font-weight:700;color:var(--green-d);letter-spacing:1.4px;text-align:center}
+h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spacing:-1px;text-align:center;margin-top:12px}
+.sec-lead{text-align:center;color:var(--ink-2);margin-top:14px;font-size:15px;line-height:1.8}
+.grid{display:grid;gap:14px;margin-top:36px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:720px){.g3,.g2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 24px}
+.card h3{font-size:16.5px;font-weight:800;letter-spacing:-.4px;margin-bottom:10px}
+.card p{font-size:14px;color:var(--ink-2);line-height:1.8}
+.card .tag{font-size:11.5px;font-weight:700;color:var(--green-d);letter-spacing:.4px;margin-bottom:8px}
 
-/* ── 풀 현황 ── */
-.pool { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-.pool-item { background: var(--card); padding: 20px 14px; text-align: center; }
-.pool-num { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; }
-.pool-num small { font-size: 13px; font-weight: 700; margin-left: 1px; }
-.pool-label { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; font-weight: 600; }
-.pool-bar-wrap { margin-top: 12px; }
-.pool-bar { height: 10px; background: #eeeae2; border-radius: 99px; overflow: hidden; display: flex; }
-.pool-bar i { display: block; height: 100%; }
-.pool-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; margin-top: 10px; font-size: 11.5px; color: var(--ink-2); }
-.pool-legend span { white-space: nowrap; }
-.dot { display: inline-block; width: 8px; height: 8px; border-radius: 3px; margin-right: 5px; vertical-align: 0px; }
+/* 문제 */
+.problem{background:#14161a;color:#fff}
+.problem .sec-label{color:#a8d94a}
+.problem h2{color:#fff}
+.problem .sec-lead{color:rgba(255,255,255,.68)}
+.problem .card{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.12)}
+.problem .card h3{color:#fff}
+.problem .card p{color:rgba(255,255,255,.72)}
+.problem .card .tag{color:#a8d94a}
+.stat{font-size:34px;font-weight:800;letter-spacing:-1.4px;color:#fff;line-height:1.15;margin-bottom:6px}
+.stat small{font-size:15px;font-weight:700;margin-left:2px}
+.src{font-size:11px;color:rgba(255,255,255,.38);margin-top:14px;line-height:1.6}
+.pisa{margin-top:40px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:28px 24px}
+.pisa-t{font-size:13px;font-weight:700;color:#a8d94a;margin-bottom:16px}
+.bars{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;text-align:center}
+/* 점수 차이(501~556)가 작아 0부터 그리면 구분이 안 돼서, 480을 바닥으로 잡고 그린다 */
+.bar i{display:block;background:rgba(255,255,255,.16);border-radius:6px 6px 3px 3px}
+.bar.last i{background:var(--pink)}
+.bar b{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
+.bar span{font-size:11px;color:rgba(255,255,255,.5);margin-top:8px}
+.pisa-note{font-size:13px;color:rgba(255,255,255,.7);line-height:1.75;margin-top:8px}
 
-/* ── 후원 카드 ── */
-.chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 7px; }
-.chip-active { background: #eef0ff; color: var(--blue); }
-.chip-done { background: #f2f9e5; color: #4e7a00; }
-.chip-wait { background: #fff4e5; color: #a86400; }
-.charge-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.charge-amt { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; }
-.charge-date { font-size: 12px; color: var(--ink-3); }
-.split { display: flex; gap: 8px; margin-top: 14px; font-size: 12px; }
-.split div { flex: 1; background: #f7f5f0; border-radius: 10px; padding: 9px 12px; }
-.split b { display: block; font-size: 14px; font-weight: 700; margin-top: 2px; }
-.prog { margin-top: 16px; }
-.prog-bar { height: 8px; background: #eeeae2; border-radius: 99px; overflow: hidden; }
-.prog-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #a8e02a); }
-.prog-txt { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+/* AI 시대에 왜 읽기인가 */
+.why{background:#fff;border-bottom:1px solid var(--line)}
+.essay{max-width:640px;margin:34px auto 0}
+.essay p{font-size:15.5px;line-height:1.95;color:var(--ink-2);margin-bottom:20px}
+.essay p b{color:var(--ink);font-weight:700}
+.essay blockquote{margin:26px 0;padding:22px 26px;background:var(--green-l);border-radius:16px;
+  font-size:20px;font-weight:800;letter-spacing:-.6px;color:var(--ink);text-align:center}
+.essay .thesis{background:#14161a;color:rgba(255,255,255,.82);border-radius:18px;padding:26px 28px;
+  font-size:16px;line-height:1.9;margin:26px 0}
+.essay .thesis b{color:#a8d94a}
+.essay .sign{font-size:13px;color:var(--ink-3);text-align:right;margin-top:26px;padding-top:18px;border-top:1px solid var(--line)}
+.finding{max-width:600px;margin:26px auto 0;background:var(--green-l);border:1px solid #dcecc0;
+  border-radius:16px;padding:20px 24px;font-size:14px;color:var(--ink-2);line-height:1.85;text-align:center}
+.finding b{color:var(--green-d)}
 
-/* ── 완료 카드 ── */
-.done-card { background: linear-gradient(150deg, #2E33BC, #4a4fd6); color: #fff; border: none; }
-.done-card .done-msg { font-size: 19px; font-weight: 700; line-height: 1.5; letter-spacing: -0.4px; }
-.done-card .done-msg b { color: var(--gold); }
-.done-meta { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.18); display: flex; gap: 22px; font-size: 12.5px; color: rgba(255,255,255,0.8); }
-.done-meta b { display: block; font-size: 17px; color: #fff; font-weight: 700; }
+/* 해법 3단계 */
+.steps{margin-top:36px;display:flex;flex-direction:column;gap:12px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 24px;display:flex;gap:20px}
+@media(max-width:640px){.step{flex-direction:column;gap:14px}}
+.step-n{flex-shrink:0;width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;
+  font-size:19px;font-weight:800;color:#fff}
+.s1 .step-n{background:var(--pink)} .s2 .step-n{background:var(--green)} .s3 .step-n{background:var(--blue)}
+.step h3{font-size:17px;font-weight:800;letter-spacing:-.4px}
+.step .where{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-left:7px}
+.step p{font-size:14px;color:var(--ink-2);line-height:1.8;margin-top:9px}
+.step .key{display:inline-block;margin-top:12px;font-size:12.5px;font-weight:700;color:var(--green-d);
+  background:var(--green-l);border-radius:9px;padding:7px 13px}
 
-/* ── 활동 피드 ── */
-.today { text-align: center; padding: 26px 20px 22px; }
-.today-big { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
-.today-big span { color: var(--green); }
-.today-sub { font-size: 13px; color: var(--ink-2); margin-top: 6px; }
-.chart { display: flex; align-items: flex-end; gap: 5px; height: 86px; margin-top: 22px; padding-top: 8px; }
-.chart-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
-.chart-col i { display: block; background: #dfeeb8; border-radius: 4px 4px 2px 2px; min-height: 3px; }
-.chart-col.on i { background: var(--green); }
-.chart-x { display: flex; gap: 5px; margin-top: 6px; }
-.chart-x span { flex: 1; text-align: center; font-size: 9.5px; color: var(--ink-3); }
+/* 성과 */
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:36px}
+@media(max-width:640px){.nums{grid-template-columns:repeat(2,1fr)}}
+.num{background:var(--card);padding:26px 12px;text-align:center}
+.num b{display:block;font-size:29px;font-weight:800;letter-spacing:-1.2px}
+.num b small{font-size:14px;margin-left:1px}
+.num span{font-size:12px;color:var(--ink-3);font-weight:600}
+.voices{display:grid;gap:12px;margin-top:16px}
+.voice{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);
+  border-radius:4px 16px 16px 4px;padding:20px 22px}
+.voice p{font-size:14.5px;line-height:1.8;color:var(--ink)}
+.voice cite{display:block;font-style:normal;font-size:12px;color:var(--ink-3);margin-top:10px}
 
-/* ── 프로세스 ── */
-.steps { counter-reset: s; }
-.step { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px dashed var(--line); }
-.step:last-child { border-bottom: none; padding-bottom: 0; }
-.step-n { flex-shrink: 0; width: 26px; height: 26px; border-radius: 9px; background: #eef0ff; color: var(--blue); font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
-.step-t { font-size: 14.5px; font-weight: 700; }
-.step-d { font-size: 13px; color: var(--ink-2); margin-top: 2px; }
-.notice { margin-top: 16px; background: #f7f5f0; border-radius: 12px; padding: 14px 16px; font-size: 12.5px; color: var(--ink-2); line-height: 1.65; }
-.notice b { color: var(--ink); }
+/* 후원 */
+.donate{background:var(--green-l);border-top:1px solid #e4f0cf;border-bottom:1px solid #e4f0cf}
+.flow{display:flex;align-items:stretch;gap:10px;margin-top:34px}
+@media(max-width:720px){.flow{flex-direction:column}}
+.flow-i{flex:1;background:#fff;border:1px solid #dcecc0;border-radius:16px;padding:20px 18px;text-align:center;position:relative}
+.flow-i b{display:block;font-size:14.5px;font-weight:800;margin-bottom:6px}
+.flow-i p{font-size:12.5px;color:var(--ink-2);line-height:1.7}
+.flow-i i{position:absolute;right:-14px;top:50%;transform:translateY(-50%);font-style:normal;color:#bcd894;font-size:18px;z-index:1}
+@media(max-width:720px){.flow-i i{right:50%;top:auto;bottom:-15px;transform:translateX(50%) rotate(90deg)}}
+.split{display:flex;gap:12px;margin-top:24px}
+@media(max-width:640px){.split{flex-direction:column}}
+.split div{flex:1;background:#fff;border:1px solid #dcecc0;border-radius:14px;padding:18px 20px}
+.split b{display:block;font-size:17px;font-weight:800;letter-spacing:-.5px;margin-bottom:7px}
+.split span{font-size:13px;color:var(--ink-2);line-height:1.75}
+.split-note{text-align:center;font-size:13.5px;color:var(--green-d);line-height:1.85;margin-top:18px;font-weight:600}
 
-/* ── 읽기 집계 ── */
-.rstat { display: flex; gap: 1px; background: var(--line); border-radius: 14px; overflow: hidden; }
-.rstat > div { flex: 1; background: var(--card); padding: 16px 10px; text-align: center; }
-.rstat b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.7px; }
-.rstat b small { font-size: 12px; margin-left: 1px; }
-.rstat span { font-size: 11.5px; color: var(--ink-3); font-weight: 600; }
+/* 서점 */
+.stores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:32px}
+@media(max-width:720px){.stores{grid-template-columns:repeat(2,1fr)}}
+.store{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 14px;text-align:center}
+.store b{display:block;font-size:14px;font-weight:800}
+.store span{font-size:11.5px;color:var(--ink-3)}
 
-/* ── 문장 ── */
-.quote { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--green);
-         border-radius: 4px 16px 16px 4px; padding: 18px 20px; margin-bottom: 10px; }
-.quote p { font-size: 15.5px; line-height: 1.75; color: var(--ink); }
-.quote cite { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
-
-/* ── 읽는 책 ── */
-.books { display: flex; flex-wrap: wrap; gap: 7px; }
-.books span { background: #f7f5f0; border-radius: 10px; padding: 8px 13px; font-size: 13px; color: var(--ink-2); }
-.books span b { color: var(--ink); font-weight: 700; }
-.books span i { font-style: normal; color: var(--ink-3); font-size: 11.5px; margin-left: 5px; }
-
-/* ── 후원자 벽 ── */
-.wall { display: flex; flex-wrap: wrap; gap: 7px; }
-.wall span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
-
-/* ── 마무리 후원 유도 ── */
-.closing { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 36px 24px; text-align: center; }
-.closing-msg { font-size: 21px; font-weight: 800; line-height: 1.5; letter-spacing: -0.5px; }
-.closing-msg b { color: var(--blue); }
-.closing .btn-primary { margin-top: 22px; }
-
-.empty { text-align: center; padding: 34px 20px; color: var(--ink-3); font-size: 13.5px; }
-footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); text-align: center; line-height: 1.8; }
-.demo-flag { background: var(--gold); color: #3d3000; font-size: 11.5px; font-weight: 700; text-align: center; padding: 7px; }
-@media (max-width: 480px) {
-  .hero h1 { font-size: 27px; }
-  .pool-num { font-size: 20px; }
-}
+/* 마무리 */
+.final{text-align:center}
+.final h2{font-size:clamp(23px,4.6vw,34px)}
+.final-cta{display:flex;gap:10px;justify-content:center;margin-top:30px;flex-wrap:wrap}
+footer{border-top:1px solid var(--line);padding:34px 0 46px;text-align:center;font-size:12.5px;color:var(--ink-3);line-height:1.9}
+footer a{color:var(--ink-3)}
 </style>
 </head>
 <body>
 
-<div class="demo-flag" id="demoFlag">데모 데이터로 보는 중 — 실제 후원 내역이 아닙니다</div>
-
 <header>
-  <div class="hd-inner">
-    <div class="logo">한끗독서<span>후원자 공간</span></div>
-    <button class="btn-ghost" id="authBtn" onclick="toggleAuth()">로그인</button>
+  <div class="hd">
+    <div class="logo">한끗<span>독서</span></div>
+    <div class="hd-btns">
+      <a class="hd-ghost" href="app.html">참여하기</a>
+      <a class="hd-cta" href="sponsor.html">후원하기</a>
+    </div>
   </div>
 </header>
 
 <div class="wrap">
 
+  <!-- 히어로 -->
   <div class="hero">
-    <div class="hero-eyebrow">청소년 독서 후원</div>
-    <h1><em>매일 읽는 습관</em>과 책을<br>선물합니다</h1>
-    <p>읽은 날마다 적립금이 쌓이고,<br>그 돈으로 동네책방에서 직접 고른 책이 손에 남습니다.</p>
-    <!-- TODO: 도너스 후원 페이지 URL 확정되면 교체 -->
-    <a class="btn-primary" href="#" onclick="return notReady()">후원하기</a>
-    <div class="hero-note">결제와 기부금영수증은 도너스를 통해 처리됩니다</div>
-  </div>
-
-  <section>
-    <div class="sec-title">지금 도서기금</div>
-    <div class="sec-desc">후원금은 들어온 순서대로 책이 되어 나갑니다.</div>
-    <div class="pool" id="poolGrid"></div>
-    <div class="card pool-bar-wrap" id="poolBarCard"></div>
-  </section>
-
-  <section id="mySection" style="display:none;">
-    <div class="sec-title">내 후원</div>
-    <div class="sec-desc">후원하신 금액이 어디까지 전해졌는지 보여드려요.</div>
-    <div id="myCharges"></div>
-  </section>
-
-  <section>
-    <div class="sec-title">오늘의 기록</div>
-    <div class="sec-desc">참여 청소년의 인증 활동입니다. 누구인지는 표시되지 않아요.</div>
-    <div class="card" id="feedCard"></div>
-    <div class="card" id="readingStats"></div>
-  </section>
-
-  <section id="quotesSection">
-    <div class="sec-title">아이들이 멈춰 선 문장</div>
-    <div class="sec-desc">읽다가 옮겨 적은 문장이에요. 운영진이 확인한 것만 보여드려요.</div>
-    <div id="quotes"></div>
-  </section>
-
-  <section id="booksSection">
-    <div class="sec-title">요즘 읽고 있는 책</div>
-    <div class="sec-desc">아이들이 동네책방에서 직접 고른 책들이에요.</div>
-    <div class="card"><div class="books" id="books"></div></div>
-  </section>
-
-  <section>
-    <div class="sec-title">후원금은 이렇게 쓰입니다</div>
-    <div class="sec-desc">추정이 아니라, 서점 영수증으로 확인된 금액만 차감합니다.</div>
-    <div class="card">
-      <div class="steps" id="stepsBox"></div>
-      <div class="notice" id="policyNotice"></div>
+    <span class="eyebrow">청소년의 정서적 자립과 문해력을 위한 독서루틴</span>
+    <h1>매일 한 장,<br><em>읽는 습관</em>과 책을<br>선물합니다</h1>
+    <p class="lead">
+      하루 10분, 책 한 장을 읽고 기록합니다.<br>
+      읽은 만큼 적립금이 쌓이고, 그 돈으로 동네책방에서 직접 책을 고릅니다.
+    </p>
+    <div class="hero-cta">
+      <a class="btn btn-blue" href="sponsor.html">후원으로 함께하기</a>
+      <a class="btn btn-line" href="app.html">청소년 참여하기</a>
     </div>
-  </section>
-
-  <section>
-    <div class="sec-title">함께하는 후원자</div>
-    <div class="sec-desc">공개에 동의하신 분들만 표시됩니다.</div>
-    <div class="wall" id="wall"></div>
-  </section>
-
-  <section class="closing">
-    <div class="closing-msg">후원으로 청소년들에게<br><b>책 읽는 습관</b>을 선물해주세요</div>
-    <!-- TODO: 도너스 후원 페이지 URL 확정되면 교체 -->
-    <a class="btn-primary" href="#" onclick="return notReady()">후원하기</a>
-  </section>
-
-  <footer>
-    사단법인 유스보이스 · 한끗독서<br>
-    문의 soon@youthvoice.or.kr
-  </footer>
+    <div class="hero-note">사단법인 유스보이스 · 전국 독립서점과 함께합니다</div>
+  </div>
 </div>
 
-<script>
-// ════════════════════════════════════════════════════════
-// Supabase — 한끗루틴과 같은 프로젝트를 사용합니다
-// (15일 연속 인증 데이터를 조인해야 하므로 분리 불가)
-// 아래 값을 채우면 데모 모드가 꺼지고 실제 데이터로 동작합니다.
-// ⚠️ 채우기 전에 supabase-schema.sql 을 먼저 적용하세요.
-// ════════════════════════════════════════════════════════
-const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGFod3ZpaHZrYXNyem5ib2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzY4OTcsImV4cCI6MjEwNDg1Mjg5N30.aCVtuxfVTApo7-bQW0NPiBDZw-9vXHeCgyNgx5pdFqw';
-const LIVE = !!(SB_URL && SB_KEY);
-const sb = LIVE ? supabase.createClient(SB_URL, SB_KEY) : null;
+<!-- 문제 -->
+<section class="problem">
+  <div class="wrap">
+    <div class="sec-label">왜 지금인가</div>
+    <h2>텍스트를 잃어버린 청소년,<br>'나'를 잃어버린 일상</h2>
+    <p class="sec-lead">
+      AI가 정보를 대신 소비하는 시대,<br>스스로 읽고 사유하는 힘의 공백이 청소년의 고립을 심화하고 있습니다.
+    </p>
 
-const won = n => n.toLocaleString('ko-KR');
-const manwon = n => (n >= 10000 ? (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) : n / 10000);
-
-// ── 데모 데이터 ─────────────────────────────────────────
-const DEMO = {
-  pool: { total_donated: 1_850_000, book_fund: 1_480_000, operation_fee: 370_000,
-          remaining: 622_000, spent: 858_000, books_bought: 47, books_pending: 5,
-          students_reached: 47, sponsors_count: 23 },
-  settings: { book_fund_rate: 0.8 },
-  feed: [
-    { day: '2026-09-13', cert_count: 12, student_count: 12 },
-    { day: '2026-09-12', cert_count: 15, student_count: 14 },
-    { day: '2026-09-11', cert_count: 11, student_count: 11 },
-    { day: '2026-09-10', cert_count: 16, student_count: 15 },
-    { day: '2026-09-09', cert_count: 14, student_count: 13 },
-    { day: '2026-09-08', cert_count: 9,  student_count: 9  },
-    { day: '2026-09-07', cert_count: 13, student_count: 12 },
-    { day: '2026-09-06', cert_count: 17, student_count: 16 },
-    { day: '2026-09-05', cert_count: 12, student_count: 12 },
-    { day: '2026-09-04', cert_count: 10, student_count: 10 },
-  ],
-  stats: { pages_read: 3_240, books_titles: 19, cert_total: 412, students_total: 31 },
-  quotes: [
-    { quote: '밤에는 바다가 더 크게 들렸다. 그 소리를 혼자 듣는 게 싫지 않았다.', book_title: '속초에서의 겨울', day: '2026-09-12' },
-    { quote: '나는 내가 좋아하는 것을 아주 늦게 알았다.', book_title: '아무튼, 메모', day: '2026-09-11' },
-    { quote: '천천히 걷는 사람에게만 보이는 것이 있다.', book_title: '느리게 걷는 법', day: '2026-09-10' },
-  ],
-  books: [
-    { book_title: '속초에서의 겨울', readers: 3 }, { book_title: '아무튼, 메모', readers: 2 },
-    { book_title: '느리게 걷는 법', readers: 2 }, { book_title: '완득이', readers: 4 },
-    { book_title: '나는 나로 살기로 했다', readers: 2 }, { book_title: '시옷의 세계', readers: 1 },
-  ],
-  wall: ['도서관지기', '이OO', '책읽는고래', '유스보이스 직원일동', 'ㅎㅈㅇ', '동네책방단골',
-         '민들레', 'K.S.H', '한끗팬', '조용한후원자', '서점러버', 'JY'],
-  myCharges: [
-    { id: 3, amount: 100000, book_fund_amount: 80000, operation_fee_amount: 20000,
-      remaining_amount: 34000, status: 'active', charged_at: '2026-09-02' },
-    { id: 2, amount: 50000, book_fund_amount: 40000, operation_fee_amount: 10000,
-      remaining_amount: 0, status: 'completed', charged_at: '2026-07-18',
-      completion: { students_count: 2, purchases_count: 2, reading_days: 31, total_amount: 40000 } },
-    { id: 1, amount: 30000, book_fund_amount: 24000, operation_fee_amount: 6000,
-      remaining_amount: 0, status: 'completed', charged_at: '2026-06-05',
-      completion: { students_count: 1, purchases_count: 1, reading_days: 18, total_amount: 24000 } },
-  ],
-};
-
-let state = { signedIn: false, pool: null, settings: null, feed: [], wall: [], charges: [] };
-
-// ── 데이터 로드 ─────────────────────────────────────────
-async function loadPublic() {
-  if (!LIVE) {
-    state.pool = DEMO.pool; state.settings = DEMO.settings;
-    state.feed = DEMO.feed; state.wall = DEMO.wall;
-    state.stats = DEMO.stats; state.quotes = DEMO.quotes; state.books = DEMO.books;
-    return;
-  }
-  const [pool, settings, feed, wall, stats, quotes, books] = await Promise.all([
-    sb.rpc('dokseo_pool_status'),
-    sb.from('dokseo_settings').select('book_fund_rate').single(),
-    sb.rpc('dokseo_activity_feed', { p_days: 10 }),
-    sb.rpc('dokseo_sponsor_wall', { p_limit: 40 }),
-    sb.rpc('dokseo_reading_stats'),
-    sb.rpc('dokseo_public_quotes', { p_limit: 8 }),
-    sb.rpc('dokseo_books_reading', { p_limit: 18 }),
-  ]);
-  state.pool = pool.data || DEMO.pool;
-  state.settings = settings.data || DEMO.settings;
-  state.feed = feed.data || [];
-  state.wall = (wall.data || []).map(w => w.nickname);
-  state.stats = stats.data || DEMO.stats;
-  state.quotes = quotes.data || [];
-  state.books = books.data || [];
-}
-
-async function loadMine() {
-  if (!LIVE) { state.charges = DEMO.myCharges; return; }
-  const { data: sponsor } = await sb.from('sponsors').select('id').maybeSingle();
-  if (!sponsor) { state.charges = []; return; }
-  const { data } = await sb.from('charges')
-    .select('*, completion_events(students_count, purchases_count, reading_days, total_amount)')
-    .eq('sponsor_id', sponsor.id).order('charged_at', { ascending: false });
-  state.charges = (data || []).map(c => ({ ...c, completion: (c.completion_events || [])[0] }));
-}
-
-// ── 렌더 ────────────────────────────────────────────────
-function renderPool() {
-  const p = state.pool;
-  document.getElementById('poolGrid').innerHTML = `
-    <div class="pool-item">
-      <div class="pool-num">${manwon(p.remaining)}<small>만원</small></div>
-      <div class="pool-label">남은 도서기금</div>
-    </div>
-    <div class="pool-item">
-      <div class="pool-num">${p.books_bought}<small>권</small></div>
-      <div class="pool-label">손에 남은 책</div>
-    </div>
-    <div class="pool-item">
-      <div class="pool-num">${p.sponsors_count}<small>명</small></div>
-      <div class="pool-label">함께한 후원자</div>
-    </div>`;
-
-  const fund = p.book_fund || 1;
-  const spentPct = Math.min(100, (p.spent / fund) * 100);
-  document.getElementById('poolBarCard').innerHTML = `
-    <div class="pool-bar">
-      <i style="width:${spentPct}%;background:var(--green);"></i>
-      <i style="width:${100 - spentPct}%;background:#dfeeb8;"></i>
-    </div>
-    <div class="pool-legend">
-      <span><i class="dot" style="background:var(--green);"></i>책이 된 금액 ${won(p.spent)}원</span>
-      <span><i class="dot" style="background:#dfeeb8;"></i>기다리는 금액 ${won(p.remaining)}원</span>
-    </div>
-    ${p.books_pending ? `<div class="notice" style="margin-top:14px;">
-      지금 <b>${p.books_pending}명</b>이 책을 사고 정산을 기다리고 있어요.
-      책방 영수증이 확인되면 도서기금에서 차감됩니다.</div>` : ''}`;
-}
-
-function renderCharges() {
-  const box = document.getElementById('myCharges');
-  if (!state.charges.length) {
-    box.innerHTML = `<div class="card empty">아직 후원 내역이 없어요.</div>`;
-    return;
-  }
-  box.innerHTML = state.charges.map(c => {
-    if (c.status === 'completed' && c.completion) {
-      const k = c.completion;
-      return `<div class="card done-card">
-        <div class="done-msg">당신이 채워준 마음이,<br><b>${k.students_count}명</b>의 아이에게<br><b>${k.reading_days}일</b>의 독서가 되었어요.</div>
-        <div class="done-meta">
-          <div>후원일<b>${fmtDate(c.charged_at)}</b></div>
-          <div>후원금<b>${won(c.amount)}원</b></div>
-          <div>손에 남은 책<b>${k.purchases_count}권</b></div>
-        </div>
-      </div>`;
-    }
-    const used = c.book_fund_amount - c.remaining_amount;
-    const pct = Math.round((used / c.book_fund_amount) * 100);
-    return `<div class="card">
-      <div class="charge-top">
-        <div class="charge-amt">${won(c.amount)}원</div>
-        <div class="charge-date">${fmtDate(c.charged_at)} · <span class="chip chip-active">전달 중</span></div>
+    <div class="pisa">
+      <div class="pisa-t">한국 학생 읽기 성취도 (PISA)</div>
+      <div class="bars">
+        <div class="bar"><b>556</b><i style="height:130px"></i><span>2006</span></div>
+        <div class="bar"><b>536</b><i style="height:96px"></i><span>2012</span></div>
+        <div class="bar"><b>515</b><i style="height:60px"></i><span>2022</span></div>
+        <div class="bar last"><b>501</b><i style="height:36px"></i><span>2025</span></div>
       </div>
-      <div class="split">
-        <div>도서기금<b>${won(c.book_fund_amount)}원</b></div>
-        <div>운영비<b>${won(c.operation_fee_amount)}원</b></div>
+      <p class="pisa-note">
+        2000년 이후 가장 낮은 수준입니다. 기초 수준에 이르지 못하는 학생은 14.7%에서 17.8%로 늘었고,
+        글을 제대로 이해하지 않고 답만 빨리 고르는 <b>'성급한 독자'가 24.7%</b>로 3년 만에 두 배가 됐습니다.
+      </p>
+    </div>
+
+    <div class="grid g3">
+      <div class="card">
+        <div class="tag">문해력 위기</div>
+        <h3>읽어도 이해하지 못하는</h3>
+        <div class="stat">30.4<small>%</small></div>
+        <p>교사가 "도움 없이는 교과서를 이해 못 하는 학생이 있다"고 답한 비율. 숏폼 중심 소비로 긴 호흡의 텍스트를 견디는 '독서 근육'을 잃고 있습니다.</p>
+        <div class="src">교원단체(한국교총) 2024년 실태조사</div>
       </div>
-      <div class="prog">
-        <div class="prog-bar"><i style="width:${pct}%"></i></div>
-        <div class="prog-txt">
-          <span>책이 된 금액 ${won(used)}원</span>
-          <span>${pct}%</span>
+      <div class="card">
+        <div class="tag">정서적 고립</div>
+        <h3>디지털 과의존과 우울</h3>
+        <div class="stat">42.5<small>%</small></div>
+        <p>스마트폰 과의존 위험군 비율. 타인과 비교하는 시간은 늘었지만, 자신을 언어화할 성찰의 시간은 줄었습니다.</p>
+        <div class="src">과기부/NIA 2024년 스마트폰 과의존 실태조사</div>
+      </div>
+      <div class="card">
+        <div class="tag">문화적 소외</div>
+        <h3>독서 격차와 제3의 공간 부재</h3>
+        <div class="stat">11.7<small>권</small></div>
+        <p>10대 평균 연간 독서량. 2011년 대비 절반 이하입니다. 입시를 위한 도구적 독서만 남고, 책과 사람을 잇는 안전한 공간이 사라졌습니다.</p>
+        <div class="src">국가데이터처 2025 사회조사</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AI 시대에 왜 읽기인가 -->
+<section class="why">
+  <div class="wrap">
+    <div class="sec-label">현장에서 본 것</div>
+    <h2>AI가 다 써주는데,<br>왜 읽어야 하나요?</h2>
+
+    <div class="essay">
+      <p>
+        지원서를 읽다 보면 요즘은 분량도 늘고 문장도 매끄럽습니다.
+        그런데 <b>그 안에 자기만의 이야기가 있는지 없는지</b>는 오히려 더 선명하게 드러납니다.
+        마음을 움직이는 지원서는 예전보다 줄었습니다.
+      </p>
+      <p>
+        예전 청소년들은 짧은 신청서를 쓰면서도 스스로 고민하고 약간의 성장통을 겪으며 글을 채웠습니다.
+        그 과정에서 '내가 왜 이걸 하고 싶은지' 스스로 동기를 발견하곤 했습니다.
+        지금은 '딸깍' 한 번이면 완성되는 문장에 자신을 맞춥니다.
+      </p>
+      <p>
+        창작에서도 같은 일이 벌어집니다. 늦은 밤 글을 쓰던 청소년에게
+        "그렇게 빨리 쓸 수 있어?"라고 물었더니 이런 답이 돌아왔습니다.
+      </p>
+      <blockquote>"ChatGPT로 쓰면 돼요."</blockquote>
+      <p class="thesis">
+        AI는 <b>무엇을 알고, 무엇을 원하고 말하고 싶은지 아는 사람에게</b> 더 효과적으로 작동하는 도구입니다.
+        그런데 그 질문을 스스로에게 해볼 기회도 갖지 못한 채,
+        결과부터 만들어내는 데 점점 익숙해지고 있습니다.
+      </p>
+      <p>
+        모든 것이 자동화되는 시대에 진짜 필요한 힘은, 역설적이게도
+        스스로 깊이 고민하며 <b>읽고 쓰는 행위 그 자체</b>에 있습니다.
+        영상을 보는 대신 책을 읽는 것, 끌려가는 대신 스스로 이끌어가는 것.
+        그런 능동적 행위를 반복하다 보면 비로소 '내 것'이 만들어집니다.
+      </p>
+      <div class="sign">김재순 · 사단법인 유스보이스 대표</div>
+    </div>
+  </div>
+</section>
+
+<!-- 해법 -->
+<section>
+  <div class="wrap">
+    <div class="sec-label">한끗독서는 이렇게 합니다</div>
+    <h2>한 장으로 시작해<br>나만의 서사로 이어집니다</h2>
+    <p class="sec-lead">읽는 습관에서 멈추지 않고, 관계와 창작으로 이어지는 세 단계입니다.</p>
+
+    <div class="finding">
+      한끗루틴을 운영하며 알게 된 건, <b>책을 좋아하는 아이들이 생각보다 많다</b>는 사실이었습니다.<br>
+      다만 주변에 방해 요소가 많아 혼자서는 꾸준히 읽기 어려웠고,<br>
+      그래서 <b>"함께 읽고 싶어서"</b> 참여했습니다.
+    </div>
+
+    <div class="steps">
+      <div class="step s1">
+        <div class="step-n">1</div>
+        <div>
+          <h3>한끗루틴 <span class="where">온라인 · 15일</span></h3>
+          <p>독립서점 운영자가 <b>끗짱</b>이 되어 청소년과 15일간 함께합니다. 매일 10분 읽고, 한 문장을 남기고, 서로의 기록에 댓글을 답니다.</p>
+          <span class="key">공부가 아닌, 즐거운 습관으로서의 독서</span>
         </div>
       </div>
-    </div>`;
-  }).join('');
-}
-
-function renderFeed() {
-  const f = state.feed;
-  const card = document.getElementById('feedCard');
-  if (!f.length) { card.innerHTML = `<div class="empty">아직 기록이 없어요.</div>`; return; }
-  const today = f[0];
-  const max = Math.max(...f.map(d => d.cert_count));
-  const cols = [...f].reverse();
-  card.innerHTML = `
-    <div class="today">
-      <div class="today-big">오늘 <span>${today.student_count}명</span>이 책을 읽었어요</div>
-      <div class="today-sub">인증 ${today.cert_count}건 · 최근 10일 동안 ${f.reduce((s, d) => s + d.cert_count, 0)}건</div>
+      <div class="step s2">
+        <div class="step-n">2</div>
+        <div>
+          <h3>독립서점 <span class="where">오프라인 · 제3의 공간</span></h3>
+          <p>쌓인 적립금으로 동네책방에 찾아가 직접 책을 고릅니다. 집이라는 고립된 공간을 벗어나, 책을 매개로 어른·또래와 만납니다.</p>
+          <span class="key">서점이라는 따뜻한 아지트에서 시작되는 느슨한 연대</span>
+        </div>
+      </div>
+      <div class="step s3">
+        <div class="step-n">3</div>
+        <div>
+          <h3>창작지원 <span class="where">온·오프라인</span></h3>
+          <p>읽기에서 얻은 영감으로 자신의 이야기를 씁니다. 완성된 글은 책이 되어 독립서점에 놓이고, 전시회로 이어집니다.</p>
+          <span class="key">수동적 독자를 넘어 능동적 창작자로</span>
+        </div>
+      </div>
     </div>
-    <div class="chart">
-      ${cols.map((d, i) => `<div class="chart-col ${i === cols.length - 1 ? 'on' : ''}">
-        <i style="height:${Math.round((d.cert_count / max) * 100)}%"></i></div>`).join('')}
+  </div>
+</section>
+
+<!-- 성과 -->
+<section style="background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-label">이미 증명된 방식</div>
+    <h2>작년 한 해,<br>240명의 청소년이 해냈습니다</h2>
+    <p class="sec-lead">한끗독서는 유스보이스가 1년간 운영해온 '한끗루틴'의 독서 버전입니다.</p>
+
+    <div class="nums">
+      <div class="num"><b>33<small>개</small></b><span>운영 루틴</span></div>
+      <div class="num"><b>240<small>명</small></b><span>참여 청소년</span></div>
+      <div class="num"><b>2,700<small>개</small></b><span>인증 기록</span></div>
+      <div class="num"><b>33<small>명</small></b><span>함께한 끗짱</span></div>
     </div>
-    <div class="chart-x">${cols.map(d => `<span>${d.day.slice(8)}</span>`).join('')}</div>`;
-}
+    <div style="text-align:center;font-size:11.5px;color:var(--ink-3);margin-top:10px">2025년 4월 ~ 2026년 4월 운영 결과</div>
 
-function renderSteps() {
-  const s = state.settings;
-  const rate = Math.round(s.book_fund_rate * 100);
-  document.getElementById('stepsBox').innerHTML = [
-    ['후원금이 들어오면', `즉시 ${rate}%는 도서기금, ${100 - rate}%는 운영비로 나뉩니다.`],
-    ['청소년이 하루를 읽으면', '읽고 인증할 때마다 그날의 적립금이 쌓입니다.'],
-    ['쌓인 적립금으로', '동네책방에 직접 가서 읽고 싶은 책을 고릅니다.'],
-    ['책방 영수증이 확인되면', '실제 결제된 금액만 도서기금에서, 오래된 후원부터 차감됩니다.'],
-  ].map(([t, d], i) => `<div class="step">
-      <div class="step-n">${i + 1}</div>
-      <div><div class="step-t">${t}</div><div class="step-d">${d}</div></div>
-    </div>`).join('');
+    <div class="voices">
+      <div class="voice">
+        <p>평소라면 무의미하게 보냈을 15일인데, 문학 작품과 함께하니 마음의 양식이 쌓이는 기분이었어요. 루틴이 없었다면 느끼지 못했을 새로움이 너무 좋아서 앞으로도 더 열심히 참여하고 싶어요!</p>
+        <cite>참여 청소년</cite>
+      </div>
+      <div class="voice">
+        <p>공부하려고 억지로 읽는 책에서 벗어난 느낌이에요. 내 말에 공감해 주고 서로 생각을 나눌 수 있는 사람들이 있다는 게 얼마나 큰 힘이 되는지 몰래 깨달았습니다. 혼자였다면 절대 몰랐을 것 같아요!</p>
+        <cite>참여 청소년</cite>
+      </div>
+      <div class="voice">
+        <p>혼자 하는 것 같지만 함께 루틴을 인증하고 응원받는 경험은 "나 혼자 아니구나" 하는 소속감을 줘요.</p>
+        <cite>참여 청소년</cite>
+      </div>
+    </div>
+  </div>
+</section>
 
-  document.getElementById('policyNotice').innerHTML =
-    `운영비 ${100 - rate}%는 사진 확인, 영수증 정산, 프로그램 운영에 쓰이는 실비입니다.<br>
-     <b>참여 청소년에게는 후원 사실을 안내하지 않습니다.</b> 후원받는 아이로 비치지 않도록,
-     책은 15일을 채운 자신에 대한 선물로만 전해집니다.`;
-}
+<!-- 후원 -->
+<section class="donate">
+  <div class="wrap">
+    <div class="sec-label">후원자에게</div>
+    <h2>후원금이 어디로 가는지<br>끝까지 보여드립니다</h2>
+    <p class="sec-lead">추정이 아니라, 책방 영수증으로 확인된 금액만 차감합니다.</p>
 
-function renderReading() {
-  const s = state.stats || {};
-  document.getElementById('readingStats').innerHTML = `
-    <div class="rstat">
-      <div><b>${won(s.pages_read || 0)}<small>쪽</small></b><span>함께 읽은 쪽수</span></div>
-      <div><b>${s.books_titles || 0}<small>권</small></b><span>읽은 책 종류</span></div>
-      <div><b>${won(s.cert_total || 0)}<small>번</small></b><span>누적 인증</span></div>
-    </div>`;
+    <div class="flow">
+      <div class="flow-i"><b>후원</b><p>책값과 운영에 쓰일 몫으로 나뉩니다</p><i>→</i></div>
+      <div class="flow-i"><b>매일 읽기</b><p>청소년이 인증할 때마다 적립금이 쌓입니다</p><i>→</i></div>
+      <div class="flow-i"><b>책 구매</b><p>동네책방에서 직접 책을 고릅니다</p><i>→</i></div>
+      <div class="flow-i"><b>정산</b><p>영수증 확인 후 오래된 후원부터 차감됩니다</p></div>
+    </div>
 
-  // 문장은 운영진이 공개로 고른 것만 내려옴 (dokseo_public_quotes)
-  const q = state.quotes || [];
-  document.getElementById('quotesSection').style.display = q.length ? '' : 'none';
-  document.getElementById('quotes').innerHTML = q.map(x => `
-    <div class="quote">
-      <p>“${esc(x.quote)}”</p>
-      <cite>${x.book_title ? esc(x.book_title) + ' · ' : ''}${fmtDate(x.day)}</cite>
-    </div>`).join('');
+    <div class="split">
+      <div>
+        <b>📚 책</b>
+        <span>청소년이 동네책방에서 직접 고르는 책값입니다. 영수증으로 확인된 금액만 나갑니다.</span>
+      </div>
+      <div>
+        <b>🌱 습관</b>
+        <span>15일을 끝까지 가도록 곁을 지키는 일에 쓰입니다. 끗짱의 응원, 매일의 인증 확인, 책방과의 정산.</span>
+      </div>
+    </div>
+    <p class="split-note">
+      책만 쥐여준다고 습관이 생기지는 않습니다.<br>
+      매일 읽도록 곁에서 함께하는 일까지가 후원이 하는 일입니다.
+    </p>
 
-  const b = state.books || [];
-  document.getElementById('booksSection').style.display = b.length ? '' : 'none';
-  document.getElementById('books').innerHTML = b.map(x =>
-    `<span><b>${esc(x.book_title)}</b>${x.readers > 1 ? `<i>${x.readers}명</i>` : ''}</span>`).join('');
-}
+    <div style="text-align:center;margin-top:32px">
+      <a class="btn btn-blue" href="sponsor.html">후원 현황 보러 가기</a>
+    </div>
+  </div>
+</section>
 
-function renderWall() {
-  document.getElementById('wall').innerHTML =
-    state.wall.length ? state.wall.map(n => `<span>${esc(n)}</span>`).join('')
-                      : `<div class="empty">첫 후원자를 기다리고 있어요.</div>`;
-}
+<!-- 서점 -->
+<section>
+  <div class="wrap">
+    <div class="sec-label">함께하는 곳</div>
+    <h2>단순한 책방이 아닌,<br>청소년의 성장을 돕는 제3의 공간</h2>
+    <p class="sec-lead">지역 독립서점 운영자들이 '끗짱'이 되어 청소년 곁을 지킵니다.</p>
+    <div class="stores">
+      <div class="store"><b>당신의강릉</b><span>강릉</span></div>
+      <div class="store"><b>책방채움</b><span>대전</span></div>
+      <div class="store"><b>완벽한날들</b><span>속초</span></div>
+      <div class="store"><b>골목책방서성이다</b><span>순천</span></div>
+    </div>
+    <p style="text-align:center;font-size:13px;color:var(--ink-3);margin-top:18px">
+      파트너 서점은 매월 새로 모집합니다
+    </p>
+  </div>
+</section>
 
-// ── 로그인 (데모: 토글) ─────────────────────────────────
-async function toggleAuth() {
-  if (LIVE) { alert('로그인 연동은 도너스 연동 방식 확정 후 붙입니다.'); return; }
-  state.signedIn = !state.signedIn;
-  if (state.signedIn) await loadMine();
-  document.getElementById('authBtn').textContent = state.signedIn ? '로그아웃' : '로그인';
-  document.getElementById('mySection').style.display = state.signedIn ? '' : 'none';
-  if (state.signedIn) { renderCharges(); document.getElementById('mySection').scrollIntoView({ behavior: 'smooth' }); }
-}
+<!-- 마무리 -->
+<section class="final" style="background:#fff;border-top:1px solid var(--line)">
+  <div class="wrap">
+    <h2>문해력은 학습 도구가 아니라,<br>세상을 해석하고 스스로를 지키는<br><span style="color:var(--green-d)">시민의 기초 체력</span>입니다</h2>
+    <p class="sec-lead" style="max-width:600px;margin-left:auto;margin-right:auto">
+      미디어 교육, 코딩 교육, 4차 산업혁명, 그리고 AI 교육까지.
+      시대는 늘 변했고 그때마다 청소년을 가만히 두지 않았습니다.
+      그 모든 유행 속에서도 변하지 않는 것은 <b style="color:var(--ink)">결국 아이들 각자의 서사이고 나다움</b>입니다.
+    </p>
+    <p class="sec-lead">
+      후원으로 청소년들에게 책 읽는 습관을 선물해주세요.<br>
+      매일 읽는 청소년이라면, 지금 바로 함께할 수 있습니다.
+    </p>
+    <div class="final-cta">
+      <a class="btn btn-blue" href="sponsor.html">후원하기</a>
+      <a class="btn btn-green" href="app.html">참여하기</a>
+    </div>
+  </div>
+</section>
 
-function notReady() {
-  alert('후원 페이지(도너스) 연결은 결제 연동 방식이 확정되면 붙습니다.');
-  return false;
-}
+<footer>
+  <div class="wrap">
+    사단법인 유스보이스 · 한끗독서<br>
+    문의 <a href="mailto:soon@youthvoice.or.kr">soon@youthvoice.or.kr</a>
+  </div>
+</footer>
 
-const fmtDate = d => { const [y, m, dd] = d.slice(0, 10).split('-'); return `${y}.${m}.${dd}`; };
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
-(async function init() {
-  if (LIVE) document.getElementById('demoFlag').style.display = 'none';
-  await loadPublic();
-  renderPool(); renderFeed(); renderReading(); renderSteps(); renderWall();
-})();
-</script>
 </body>
 </html>
