@@ -61,7 +61,10 @@ select.ph { color:var(--ink-3); }
   letter-spacing:.3px; margin-bottom:5px; }
 
 /* 로그인 */
-.auth { min-height:100vh; background:linear-gradient(160deg,#3A40D6,#2A2FA8); color:#fff; padding:0 26px; display:flex; flex-direction:column; justify-content:center; }
+/* body 가 flex 라 너비를 안 주면 내용 크기만큼만 늘어난다. 화면을 꽉 채우고 폼만 가운데로 */
+.auth { width:100%; min-height:100vh; background:linear-gradient(160deg,#3A40D6,#2A2FA8); color:#fff;
+  padding:0 26px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
+.auth > * { width:100%; max-width:360px; }
 .auth h1 { font-size:27px; font-weight:800; letter-spacing:-1px; line-height:1.35; }
 .auth .sub { font-size:14px; color:rgba(255,255,255,.72); margin-top:10px; margin-bottom:30px; }
 .auth input { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); color:#fff; margin-bottom:10px; }
@@ -207,7 +210,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 <!-- 로그인 -->
 <div class="auth" id="authScr">
   <h1>매일 한 장,<br>책과 가까워지는 습관</h1>
-  <div class="sub">끗짱과 함께 15일, 읽은 만큼 적립돼요</div>
+  <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 포인트가 쌓여요</div>
   <div id="authErr" class="auth-err" style="display:none;"></div>
   <div id="signupOnly" style="display:none;">
     <div class="role-row">
