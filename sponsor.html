@@ -265,7 +265,6 @@ const DEMO = {
   pool: { total_donated: 1_850_000, book_fund: 1_480_000, operation_fee: 370_000,
           remaining: 622_000, spent: 858_000, books_bought: 47, books_pending: 5,
           students_reached: 47, sponsors_count: 23 },
-  settings: { book_fund_rate: 0.8 },
   feed: [
     { day: '2026-09-13', cert_count: 12, student_count: 12 },
     { day: '2026-09-12', cert_count: 15, student_count: 14 },
@@ -301,19 +300,18 @@ const DEMO = {
   ],
 };
 
-let state = { signedIn: false, pool: null, settings: null, feed: [], wall: [], charges: [] };
+let state = { signedIn: false, pool: null, feed: [], wall: [], charges: [] };
 
 // ── 데이터 로드 ─────────────────────────────────────────
 async function loadPublic() {
   if (!LIVE) {
-    state.pool = DEMO.pool; state.settings = DEMO.settings;
+    state.pool = DEMO.pool;
     state.feed = DEMO.feed; state.wall = DEMO.wall;
     state.stats = DEMO.stats; state.quotes = DEMO.quotes; state.books = DEMO.books;
     return;
   }
-  const [pool, settings, feed, wall, stats, quotes, books] = await Promise.all([
+  const [pool, feed, wall, stats, quotes, books] = await Promise.all([
     sb.rpc('dokseo_pool_status'),
-    sb.from('dokseo_settings').select('book_fund_rate').single(),
     sb.rpc('dokseo_activity_feed', { p_days: 10 }),
     sb.rpc('dokseo_sponsor_wall', { p_limit: 40 }),
     sb.rpc('dokseo_reading_stats'),
@@ -321,7 +319,6 @@ async function loadPublic() {
     sb.rpc('dokseo_books_reading', { p_limit: 18 }),
   ]);
   state.pool = pool.data || DEMO.pool;
-  state.settings = settings.data || DEMO.settings;
   state.feed = feed.data || [];
   state.wall = (wall.data || []).map(w => w.nickname);
   state.stats = stats.data || DEMO.stats;
@@ -386,7 +383,7 @@ function renderPool() {
       책방 영수증이 확인되면 도서기금에서 차감됩니다.</div>` : ''}`;
 }
 
-// 개인 금액을 쪼개 성과를 증명하려 하지 않는다. 1만원에서 운영비를 빼면
+// 개인 금액을 쪼개 성과를 증명하려 하지 않는다. 1만원에서 습관기금을 빼면
 // 책 한 권도 안 되기 때문에, 배분을 보여줄수록 초라해질 뿐이다.
 // 대신 합류 이후 전체 누적을 보여준다. 소액도 같은 숫자를 보고, 시간이 지나면 자란다
 function renderCharges() {
@@ -437,11 +434,11 @@ function renderFeed() {
     <div class="chart-x">${cols.map(d => `<span>${d.day.slice(8)}</span>`).join('')}</div>`;
 }
 
+// 비율(80/20)은 화면에 내보내지 않는다. 후원금이 하는 일은 '책'과 '습관' 두 가지고,
+// 투명성은 퍼센트가 아니라 영수증 실차감에서 나온다
 function renderSteps() {
-  const s = state.settings;
-  const rate = Math.round(s.book_fund_rate * 100);
   document.getElementById('stepsBox').innerHTML = [
-    ['후원금이 들어오면', `즉시 ${rate}%는 도서기금, ${100 - rate}%는 운영비로 나뉩니다.`],
+    ['후원금이 들어오면', '책을 선물하는 도서기금과, 매일 읽도록 곁을 지키는 습관기금으로 나뉩니다.'],
     ['청소년이 하루를 읽으면', '읽고 인증할 때마다 그날의 적립금이 쌓입니다.'],
     ['쌓인 적립금으로', '동네책방에 직접 가서 읽고 싶은 책을 고릅니다.'],
     ['책이 아이에게 갈 때', '"너를 응원하는 어른들이 이 책을 보냈다"고 전합니다.'],
@@ -452,8 +449,9 @@ function renderSteps() {
     </div>`).join('');
 
   document.getElementById('policyNotice').innerHTML =
-    `운영비 ${100 - rate}%는 끗짱을 찾아 연결하고, 매일 아이들을 응원하고,
-     인증과 영수증을 확인하고, 마지막 날 책방 모임을 여는 데 쓰입니다.`;
+    `후원금은 <b>청소년에게 책을 선물하고, 매일 읽는 습관이 자리 잡도록 곁을 지키는 데</b> 쓰입니다.<br>
+     습관기금은 끗짱을 찾아 연결하고, 매일 아이들을 응원하고,
+     인증과 영수증을 확인하고, 마지막 날 책방 모임을 여는 일에 들어갑니다.`;
 }
 
 function renderReading() {
