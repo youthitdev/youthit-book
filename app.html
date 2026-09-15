@@ -733,7 +733,7 @@ function viewHome() {
           <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${esc(r?.title||'')}</div>
           ${p.book_photo_url ? `<div style="margin-top:10px;"><img src="${esc(p.book_photo_url)}" loading="lazy"
               style="width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:12px;display:block;background:#f0f0f4;">
-              <div style="font-size:11.5px;color:var(--ink-3);margin-top:5px;">이 책으로 시작한대요</div></div>` : ''}
+              <div style="font-size:11.5px;color:var(--ink-3);margin-top:5px;">${p.book_title ? `📖 ${esc(p.book_title)}` : '이 책으로 시작한대요'}</div></div>` : ''}
           ${p.note ? `<div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.6;">“${esc(p.note)}”</div>` : ''}
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button class="btn btn-green" style="padding:10px;font-size:13.5px;" onclick="decide(${p.routine_id},'${p.user_id}','approved')">승인</button>
@@ -916,14 +916,16 @@ function openRoutine(id) {
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : `<div>
-          <div class="field-label">내가 읽을 책 <span class="opt">선택</span></div>
+          <div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
           <div id="apBookBox"></div>
           <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
           <div class="hint">시작할 책을 한 장 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
-          <div class="field-label" style="margin-top:16px;">참여 각오 <span class="opt">선택</span></div>
-          <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300"></textarea>
-          <button class="btn btn-primary" style="margin-top:12px;" onclick="apply(${r.id})">참여하기</button></div>`}`;
-  applyBook = null; drawApplyBook();
+          <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
+          <input type="text" id="applyBookTitle" placeholder="예) 속초에서의 겨울" maxlength="60" oninput="checkApply()">
+          <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
+          <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
+          <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`;
+  applyBook = null; drawApplyBook(); checkApply();
   openOv('ovRoutine');
 }
 
@@ -933,21 +935,33 @@ function drawApplyBook() {
   const box = $('apBookBox'); if (!box) return;
   box.innerHTML = applyBook
     ? `<div class="book-prev"><img src="${esc(applyBook)}" alt="">
-         <button type="button" onclick="applyBook=null;drawApplyBook()">×</button></div>`
+         <button type="button" onclick="applyBook=null;drawApplyBook();checkApply()">×</button></div>`
     : `<div class="cover-pick" onclick="document.getElementById('apBookInput').click()">
          <i class="ti ti-book" style="font-size:22px;"></i>책 사진 고르기</div>`;
 }
 
 async function pickApplyBook(e) {
   const f = e.target.files[0]; if (!f) return;
-  try { applyBook = await resize(f, 1280, .82); drawApplyBook(); }
+  try { applyBook = await resize(f, 1280, .82); drawApplyBook(); checkApply(); }
   catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+}
+
+// 셋 다 채워야 참여할 수 있다. 서버에도 같은 검사가 걸려 있다
+function checkApply() {
+  const b = $('apSubmit'); if (!b) return;
+  b.disabled = !(applyBook
+    && $('applyBookTitle')?.value.trim()
+    && $('applyNote')?.value.trim());
 }
 
 async function apply(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
-  const note = $('applyNote')?.value.trim() || null;
+  const note  = $('applyNote')?.value.trim() || '';
+  const title = $('applyBookTitle')?.value.trim() || '';
+  if (!applyBook) return toast('읽을 책 사진을 올려주세요');
+  if (!title) return toast('읽을 책 제목을 적어주세요');
+  if (!note) return toast('참여 각오를 적어주세요');
 
   let bookUrl = null;
   if (applyBook) {
@@ -960,7 +974,7 @@ async function apply(rid) {
 
   // 승인 절차 없이 바로 참여. 서버 트리거가 status 와 정원을 지킨다
   const { error } = await sb.from('routine_participants')
-    .insert({ routine_id: rid, user_id: me.id, status: 'approved', note, book_photo_url: bookUrl });
+    .insert({ routine_id: rid, user_id: me.id, status: 'approved', note, book_title: title, book_photo_url: bookUrl });
   if (error) return toast('참여하지 못했어요: ' + error.message);
   applyBook = null;
   await loadAll(); closeOv('ovRoutine'); render();
