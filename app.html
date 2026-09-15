@@ -105,6 +105,12 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 
 /* 루틴 카드 */
 .r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; overflow:hidden; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+  border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-bottom:18px; }
+.stats div { background:var(--card); padding:13px 4px; text-align:center; }
+.stats b { display:block; font-size:17px; font-weight:800; letter-spacing:-.5px; }
+.stats b small { font-size:11px; font-weight:700; margin-left:1px; }
+.stats span { display:block; font-size:10px; color:var(--ink-3); margin-top:3px; font-weight:600; }
 .r-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
 .r-grid .r-card { margin-bottom:0; padding:12px; }
 .r-grid .r-cover { margin:-12px -12px 10px; }
@@ -237,8 +243,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div class="body" id="tabBody"><div class="spin">불러오는 중…</div></div>
   <nav>
     <div class="on" data-tab="home" onclick="go('home')"><i class="ti ti-home"></i>홈</div>
-    <div data-tab="cert" onclick="go('cert')"><i class="ti ti-camera"></i>인증</div>
-    <div data-tab="feed" onclick="go('feed')"><i class="ti ti-book"></i>기록</div>
+    <div data-tab="cert" onclick="go('cert')"><i class="ti ti-gift"></i>포인트</div>
+    <div data-tab="feed" onclick="go('feed')"><i class="ti ti-users"></i>모두</div>
     <div data-tab="my" onclick="go('my')"><i class="ti ti-user"></i>MY</div>
   </nav>
 </div>
@@ -589,12 +595,15 @@ async function loadAll() {
     sb.from('bookstores').select('*').order('name'),
     sb.from('dokseo_settings').select('*').maybeSingle(),
     sb.rpc('routine_people_count'),
+    sb.rpc('dokseo_reading_stats'),
+    sb.rpc('dokseo_pool_status'),
   ]);
   state.routines = pub[0].data || [];
   state.stores   = pub[1].data || [];
   state.settings = pub[2].data || {};
   state.counts   = {};
   (pub[3].data || []).forEach(x => state.counts[x.routine_id] = Number(x.people));
+  state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
     state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.names = {};
@@ -725,12 +734,25 @@ function routineCard(r) {
   </div>`;
 }
 
+// 우리가 함께 만든 숫자. 익명 집계라 누구도 특정되지 않는다
+function statsStrip() {
+  const st = state.stats || {};
+  const row = (n, unit, label) =>
+    `<div><b>${won(n || 0)}<small>${unit}</small></b><span>${label}</span></div>`;
+  return `<div class="stats">
+    ${row(st.students_total, '명', '함께 읽는 친구')}
+    ${row(st.cert_total, '일', '쌓인 인증')}
+    ${row(st.books_bought, '권', '바꾼 책')}
+    ${row(st.sponsors_count, '명', '응원하는 어른')}
+  </div>`;
+}
+
 function viewHome() {
   const mine = myRoutines();
   const others = state.routines.filter(r => !mine.includes(r) && r.status !== 'done');
 
   if (isGuest()) {
-    return `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
+    return statsStrip() + `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
@@ -746,7 +768,7 @@ function viewHome() {
       </div>`;
   }
 
-  let h = '';
+  let h = statsStrip();
 
   if (me.role === 'kkutjjang') {
     const pend = state.parts.filter(p => p.status === 'pending' &&
@@ -814,20 +836,22 @@ function viewCert() {
   }
 
   const mine = myRoutines();
-  if (!mine.length) return `<div class="empty">참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 신청해주세요.</div>`;
-  return mine.map(r => {
-    const done = didToday(r.id);
-    return `<div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+  if (!mine.length) return `<div class="empty">참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.</div>`;
+
+  // 오늘 아직 안 한 루틴은 여기서 바로 누를 수 있게
+  const todo = mine.filter(r => !didToday(r.id) && r.status !== 'done');
+  return (todo.length
+    ? `<div class="sec-t" style="margin-top:0;">오늘 읽을 차례</div>` + todo.map(r => `<div class="card"
+        style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <div style="min-width:0;">
-          <div style="font-weight:700;">${r.emoji||'📚'} ${esc(r.title)}</div>
-          <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${myCerts(r.id).length}번째 인증까지 했어요</div>
+          <div style="font-weight:700;font-size:14.5px;">${r.emoji||'📚'} ${esc(r.title)}</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">${myCerts(r.id).length}번째 인증까지 했어요</div>
         </div>
-        ${done ? `<span class="chip c-active">오늘 완료</span>`
-               : `<button class="btn btn-green" style="width:auto;padding:10px 16px;font-size:13.5px;" onclick="openCert(${r.id})">인증하기</button>`}
-      </div>
-    </div>`;
-  }).join('') + balanceBlock();
+        <button class="btn-green" style="flex:none;padding:10px 15px;border:none;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer;"
+          onclick="openCert(${r.id})">인증하기</button>
+      </div>`).join('')
+    : `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 모두 마쳤어요 🌱</div>`)
+    + balanceBlock();
 }
 
 function balanceBlock() {
@@ -868,35 +892,54 @@ function shelfHtml() {
       `<span>${esc(t)}${n > 1 ? `<i>${n}명</i>` : ''}</span>`).join('')}</div>`;
 }
 
+// 인증 카드 한 장. 루틴 상세와 '모두' 탭에서 같이 쓴다
+// 그 루틴 참여자들의 기록. 8명이 서로 보고 댓글 다는 게 이 프로그램의 동력이라
+// 피드는 '모든 기록'이 아니라 '우리 루틴'이어야 한다
+function routineFeed(r) {
+  if (isGuest()) return '';
+  const p = myPart(r.id);
+  if (!(p && p.status === 'approved') && r.led_by !== me.id) return '';
+  const list = state.certs.filter(c => c.routine_id === r.id).slice(0, 60);
+  return `<div class="sec-t">우리 루틴 기록</div>` + (list.length
+    ? list.map(certCard).join('')
+    : `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`);
+}
+
+function certCard(c) {
+  const cms = state.comments.filter(x => x.cert_id === c.id);
+  return `<div class="f-card">
+    <div class="f-head">
+      <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
+      <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
+      ${me && c.user_id === me.id ? `<div style="display:flex;gap:6px;flex-shrink:0;">
+        <button class="f-act" onclick="editCert(${c.id})">고치기</button>
+        <button class="f-act" onclick="delCert(${c.id})">지우기</button></div>` : ''}
+    </div>
+    ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
+    ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
+      ${(c.book_title||c.page_end) ? `<cite>📖 ${[esc(c.book_title||''), c.page_end?c.page_end+'쪽':''].filter(Boolean).join(' · ')}</cite>` : ''}</div>` : ''}
+    ${c.content ? `<div class="f-text">${esc(c.content)}</div>` : ''}
+    <div class="f-cmts">
+      ${cms.map(m => `<div class="f-cmt"><b>${esc(nameOf(m.user_id))}</b>${esc(m.content)}</div>`).join('')}
+      <div class="f-cmt-in">
+        <input type="text" id="cm_${c.id}" placeholder="응원 한마디" maxlength="200"
+               onkeydown="if(event.key==='Enter')addComment(${c.id})">
+        <button onclick="addComment(${c.id})">남기기</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// '모두' 탭 — 루틴을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
 function viewFeed() {
-  const rids = myRoutines().map(r => r.id);
-  const list = state.certs.filter(c => rids.includes(c.routine_id)).slice(0, 60);
   const shelf = shelfHtml();
-  if (!list.length) return shelf + `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`;
-  return shelf + list.map(c => {
-    const cms = state.comments.filter(x => x.cert_id === c.id);
-    return `<div class="f-card">
-      <div class="f-head">
-        <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
-        <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
-        ${me && c.user_id === me.id ? `<div style="display:flex;gap:6px;flex-shrink:0;">
-          <button class="f-act" onclick="editCert(${c.id})">고치기</button>
-          <button class="f-act" onclick="delCert(${c.id})">지우기</button></div>` : ''}
-      </div>
-      ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
-      ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
-        ${(c.book_title||c.page_end) ? `<cite>📖 ${[esc(c.book_title||''), c.page_end?c.page_end+'쪽':''].filter(Boolean).join(' · ')}</cite>` : ''}</div>` : ''}
-      ${c.content ? `<div class="f-text">${esc(c.content)}</div>` : ''}
-      <div class="f-cmts">
-        ${cms.map(m => `<div class="f-cmt"><b>${esc(nameOf(m.user_id))}</b>${esc(m.content)}</div>`).join('')}
-        <div class="f-cmt-in">
-          <input type="text" id="cm_${c.id}" placeholder="응원 한마디" maxlength="200"
-                 onkeydown="if(event.key==='Enter')addComment(${c.id})">
-          <button onclick="addComment(${c.id})">남기기</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  const quotes = state.certs.filter(c => c.quote && c.quote.trim()).slice(0, 30);
+  return shelf + `<div class="sec-t">💬 요즘 옮겨 적은 문장</div>` + (quotes.length
+    ? quotes.map(c => `<div class="card" style="padding:15px 16px;">
+        <div style="font-size:14.5px;line-height:1.75;">“${esc(c.quote)}”</div>
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
+      </div>`).join('')
+    : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 데서 한 문장 옮겨 적어보세요.</div>`);
 }
 
 function viewMy() {
@@ -989,7 +1032,8 @@ function openRoutine(id) {
           <input type="text" id="applyBookTitle" placeholder="예) 속초에서의 겨울" maxlength="60" oninput="checkApply()">
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
           <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
-          <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`;
+          <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`
+    + routineFeed(r);
   applyBook = null; drawApplyBook(); checkApply();
   openOv('ovRoutine');
 }
@@ -1608,6 +1652,7 @@ function enterDemo(role) {
   ];
   state.purchases = [];
   state.counts = { 901:3, 902:0 };
+  state.stats = { students_total:31, cert_total:412, books_bought:47, sponsors_count:23 };
 
   $('authScr').style.display = 'none';
   $('appScr').style.display = '';
