@@ -163,6 +163,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 /* 피드 */
 .f-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; }
 .f-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.f-act { background:none; border:1px solid var(--line); border-radius:8px; padding:4px 9px;
+  font-size:11.5px; color:var(--ink-3); cursor:pointer; font-family:inherit; }
 .f-av { width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
 .f-name { font-size:13.5px; font-weight:700; }
 .f-time { font-size:11.5px; color:var(--ink-3); }
@@ -251,7 +253,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 <!-- 인증 작성 -->
 <div class="ov" id="ovCert">
   <div class="ov-h"><button onclick="closeOv('ovCert')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">오늘의 인증</div><div class="t" id="ovCTitle"></div></div></div>
+    <div><div class="s" id="ovCLabel">오늘의 인증</div><div class="t" id="ovCTitle"></div></div></div>
   <div class="ov-b">
     <div id="certGuide"></div>
     <div>
@@ -387,6 +389,27 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
         <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">얼굴이 안 나온 사진만, 운영진이 한 번 더 확인하고 올려요. 안 해도 괜찮아요.</span></span>
     </label>
     <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
+  </div>
+</div>
+
+<!-- 내 정보 -->
+<div class="ov" id="ovProfile">
+  <div class="ov-h"><button onclick="closeOv('ovProfile')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">MY</div><div class="t">내 정보</div></div></div>
+  <div class="ov-b">
+    <div>
+      <div class="field-label">이름 <span class="req">* 필수</span></div>
+      <input type="text" id="pfName" maxlength="20" oninput="checkProfile()">
+    </div>
+    <div>
+      <div class="field-label">사는 곳 <span class="opt">선택</span></div>
+      <input type="text" id="pfRegion" maxlength="30" placeholder="예) 강원 속초">
+      <div class="hint">가까운 책방을 먼저 보여드리는 데 써요</div>
+    </div>
+    <div class="card" style="font-size:12.5px;color:var(--ink-3);line-height:1.7;">
+      이메일과 역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
+    </div>
+    <button class="btn btn-primary" id="pfSubmit" onclick="saveProfile()">저장하기</button>
   </div>
 </div>
 
@@ -855,7 +878,10 @@ function viewFeed() {
     return `<div class="f-card">
       <div class="f-head">
         <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
-        <div><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
+        <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
+        ${me && c.user_id === me.id ? `<div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="f-act" onclick="editCert(${c.id})">고치기</button>
+          <button class="f-act" onclick="delCert(${c.id})">지우기</button></div>` : ''}
       </div>
       ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
       ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
@@ -879,7 +905,9 @@ function viewMy() {
   return `<div class="card" style="text-align:center;padding:26px 18px;">
       <div class="f-av" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px;">${esc(me.name[0]||'?')}</div>
       <div style="font-size:17px;font-weight:800;">${esc(me.name)}</div>
-      <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${me.role==='kkutjjang'?'끗짱':'청소년'}</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${me.role==='kkutjjang'?'끗짱':'청소년'}${me.region?` · ${esc(me.region)}`:''}</div>
+      <button class="btn btn-line" style="margin-top:16px;max-width:200px;margin-left:auto;margin-right:auto;"
+        onclick="openProfile()">내 정보 고치기</button>
     </div>
     <div class="card" style="display:flex;text-align:center;">
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
@@ -891,6 +919,33 @@ function viewMy() {
     <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
       <span style="font-weight:700;">함께하는 동네책방 보기</span><i class="ti ti-chevron-right" style="color:var(--ink-3);"></i>
     </div>`;
+}
+
+// ── 내 정보 ────────────────────────────────────────────
+function openProfile() {
+  $('pfName').value   = me.name || '';
+  $('pfRegion').value = me.region || '';
+  checkProfile(); openOv('ovProfile');
+}
+
+function checkProfile() { $('pfSubmit').disabled = !$('pfName').value.trim(); }
+
+async function saveProfile() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const name = $('pfName').value.trim();
+  if (!name) return toast('이름을 적어주세요');
+  const region = $('pfRegion').value.trim() || null;
+
+  const btn = $('pfSubmit'); btn.disabled = true; btn.textContent = '저장 중…';
+  // 역할은 바꾸지 않는다. 청소년이 스스로 끗짱이 되면 안 된다
+  const { error } = await sb.from('profiles').update({ name, region }).eq('id', me.id);
+  btn.disabled = false; btn.textContent = '저장하기';
+  if (error) return toast('저장에 실패했어요: ' + error.message);
+
+  me.name = name; me.region = region;
+  state.names[me.id] = name;
+  closeOv('ovProfile'); render();
+  toast('바꿨어요');
 }
 
 // ── 루틴 상세 ──────────────────────────────────────────
@@ -1172,11 +1227,13 @@ async function submitMake() {
 }
 
 // ── 인증 ───────────────────────────────────────────────
-let certRid = null, photos = [];
+let certRid = null, photos = [], certEditId = null;
 
 function openCert(rid) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
-  certRid = rid; photos = [];
+  certRid = rid; photos = []; certEditId = null;
+  $('ovCLabel').textContent = '오늘의 인증';
+  $('cSubmit').textContent = '인증하기';
   $('ovCTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('certGuide').innerHTML = r.cert_guide
     ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
@@ -1267,31 +1324,79 @@ function pageHint() {
   }
 }
 
+// 내가 쓴 인증만. 사진은 그대로 두고 글만 고친다 (사진을 바꾸려면 지우고 다시)
+function editCert(id) {
+  const c = state.certs.find(x => x.id === id);
+  if (!c || c.user_id !== me.id) return;
+  const r = state.routines.find(x => x.id === c.routine_id);
+  certRid = c.routine_id; certEditId = id; photos = [];
+
+  $('ovCLabel').textContent = '인증 고치기';
+  $('ovCTitle').textContent = `${r?.emoji||'📚'} ${r?.title||''}`;
+  $('certGuide').innerHTML = `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--ink-2);">
+      사진은 그대로 두고 글만 고칠 수 있어요. 사진을 바꾸려면 이 인증을 지우고 다시 올려주세요.</div>`;
+  $('phGrid').innerHTML = (c.photo_urls||[]).map(u =>
+    `<div class="ph-wrap"><img src="${esc(u)}"></div>`).join('');
+  $('cQuote').value = c.quote || '';
+  $('cBook').value  = c.book_title || '';
+  $('cPage').value  = c.page_end || '';
+  $('cMemo').value  = c.content || '';
+  $('cSubmit').textContent = '고치기';
+  $('cSubmit').disabled = false;
+  $('cPageHint').style.display = 'none';
+  openOv('ovCert');
+}
+
+async function delCert(id) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const c = state.certs.find(x => x.id === id);
+  if (!c || c.user_id !== me.id) return;
+  if (!confirm('이 인증을 지울까요?\n쌓인 포인트도 같이 줄어들어요.')) return;
+  const { error } = await sb.from('certifications').delete().eq('id', id);
+  if (error) return toast('지우지 못했어요: ' + error.message);
+  await loadAll(); render();
+  toast('지웠어요');
+}
+
 async function submitCert() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
-  if (!photos.length) return;
   const r0 = state.routines.find(x => x.id === certRid);
+  if (!certEditId && !photos.length) return;
   if (r0?.quote_required && !$('cQuote').value.trim()) return toast('마음에 남은 문장을 적어주세요');
   if (!$('cBook').value.trim()) return toast('읽는 책 제목을 적어주세요');
   if (!parseInt($('cPage').value || '0', 10)) return toast('오늘까지 읽은 쪽을 적어주세요');
-  const btn = $('cSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
+  const btn = $('cSubmit'); const label = btn.textContent;
+  btn.disabled = true; btn.textContent = '저장 중…';
+
+  const row = {
+    quote: $('cQuote').value.trim() || null,
+    book_title: $('cBook').value.trim() || null,
+    page_end: parseInt($('cPage').value||'0',10) || null,
+    content: $('cMemo').value.trim() || null,
+  };
+
+  // 고치는 경우: 사진은 건드리지 않는다
+  if (certEditId) {
+    const { error } = await sb.from('certifications').update(row).eq('id', certEditId);
+    btn.disabled = false; btn.textContent = label;
+    if (error) return toast('저장에 실패했어요: ' + error.message);
+    certEditId = null;
+    await loadAll(); closeOv('ovCert'); render();
+    return toast('고쳤어요');
+  }
+
   const urls = [];
   for (let i = 0; i < photos.length; i++) {
     const blob = toBlob(photos[i]);
     const path = `${me.id}/${certRid}_${Date.now()}_${i}.jpg`;
     const { error } = await sb.storage.from('cert-photos').upload(path, blob, { contentType:'image/jpeg' });
-    if (error) { btn.disabled=false; btn.textContent='인증하기'; return toast('사진 업로드 실패: '+error.message); }
+    if (error) { btn.disabled=false; btn.textContent=label; return toast('사진 업로드 실패: '+error.message); }
     urls.push(sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl);
   }
-  const { error } = await sb.from('certifications').insert({
-    routine_id: certRid, user_id: me.id, photo_urls: urls,
-    quote: $('cQuote').value.trim() || null,
-    book_title: $('cBook').value.trim() || null,
-    page_end: parseInt($('cPage').value||'0',10) || null,
-    content: $('cMemo').value.trim() || null,
-  });
-  btn.disabled = false; btn.textContent = '인증하기';
+  const { error } = await sb.from('certifications')
+    .insert({ routine_id: certRid, user_id: me.id, photo_urls: urls, ...row });
+  btn.disabled = false; btn.textContent = label;
   if (error) {
     return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증 저장에 실패했어요: ' + error.message);
   }
