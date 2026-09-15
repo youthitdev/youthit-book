@@ -693,7 +693,7 @@ function routineCard(r) {
       <span class="chip ${st[0]}">${st[1]}</span>
     </div>
     ${r.description ? `<div class="r-desc">${esc(r.description).slice(0,70)}${r.description.length>70?'…':''}</div>` : ''}
-    ${waiting ? `<div style="margin-top:9px;"><span class="chip c-wait">승인 기다리는 중</span></div>` : ''}
+    ${waiting ? `<div style="margin-top:9px;"><span class="chip c-wait">확인 중</span></div>` : ''}
     ${mine && r.points_per_cert ? `<div style="margin-top:9px;font-size:12.5px;color:var(--green-d);font-weight:700;">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}P</div>` : ''}
   </div>`;
 }
@@ -725,7 +725,7 @@ function viewHome() {
     const pend = state.parts.filter(p => p.status === 'pending' &&
       state.routines.some(r => r.id === p.routine_id && r.led_by === me.id));
     if (pend.length) {
-      h += `<div class="sec-t">신청을 기다리고 있어요</div>`;
+      h += `<div class="sec-t">확인이 필요한 신청</div>`;
       h += pend.map(p => {
         const r = state.routines.find(x => x.id === p.routine_id);
         return `<div class="card">
@@ -908,9 +908,9 @@ function openRoutine(id) {
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
     ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
-        : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 신청할 수 있어요')">로그인하고 신청하기</button>`)
+        : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
       : p && p.status==='approved' ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">참여 중이에요 🌱</div>`
-      : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">승인을 기다리고 있어요</div>`
+      : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">확인 중이에요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : me.role==='kkutjjang' ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
@@ -921,8 +921,8 @@ function openRoutine(id) {
           <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
           <div class="hint">시작할 책을 한 장 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="opt">선택</span></div>
-          <textarea id="applyNote" rows="3" placeholder="이 루틴을 신청하는 이유를 적어주세요." maxlength="300"></textarea>
-          <button class="btn btn-primary" style="margin-top:12px;" onclick="apply(${r.id})">신청하기</button></div>`}`;
+          <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300"></textarea>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="apply(${r.id})">참여하기</button></div>`}`;
   applyBook = null; drawApplyBook();
   openOv('ovRoutine');
 }
@@ -958,12 +958,13 @@ async function apply(rid) {
     bookUrl = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
   }
 
+  // 승인 절차 없이 바로 참여. 서버 트리거가 status 와 정원을 지킨다
   const { error } = await sb.from('routine_participants')
-    .insert({ routine_id: rid, user_id: me.id, note, book_photo_url: bookUrl });
-  if (error) return toast('신청에 실패했어요: ' + error.message);
+    .insert({ routine_id: rid, user_id: me.id, status: 'approved', note, book_photo_url: bookUrl });
+  if (error) return toast('참여하지 못했어요: ' + error.message);
   applyBook = null;
   await loadAll(); closeOv('ovRoutine'); render();
-  toast('신청했어요! 끗짱의 승인을 기다려주세요.');
+  toast('함께하게 됐어요! 오늘부터 읽어볼까요 🌱');
 }
 
 async function decide(rid, uid, status) {
@@ -1428,7 +1429,7 @@ function enterDemo(role) {
     { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
-    { routine_id:901, user_id:'u4', status:'pending', book_photo_url:null, note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
+    { routine_id:901, user_id:'u4', status:'approved', book_photo_url:null, note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
   ];
   state.names = { [uid]: me.name, [y1]:'서연', [kid]:'민지', u2:'하준', u3:'지우', u4:'예린' };
   state.certs = [
