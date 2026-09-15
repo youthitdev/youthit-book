@@ -1276,11 +1276,11 @@ async function submitMake() {
 }
 
 // ── 인증 ───────────────────────────────────────────────
-let certRid = null, photos = [], certEditId = null;
+let certRid = null, photos = [], certEditId = null, keptUrls = [];
 
 function openCert(rid) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
-  certRid = rid; photos = []; certEditId = null;
+  certRid = rid; photos = []; keptUrls = []; certEditId = null;
   $('ovCLabel').textContent = '오늘의 인증';
   $('cSubmit').textContent = '인증하기';
   $('cPhLabel').innerHTML = '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
@@ -1313,21 +1313,27 @@ function openCert(rid) {
 }
 
 async function pickPhotos(e) {
-  const files = [...e.target.files].slice(0, 3 - photos.length);
+  const files = [...e.target.files].slice(0, 3 - keptUrls.length - photos.length);
   for (const f of files) {
     try { photos.push(await resize(f, 1280, .82, true)); }
     catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
   }
   e.target.value = ''; drawPhotos();
 }
+// keptUrls = 이미 서버에 있는 사진, photos = 이번에 새로 고른 사진
 function drawPhotos() {
   const g = $('phGrid');
-  g.innerHTML = photos.map((p,i) => `<div class="ph-wrap"><img src="${p}">
-      <button class="ph-del" onclick="delPhoto(${i})">×</button></div>`).join('')
-    + (photos.length < 3 ? `<div class="ph-box" onclick="document.getElementById('phInput').click()">
-        <i class="ti ti-plus" style="font-size:20px;"></i>${photos.length}/3</div>` : '');
+  const total = keptUrls.length + photos.length;
+  g.innerHTML =
+      keptUrls.map((u,i) => `<div class="ph-wrap"><img src="${esc(u)}">
+        <button class="ph-del" onclick="delKept(${i})">×</button></div>`).join('')
+    + photos.map((p,i) => `<div class="ph-wrap"><img src="${p}">
+        <button class="ph-del" onclick="delPhoto(${i})">×</button></div>`).join('')
+    + (total < 3 ? `<div class="ph-box" onclick="document.getElementById('phInput').click()">
+        <i class="ti ti-plus" style="font-size:20px;"></i>${total}/3</div>` : '');
   checkCert();
 }
+function delKept(i) { keptUrls.splice(i,1); drawPhotos(); }
 function delPhoto(i) { photos.splice(i,1); drawPhotos(); }
 
 // 진도가 뒤로 가거나 하루에 너무 많이 뛰면 물어보되, 막지는 않는다
@@ -1338,7 +1344,7 @@ function checkCert() {
   const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
   const needPage  = !parseInt($('cPage').value || '0', 10);
   const needBook  = !$('cBook').value.trim();   // 비면 쪽수 범위 계산이 틀어진다
-  const needPhoto = !certEditId && photos.length === 0;   // 수정 중이면 사진은 이미 있다
+  const needPhoto = keptUrls.length + photos.length === 0;
   $('cSubmit').disabled = needPhoto || needQuote || needPage || needBook;
 }
 
@@ -1381,23 +1387,24 @@ function editCert(id) {
   const c = state.certs.find(x => x.id === id);
   if (!c || c.user_id !== me.id) return;
   const r = state.routines.find(x => x.id === c.routine_id);
-  certRid = c.routine_id; certEditId = id; photos = [];
+  certRid = c.routine_id; certEditId = id; photos = []; keptUrls = [...(c.photo_urls || [])];
 
   $('ovCLabel').textContent = '인증 수정';
   $('ovCTitle').textContent = `${r?.emoji||'📚'} ${r?.title||''}`;
-  $('certGuide').innerHTML = `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--ink-2);">
-      사진은 그대로 두고 글만 수정할 수 있어요. 사진을 바꾸려면 삭제하고 다시 올려주세요.</div>`;
-  $('phGrid').innerHTML = (c.photo_urls||[]).map(u =>
-    `<div class="ph-wrap"><img src="${esc(u)}"></div>`).join('');
+  $('certGuide').innerHTML = r?.cert_guide
+    ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
+         <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
+         <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
+  drawPhotos();
   $('cQuote').value = c.quote || '';
   $('cBook').value  = c.book_title || '';
   $('cPage').value  = c.page_end || '';
   $('cMemo').value  = c.content || '';
-  $('cPhLabel').innerHTML = '올린 사진';
-  $('camHint').style.display = 'none';
+  $('cPhLabel').innerHTML = '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
+  $('camHint').style.display = '';
   $('cSubmit').textContent = '수정하기';
-  $('cSubmit').disabled = false;
   $('cPageHint').style.display = 'none';
+  checkCert();          // 값을 다 채운 뒤에 검사해야 버튼이 열린다
   openOv('ovCert');
 }
 
@@ -1416,7 +1423,7 @@ async function submitCert() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
   const r0 = state.routines.find(x => x.id === certRid);
-  if (!certEditId && !photos.length) return;
+  if (!keptUrls.length && !photos.length) return toast('사진을 한 장 올려주세요');
   if (r0?.quote_required && !$('cQuote').value.trim()) return toast('마음에 남은 문장을 적어주세요');
   if (!$('cBook').value.trim()) return toast('읽는 책 제목을 적어주세요');
   if (!parseInt($('cPage').value || '0', 10)) return toast('오늘까지 읽은 쪽을 적어주세요');
@@ -1430,17 +1437,7 @@ async function submitCert() {
     content: $('cMemo').value.trim() || null,
   };
 
-  // 고치는 경우: 사진은 건드리지 않는다
-  if (certEditId) {
-    const { error } = await sb.from('certifications').update(row).eq('id', certEditId);
-    btn.disabled = false; btn.textContent = label;
-    if (error) return toast('저장에 실패했어요: ' + error.message);
-    certEditId = null;
-    await loadAll(); closeOv('ovCert'); render();
-    return toast('수정했어요');
-  }
-
-  const urls = [];
+  const urls = [...keptUrls];
   for (let i = 0; i < photos.length; i++) {
     const blob = toBlob(photos[i]);
     const path = `${me.id}/${certRid}_${Date.now()}_${i}.jpg`;
@@ -1448,6 +1445,16 @@ async function submitCert() {
     if (error) { btn.disabled=false; btn.textContent=label; return toast('사진 업로드 실패: '+error.message); }
     urls.push(sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl);
   }
+  if (certEditId) {
+    const { error } = await sb.from('certifications')
+      .update({ photo_urls: urls, ...row }).eq('id', certEditId);
+    btn.disabled = false; btn.textContent = label;
+    if (error) return toast('저장에 실패했어요: ' + error.message);
+    certEditId = null;
+    await loadAll(); closeOv('ovCert'); render();
+    return toast('수정했어요');
+  }
+
   const { error } = await sb.from('certifications')
     .insert({ routine_id: certRid, user_id: me.id, photo_urls: urls, ...row });
   btn.disabled = false; btn.textContent = label;
