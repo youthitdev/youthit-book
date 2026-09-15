@@ -293,6 +293,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       </label>
       <div class="hint">체크하면 인증할 때 마음에 남은 문장을 꼭 옮겨 적어야 해요</div>
     </div>
+    <div>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
+        <input type="checkbox" id="mCamera" checked style="width:17px;height:17px;">
+        그 자리에서 찍은 사진만 받기
+      </label>
+      <div class="hint">저장된 사진을 못 올리고 카메라로 바로 찍어야 해요. 필요하면 해제할 수 있어요</div>
+    </div>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
   </div>
 </div>
@@ -907,6 +914,7 @@ function openMake(id) {
   $('mEnd').value    = r?.end_date || '';
   $('mPeople').value = r?.max_people ?? 8;
   $('mQuote').checked  = !!r?.quote_required;
+  $('mCamera').checked = r ? !!r.camera_only : true;
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
@@ -939,6 +947,7 @@ async function submitMake() {
     start_date: s, end_date: e,
     max_people: parseInt($('mPeople').value||'8',10),
     quote_required: $('mQuote').checked,
+    camera_only: $('mCamera').checked,
     led_by: me.id,
   };
   const { error } = makeId
@@ -962,9 +971,11 @@ function openCert(rid) {
     ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
-  // 인증 사진은 그 자리에서 찍은 것만. 서비스 고정 규칙이라 루틴별로 다르지 않다
-  $('camHint').textContent = '지금 읽고 있는 모습을 바로 찍어주세요. 저장된 사진은 올릴 수 없어요';
-  $('phInput').setAttribute('capture', 'environment');
+  $('camHint').textContent = r.camera_only
+    ? '지금 읽고 있는 모습을 바로 찍어주세요. 저장된 사진은 올릴 수 없어요'
+    : '읽고 있는 순간을 사진으로 담아주세요';
+  if (r.camera_only) $('phInput').setAttribute('capture', 'environment');
+  else               $('phInput').removeAttribute('capture');
   // 필사 루틴이면 문장이 선택이 아니라 필수가 된다
   const q = !!r.quote_required;
   $('cQuoteReq').textContent = q ? '* 필수' : '선택';
