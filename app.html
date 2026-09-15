@@ -263,12 +263,12 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     </div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;min-width:0;">
-        <div class="field-label">읽는 책 <span class="opt">선택</span></div>
-        <input type="text" id="cBook" placeholder="책 제목" maxlength="60">
+        <div class="field-label">읽는 책 <span class="req">* 필수</span></div>
+        <input type="text" id="cBook" placeholder="책 제목" maxlength="60" oninput="pageHint()">
         <div class="hint">다른 책으로 바꿨으면 고쳐주세요</div>
       </div>
       <div style="width:112px;flex-shrink:0;">
-        <div class="field-label">읽은 쪽 <span class="opt">선택</span></div>
+        <div class="field-label">읽은 쪽 <span class="req">* 필수</span></div>
         <input type="number" id="cPage" min="1" max="9999" placeholder="쪽수" oninput="pageHint()">
       </div>
     </div>
@@ -1198,7 +1198,7 @@ function openCert(rid) {
   $('cBook').value = last?.book_title || myPart(rid)?.book_title || '';
   $('cPage').value = '';
   $('cPageHint').style.display = 'none';
-  drawPhotos(); pageHint(); openOv('ovCert');
+  drawPhotos(); pageHint(); checkCert(); openOv('ovCert');
 }
 
 async function pickPhotos(e) {
@@ -1215,19 +1215,41 @@ function drawPhotos() {
       <button class="ph-del" onclick="delPhoto(${i})">×</button></div>`).join('')
     + (photos.length < 3 ? `<div class="ph-box" onclick="document.getElementById('phInput').click()">
         <i class="ti ti-plus" style="font-size:20px;"></i>${photos.length}/3</div>` : '');
-  const r = state.routines.find(x => x.id === certRid);
-  const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
-  $('cSubmit').disabled = photos.length === 0 || needQuote;
+  checkCert();
 }
 function delPhoto(i) { photos.splice(i,1); drawPhotos(); }
 
 // 진도가 뒤로 가거나 하루에 너무 많이 뛰면 물어보되, 막지는 않는다
 // (다른 책을 시작했거나 몰아 읽은 날일 수 있어서 — 판단은 사람이 한다)
+// 사진 · (필사 루틴이면) 문장 · 읽은 쪽이 다 있어야 인증할 수 있다
+function checkCert() {
+  const r = state.routines.find(x => x.id === certRid);
+  const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
+  const needPage  = !parseInt($('cPage').value || '0', 10);
+  const needBook  = !$('cBook').value.trim();   // 비면 쪽수 범위 계산이 틀어진다
+  $('cSubmit').disabled = photos.length === 0 || needQuote || needPage || needBook;
+}
+
+// 같은 책의 직전 인증부터 오늘까지. 새 책이거나 첫 인증이면 0부터
+function pageRange(rid, book, page) {
+  const last = myCerts(rid).find(c => c.page_end && c.book_title === book);
+  const from = (last && last.page_end < page) ? last.page_end : 0;
+  return { from, to: page, read: page - from };
+}
+
 function pageHint() {
+  checkCert();
   const h = $('cPageHint'), page = parseInt($('cPage').value||'0',10);
   const book = $('cBook').value.trim();
   const last = myCerts(certRid).find(c => c.page_end && c.book_title === book);
-  if (!last) { h.style.display = 'none'; return; }
+  if (!last) {
+    // 새 책이거나 첫 인증. 0쪽부터 센다
+    if (!page) { h.style.display = 'none'; return; }
+    h.style.display = '';
+    h.style.background='#f2f9e5'; h.style.color='#4e7a00';
+    h.textContent = `0~${page}쪽 · 오늘 ${page}쪽 읽었어요 📖`;
+    return;
+  }
   h.style.display = '';
   if (!page) { h.style.background='#f0f0f4'; h.style.color='#666'; h.textContent=`지난 인증에서 ${last.page_end}쪽까지 읽었어요.`; return; }
   if (page < last.page_end) {
@@ -1238,7 +1260,7 @@ function pageHint() {
     h.textContent = `오늘 ${page-last.page_end}쪽이나 읽었네요! 맞다면 그대로 올려주세요.`;
   } else {
     h.style.background='#f2f9e5'; h.style.color='#4e7a00';
-    h.textContent = `오늘 ${page-last.page_end}쪽 읽었어요 📖`;
+    h.textContent = `${last.page_end}~${page}쪽 · 오늘 ${page-last.page_end}쪽 읽었어요 📖`;
   }
 }
 
@@ -1248,6 +1270,8 @@ async function submitCert() {
   if (!photos.length) return;
   const r0 = state.routines.find(x => x.id === certRid);
   if (r0?.quote_required && !$('cQuote').value.trim()) return toast('마음에 남은 문장을 적어주세요');
+  if (!$('cBook').value.trim()) return toast('읽는 책 제목을 적어주세요');
+  if (!parseInt($('cPage').value || '0', 10)) return toast('오늘까지 읽은 쪽을 적어주세요');
   const btn = $('cSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
   const urls = [];
   for (let i = 0; i < photos.length; i++) {
