@@ -123,7 +123,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
   <div class="tabs">
     <button class="tab on" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
-    <button class="tab" data-tab="settled" onclick="switchTab('settled')">정산 완료<i id="cntSettled"></i></button>
+    <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
@@ -314,9 +314,9 @@ let DB = {
     { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:true },
     { id:13, name:'박OO', routine:'속초 밤바다 15일', bookstore:'△△책방', status:'pending', created_at:'2026-09-09' },
     { id:9,  name:'최OO', routine:'속초 밤바다 15일', bookstore:'△△책방', status:'settled', created_at:'2026-08-28', settled_at:'2026-09-01',
-      amount:17500, allocs:[{charge_id:2, amount:17500}] },
+      amount:17500, paid_at:'2026-09-02' },
     { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
-      amount:19000, allocs:[{charge_id:1, amount:12000},{charge_id:2, amount:7000}] },
+      amount:19000, paid_at:null },
   ],
 };
 
@@ -324,6 +324,8 @@ let tab = 'pending';
 let settleTargetId = null;
 
 // ── 집계 ────────────────────────────────────────────────
+const unpaid = () => DB.purchases.filter(g => g.status === 'settled' && !g.paid_at);
+
 function pool() {
   const c = DB.charges;
   const spent = DB.purchases.filter(g => g.status === 'settled').reduce((s,g) => s + (g.amount||0), 0);
@@ -335,6 +337,9 @@ function pool() {
     spent,
     pending:    DB.purchases.filter(g => g.status === 'pending').length,
     delivered:  DB.purchases.filter(g => g.status === 'settled').length,
+    // 금액은 확정됐는데 아직 서점에 안 보낸 것. 3영업일 약속을 지키려면 이게 보여야 한다
+    unpaidCnt:  unpaid().length,
+    unpaidSum:  unpaid().reduce((n, g) => n + (g.amount || 0), 0),
   };
 }
 
@@ -355,8 +360,9 @@ function renderSummary() {
     <div class="sum-c"><div class="sum-l">누적 후원</div><div class="sum-v num">${won(p.total)}<small>원</small></div></div>
     <div class="sum-c"><div class="sum-l">도서기금 (80%)</div><div class="sum-v num">${won(p.fund)}<small>원</small></div></div>
     <div class="sum-c"><div class="sum-l">책이 된 금액</div><div class="sum-v num">${won(p.spent)}<small>원</small></div></div>
-    <div class="sum-c"><div class="sum-l">남은 도서기금</div><div class="sum-v num">${won(p.remaining)}<small>원</small></div></div>
-    <div class="sum-c ${p.pending ? 'hl' : ''}"><div class="sum-l">정산 대기</div><div class="sum-v num">${p.pending}<small>건</small></div></div>`;
+    <div class="sum-c"><div class="sum-l">남은 도서기금</div><div class="sum-v num">${won(fundLeft())}<small>원</small></div></div>
+    <div class="sum-c ${p.pending ? 'hl' : ''}"><div class="sum-l">정산 대기</div><div class="sum-v num">${p.pending}<small>건</small></div></div>
+    <div class="sum-c ${p.unpaidCnt ? 'hl' : ''}"><div class="sum-l">서점 입금 대기</div><div class="sum-v num">${won(p.unpaidSum)}<small>원</small></div></div>`;
   document.getElementById('cntPending').textContent = ` ${p.pending}`;
   document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
   document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
@@ -508,21 +514,50 @@ async function togglePhoto(id) {
 function viewSettled() {
   const rows = DB.purchases.filter(g => g.status === 'settled')
                        .sort((a,b) => (b.settled_at||'').localeCompare(a.settled_at||''));
+  const wait = unpaid();
+
+  // 서점별로 묶어야 한 번에 이체할 수 있다
+  const byStore = {};
+  wait.forEach(g => { (byStore[g.bookstore] = byStore[g.bookstore] || []).push(g); });
+
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">정산 완료</div>
-    <div class="panel-d">영수증 금액이 확정되어 도서기금에서 차감된 건입니다.</div></div>
+    <div><div class="panel-t">서점 입금</div>
+    <div class="panel-d">아이는 돈 없이 책을 가져갑니다. 책값은 유스보이스가 서점에 보냅니다 — 다녀간 뒤 3영업일 안에.</div></div>
   </div>
+
+  ${wait.length ? `<div class="preview" style="margin-bottom:14px;">
+    <div class="preview-t">아직 안 보낸 곳</div>
+    ${Object.entries(byStore).map(([store, list]) => `<div class="preview-row">
+      <span><b>${esc(store)}</b> ${list.length}건</span>
+      <span class="num"><b>${won(list.reduce((n,g)=>n+(g.amount||0),0))}원</b></span>
+    </div>`).join('')}
+  </div>` : ''}
+
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>청소년</th><th>루틴 / 서점</th><th class="right">지급액</th><th>차감된 후원</th><th>정산일</th></tr>
+    <tr><th>청소년</th><th>서점</th><th class="right">책값</th><th>정산일</th><th>입금</th></tr>
     ${rows.map(g => `<tr>
-      <td><b>${esc(g.name)}</b></td>
-      <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
+      <td><b>${esc(g.name)}</b><div class="muted">${esc(g.routine)}</div></td>
+      <td>${esc(g.bookstore)}</td>
       <td class="right num"><b>${won(g.amount)}원</b></td>
-      <td class="muted">${(g.allocs||[]).map(a => `#${a.charge_id} ${won(a.amount)}원`).join(' · ')}</td>
       <td class="num">${fmtDate(g.settled_at)}</td>
+      <td>${g.paid_at
+        ? `<span class="chip c-done">${fmtDate(g.paid_at)} 입금</span>
+           <button class="btn btn-line" style="margin-left:6px;" onclick="markPaid(${g.id}, false)">되돌리기</button>`
+        : `<button class="btn btn-pink" onclick="markPaid(${g.id}, true)">입금 완료</button>`}</td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">아직 정산 완료된 건이 없습니다.</div>`}`;
+  </table></div>` : `<div class="empty">아직 정산된 건이 없습니다.</div>`}`;
+}
+
+async function markPaid(id, paid) {
+  const g = DB.purchases.find(x => x.id === id); if (!g) return;
+  if (paid && !confirm(`${g.bookstore}에 ${won(g.amount)}원을 실제로 보내셨나요?\n앱이 이체를 대신하지는 않습니다.`)) return;
+  if (LIVE) {
+    const { error } = await sb.rpc('mark_purchase_paid', { p_purchase_id: id, p_paid: paid });
+    if (error) return alert('변경에 실패했습니다: ' + error.message);
+  }
+  g.paid_at = paid ? new Date().toISOString() : null;
+  render();
 }
 
 function viewCharges() {
@@ -595,9 +630,19 @@ async function submitSettle() {
   const note = document.getElementById('settleNote').value.trim();
 
   if (LIVE) {
-    // TODO: 영수증 파일을 dokseo-receipts 버킷에 먼저 업로드하고 URL을 넘기기
+    // 영수증은 비공개 버킷(dokseo-receipts). 올리다 실패해도 정산은 막지 않는다
+    let receiptPath = null;
+    const f = document.getElementById('settleReceipt').files[0];
+    if (f) {
+      const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${settleTargetId}_${Date.now()}.${ext}`;
+      const { error: up } = await sb.storage.from('dokseo-receipts')
+        .upload(path, f, { contentType: f.type || 'application/octet-stream' });
+      if (up) { alert('영수증 업로드 실패: ' + up.message + '\n정산은 계속 진행합니다.'); }
+      else receiptPath = path;
+    }
     const { error } = await sb.rpc('settle_book_purchase',
-      { p_purchase_id: settleTargetId, p_amount: amt, p_receipt_url: null, p_note: note || null });
+      { p_purchase_id: settleTargetId, p_amount: amt, p_receipt_url: receiptPath, p_note: note || null });
     if (error) { alert('정산 실패: ' + error.message); return; }
     await loadLive();
   } else {
@@ -694,7 +739,7 @@ async function loadLive() {
     id: p.id, user_id: p.user_id, routine_id: p.routine_id,
     name: nameByUserId[p.user_id] || '(탈퇴 또는 프로필 없음)', routine: p.routines?.title || '-',
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
-    settled_at: p.settled_at, amount: p.amount, photo_path: p.proof_photo_url || null,
+    settled_at: p.settled_at, paid_at: p.paid_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
     allocs: p.consumption_allocations || [],
   }));
