@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>한끗독서</title>
 <meta name="theme-color" content="#2E33BC">
+<!-- 한 파일짜리 앱이라 브라우저가 옛 버전을 붙들면 고친 게 안 보인다 -->
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -170,8 +173,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 /* 피드 */
 .f-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; }
 .f-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
-.f-act { width:30px; height:30px; background:none; border:none; border-radius:50%;
-  font-size:16px; color:var(--ink-3); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.f-act { width:32px; height:32px; background:none; border:none; border-radius:50%;
+  font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .f-act:active { background:#f0f0f4; }
 .f-av { width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
 .f-name { font-size:13.5px; font-weight:700; }
@@ -913,8 +916,8 @@ function certCard(c) {
       <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
       <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
       ${me && c.user_id === me.id ? `<div style="display:flex;gap:4px;flex-shrink:0;">
-        <button class="f-act" title="수정" aria-label="수정" onclick="editCert(${c.id})"><i class="ti ti-pencil"></i></button>
-        <button class="f-act" title="삭제" aria-label="삭제" onclick="delCert(${c.id})"><i class="ti ti-trash"></i></button></div>` : ''}
+        <button class="f-act" title="수정" aria-label="수정" onclick="editCert(${c.id})">✏️</button>
+        <button class="f-act" title="삭제" aria-label="삭제" onclick="delCert(${c.id})">🗑️</button></div>` : ''}
     </div>
     ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
     ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
