@@ -28,8 +28,11 @@
 -- ────────────────────────────────────────────────────────────────────
 -- 0. 관리자 판별
 -- ────────────────────────────────────────────────────────────────────
+-- ⚠️ COALESCE 를 빼지 말 것. 로그인하지 않으면 auth.email() 이 NULL 이고
+--    NULL IN (...) 은 false 가 아니라 NULL 이다. 그러면
+--    IF NOT is_admin() THEN RAISE ... 형태의 검사가 통째로 통과해 버린다
 CREATE OR REPLACE FUNCTION is_admin() RETURNS boolean AS $$
-  SELECT auth.email() IN ('dev@youthvoice.or.kr', 'yv@youthvoice.or.kr');
+  SELECT COALESCE(auth.email() IN ('dev@youthvoice.or.kr', 'yv@youthvoice.or.kr'), false);
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 
@@ -448,7 +451,11 @@ GRANT EXECUTE ON FUNCTION dokseo_reading_stats()    TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION dokseo_public_quotes(int) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION dokseo_books_reading(int) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION dokseo_sponsor_wall(int)  TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION settle_book_purchase(bigint, int, text, text) TO authenticated;
+-- ⚠️ 함수를 만들면 PUBLIC 에 EXECUTE 가 기본으로 붙는다. authenticated 에만
+--    GRANT 해도 익명이 호출할 수 있으므로, 반드시 PUBLIC 에서 회수해야 한다
+REVOKE EXECUTE ON FUNCTION settle_book_purchase(bigint, int, text, text) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION settle_book_purchase(bigint, int, text, text) TO authenticated;
+REVOKE EXECUTE ON FUNCTION dokseo_balance(uuid, bigint) FROM PUBLIC, anon;
 
 
 -- ════════════════════════════════════════════════════════════════════
