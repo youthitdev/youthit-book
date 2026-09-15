@@ -586,15 +586,27 @@ const didToday = rid => myCerts(rid).some(c => c.cert_date === todayKST());
 // 서버 dokseo_points() 와 같은 식. 포인트는 루틴을 가리지 않고 계정에 쌓인다.
 // 정산 대기 중인 구매도 교환권을 이미 쓴 것으로 센다 (중복 사용 방지)
 function myPoints() {
-  if (!me) return { points:0, earned:0, used:0, left:0, to_next:0, per:300 };
   const per = state.settings.points_per_voucher || 300;
-  const points = state.certs
+  const ppc = state.settings.points_per_comment ?? 1;
+  const cap = state.settings.comment_daily_cap ?? 5;
+  if (!me) return { points:0, from_cert:0, from_comment:0, per, earned:0, used:0, left:0, to_next:per };
+
+  const from_cert = state.certs
     .filter(c => c.user_id === me.id)
     .reduce((n, c) => n + (state.routines.find(r => r.id === c.routine_id)?.points_per_cert || 0), 0);
-  const used = state.purchases
-    .filter(p => p.user_id === me.id && p.status !== 'void').length;
+
+  // 하루 상한까지만. 자기 인증에 스스로 단 댓글은 빼고 (혼자 무한히 만들 수 있다)
+  const byDay = {};
+  state.comments
+    .filter(m => m.user_id === me.id
+                 && state.certs.find(c => c.id === m.cert_id)?.user_id !== me.id)
+    .forEach(m => { const d = String(m.created_at).slice(0,10); byDay[d] = (byDay[d]||0) + 1; });
+  const from_comment = Object.values(byDay).reduce((n, v) => n + Math.min(v, cap), 0) * ppc;
+
+  const points = from_cert + from_comment;
+  const used = state.purchases.filter(p => p.user_id === me.id && p.status !== 'void').length;
   const earned = Math.floor(points / per);
-  return { points, per, earned, used,
+  return { points, from_cert, from_comment, per, earned, used,
            left: Math.max(0, earned - used), to_next: per - (points % per) };
 }
 
@@ -759,7 +771,8 @@ function balanceBlock() {
   return `<div class="bal">
       <div class="bal-l">📚 내 독서 포인트</div>
       <div class="bal-n">${won(p.points)}<small>P</small></div>
-      <div class="bal-s">인증 한 번에 ${won(state.settings.points_per_cert || 20)}P · 루틴이 끝나도 사라지지 않아요</div>
+      <div class="bal-s">인증 ${state.settings.points_per_cert ?? 10}P · 댓글 ${state.settings.points_per_comment ?? 1}P (하루 ${state.settings.comment_daily_cap ?? 5}개까지)</div>
+      <div class="bal-s" style="color:var(--ink-3);">루틴이 끝나도 사라지지 않아요</div>
       ${p.left > 0
         ? `<div class="vch">🎫 쓸 수 있는 교환권 <b>${p.left}장</b><span>${cap}원 이하 책 한 권과 바꿀 수 있어요</span></div>`
         : `<div class="vch vch-off">다음 교환권까지 <b>${won(p.to_next)}P</b><span>${won(p.per)}P를 모으면 ${cap}원 이하 책 한 권과 바꿔요</span></div>`}
@@ -1291,7 +1304,7 @@ function enterDemo(role) {
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
   const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
 
-  state.settings = { book_fund_rate: 0.8, points_per_cert: 20, points_per_voucher: 300, voucher_max_amount: 20000 };
+  state.settings = { book_fund_rate: 0.8, points_per_cert: 10, points_per_comment: 1, comment_daily_cap: 5, points_per_voucher: 300, voucher_max_amount: 20000 };
   state.stores = [
     { id:1, name:'완벽한날들', region:'강원 속초', address:'강원특별자치도 속초시 동해대로 4344',
       hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
@@ -1304,10 +1317,10 @@ function enterDemo(role) {
   state.routines = [
     { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
       cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
-      max_people:8, points_per_cert:20, cover_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
+      max_people:8, points_per_cert:10, cover_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
-      max_people:10, points_per_cert:20, camera_only:true, status:'recruit', led_by:'demo-k2' },
+      max_people:10, points_per_cert:10, camera_only:true, status:'recruit', led_by:'demo-k2' },
   ];
   state.parts = [
     { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },
