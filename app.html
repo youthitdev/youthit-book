@@ -169,8 +169,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 /* 피드 */
 .f-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:12px; }
 .f-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
-.f-act { background:none; border:1px solid var(--line); border-radius:8px; padding:4px 9px;
-  font-size:11.5px; color:var(--ink-3); cursor:pointer; font-family:inherit; }
+.f-act { width:30px; height:30px; background:none; border:none; border-radius:50%;
+  font-size:16px; color:var(--ink-3); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.f-act:active { background:#f0f0f4; }
 .f-av { width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
 .f-name { font-size:13.5px; font-weight:700; }
 .f-time { font-size:11.5px; color:var(--ink-3); }
@@ -911,9 +912,9 @@ function certCard(c) {
     <div class="f-head">
       <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
       <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
-      ${me && c.user_id === me.id ? `<div style="display:flex;gap:6px;flex-shrink:0;">
-        <button class="f-act" onclick="editCert(${c.id})">고치기</button>
-        <button class="f-act" onclick="delCert(${c.id})">지우기</button></div>` : ''}
+      ${me && c.user_id === me.id ? `<div style="display:flex;gap:4px;flex-shrink:0;">
+        <button class="f-act" title="수정" aria-label="수정" onclick="editCert(${c.id})"><i class="ti ti-pencil"></i></button>
+        <button class="f-act" title="삭제" aria-label="삭제" onclick="delCert(${c.id})"><i class="ti ti-trash"></i></button></div>` : ''}
     </div>
     ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
     ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
@@ -950,7 +951,7 @@ function viewMy() {
       <div style="font-size:17px;font-weight:800;">${esc(me.name)}</div>
       <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${me.role==='kkutjjang'?'끗짱':'청소년'}${me.region?` · ${esc(me.region)}`:''}</div>
       <button class="btn btn-line" style="margin-top:16px;max-width:200px;margin-left:auto;margin-right:auto;"
-        onclick="openProfile()">내 정보 고치기</button>
+        onclick="openProfile()">내 정보 수정</button>
     </div>
     <div class="card" style="display:flex;text-align:center;">
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
@@ -1375,17 +1376,17 @@ function editCert(id) {
   const r = state.routines.find(x => x.id === c.routine_id);
   certRid = c.routine_id; certEditId = id; photos = [];
 
-  $('ovCLabel').textContent = '인증 고치기';
+  $('ovCLabel').textContent = '인증 수정';
   $('ovCTitle').textContent = `${r?.emoji||'📚'} ${r?.title||''}`;
   $('certGuide').innerHTML = `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;color:var(--ink-2);">
-      사진은 그대로 두고 글만 고칠 수 있어요. 사진을 바꾸려면 이 인증을 지우고 다시 올려주세요.</div>`;
+      사진은 그대로 두고 글만 수정할 수 있어요. 사진을 바꾸려면 삭제하고 다시 올려주세요.</div>`;
   $('phGrid').innerHTML = (c.photo_urls||[]).map(u =>
     `<div class="ph-wrap"><img src="${esc(u)}"></div>`).join('');
   $('cQuote').value = c.quote || '';
   $('cBook').value  = c.book_title || '';
   $('cPage').value  = c.page_end || '';
   $('cMemo').value  = c.content || '';
-  $('cSubmit').textContent = '고치기';
+  $('cSubmit').textContent = '수정하기';
   $('cSubmit').disabled = false;
   $('cPageHint').style.display = 'none';
   openOv('ovCert');
@@ -1395,11 +1396,11 @@ async function delCert(id) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
   const c = state.certs.find(x => x.id === id);
   if (!c || c.user_id !== me.id) return;
-  if (!confirm('이 인증을 지울까요?\n쌓인 포인트도 같이 줄어들어요.')) return;
+  if (!confirm('이 인증을 삭제할까요?\n쌓인 포인트도 같이 줄어들어요.')) return;
   const { error } = await sb.from('certifications').delete().eq('id', id);
   if (error) return toast('지우지 못했어요: ' + error.message);
   await loadAll(); render();
-  toast('지웠어요');
+  toast('삭제했어요');
 }
 
 async function submitCert() {
@@ -1427,7 +1428,7 @@ async function submitCert() {
     if (error) return toast('저장에 실패했어요: ' + error.message);
     certEditId = null;
     await loadAll(); closeOv('ovCert'); render();
-    return toast('고쳤어요');
+    return toast('수정했어요');
   }
 
   const urls = [];
