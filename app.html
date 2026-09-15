@@ -259,15 +259,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
         <input type="date" id="mEnd" onchange="makeHint()">
       </div>
     </div>
-    <div style="display:flex;gap:10px;">
-      <div style="flex:1;min-width:0;">
-        <div class="field-label">모집 인원 <span class="req">*</span></div>
-        <input type="number" id="mPeople" min="1" max="50" value="8">
-      </div>
-      <div style="flex:1;min-width:0;">
-        <div class="field-label">인증 1회당 적립 <span class="req">*</span></div>
-        <input type="number" id="mAmount" min="0" step="100" value="1300" oninput="makeHint()">
-      </div>
+    <div>
+      <div class="field-label">모집 인원 <span class="req">*</span></div>
+      <input type="number" id="mPeople" min="1" max="50" value="8">
     </div>
     <div id="mHint" style="font-size:12.5px;line-height:1.6;padding:11px 13px;border-radius:11px;background:#f7fbf0;color:var(--green-d);"></div>
     <div>
@@ -836,9 +830,9 @@ async function decide(rid, uid, status) {
 }
 
 // ── 루틴 만들기 (끗짱) ──────────────────────────────────
-// 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는 구조라
-// 적립액은 관리자가 정한 상한(dokseo_settings.max_amount_per_cert) 안에서만 고를 수 있다.
-// 서버에도 같은 검증이 트리거로 걸려 있다.
+// 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는다.
+// 적립액은 끗짱이 고르지 않는다 — dokseo_settings.amount_per_cert 를 서버 트리거가
+// 자동으로 붙인다. 여기서는 얼마가 쌓이는지 알려주기만 한다.
 let makeId = null;
 
 function openMake(id) {
@@ -853,30 +847,24 @@ function openMake(id) {
   $('mStart').value  = r?.start_date || '';
   $('mEnd').value    = r?.end_date || '';
   $('mPeople').value = r?.max_people ?? 8;
-  const max = state.settings.max_amount_per_cert ?? 1500;
-  $('mAmount').value = r?.amount_per_cert ?? Math.min(1300, max);
-  $('mAmount').max = max;
   $('mCamera').checked = !!r?.camera_only;
   makeHint(); openOv('ovMake');
 }
 
 function makeHint() {
-  const amt = parseInt($('mAmount').value||'0',10);
-  const max = state.settings.max_amount_per_cert ?? 1500;
+  // 수정 중이면 그 루틴의 단가, 새로 만들면 지금 설정값
+  const cur = makeId ? state.routines.find(x => x.id === makeId) : null;
+  const amt = cur?.amount_per_cert ?? state.settings.amount_per_cert ?? 1300;
   const s = $('mStart').value, e = $('mEnd').value;
   let days = 0;
   if (s && e) days = Math.round((new Date(e) - new Date(s)) / 86400e3) + 1;
   const h = $('mHint');
-  if (amt > max) {
-    h.style.background = '#fff1f4'; h.style.color = '#b00038';
-    h.textContent = `인증당 적립액은 ${won(max)}원까지만 정할 수 있어요. 더 필요하면 운영진에게 얘기해주세요.`;
-  } else if (days > 0) {
-    h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
-    h.textContent = `${days}일 동안 매일 인증하면 한 사람당 ${won(amt*days)}원이 쌓여요.`;
-  } else {
-    h.style.background = '#f0f0f4'; h.style.color = '#666';
-    h.textContent = `인증할 때마다 참여자에게 이 금액이 쌓여요. (최대 ${won(max)}원)`;
-  }
+  h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
+  h.innerHTML = days > 0
+    ? `인증 1회당 <b>${won(amt)}원</b>이 쌓여요. ${days}일 동안 매일 하면 한 사람당 <b>${won(amt*days)}원</b>이에요.
+       <span style="display:block;color:var(--ink-3);font-weight:400;margin-top:3px;">적립액은 유스보이스가 정합니다.</span>`
+    : `인증 1회당 <b>${won(amt)}원</b>이 쌓여요.
+       <span style="display:block;color:var(--ink-3);font-weight:400;margin-top:3px;">적립액은 유스보이스가 정합니다.</span>`;
 }
 
 async function submitMake() {
@@ -884,13 +872,10 @@ async function submitMake() {
 
   const title = $('mTitle').value.trim(), desc = $('mDesc').value.trim();
   const s = $('mStart').value, e = $('mEnd').value;
-  const amt = parseInt($('mAmount').value||'0',10);
-  const max = state.settings.max_amount_per_cert ?? 1500;
   if (!title) return toast('루틴 이름을 적어주세요');
   if (!desc) return toast('루틴 소개를 적어주세요');
   if (!s || !e) return toast('시작일과 종료일을 골라주세요');
   if (e < s) return toast('종료일이 시작일보다 빨라요');
-  if (amt > max) return toast(`적립액은 ${won(max)}원까지만 가능해요`);
 
   const btn = $('mSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
@@ -899,7 +884,6 @@ async function submitMake() {
     cert_guide: $('mGuide').value.trim() || null,
     start_date: s, end_date: e,
     max_people: parseInt($('mPeople').value||'8',10),
-    amount_per_cert: amt,
     camera_only: $('mCamera').checked,
     led_by: me.id,
   };
@@ -1161,7 +1145,7 @@ function enterDemo(role) {
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
   const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
 
-  state.settings = { book_fund_rate: 0.8, max_amount_per_cert: 1500 };
+  state.settings = { book_fund_rate: 0.8, amount_per_cert: 1300 };
   state.stores = [
     { id:1, name:'완벽한날들', region:'강원 속초', address:'강원특별자치도 속초시 동해대로 4344',
       hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
