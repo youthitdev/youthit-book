@@ -237,8 +237,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       </div>
       <div class="field">
         <div class="label">후원 금액 <span>*</span></div>
-        <input type="number" id="cAmount" placeholder="예) 50000" oninput="renderSplit()">
-        <div id="splitBox"></div>
+        <input type="number" id="cAmount" placeholder="예) 50000">
       </div>
       <div class="field">
         <div class="label">후원일 <span>*</span></div>
@@ -633,20 +632,12 @@ async function submitSettle() {
 function openCharge() {
   ['cNick','cEmail','cAmount','cRef'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('cDate').value = new Date().toISOString().slice(0,10);
-  document.getElementById('splitBox').innerHTML = '';
   document.getElementById('chargeOverlay').classList.add('on');
 }
 
-function renderSplit() {
-  const amt = parseInt(document.getElementById('cAmount').value || '0', 10);
-  const box = document.getElementById('splitBox');
-  if (!amt) { box.innerHTML = ''; return; }
-  const ops = Math.floor(amt * (1 - DB.settings.book_fund_rate));
-  box.innerHTML = `<div class="preview" style="margin-top:10px;margin-bottom:0;">
-    <div class="preview-row"><span>도서기금</span><span class="num"><b>${won(amt - ops)}원</b></span></div>
-    <div class="preview-row"><span>습관기금</span><span class="num">${won(ops)}원</span></div>
-  </div>`;
-}
+// 도서기금·습관기금 분리는 DB의 split_charge_amounts 트리거가 한다.
+// 입력할 때 미리 보여줄 이유가 없고, JS 부동소수점으로 계산하면
+// 100000 × (1−0.8) 이 19999 가 나와 실제 저장값과 1원씩 어긋난다
 
 async function submitCharge() {
   const nick = document.getElementById('cNick').value.trim();
@@ -674,7 +665,10 @@ async function submitCharge() {
   } else {
     let sp = DB.sponsors.find(s => s.email === email);
     if (!sp) { sp = { id:'s' + (DB.sponsors.length + 1), nickname:nick, email }; DB.sponsors.push(sp); }
-    const ops = Math.floor(amount * (1 - DB.settings.book_fund_rate));
+    // DB 트리거(split_charge_amounts)와 같은 순서로: 습관기금을 내리고 잔돈은 도서기금으로.
+    // rate 는 numeric(4,3) 이라 천분율 정수로 바꿔 계산해야 부동소수점 오차가 안 난다
+    const permille = 1000 - Math.round(DB.settings.book_fund_rate * 1000);
+    const ops = Math.floor(amount * permille / 1000);
     DB.charges.push({
       id: Math.max(0, ...DB.charges.map(c => c.id)) + 1,
       sponsor_id: sp.id, amount, book_fund_amount: amount - ops, operation_fee_amount: ops,
