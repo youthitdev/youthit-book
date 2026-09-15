@@ -898,8 +898,10 @@ function routineDay(r) {
 }
 
 // 격자에서 한 장을 누르면 그 인증만 크게
+let curOneId = null;
 function openOneCert(id) {
   const c = state.certs.find(x => x.id === id); if (!c) return;
+  curOneId = id;
   const r = state.routines.find(x => x.id === c.routine_id);
   $('ovOneTitle').textContent = `${r?.emoji||'📚'} ${r?.title||''}`;
   $('ovOneBody').innerHTML = certCard(c);
@@ -1477,7 +1479,7 @@ async function delCert(id) {
   if (!confirm('이 인증을 삭제할까요?\n쌓인 포인트도 같이 줄어들어요.')) return;
   const { error } = await sb.from('certifications').delete().eq('id', id);
   if (error) return toast('지우지 못했어요: ' + error.message);
-  await loadAll(); render();
+  await loadAll(); render(); refreshOpenOv(c.routine_id, id);
   toast('삭제했어요');
 }
 
@@ -1513,7 +1515,7 @@ async function submitCert() {
     btn.disabled = false; btn.textContent = label;
     if (error) return toast('저장에 실패했어요: ' + error.message);
     certEditId = null;
-    await loadAll(); closeOv('ovCert'); render();
+    await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
     return toast('수정했어요');
   }
 
@@ -1523,7 +1525,7 @@ async function submitCert() {
   if (error) {
     return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증 저장에 실패했어요: ' + error.message);
   }
-  await loadAll(); closeOv('ovCert'); render();
+  await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
   toast('인증 완료! 오늘도 한 장 읽었어요 🌱');
 }
 
@@ -1633,11 +1635,24 @@ async function addComment(certId) {
   el.value = '';
   const { error } = await sb.from('cert_comments').insert({ cert_id: certId, user_id: me.id, content: text });
   if (error) return toast('댓글 저장에 실패했어요');
-  await loadAll(); render();
+  const c0 = state.certs.find(x => x.id === certId);
+  await loadAll(); render(); refreshOpenOv(c0?.routine_id);
 }
 
 // ── 공용 ───────────────────────────────────────────────
 function openOv(id) { $(id).classList.add('on'); }
+const isOvOpen = id => $(id).classList.contains('on');
+
+// render() 는 탭 화면만 다시 그린다. 오버레이가 열려 있으면 거기도 손봐야
+// 방금 지운 글이 그대로 남아 있는 일이 없다
+function refreshOpenOv(rid, goneCertId) {
+  if (goneCertId != null && isOvOpen('ovOne')) closeOv('ovOne');
+  else if (isOvOpen('ovOne')) {
+    const c = state.certs.find(x => x.id === curOneId);
+    if (c) $('ovOneBody').innerHTML = certCard(c); else closeOv('ovOne');
+  }
+  if (isOvOpen('ovRoutine') && rid != null) openRoutine(rid);
+}
 function closeOv(id) { $(id).classList.remove('on'); }
 
 // 사진은 올리기 전에 적당한 해상도로 줄인다 (업로드 속도·용량)
