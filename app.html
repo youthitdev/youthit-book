@@ -187,7 +187,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .f-name { font-size:13.5px; font-weight:700; }
 .f-time { font-size:11.5px; color:var(--ink-3); }
 .f-photos { display:grid; gap:5px; margin-bottom:10px; border-radius:12px; overflow:hidden; }
-.f-photos img { width:100%; display:block; object-fit:cover; max-height:320px; }
+/* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
+   비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
+.f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#f0f0f4; }
 .f-quote { border-left:3px solid var(--green); background:#f7fbf0; border-radius:0 10px 10px 0; padding:11px 13px; margin-bottom:8px; }
 .f-quote p { font-size:14px; line-height:1.7; }
 .f-quote cite { display:block; font-style:normal; font-size:11.5px; color:var(--green-d); margin-top:6px; }
