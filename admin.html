@@ -88,10 +88,31 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
 <div class="demo-flag" id="demoFlag">데모 데이터로 동작 중 — 실제 정산이 아닙니다 (새로고침하면 초기화)</div>
 
+<!-- 정산은 관리자 계정으로만. is_admin() 이 이메일로 판정한다 -->
+<div id="gate" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:60;
+  align-items:center;justify-content:center;padding:24px;">
+  <div style="width:100%;max-width:340px;">
+    <div class="logo" style="text-align:center;margin-bottom:6px;">한끗독서 <b>정산 관리자</b></div>
+    <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:22px;">운영진만 들어올 수 있어요</div>
+    <div id="gateErr" style="display:none;background:#fff0f4;color:#c2185b;border-radius:10px;
+      padding:11px 14px;font-size:13px;margin-bottom:12px;line-height:1.6;"></div>
+    <input type="email" id="gateEmail" placeholder="이메일" autocomplete="username"
+      style="width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:11px;font-size:14px;margin-bottom:9px;">
+    <input type="password" id="gatePw" placeholder="비밀번호" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')adminLogin()"
+      style="width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:11px;font-size:14px;margin-bottom:14px;">
+    <button class="btn btn-pink" id="gateBtn" style="width:100%;" onclick="adminLogin()">로그인</button>
+  </div>
+</div>
+
 <header>
   <div class="hd">
     <div class="logo">한끗독서 <b>정산 관리자</b></div>
-    <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
+      <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
+      <button class="btn btn-line" id="logoutBtn" style="display:none;" onclick="adminLogout()">로그아웃</button>
+    </div>
   </div>
 </header>
 
@@ -735,8 +756,53 @@ function render() { renderSummary(); renderPanel(); }
 document.querySelectorAll('.overlay').forEach(o =>
   o.addEventListener('click', e => { if (e.target === o) o.classList.remove('on'); }));
 
+// ── 로그인 ──────────────────────────────────────────────
+const ADMIN_EMAILS = ['dev@youthvoice.or.kr', 'yv@youthvoice.or.kr'];
+
+function showGate(msg) {
+  const g = document.getElementById('gate');
+  g.style.display = 'flex';
+  if (msg) {
+    const e = document.getElementById('gateErr');
+    e.style.display = ''; e.textContent = msg;
+  }
+}
+
+async function adminLogin() {
+  const email = document.getElementById('gateEmail').value.trim();
+  const pw    = document.getElementById('gatePw').value;
+  const btn   = document.getElementById('gateBtn');
+  if (!email || !pw) return showGate('이메일과 비밀번호를 입력해 주세요.');
+
+  btn.disabled = true; btn.textContent = '확인 중…';
+  const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+  btn.disabled = false; btn.textContent = '로그인';
+  if (error) return showGate('로그인에 실패했어요: ' + error.message);
+
+  if (!ADMIN_EMAILS.includes(email.toLowerCase())) {
+    await sb.auth.signOut();
+    return showGate('관리자 계정이 아닙니다. 운영진 이메일로 로그인해 주세요.');
+  }
+  location.reload();
+}
+
+async function adminLogout() { await sb.auth.signOut(); location.reload(); }
+
 (async function init() {
-  if (LIVE) { document.getElementById('demoFlag').style.display = 'none'; await loadLive(); }
+  if (!LIVE) { render(); return; }
+  document.getElementById('demoFlag').style.display = 'none';
+
+  const { data: { session } } = await sb.auth.getSession();
+  const email = session?.user?.email?.toLowerCase();
+  if (!email) return showGate();
+  if (!ADMIN_EMAILS.includes(email)) {
+    await sb.auth.signOut();
+    return showGate('관리자 계정이 아닙니다. 운영진 이메일로 로그인해 주세요.');
+  }
+
+  document.getElementById('whoami').textContent = email;
+  document.getElementById('logoutBtn').style.display = '';
+  await loadLive();
   render();
 })();
 </script>
