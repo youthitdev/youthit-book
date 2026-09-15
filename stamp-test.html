@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<title>타임스탬프 진단</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:18px;background:#fafaf8;color:#14161a;line-height:1.6}
+  h1{font-size:18px;margin:0 0 4px}
+  p.sub{font-size:13px;color:#8d939e;margin:0 0 18px}
+  button{width:100%;padding:15px;border:none;border-radius:13px;background:#2E33BC;color:#fff;
+    font-size:16px;font-weight:700;font-family:inherit;cursor:pointer}
+  #log{margin-top:16px;background:#14161a;color:#a8e02a;border-radius:12px;padding:14px;
+    font-size:12px;font-family:ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all;line-height:1.7}
+  #out{margin-top:14px;width:100%;border-radius:12px;display:block}
+</style></head><body>
+
+<h1>타임스탬프 진단</h1>
+<p class="sub">사진을 한 장 찍으면, 어디까지 되는지 아래에 그대로 적힙니다.</p>
+
+<button onclick="document.getElementById('f').click()">사진 찍기 / 고르기</button>
+<input type="file" id="f" accept="image/*" capture="environment" style="display:none" onchange="go(event)">
+
+<div id="log">기다리는 중…</div>
+<img id="out" alt="">
+
+<script>
+const L = [];
+const say = m => { L.push(m); document.getElementById('log').textContent = L.join('\n'); };
+
+say('브라우저: ' + navigator.userAgent);
+
+function stampTime(ctx, w, h) {
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  const txt = `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}`;
+  const size = Math.max(15, Math.round(w * 0.036));
+
+  ctx.font = `bold ${size}px sans-serif`;
+  say('① 폰트 지정 시도: bold ' + size + 'px sans-serif');
+  say('② 실제 적용된 폰트: ' + ctx.font);
+  if (ctx.font.indexOf(String(size)) === -1) {
+    ctx.font = `${size}px sans-serif`;
+    say('   → 안 먹어서 다시 지정: ' + ctx.font);
+  }
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(txt).width;
+  say('③ 글자 폭: ' + Math.round(tw) + 'px  (글자: ' + txt + ')');
+
+  const padX = Math.round(size*0.7), padY = Math.round(size*0.45);
+  const bw = tw + padX*2, bh = size + padY*2;
+  const bx = w - Math.round(w*0.03) - bw, by = h - Math.round(w*0.03) - bh;
+  say('④ 띠 위치: x=' + Math.round(bx) + ' y=' + Math.round(by) + ' w=' + Math.round(bw) + ' h=' + Math.round(bh));
+
+  const rr = Math.round(bh/2);
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath();
+  ctx.moveTo(bx+rr, by);
+  ctx.arcTo(bx+bw, by,    bx+bw, by+bh, rr);
+  ctx.arcTo(bx+bw, by+bh, bx,    by+bh, rr);
+  ctx.arcTo(bx,    by+bh, bx,    by,    rr);
+  ctx.arcTo(bx,    by,    bx+bw, by,    rr);
+  ctx.closePath(); ctx.fill();
+  say('⑤ 띠 그림 완료');
+
+  ctx.fillStyle = '#fff';
+  ctx.fillText(txt, bx+padX, by+bh/2);
+  say('⑥ 글자 그림 완료');
+}
+
+function go(e) {
+  const file = e.target.files[0];
+  if (!file) return say('파일이 없습니다');
+  say('파일: ' + file.name + ' / ' + file.type + ' / ' + Math.round(file.size/1024) + 'KB');
+
+  const r = new FileReader();
+  r.onerror = () => say('❌ 파일을 못 읽음');
+  r.onload = ev => {
+    const img = new Image();
+    img.onerror = () => say('❌ 사진 디코딩 실패 (HEIC 일 수 있음)');
+    img.onload = () => {
+      say('원본 크기: ' + img.width + ' × ' + img.height);
+      let w = img.width, h = img.height, maxDim = 1280;
+      if (w > maxDim || h > maxDim) { const s = maxDim/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
+      say('줄인 크기: ' + w + ' × ' + h);
+
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d');
+      if (!ctx) return say('❌ 캔버스 컨텍스트 없음');
+      ctx.drawImage(img, 0, 0, w, h);
+      say('사진 그림 완료');
+
+      try { stampTime(ctx, w, h); }
+      catch (err) { say('❌ 타임스탬프에서 오류: ' + err.message); }
+
+      const url = cv.toDataURL('image/jpeg', .82);
+      say('⑦ 결과 만들기 완료 (' + Math.round(url.length/1024) + 'KB)');
+      document.getElementById('out').src = url;
+      say('');
+      say('아래 사진 오른쪽 아래를 보세요. 띠와 날짜가 있으면 정상입니다.');
+    };
+    img.src = ev.target.result;
+  };
+  r.readAsDataURL(file);
+}
+</script>
+</body></html>
