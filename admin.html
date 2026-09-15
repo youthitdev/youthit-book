@@ -331,25 +331,19 @@ function pool() {
     total:      c.reduce((s,x) => s + x.amount, 0),
     fund:       c.reduce((s,x) => s + x.book_fund_amount, 0),
     ops:        c.reduce((s,x) => s + x.operation_fee_amount, 0),
-    remaining:  c.reduce((s,x) => s + x.remaining_amount, 0),
+    remaining:  0,   // 잔액은 fundLeft() 로 따로 계산한다
     spent,
     pending:    DB.purchases.filter(g => g.status === 'pending').length,
     delivered:  DB.purchases.filter(g => g.status === 'settled').length,
   };
 }
 
-// FIFO 차감 계산 — SQL settle_book_purchase() 와 같은 순서로 동작
-function fifoPlan(amount) {
-  let left = amount, out = [];
-  const queue = DB.charges.filter(c => c.remaining_amount > 0)
-                          .sort((a,b) => a.charged_at.localeCompare(b.charged_at) || a.id - b.id);
-  for (const c of queue) {
-    if (left <= 0) break;
-    const take = Math.min(c.remaining_amount, left);
-    out.push({ charge_id:c.id, amount:take, after:c.remaining_amount - take });
-    left -= take;
-  }
-  return { allocs: out, shortfall: left };
+// 앱이 아는 범위의 도서기금 잔액. 창작지원금·북페어는 앱 밖이라 모른다
+function fundLeft() {
+  const fund  = DB.charges.reduce((n, c) => n + (c.book_fund_amount || 0), 0);
+  const spent = DB.purchases.filter(g => g.status === 'settled')
+                            .reduce((n, g) => n + (g.amount || 0), 0);
+  return fund - spent;
 }
 
 const sponsorOf = id => DB.sponsors.find(s => s.id === id)?.nickname || '-';
@@ -581,21 +575,17 @@ function renderPreview() {
     box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘습니다. 초과분은 후원금에서 나갈 수 없어요.</div>`;
     btn.disabled = true; return;
   }
-  const plan = fifoPlan(amt);
-  if (plan.shortfall > 0) {
-    box.innerHTML = `<div class="warn">도서기금 잔액이 ${won(plan.shortfall)}원 부족합니다. 후원 입력 후 다시 시도하세요.</div>`;
+  const left = fundLeft();
+  if (amt > left) {
+    box.innerHTML = `<div class="warn">도서기금이 ${won(amt - left)}원 부족합니다 (남은 ${won(left)}원). 후원 입력 후 다시 시도하세요.</div>`;
     btn.disabled = true; return;
   }
   btn.disabled = false;
   box.innerHTML = `<div class="preview">
-    <div class="preview-t">이렇게 차감됩니다 (오래된 후원부터)</div>
-    ${plan.allocs.map(a => {
-      const c = DB.charges.find(x => x.id === a.charge_id);
-      return `<div class="preview-row">
-        <span>#${a.charge_id} ${esc(sponsorOf(c.sponsor_id))} (${fmtDate(c.charged_at)})</span>
-        <span class="num">−${won(a.amount)}원 → 잔액 ${won(a.after)}원</span>
-      </div>${a.after === 0 ? `<div class="preview-row out"><span>↳ 이 후원이 모두 전달되어 완료 카드가 생성됩니다</span><span></span></div>` : ''}`;
-    }).join('')}
+    <div class="preview-t">정산하면</div>
+    <div class="preview-row"><span>도서기금 남은 금액</span>
+      <span class="num">${won(left)}원 → ${won(left - amt)}원</span></div>
+    <div class="preview-row out"><span>후원 건별로 나누지 않습니다. 기금은 책뿐 아니라 창작지원·북페어에도 쓰입니다</span><span></span></div>
   </div>`;
 }
 
@@ -611,17 +601,10 @@ async function submitSettle() {
     if (error) { alert('정산 실패: ' + error.message); return; }
     await loadLive();
   } else {
-    const plan = fifoPlan(amt);
-    if (plan.shortfall > 0) { alert('도서기금 잔액이 부족합니다.'); return; }
-    plan.allocs.forEach(a => {
-      const c = DB.charges.find(x => x.id === a.charge_id);
-      c.remaining_amount = a.after;
-      if (a.after === 0) c.status = 'completed';
-    });
+    if (amt > fundLeft()) { alert('도서기금이 부족합니다.'); return; }
     const g = DB.purchases.find(x => x.id === settleTargetId);
     Object.assign(g, { status:'settled', amount:amt, note,
-                       settled_at:new Date().toISOString().slice(0,10),
-                       allocs: plan.allocs.map(a => ({ charge_id:a.charge_id, amount:a.amount })) });
+                       settled_at:new Date().toISOString().slice(0,10) });
   }
   closeModal('settleOverlay');
   render();
