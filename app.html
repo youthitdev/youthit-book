@@ -1583,18 +1583,36 @@ function closeOv(id) { $(id).classList.remove('on'); }
 function stampTime(ctx, w, h) {
   const d = new Date(), p = n => String(n).padStart(2, '0');
   const txt = `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}`;
-  const size = Math.max(13, Math.round(w * 0.032));
-  const pad  = Math.round(w * 0.035);
-  ctx.font = `600 ${size}px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'bottom';
-  // 밝은 사진에서도 읽히도록 그림자를 깔고 흰 글씨
-  ctx.shadowColor = 'rgba(0,0,0,.55)';
-  ctx.shadowBlur = Math.round(size * 0.5);
-  ctx.shadowOffsetY = 1;
-  ctx.fillStyle = 'rgba(255,255,255,.92)';
-  ctx.fillText(txt, w - pad, h - pad);
-  ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  const size = Math.max(15, Math.round(w * 0.036));
+
+  // ⚠️ 사파리는 폰트 축약형에 까다롭다. 못 읽으면 조용히 무시하고 10px 로 남아
+  //    사진에 글자가 안 보인다. 단순한 문자열만 쓰고, 먹었는지 확인한다
+  ctx.font = `bold ${size}px sans-serif`;
+  if (ctx.font.indexOf(String(size)) === -1) ctx.font = `${size}px sans-serif`;
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  const tw  = ctx.measureText(txt).width;
+  const padX = Math.round(size * 0.7), padY = Math.round(size * 0.45);
+  const bw = tw + padX * 2, bh = size + padY * 2;
+  const bx = w - Math.round(w * 0.03) - bw;
+  const by = h - Math.round(w * 0.03) - bh;
+  const rr = Math.round(bh / 2);
+
+  // 밝은 사진에서도 읽히도록 어두운 띠를 깔고 흰 글씨
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.beginPath();
+  ctx.moveTo(bx + rr, by);
+  ctx.arcTo(bx + bw, by,      bx + bw, by + bh, rr);
+  ctx.arcTo(bx + bw, by + bh, bx,      by + bh, rr);
+  ctx.arcTo(bx,      by + bh, bx,      by,      rr);
+  ctx.arcTo(bx,      by,      bx + bw, by,      rr);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = '#fff';
+  ctx.fillText(txt, bx + padX, by + bh / 2);
 }
 
 function resize(file, maxDim, q, stamp) {
