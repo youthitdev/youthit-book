@@ -63,6 +63,10 @@ header.k { background:var(--pink); }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
 .body { padding:18px; }
+.shelf { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
+.shelf span { background:#fff; border:1px solid var(--line); border-radius:99px;
+  padding:7px 13px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
+.shelf i { font-style:normal; font-size:11px; color:var(--green-d); font-weight:700; }
 nav { position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; background:#fff; border-top:1px solid var(--line); display:flex; z-index:30; }
 nav div { flex:1; padding:9px 0 10px; text-align:center; color:var(--ink-3); cursor:pointer; font-size:10.5px; font-weight:600; }
 nav div.on { color:var(--blue); }
@@ -698,11 +702,28 @@ function balanceBlock() {
   }).join('');
 }
 
+// 지금 어떤 책들이 읽히고 있나. 혼자 읽기 어려워서 온 아이들이라
+// "다른 애들은 뭐 읽지?" 가 꽤 크게 작동한다
+function shelfHtml() {
+  const by = {};
+  state.certs.forEach(c => {
+    const t = (c.book_title || '').trim(); if (!t) return;
+    (by[t] = by[t] || new Set()).add(c.user_id);
+  });
+  const books = Object.entries(by).map(([t, s]) => [t, s.size])
+                      .sort((a, b) => b[1] - a[1]).slice(0, 12);
+  if (!books.length) return '';
+  return `<div class="sec-t" style="margin-top:0;">📚 지금 함께 읽는 책</div>
+    <div class="shelf">${books.map(([t, n]) =>
+      `<span>${esc(t)}${n > 1 ? `<i>${n}명</i>` : ''}</span>`).join('')}</div>`;
+}
+
 function viewFeed() {
   const rids = myRoutines().map(r => r.id);
   const list = state.certs.filter(c => rids.includes(c.routine_id)).slice(0, 60);
-  if (!list.length) return `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`;
-  return list.map(c => {
+  const shelf = shelfHtml();
+  if (!list.length) return shelf + `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`;
+  return shelf + list.map(c => {
     const cms = state.comments.filter(x => x.cert_id === c.id);
     return `<div class="f-card">
       <div class="f-head">

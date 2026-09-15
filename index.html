@@ -95,6 +95,11 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
   border-radius:16px;padding:20px 24px;font-size:14px;color:var(--ink-2);line-height:1.85;text-align:center}
 .finding b{color:var(--green-d)}
 
+.shelf { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:34px; }
+.shelf span { background:var(--card); border:1px solid var(--line); border-radius:99px;
+  padding:10px 17px; font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:8px; }
+.shelf i { font-style:normal; font-size:12px; font-weight:700; color:var(--green-d); }
+
 /* 해법 3단계 */
 .steps{margin-top:36px;display:flex;flex-direction:column;gap:12px}
 .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 24px;display:flex;gap:20px}
@@ -306,6 +311,16 @@ footer a{color:var(--ink-3)}
   </div>
 </section>
 
+<!-- 지금 읽히는 책 : 데이터가 없으면 통째로 숨는다 -->
+<section id="shelfSec" style="display:none">
+  <div class="wrap">
+    <div class="sec-label">지금 읽히는 책</div>
+    <h2>청소년들이<br>읽고 있는 책</h2>
+    <p class="sec-lead">아이들이 동네책방에서 직접 고른 책입니다.</p>
+    <div class="shelf" id="shelf"></div>
+  </div>
+</section>
+
 <!-- 후원 -->
 <section class="donate">
   <div class="wrap">
@@ -386,5 +401,28 @@ footer a{color:var(--ink-3)}
   </div>
 </footer>
 
+
+<script>
+// 읽히는 책 목록만 가져온다. 실패하거나 비어 있으면 섹션을 띄우지 않는다
+(async function () {
+  const URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2cGFod3ZpaHZrYXNyem5ib2FhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyNzY4OTcsImV4cCI6MjEwNDg1Mjg5N30.aCVtuxfVTApo7-bQW0NPiBDZw-9vXHeCgyNgx5pdFqw';
+  try {
+    const r = await fetch(URL + '/rest/v1/rpc/dokseo_books_reading', {
+      method: 'POST',
+      headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_limit: 18 }),
+    });
+    if (!r.ok) return;
+    const books = await r.json();
+    if (!Array.isArray(books) || !books.length) return;
+    const esc = t => String(t).replace(/[&<>"]/g, c =>
+      ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+    document.getElementById('shelf').innerHTML = books.map(b =>
+      `<span>${esc(b.book_title)}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('');
+    document.getElementById('shelfSec').style.display = '';
+  } catch (e) { /* 랜딩은 DB가 죽어도 그대로 보여야 한다 */ }
+})();
+</script>
 </body>
 </html>
