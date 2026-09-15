@@ -211,8 +211,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <div class="hint" id="camHint">읽고 있는 순간을 사진으로 담아주세요</div>
     </div>
     <div>
-      <div class="field-label">마음에 남은 문장 <span class="opt">선택</span></div>
-      <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300"></textarea>
+      <div class="field-label">마음에 남은 문장 <span id="cQuoteReq" class="opt">선택</span></div>
+      <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300" oninput="drawPhotos()"></textarea>
     </div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;min-width:0;">
@@ -273,6 +273,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <input type="number" id="mPeople" min="1" max="50" value="8">
     </div>
     <div id="mHint" style="font-size:12.5px;line-height:1.6;padding:11px 13px;border-radius:11px;background:#f7fbf0;color:var(--green-d);"></div>
+    <div>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
+        <input type="checkbox" id="mQuote" style="width:17px;height:17px;">
+        필사도 함께하기
+      </label>
+      <div class="hint">체크하면 인증할 때 마음에 남은 문장을 꼭 옮겨 적어야 해요</div>
+    </div>
     <div>
       <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
         <input type="checkbox" id="mCamera" style="width:17px;height:17px;">
@@ -850,7 +857,6 @@ const GUIDES = [
   ['읽는 자리', '지금 읽고 있는 자리를 그대로 한 장 찍어주세요. 책상이든 침대든 버스 안이든 괜찮아요.'],
   ['펼친 책',   '오늘 읽은 데까지 펼쳐서 한 장 찍어주세요. 쪽수가 보이면 더 좋아요.'],
   ['남은 문장', '오늘 마음에 걸린 문장이 있는 쪽을 찍어주세요. 한 문장이면 충분해요.'],
-  ['필사',      '마음에 남은 문장을 공책에 옮겨 적고, 그 페이지를 찍어주세요.'],
 ];
 
 function buildGuideSel(cur) {
@@ -894,6 +900,7 @@ function openMake(id) {
   $('mEnd').value    = r?.end_date || '';
   $('mPeople').value = r?.max_people ?? 8;
   $('mCamera').checked = !!r?.camera_only;
+  $('mQuote').checked  = !!r?.quote_required;
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
@@ -926,6 +933,7 @@ async function submitMake() {
     start_date: s, end_date: e,
     max_people: parseInt($('mPeople').value||'8',10),
     camera_only: $('mCamera').checked,
+    quote_required: $('mQuote').checked,
     led_by: me.id,
   };
   const { error } = makeId
@@ -953,6 +961,13 @@ function openCert(rid) {
     ? '이 루틴은 그 자리에서 찍은 사진만 올릴 수 있어요'
     : '읽고 있는 순간을 사진으로 담아주세요';
   $('phInput').toggleAttribute('capture', !!r.camera_only);
+  // 필사 루틴이면 문장이 선택이 아니라 필수가 된다
+  const q = !!r.quote_required;
+  $('cQuoteReq').textContent = q ? '* 필수' : '선택';
+  $('cQuoteReq').className   = q ? 'req' : 'opt';
+  $('cQuote').placeholder    = q
+    ? '오늘 읽은 데서 마음에 남은 문장을 그대로 옮겨 적어주세요.'
+    : '옮겨 적고 싶은 문장이 있다면 적어주세요.';
   // 지난 인증에서 읽던 책을 이어받아 매번 다시 치지 않게 함
   const last = myCerts(rid).find(c => c.book_title || c.page_end);
   $('cQuote').value = ''; $('cMemo').value = '';
@@ -976,7 +991,9 @@ function drawPhotos() {
       <button class="ph-del" onclick="delPhoto(${i})">×</button></div>`).join('')
     + (photos.length < 3 ? `<div class="ph-box" onclick="document.getElementById('phInput').click()">
         <i class="ti ti-plus" style="font-size:20px;"></i>${photos.length}/3</div>` : '');
-  $('cSubmit').disabled = photos.length === 0;
+  const r = state.routines.find(x => x.id === certRid);
+  const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
+  $('cSubmit').disabled = photos.length === 0 || needQuote;
 }
 function delPhoto(i) { photos.splice(i,1); drawPhotos(); }
 
@@ -1005,6 +1022,8 @@ async function submitCert() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
   if (!photos.length) return;
+  const r0 = state.routines.find(x => x.id === certRid);
+  if (r0?.quote_required && !$('cQuote').value.trim()) return toast('마음에 남은 문장을 적어주세요');
   const btn = $('cSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
   const urls = [];
   for (let i = 0; i < photos.length; i++) {
@@ -1199,7 +1218,7 @@ function enterDemo(role) {
   state.routines = [
     { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
       cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
-      max_people:8, amount_per_cert:1300, camera_only:false, status:'active', led_by: kid },
+      max_people:8, amount_per_cert:1300, camera_only:false, quote_required:true, status:'active', led_by: kid },
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
       max_people:10, amount_per_cert:1000, camera_only:false, status:'recruit', led_by:'demo-k2' },
