@@ -221,7 +221,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <div class="field-label">책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span></div>
       <div class="ph-grid" id="phGrid"></div>
       <input type="file" id="phInput" accept="image/*" multiple style="display:none;" onchange="pickPhotos(event)">
-      <div class="hint" id="camHint">읽고 있는 순간을 사진으로 담아주세요</div>
+      <div class="hint" id="camHint">지금 읽고 있는 모습을 바로 찍어주세요</div>
     </div>
     <div>
       <div class="field-label">마음에 남은 문장 <span id="cQuoteReq" class="opt">선택</span></div>
@@ -292,13 +292,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
         필사도 함께하기
       </label>
       <div class="hint">체크하면 인증할 때 마음에 남은 문장을 꼭 옮겨 적어야 해요</div>
-    </div>
-    <div>
-      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
-        <input type="checkbox" id="mCamera" style="width:17px;height:17px;">
-        그 자리에서 찍은 사진만 받기
-      </label>
-      <div class="hint">체크하면 갤러리에 저장된 사진을 못 올리고, 카메라로 바로 찍어야 해요</div>
     </div>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
   </div>
@@ -913,7 +906,6 @@ function openMake(id) {
   $('mStart').value  = r?.start_date || '';
   $('mEnd').value    = r?.end_date || '';
   $('mPeople').value = r?.max_people ?? 8;
-  $('mCamera').checked = !!r?.camera_only;
   $('mQuote').checked  = !!r?.quote_required;
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
@@ -946,7 +938,6 @@ async function submitMake() {
     cert_guide: $('mGuide').value.trim() || null,
     start_date: s, end_date: e,
     max_people: parseInt($('mPeople').value||'8',10),
-    camera_only: $('mCamera').checked,
     quote_required: $('mQuote').checked,
     led_by: me.id,
   };
@@ -971,10 +962,9 @@ function openCert(rid) {
     ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
-  $('camHint').textContent = r.camera_only
-    ? '이 루틴은 그 자리에서 찍은 사진만 올릴 수 있어요'
-    : '읽고 있는 순간을 사진으로 담아주세요';
-  $('phInput').toggleAttribute('capture', !!r.camera_only);
+  // 인증 사진은 그 자리에서 찍은 것만. 서비스 고정 규칙이라 루틴별로 다르지 않다
+  $('camHint').textContent = '지금 읽고 있는 모습을 바로 찍어주세요. 저장된 사진은 올릴 수 없어요';
+  $('phInput').setAttribute('capture', 'environment');
   // 필사 루틴이면 문장이 선택이 아니라 필수가 된다
   const q = !!r.quote_required;
   $('cQuoteReq').textContent = q ? '* 필수' : '선택';
@@ -1232,10 +1222,10 @@ function enterDemo(role) {
   state.routines = [
     { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
       cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
-      max_people:8, amount_per_cert:1300, camera_only:false, quote_required:true, status:'active', led_by: kid },
+      max_people:8, amount_per_cert:1300, camera_only:true, quote_required:true, status:'active', led_by: kid },
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
-      max_people:10, amount_per_cert:1000, camera_only:false, status:'recruit', led_by:'demo-k2' },
+      max_people:10, amount_per_cert:1000, camera_only:true, status:'recruit', led_by:'demo-k2' },
   ];
   state.parts = [
     { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },
