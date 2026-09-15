@@ -669,7 +669,7 @@ function guestWall() {
   </div>`;
 }
 
-// 모집 목록은 훑어보는 화면이라 2열로. 내 루틴은 수가 적어 한 줄씩 그대로 둔다
+// 루틴 카드는 대표 사진이 붙어 커서, 목록은 전부 2열로 깐다
 const routineGrid = list => `<div class="r-grid">${list.map(routineCard).join('')}</div>`;
 
 function routineCard(r) {
@@ -744,11 +744,11 @@ function viewHome() {
       <span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>
       <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
     </div>`;
-    h += mine.length ? mine.map(routineCard).join('')
+    h += mine.length ? routineGrid(mine)
        : `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
   } else {
     h += `<div class="sec-t">참여 중인 루틴</div>`;
-    h += mine.length ? mine.map(routineCard).join('')
+    h += mine.length ? routineGrid(mine)
        : `<div class="empty">아직 참여 중인 루틴이 없어요.<br>아래에서 모집 중인 루틴을 찾아보세요.</div>`;
   }
 
