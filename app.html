@@ -101,7 +101,16 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .c-wait { background:#FFF4E5; color:#A86400; }
 
 /* 루틴 카드 */
-.r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; }
+.r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; overflow:hidden; }
+.r-cover { margin:-16px -16px 13px; aspect-ratio:16/9; background:#eeeae2; }
+.r-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+.cover-pick { width:100%; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
+  background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
+.cover-prev { position:relative; border-radius:13px; overflow:hidden; aspect-ratio:16/9; }
+.cover-prev img { width:100%; height:100%; object-fit:cover; display:block; }
+.cover-prev button { position:absolute; top:8px; right:8px; width:28px; height:28px; border:none;
+  border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:15px; cursor:pointer; }
 .r-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
 .r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
@@ -254,6 +263,12 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <div>
       <div class="field-label">루틴 이름 <span class="req">* 필수</span></div>
       <input type="text" id="mTitle" placeholder="예) 밤바다 곁에서 읽는 15일" maxlength="40">
+    </div>
+    <div>
+      <div class="field-label">대표 사진 <span class="opt">선택</span></div>
+      <div id="mCoverBox"></div>
+      <input type="file" id="mCoverInput" accept="image/*" style="display:none;" onchange="pickCover(event)">
+      <div class="hint">청소년이 루틴을 고를 때 제일 먼저 보는 그림이에요. 없으면 이모지로 보여요.</div>
     </div>
     <div>
       <div class="field-label">이모지 <span class="opt">선택</span></div>
@@ -610,6 +625,7 @@ function routineCard(r) {
   const mine = p && p.status === 'approved';
   const waiting = p && p.status === 'pending';
   return `<div class="r-card" onclick="openRoutine(${r.id})">
+    ${r.cover_url ? `<div class="r-cover"><img src="${esc(r.cover_url)}" loading="lazy" alt=""></div>` : ''}
     <div class="r-top">
       <div style="min-width:0;">
         <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
@@ -863,6 +879,33 @@ async function decide(rid, uid, status) {
 // 적립액은 끗짱이 고르지 않는다 — dokseo_settings.amount_per_cert 를 서버 트리거가
 // 자동으로 붙인다. 여기서는 얼마가 쌓이는지 알려주기만 한다.
 let makeId = null;
+let cover = null;       // 새로 고른 사진 (data URL)
+let coverUrl = null;    // 이미 올라가 있는 사진 주소
+
+function drawCover() {
+  const src = cover || coverUrl;
+  $('mCoverBox').innerHTML = src
+    ? `<div class="cover-prev"><img src="${esc(src)}" alt="">
+         <button type="button" onclick="clearCover(event)">×</button></div>`
+    : `<div class="cover-pick" onclick="document.getElementById('mCoverInput').click()">
+         <i class="ti ti-photo" style="font-size:22px;"></i>사진 고르기</div>`;
+}
+
+function clearCover(e) {
+  e.stopPropagation();
+  cover = null; coverUrl = null;
+  $('mCoverInput').value = '';
+  drawCover();
+}
+
+async function pickCover(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    cover = await resize(f, 1280, .82);
+    coverUrl = null;
+    drawCover();
+  } catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+}
 
 // 인증 방법은 루틴마다 크게 다르지 않다. 대표적인 것들을 고르게 하고,
 // 그래도 다르게 하고 싶으면 '기타'로 직접 쓰게 둔다
@@ -915,6 +958,8 @@ function openMake(id) {
   $('mPeople').value = r?.max_people ?? 8;
   $('mQuote').checked  = !!r?.quote_required;
   $('mCamera').checked = r ? !!r.camera_only : true;
+  cover = null; coverUrl = r?.cover_url || null;
+  $('mCoverInput').value = ''; drawCover();
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
@@ -941,6 +986,17 @@ async function submitMake() {
 
   const btn = $('mSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
+
+  // 새로 고른 사진이 있으면 먼저 올린다. 실패하면 루틴 저장까지 막지 않고 사진만 건너뛴다
+  let coverSaved = coverUrl;
+  if (cover) {
+    const path = `${me.id}/cover_${Date.now()}.jpg`;
+    const { error: up } = await sb.storage.from('routine-covers')
+      .upload(path, toBlob(cover), { contentType: 'image/jpeg' });
+    if (up) { btn.disabled = false; btn.textContent = label; return toast('사진 업로드 실패: ' + up.message); }
+    coverSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
+  }
+
   const row = {
     title, emoji: $('mEmoji').value.trim() || '📚', description: desc,
     cert_guide: $('mGuide').value.trim() || null,
@@ -948,6 +1004,7 @@ async function submitMake() {
     max_people: parseInt($('mPeople').value||'8',10),
     quote_required: $('mQuote').checked,
     camera_only: $('mCamera').checked,
+    cover_url: coverSaved,
     led_by: me.id,
   };
   const { error } = makeId
@@ -1233,7 +1290,7 @@ function enterDemo(role) {
   state.routines = [
     { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
       cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
-      max_people:8, amount_per_cert:1300, camera_only:true, quote_required:true, status:'active', led_by: kid },
+      max_people:8, amount_per_cert:1300, cover_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
       max_people:10, amount_per_cert:1000, camera_only:true, status:'recruit', led_by:'demo-k2' },
