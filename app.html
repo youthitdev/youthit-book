@@ -726,6 +726,9 @@ function viewHome() {
         return `<div class="card">
           <div style="font-weight:700;">${esc(nameOf(p.user_id))}</div>
           <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${esc(r?.title||'')}</div>
+          ${p.book_photo_url ? `<div style="margin-top:10px;"><img src="${esc(p.book_photo_url)}" loading="lazy"
+              style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;display:block;">
+              <div style="font-size:11.5px;color:var(--ink-3);margin-top:5px;">이 책으로 시작한대요</div></div>` : ''}
           ${p.note ? `<div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.6;">“${esc(p.note)}”</div>` : ''}
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button class="btn btn-green" style="padding:10px;font-size:13.5px;" onclick="decide(${p.routine_id},'${p.user_id}','approved')">승인</button>
@@ -896,7 +899,7 @@ function openRoutine(id) {
       ${r.points_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당</div>
         <div style="font-weight:700;color:var(--green-d);">${won(r.points_per_cert)}P</div>` : ''}
     </div>
-    ${r.description ? `<div class="sec-t">루틴 소개</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
+    ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
     ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
@@ -907,18 +910,53 @@ function openRoutine(id) {
       : me.role==='kkutjjang' ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
-      : `<div><div class="field-label">참여 각오 <span class="opt">선택</span></div>
+      : `<div>
+          <div class="field-label">내가 읽을 책 <span class="opt">선택</span></div>
+          <div id="apBookBox"></div>
+          <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
+          <div class="hint">시작할 책을 한 장 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
+          <div class="field-label" style="margin-top:16px;">참여 각오 <span class="opt">선택</span></div>
           <textarea id="applyNote" rows="3" placeholder="이 루틴을 신청하는 이유를 적어주세요." maxlength="300"></textarea>
           <button class="btn btn-primary" style="margin-top:12px;" onclick="apply(${r.id})">신청하기</button></div>`}`;
+  applyBook = null; drawApplyBook();
   openOv('ovRoutine');
+}
+
+let applyBook = null;
+
+function drawApplyBook() {
+  const box = $('apBookBox'); if (!box) return;
+  box.innerHTML = applyBook
+    ? `<div class="cover-prev"><img src="${esc(applyBook)}" alt="">
+         <button type="button" onclick="applyBook=null;drawApplyBook()">×</button></div>`
+    : `<div class="cover-pick" onclick="document.getElementById('apBookInput').click()">
+         <i class="ti ti-book" style="font-size:22px;"></i>책 사진 고르기</div>`;
+}
+
+async function pickApplyBook(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try { applyBook = await resize(f, 1280, .82); drawApplyBook(); }
+  catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
 }
 
 async function apply(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
   const note = $('applyNote')?.value.trim() || null;
-  const { error } = await sb.from('routine_participants').insert({ routine_id: rid, user_id: me.id, note });
+
+  let bookUrl = null;
+  if (applyBook) {
+    const path = `${me.id}/apply_${rid}_${Date.now()}.jpg`;
+    const { error: up } = await sb.storage.from('cert-photos')
+      .upload(path, toBlob(applyBook), { contentType: 'image/jpeg' });
+    if (up) return toast('사진 업로드 실패: ' + up.message);
+    bookUrl = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
+  }
+
+  const { error } = await sb.from('routine_participants')
+    .insert({ routine_id: rid, user_id: me.id, note, book_photo_url: bookUrl });
   if (error) return toast('신청에 실패했어요: ' + error.message);
+  applyBook = null;
   await loadAll(); closeOv('ovRoutine'); render();
   toast('신청했어요! 끗짱의 승인을 기다려주세요.');
 }
@@ -1385,7 +1423,7 @@ function enterDemo(role) {
     { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
-    { routine_id:901, user_id:'u4', status:'pending', note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
+    { routine_id:901, user_id:'u4', status:'pending', book_photo_url:null, note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
   ];
   state.names = { [uid]: me.name, [y1]:'서연', [kid]:'민지', u2:'하준', u3:'지우', u4:'예린' };
   state.certs = [
