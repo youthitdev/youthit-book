@@ -142,14 +142,14 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-bd">
       <div class="target" id="settleTarget"></div>
       <div class="field">
-        <div class="label">실제 지급 금액 <span>*</span></div>
+        <div class="label">서점에 지급할 금액 <span>*</span></div>
         <input type="number" id="settleAmount" placeholder="예) 18000" oninput="renderPreview()">
         <div class="hint">교환권 한도 <b id="capHint"></b>원. 초과분은 후원금에서 나갈 수 없어요</div>
       </div>
       <div class="field">
         <div class="label">영수증 첨부</div>
         <input type="file" id="settleReceipt" accept="image/*,application/pdf">
-        <div class="hint">서점에서 받은 영수증 사진 또는 스캔본</div>
+        <div class="hint">서점이 보낸 영수증 사진 또는 스캔본</div>
       </div>
       <div class="field">
         <div class="label">메모</div>
@@ -477,7 +477,7 @@ function viewPending() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
-    <div class="panel-d">적립금으로 책을 사고 사진을 올린 건입니다. 영수증 금액을 입력하면 도서기금에서 차감됩니다.</div></div>
+    <div class="panel-d">교환권으로 책을 받아온 건입니다. 서점이 보낸 영수증과 금액을 확인해 확정하세요.</div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>

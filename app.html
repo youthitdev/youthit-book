@@ -383,26 +383,26 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div class="ov-b" id="ovStoresBody"></div>
 </div>
 
-<!-- 책 샀어요 -->
+<!-- 책 받았어요 -->
 <div class="ov" id="ovBuy">
   <div class="ov-h"><button onclick="closeOv('ovBuy')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">책 샀어요</div><div class="t" id="ovBuyTitle"></div></div></div>
+    <div><div class="s">책 받았어요</div><div class="t" id="ovBuyTitle"></div></div></div>
   <div class="ov-b">
     <div id="buyBal"></div>
     <div>
-      <div class="field-label">어느 책방에서 샀나요? <span class="req">* 필수</span></div>
+      <div class="field-label">어느 책방에서 받았나요? <span class="req">* 필수</span></div>
       <select id="buyStore" onchange="checkBuy()"></select>
     </div>
     <div style="background:#f0f0f4;border-radius:12px;padding:13px 15px;">
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
-      <div style="font-size:13.5px;line-height:1.6;">산 책으로 얼굴을 가리고 찍어주세요.<br>얼굴이 나오지 않게 책을 들어올리면 돼요.</div>
+      <div style="font-size:13.5px;line-height:1.6;">받은 책으로 얼굴을 가리고 찍어주세요.<br>얼굴이 나오지 않게 책을 들어올리면 돼요.</div>
     </div>
     <div>
       <div class="field-label">책 사진 <span class="req">* 필수</span></div>
       <div id="buyPhPrev" style="margin-bottom:8px;"></div>
       <button class="btn btn-line" onclick="document.getElementById('buyPhInput').click()">사진 고르기</button>
       <input type="file" id="buyPhInput" accept="image/*" style="display:none;" onchange="pickBuyPhoto(event)">
-      <div class="hint">정산 확인용이라 기록에는 올라가지 않아요.</div>
+      <div class="hint">운영진만 확인해요. 기록 피드에는 올라가지 않아요.</div>
     </div>
     <label id="buyShareBox" style="display:flex;gap:10px;align-items:flex-start;background:#f7fbf0;border-radius:12px;padding:13px 15px;cursor:pointer;">
       <input type="checkbox" id="buyShare" style="margin-top:3px;width:17px;height:17px;flex:none;">
@@ -924,10 +924,10 @@ function balanceBlock() {
         ? `<div class="vch">🎫 쓸 수 있는 교환권 <b>${p.left}장</b><span>${cap}원 이하 책 한 권과 바꿀 수 있어요</span></div>`
         : `<div class="vch vch-off">다음 교환권까지 <b>${won(p.to_next)}P</b><span>${won(p.per)}P를 모으면 ${cap}원 이하 책 한 권과 바꿔요</span></div>`}
       ${pend
-        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 책 산 기록을 확인하고 있어요.</div>`
+        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="openStores()">책방 찾기</button>
-            ${p.left > 0 ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 샀어요</button>` : ''}
+            ${p.left > 0 ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 받았어요</button>` : ''}
           </div>`}
     </div>`;
 }
@@ -1563,7 +1563,8 @@ function storeCard(b) {
   </div>`;
 }
 
-// ── 책 샀어요 ──────────────────────────────────────────
+// ── 책 받았어요 ────────────────────────────────────────
+// 아이는 돈을 내지 않는다. 서점 외상으로 받아오고, 책값은 유스보이스가 서점에 보낸다
 let buyRid = null, buyPhoto = null;
 
 function openBuy(rid) {
@@ -1572,7 +1573,7 @@ function openBuy(rid) {
   $('ovBuyTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('buyBal').innerHTML = `<div style="background:#f7fbf0;border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--green-d);line-height:1.6;">
       쓸 수 있는 교환권 <b style="font-size:16px;">${myPoints().left}장</b><br>
-      <span style="font-size:12px;">${won(state.settings.voucher_max_amount || 20000)}원 이하 책 한 권과 바꿀 수 있어요.</span></div>`;
+      <span style="font-size:12px;">${won(state.settings.voucher_max_amount || 20000)}원 이하 책 한 권과 바꿀 수 있어요. 돈은 내지 않아요.</span></div>`;
   $('buyStore').innerHTML = `<option value="">책방을 골라주세요</option>` +
     state.stores.filter(s=>s.active).map(s =>
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
