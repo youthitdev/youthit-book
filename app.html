@@ -122,6 +122,10 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .bal-n { font-size:30px; font-weight:800; letter-spacing:-1.2px; margin-top:3px; }
 .bal-n small { font-size:15px; font-weight:700; margin-left:2px; }
 .bal-s { font-size:12.5px; color:var(--ink-2); margin-top:3px; }
+.vch { margin-top:13px; background:#fff; border-radius:12px; padding:12px 14px; font-size:13.5px; font-weight:700; color:var(--green-d); }
+.vch b { font-size:15px; }
+.vch span { display:block; font-size:12px; font-weight:400; color:var(--ink-3); margin-top:3px; }
+.vch-off { color:var(--ink-2); }
 .bal-btns { display:flex; gap:8px; margin-top:14px; }
 .bal-btns button { flex:1; padding:11px; border-radius:11px; font-size:13.5px; font-weight:700; cursor:pointer; border:none; }
 
@@ -579,15 +583,21 @@ const myRoutines = () => me ? state.routines.filter(r => {
 const didToday = rid => myCerts(rid).some(c => c.cert_date === todayKST());
 
 // 잔액 = (내 인증 수 × 인증당 적립액) − 정산 완료된 구매 합계
-// 서버 dokseo_balance() 와 같은 식. 대기 중인 구매는 금액이 없어 빼지 않는다
-function balance(r) {
-  if (!me) return 0;
-  const earned = myCerts(r.id).length * (r.amount_per_cert || 0);
+// 서버 dokseo_points() 와 같은 식. 포인트는 루틴을 가리지 않고 계정에 쌓인다.
+// 정산 대기 중인 구매도 교환권을 이미 쓴 것으로 센다 (중복 사용 방지)
+function myPoints() {
+  if (!me) return { points:0, earned:0, used:0, left:0, to_next:0, per:300 };
+  const per = state.settings.points_per_voucher || 300;
+  const points = state.certs
+    .filter(c => c.user_id === me.id)
+    .reduce((n, c) => n + (state.routines.find(r => r.id === c.routine_id)?.points_per_cert || 0), 0);
   const used = state.purchases
-    .filter(p => p.routine_id === r.id && p.user_id === me.id && p.status === 'settled')
-    .reduce((s,p) => s + (p.amount||0), 0);
-  return Math.max(0, earned - used);
+    .filter(p => p.user_id === me.id && p.status !== 'void').length;
+  const earned = Math.floor(points / per);
+  return { points, per, earned, used,
+           left: Math.max(0, earned - used), to_next: per - (points % per) };
 }
+
 const pendingBuy = rid => me && state.purchases.find(p =>
   p.routine_id === rid && p.user_id === me.id && p.status === 'pending');
 
@@ -635,7 +645,7 @@ function routineCard(r) {
     </div>
     ${r.description ? `<div class="r-desc">${esc(r.description).slice(0,70)}${r.description.length>70?'…':''}</div>` : ''}
     ${waiting ? `<div style="margin-top:9px;"><span class="chip c-wait">승인 기다리는 중</span></div>` : ''}
-    ${mine && r.amount_per_cert ? `<div style="margin-top:9px;font-size:12.5px;color:var(--green-d);font-weight:700;">적립금 ${won(balance(r))}원</div>` : ''}
+    ${mine && r.points_per_cert ? `<div style="margin-top:9px;font-size:12.5px;color:var(--green-d);font-weight:700;">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}P</div>` : ''}
   </div>`;
 }
 
@@ -647,7 +657,7 @@ function viewHome() {
     return `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
-          읽은 만큼 적립금이 쌓이고, 그 돈으로 동네책방에서 직접 책을 골라요.</div>
+          읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
         <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth()">시작하기</button>
       </div>
       <div class="sec-t">지금 모집 중인 루틴</div>
@@ -742,20 +752,24 @@ function viewCert() {
 }
 
 function balanceBlock() {
-  return myRoutines().filter(r => r.amount_per_cert > 0).map(r => {
-    const bal = balance(r), pend = pendingBuy(r.id);
-    return `<div class="bal">
-      <div class="bal-l">📚 내 독서 적립금</div>
-      <div class="bal-n">${won(bal)}<small>원</small></div>
-      <div class="bal-s">${esc(r.title)} · 인증 ${myCerts(r.id).length}회 · 1회당 ${won(r.amount_per_cert)}원</div>
+  if (!myRoutines().length) return '';
+  const p = myPoints();
+  const pend = state.purchases.some(x => x.user_id === me.id && x.status === 'pending');
+  const cap = won(state.settings.voucher_max_amount || 20000);
+  return `<div class="bal">
+      <div class="bal-l">📚 내 독서 포인트</div>
+      <div class="bal-n">${won(p.points)}<small>P</small></div>
+      <div class="bal-s">인증 한 번에 ${won(state.settings.points_per_cert || 20)}P · 루틴이 끝나도 사라지지 않아요</div>
+      ${p.left > 0
+        ? `<div class="vch">🎫 쓸 수 있는 교환권 <b>${p.left}장</b><span>${cap}원 이하 책 한 권과 바꿀 수 있어요</span></div>`
+        : `<div class="vch vch-off">다음 교환권까지 <b>${won(p.to_next)}P</b><span>${won(p.per)}P를 모으면 ${cap}원 이하 책 한 권과 바꿔요</span></div>`}
       ${pend
-        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 책 산 기록을 확인하고 있어요. 확인이 끝나면 적립금에 반영돼요.</div>`
+        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 책 산 기록을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="openStores()">책방 찾기</button>
-            ${bal > 0 ? `<button class="btn-green" onclick="openBuy(${r.id})">책 샀어요</button>` : ''}
+            ${p.left > 0 ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 샀어요</button>` : ''}
           </div>`}
     </div>`;
-  }).join('');
 }
 
 // 지금 어떤 책들이 읽히고 있나. 혼자 읽기 어려워서 온 아이들이라
@@ -834,8 +848,8 @@ function openRoutine(id) {
       <div style="font-weight:700;margin-bottom:10px;">${fmtPeriod(r.start_date,r.end_date)}</div>
       <div style="font-size:12.5px;color:var(--ink-3);">참여</div>
       <div style="font-weight:700;margin-bottom:10px;">${people} / ${r.max_people}명</div>
-      ${r.amount_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당 적립</div>
-        <div style="font-weight:700;color:var(--green-d);">${won(r.amount_per_cert)}원</div>` : ''}
+      ${r.points_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당</div>
+        <div style="font-weight:700;color:var(--green-d);">${won(r.points_per_cert)}P</div>` : ''}
     </div>
     ${r.description ? `<div class="sec-t">루틴 소개</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
@@ -876,8 +890,8 @@ async function decide(rid, uid, status) {
 
 // ── 루틴 만들기 (끗짱) ──────────────────────────────────
 // 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는다.
-// 적립액은 끗짱이 고르지 않는다 — dokseo_settings.amount_per_cert 를 서버 트리거가
-// 자동으로 붙인다. 여기서는 얼마가 쌓이는지 알려주기만 한다.
+// 인증 1회당 포인트는 끗짱이 고르지 않는다 — dokseo_settings.points_per_cert 를
+// 서버 트리거가 자동으로 붙인다.
 let makeId = null;
 let cover = null;       // 새로 고른 사진 (data URL)
 let coverUrl = null;    // 이미 올라가 있는 사진 주소
@@ -1127,7 +1141,7 @@ function openStores() {
   if (!list.length) { b.innerHTML = `<div class="empty">아직 등록된 책방이 없어요</div>`; openOv('ovStores'); return; }
   const byRegion = {};
   list.forEach(s => { const k = s.region || '그 외'; (byRegion[k] = byRegion[k]||[]).push(s); });
-  b.innerHTML = `<div style="font-size:13px;color:var(--ink-3);line-height:1.6;">적립금으로 책을 살 수 있는 동네책방이에요. 가까운 곳으로 가면 돼요.</div>`
+  b.innerHTML = `<div style="font-size:13px;color:var(--ink-3);line-height:1.6;">교환권으로 책을 바꿀 수 있는 동네책방이에요. 가까운 곳으로 가면 돼요.</div>`
     + Object.keys(byRegion).sort().map(rg => `<div class="region-t">${esc(rg)}</div>`
       + byRegion[rg].map(storeCard).join('')).join('');
   openOv('ovStores');
@@ -1160,8 +1174,8 @@ function openBuy(rid) {
   buyRid = rid; buyPhoto = null;
   $('ovBuyTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('buyBal').innerHTML = `<div style="background:#f7fbf0;border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--green-d);line-height:1.6;">
-      쓸 수 있는 적립금 <b style="font-size:16px;">${won(balance(r))}원</b><br>
-      <span style="font-size:12px;">영수증을 확인한 뒤 실제 쓴 금액만큼 차감돼요.</span></div>`;
+      쓸 수 있는 교환권 <b style="font-size:16px;">${myPoints().left}장</b><br>
+      <span style="font-size:12px;">${won(state.settings.voucher_max_amount || 20000)}원 이하 책 한 권과 바꿀 수 있어요.</span></div>`;
   $('buyStore').innerHTML = `<option value="">책방을 골라주세요</option>` +
     state.stores.filter(s=>s.active).map(s =>
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
@@ -1277,7 +1291,7 @@ function enterDemo(role) {
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
   const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
 
-  state.settings = { book_fund_rate: 0.8, amount_per_cert: 1300 };
+  state.settings = { book_fund_rate: 0.8, points_per_cert: 20, points_per_voucher: 300, voucher_max_amount: 20000 };
   state.stores = [
     { id:1, name:'완벽한날들', region:'강원 속초', address:'강원특별자치도 속초시 동해대로 4344',
       hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
@@ -1290,10 +1304,10 @@ function enterDemo(role) {
   state.routines = [
     { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
       cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
-      max_people:8, amount_per_cert:1300, cover_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
+      max_people:8, points_per_cert:20, cover_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
-      max_people:10, amount_per_cert:1000, camera_only:true, status:'recruit', led_by:'demo-k2' },
+      max_people:10, points_per_cert:20, camera_only:true, status:'recruit', led_by:'demo-k2' },
   ];
   state.parts = [
     { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },

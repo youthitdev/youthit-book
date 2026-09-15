@@ -142,7 +142,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <div class="field">
         <div class="label">실제 지급 금액 <span>*</span></div>
         <input type="number" id="settleAmount" placeholder="예) 18000" oninput="renderPreview()">
-        <div class="hint">이 참여자의 적립금 잔액 <b id="capHint"></b>원</div>
+        <div class="hint">교환권 한도 <b id="capHint"></b>원. 초과분은 후원금에서 나갈 수 없어요</div>
       </div>
       <div class="field">
         <div class="label">영수증 첨부</div>
@@ -271,7 +271,7 @@ const fmtDate = d => d ? d.slice(0,10).replace(/-/g,'.') : '-';
 
 // ── 데모 데이터 (LIVE 전환 시 Supabase 조회로 대체) ─────
 let DB = {
-  settings: { book_fund_rate: 0.8 },
+  settings: { book_fund_rate: 0.8, voucher_max_amount: 20000 },
   sponsors: [
     { id:'s1', nickname:'책읽는고래', email:'whale@example.com' },
     { id:'s2', nickname:'민들레',     email:'dan@example.com' },
@@ -308,17 +308,12 @@ let DB = {
       book_title:'완득이', created_at:'2026-09-10', quote_public:false },
   ],
   purchases: [
-    { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:19500,
-      status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:false },
-    { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:14300,
-      status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:true },
-    { id:13, name:'박OO', routine:'속초 밤바다 15일', bookstore:'△△책방', balance:20000,
-      status:'pending', created_at:'2026-09-09' },
-    { id:9,  name:'최OO', routine:'속초 밤바다 15일', bookstore:'△△책방', balance:2500,
-      status:'settled', created_at:'2026-08-28', settled_at:'2026-09-01',
+    { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:false },
+    { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:true },
+    { id:13, name:'박OO', routine:'속초 밤바다 15일', bookstore:'△△책방', status:'pending', created_at:'2026-09-09' },
+    { id:9,  name:'최OO', routine:'속초 밤바다 15일', bookstore:'△△책방', status:'settled', created_at:'2026-08-28', settled_at:'2026-09-01',
       amount:17500, allocs:[{charge_id:2, amount:17500}] },
-    { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:500,
-      status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
+    { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
       amount:19000, allocs:[{charge_id:1, amount:12000},{charge_id:2, amount:7000}] },
   ],
 };
@@ -557,13 +552,16 @@ function viewCharges() {
 }
 
 // ── 정산 ────────────────────────────────────────────────
+// 교환권 1장으로 살 수 있는 책값 상한. 참여자별 잔액이 아니라 설정 한 값이다
+const voucherCap = () => DB.settings.voucher_max_amount || 20000;
+
 function openSettle(id) {
   settleTargetId = id;
   const g = DB.purchases.find(x => x.id === id);
   document.getElementById('settleTarget').innerHTML =
     `<div><b>${esc(g.name)}</b> · ${esc(g.routine)}</div>
      <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 구매</div>`;
-  document.getElementById('capHint').textContent = won(g.balance);
+  document.getElementById('capHint').textContent = won(voucherCap());
   document.getElementById('settleAmount').value = '';
   document.getElementById('settleNote').value = '';
   document.getElementById('settleReceipt').value = '';
@@ -577,9 +575,8 @@ function renderPreview() {
   const btn = document.getElementById('settleBtn');
   if (!amt) { box.innerHTML = ''; btn.disabled = false; return; }
 
-  const target = DB.purchases.find(x => x.id === settleTargetId);
-  if (target && amt > target.balance) {
-    box.innerHTML = `<div class="warn">이 참여자의 적립금 잔액 ${won(target.balance)}원을 넘습니다. 초과분은 후원금에서 나갈 수 없어요.</div>`;
+  if (amt > voucherCap()) {
+    box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘습니다. 초과분은 후원금에서 나갈 수 없어요.</div>`;
     btn.disabled = true; return;
   }
   const plan = fifoPlan(amt);
@@ -683,7 +680,7 @@ async function submitCharge() {
 // ── LIVE 데이터 로드 ────────────────────────────────────
 async function loadLive() {
   const [settings, sponsors, charges, purchases, stores, quotes] = await Promise.all([
-    sb.from('dokseo_settings').select('book_fund_rate').single(),
+    sb.from('dokseo_settings').select('book_fund_rate, voucher_max_amount').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
     // profiles 는 book_purchases.user_id(→auth.users)와 FK로 직접 안 엮여서
@@ -714,7 +711,7 @@ async function loadLive() {
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
-    allocs: p.consumption_allocations || [], balance: 0,
+    allocs: p.consumption_allocations || [],
   }));
 
   // 책방별 구매 건수
@@ -723,11 +720,6 @@ async function loadLive() {
     if (p.bookstore_id) DB.purchaseCounts[p.bookstore_id] = (DB.purchaseCounts[p.bookstore_id] || 0) + 1;
   });
 
-  // 정산 대기 건의 적립금 잔액 — 금액을 넘겨 정산하지 않도록 대기 건만 조회
-  await Promise.all(DB.purchases.filter(p => p.status === 'pending').map(async p => {
-    const { data } = await sb.rpc('dokseo_balance', { p_user: p.user_id, p_routine: p.routine_id });
-    p.balance = data || 0;
-  }));
 }
 
 // 책 구매 사진은 비공개 버킷에 있어서 볼 때마다 짧은 서명 URL을 새로 발급받음
