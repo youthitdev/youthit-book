@@ -265,6 +265,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <div style="flex:1;min-width:0;">
         <div class="field-label">읽는 책 <span class="opt">선택</span></div>
         <input type="text" id="cBook" placeholder="책 제목" maxlength="60">
+        <div class="hint">다른 책으로 바꿨으면 고쳐주세요</div>
       </div>
       <div style="width:112px;flex-shrink:0;">
         <div class="field-label">읽은 쪽 <span class="opt">선택</span></div>
@@ -1190,10 +1191,11 @@ function openCert(rid) {
   $('cQuote').placeholder    = q
     ? '오늘 읽은 데서 마음에 남은 문장을 그대로 옮겨 적어주세요.'
     : '옮겨 적고 싶은 문장이 있다면 적어주세요.';
-  // 지난 인증에서 읽던 책을 이어받아 매번 다시 치지 않게 함
-  const last = myCerts(rid).find(c => c.book_title || c.page_end);
+  // 책 제목은 매번 다시 치지 않게 채워둔다.
+  // 직전 인증에서 읽던 책 → 없으면 참여할 때 적은 책. 바뀌었으면 고쳐 쓰면 된다
+  const last = myCerts(rid).find(c => c.book_title);
   $('cQuote').value = ''; $('cMemo').value = '';
-  $('cBook').value = last?.book_title || '';
+  $('cBook').value = last?.book_title || myPart(rid)?.book_title || '';
   $('cPage').value = '';
   $('cPageHint').style.display = 'none';
   drawPhotos(); pageHint(); openOv('ovCert');
@@ -1446,7 +1448,7 @@ function enterDemo(role) {
       max_people:10, points_per_cert:10, camera_only:true, status:'recruit', led_by:'demo-k2' },
   ];
   state.parts = [
-    { routine_id:901, user_id:y1, status:'approved', joined_at:day(7) },
+    { routine_id:901, user_id:y1, status:'approved', book_title:'속초에서의 겨울', joined_at:day(7) },
     { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
     { routine_id:901, user_id:'u4', status:'approved', book_photo_url:null, note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
