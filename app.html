@@ -1642,6 +1642,38 @@ function closeOv(id) { $(id).classList.remove('on'); }
 
 // 사진은 올리기 전에 적당한 해상도로 줄인다 (업로드 속도·용량)
 // 찍은 시각을 사진에 새긴다. 인증·책 구매 사진처럼 '그때 거기'가 중요한 것에만 쓴다
+// 오른쪽 위 원형 도장. 반투명이라 사진 위에 얹혀도 내용을 심하게 가리지 않는다
+function stampLogo(ctx, w, h) {
+  const r0 = Math.round(w * 0.085);            // 반지름
+  const cx = w - Math.round(w * 0.03) - r0;
+  const cy = Math.round(w * 0.03) + r0;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.35)';
+  ctx.shadowBlur = Math.round(r0 * 0.25);
+
+  // 안쪽을 살짝 어둡게 깔아야 밝은 사진에서도 흰 테두리가 보인다
+  ctx.beginPath(); ctx.arc(cx, cy, r0, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill();
+
+  ctx.lineWidth = Math.max(2, Math.round(r0 * 0.09));
+  ctx.strokeStyle = 'rgba(255,255,255,.92)'; ctx.stroke();
+
+  // 테두리 안쪽에 가는 선 하나 더 — 도장 느낌
+  ctx.beginPath(); ctx.arc(cx, cy, r0 - ctx.lineWidth * 1.8, 0, Math.PI*2);
+  ctx.lineWidth = Math.max(1, Math.round(r0 * 0.035));
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const fs = Math.round(r0 * 0.42);
+  ctx.font = `bold ${fs}px sans-serif`;
+  if (ctx.font.indexOf(String(fs)) === -1) ctx.font = `${fs}px sans-serif`;
+  ctx.fillText('한끗', cx, cy - fs * 0.55);
+  ctx.fillText('독서', cx, cy + fs * 0.55);
+}
+
 function stampTime(ctx, w, h) {
   const d = new Date(), p = n => String(n).padStart(2, '0');
   const txt = `${d.getFullYear()}.${p(d.getMonth()+1)}.${p(d.getDate())}  ${p(d.getHours())}:${p(d.getMinutes())}`;
@@ -1691,7 +1723,7 @@ function resize(file, maxDim, q, stamp) {
         cv.width = w; cv.height = h;
         const ctx = cv.getContext('2d');
         ctx.drawImage(img, 0, 0, w, h);
-        if (stamp) stampTime(ctx, w, h);
+        if (stamp) { stampLogo(ctx, w, h); stampTime(ctx, w, h); }
         res(cv.toDataURL('image/jpeg', q));
       };
       img.src = ev.target.result;
