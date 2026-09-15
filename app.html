@@ -303,9 +303,27 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <div id="buyPhPrev" style="margin-bottom:8px;"></div>
       <button class="btn btn-line" onclick="document.getElementById('buyPhInput').click()">사진 고르기</button>
       <input type="file" id="buyPhInput" accept="image/*" style="display:none;" onchange="pickBuyPhoto(event)">
-      <div class="hint">이 사진은 기록에 올라가지 않아요. 운영진만 확인해요.</div>
+      <div class="hint">정산 확인용이라 기록에는 올라가지 않아요.</div>
     </div>
+    <label id="buyShareBox" style="display:flex;gap:10px;align-items:flex-start;background:#f7fbf0;border-radius:12px;padding:13px 15px;cursor:pointer;">
+      <input type="checkbox" id="buyShare" style="margin-top:3px;width:17px;height:17px;flex:none;">
+      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>너를 응원하는 어른들</b>에게 보여줘도 괜찮아요
+        <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">얼굴이 안 나온 사진만, 운영진이 한 번 더 확인하고 올려요. 안 해도 괜찮아요.</span></span>
+    </label>
     <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
+  </div>
+</div>
+
+<!-- 책이 도착한 순간. 후원자가 누구인지는 알리지 않고, 응원만 전한다 -->
+<div class="ov" id="ovCheer" style="background:linear-gradient(160deg,#2E33BC,#4a4fd6);">
+  <div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 30px;text-align:center;color:#fff;">
+    <div style="font-size:52px;margin-bottom:22px;">📚</div>
+    <div id="cheerMsg" style="font-size:22px;font-weight:800;line-height:1.5;letter-spacing:-0.5px;"></div>
+    <div style="font-size:14.5px;line-height:1.85;color:rgba(255,255,255,.8);margin-top:18px;max-width:300px;">
+      누가 보냈는지는 알 수 없지만,<br>네가 매일 읽는 걸 지켜보고 있어요.
+    </div>
+    <button class="btn" style="background:#fff;color:var(--blue);max-width:200px;margin-top:34px;"
+      onclick="closeOv('ovCheer')">고마워요</button>
   </div>
 </div>
 
@@ -993,7 +1011,7 @@ function openBuy(rid) {
   $('buyStore').innerHTML = `<option value="">책방을 골라주세요</option>` +
     state.stores.filter(s=>s.active).map(s =>
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
-  $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = '';
+  $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = ''; $('buyShare').checked = false;
   checkBuy(); openOv('ovBuy');
 }
 async function pickBuyPhoto(e) {
@@ -1016,14 +1034,33 @@ async function submitBuy() {
   const { error: up } = await sb.storage.from('dokseo-proofs').upload(path, blob, { contentType:'image/jpeg' });
   if (up) { btn.disabled=false; btn.textContent='기록하기'; return toast('사진 업로드 실패: '+up.message); }
 
+  // 아이가 동의했을 때만 공개 버킷에도 한 장. 노출 여부는 운영진이 따로 승인한다
+  let publicPath = null;
+  if ($('buyShare').checked) {
+    const pp = `${me.id}/book_${buyRid}_${Date.now()}.jpg`;
+    const { error: up2 } = await sb.storage.from('cert-photos').upload(pp, toBlob(buyPhoto), { contentType:'image/jpeg' });
+    if (!up2) publicPath = sb.storage.from('cert-photos').getPublicUrl(pp).data.publicUrl;
+  }
+
   const { error } = await sb.from('book_purchases').insert({
     user_id: me.id, routine_id: buyRid,
     bookstore_id: parseInt($('buyStore').value,10), proof_photo_url: path,
+    book_photo_url: publicPath,
   });
   btn.disabled = false; btn.textContent = '기록하기';
   if (error) return toast('기록에 실패했어요: ' + error.message);
   await loadAll(); closeOv('ovBuy'); render();
-  toast('기록했어요! 잘 어울리는 책이길 바라요 🌱');
+  await showCheer();
+}
+
+// 책이 도착한 순간에만 후원 이야기를 꺼낸다. 평소 화면에는 두지 않는다
+async function showCheer() {
+  let n = 0;
+  try { const { data } = await sb.rpc('dokseo_pool_status'); n = (data && data.sponsors_count) || 0; } catch (e) {}
+  $('cheerMsg').innerHTML = n > 0
+    ? `이 책, 너를 응원하는<br>어른 ${n}명이 함께 보냈어요`
+    : `이 책, 너를 응원하는<br>어른들이 함께 보냈어요`;
+  openOv('ovCheer');
 }
 
 // ── 댓글 ───────────────────────────────────────────────

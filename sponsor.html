@@ -67,8 +67,9 @@ section { margin-top: 44px; }
 .card + .card { margin-top: 12px; }
 
 /* ── 풀 현황 ── */
-.pool { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.pool { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
 .pool-item { background: var(--card); padding: 20px 14px; text-align: center; }
+@media (min-width: 560px) { .pool { grid-template-columns: repeat(4, 1fr); } }
 .pool-num { font-size: 24px; font-weight: 800; letter-spacing: -0.8px; }
 .pool-num small { font-size: 13px; font-weight: 700; margin-left: 1px; }
 .pool-label { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; font-weight: 600; }
@@ -87,6 +88,12 @@ section { margin-top: 44px; }
 .charge-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .charge-amt { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; }
 .charge-date { font-size: 12px; color: var(--ink-3); }
+.photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.photos figure { margin: 0; position: relative; aspect-ratio: 3/4; border-radius: 12px; overflow: hidden; background: #eeeae2; }
+.photos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photos figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 8px 6px;
+  font-size: 11px; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,0.55)); }
+@media (max-width: 380px) { .photos { grid-template-columns: repeat(2, 1fr); } }
 .seq { display: inline-block; font-size: 12px; font-weight: 700; color: var(--gold);
   border: 1px solid rgba(255,255,255,0.28); border-radius: 99px; padding: 4px 11px; margin-bottom: 13px; }
 .since-q { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.18);
@@ -187,7 +194,7 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
   </div>
 
   <section>
-    <div class="sec-title">지금 도서기금</div>
+    <div class="sec-title">지금까지 함께 만든 것</div>
     <div class="sec-desc">후원금은 들어온 순서대로 책이 되어 나갑니다.</div>
     <div class="pool" id="poolGrid"></div>
     <div class="card pool-bar-wrap" id="poolBarCard"></div>
@@ -205,6 +212,12 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
     <div class="sec-desc">참여 청소년의 인증 활동입니다. 누구인지는 표시되지 않아요.</div>
     <div class="card" id="feedCard"></div>
     <div class="card" id="readingStats"></div>
+  </section>
+
+  <section id="photosSection" style="display:none;">
+    <div class="sec-title">책이 도착한 날</div>
+    <div class="sec-desc">아이들이 산 책으로 얼굴을 가리고 찍었어요. 본인이 동의하고 운영진이 확인한 사진만 올라갑니다.</div>
+    <div class="photos" id="photos"></div>
   </section>
 
   <section id="quotesSection">
@@ -288,6 +301,7 @@ const DEMO = {
     { book_title: '느리게 걷는 법', readers: 2 }, { book_title: '완득이', readers: 4 },
     { book_title: '나는 나로 살기로 했다', readers: 2 }, { book_title: '시옷의 세계', readers: 1 },
   ],
+  photos: [],
   wall: ['도서관지기', '이OO', '책읽는고래', '유스보이스 직원일동', 'ㅎㅈㅇ', '동네책방단골',
          '민들레', 'K.S.H', '한끗팬', '조용한후원자', '서점러버', 'JY'],
   mySeq: 12,
@@ -308,15 +322,17 @@ async function loadPublic() {
     state.pool = DEMO.pool;
     state.feed = DEMO.feed; state.wall = DEMO.wall;
     state.stats = DEMO.stats; state.quotes = DEMO.quotes; state.books = DEMO.books;
+    state.photos = DEMO.photos;
     return;
   }
-  const [pool, feed, wall, stats, quotes, books] = await Promise.all([
+  const [pool, feed, wall, stats, quotes, books, photos] = await Promise.all([
     sb.rpc('dokseo_pool_status'),
     sb.rpc('dokseo_activity_feed', { p_days: 10 }),
     sb.rpc('dokseo_sponsor_wall', { p_limit: 40 }),
     sb.rpc('dokseo_reading_stats'),
     sb.rpc('dokseo_public_quotes', { p_limit: 8 }),
     sb.rpc('dokseo_books_reading', { p_limit: 18 }),
+    sb.rpc('dokseo_book_photos', { p_limit: 12 }),
   ]);
   state.pool = pool.data || DEMO.pool;
   state.feed = feed.data || [];
@@ -324,6 +340,7 @@ async function loadPublic() {
   state.stats = stats.data || DEMO.stats;
   state.quotes = quotes.data || [];
   state.books = books.data || [];
+  state.photos = photos.data || [];
 }
 
 async function loadMine() {
@@ -353,18 +370,23 @@ async function loadMine() {
 // ── 렌더 ────────────────────────────────────────────────
 function renderPool() {
   const p = state.pool;
+  const st = state.stats || {};
   document.getElementById('poolGrid').innerHTML = `
     <div class="pool-item">
-      <div class="pool-num">${manwon(p.remaining)}<small>만원</small></div>
-      <div class="pool-label">남은 도서기금</div>
+      <div class="pool-num">${p.sponsors_count}<small>명</small></div>
+      <div class="pool-label">응원하는 어른</div>
+    </div>
+    <div class="pool-item">
+      <div class="pool-num">${won(st.cert_total || 0)}<small>일</small></div>
+      <div class="pool-label">쌓인 독서</div>
     </div>
     <div class="pool-item">
       <div class="pool-num">${p.books_bought}<small>권</small></div>
-      <div class="pool-label">손에 남은 책</div>
+      <div class="pool-label">전해진 책</div>
     </div>
     <div class="pool-item">
-      <div class="pool-num">${p.sponsors_count}<small>명</small></div>
-      <div class="pool-label">함께한 후원자</div>
+      <div class="pool-num">${manwon(p.total_donated)}<small>만원</small></div>
+      <div class="pool-label">모인 후원금</div>
     </div>`;
 
   const fund = p.book_fund || 1;
@@ -413,6 +435,15 @@ function renderCharges() {
     ${state.charges.map(c => `<div><span>${fmtDate(c.charged_at)}</span><b>${won(c.amount)}원</b></div>`).join('')}
     <div class="charge-total"><span>지금까지 후원</span><b>${won(total)}원</b></div>
   </div>`;
+}
+
+function renderPhotos() {
+  const ph = state.photos || [];
+  document.getElementById('photosSection').style.display = ph.length ? '' : 'none';
+  if (!ph.length) return;
+  document.getElementById('photos').innerHTML = ph.map(x =>
+    `<figure><img src="${esc(x.photo_url)}" alt="책이 도착한 날" loading="lazy">
+      <figcaption>${fmtDate(x.day)}</figcaption></figure>`).join('');
 }
 
 function renderFeed() {
@@ -506,7 +537,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 (async function init() {
   if (LIVE) document.getElementById('demoFlag').style.display = 'none';
   await loadPublic();
-  renderPool(); renderFeed(); renderReading(); renderSteps(); renderWall();
+  renderPool(); renderPhotos(); renderFeed(); renderReading(); renderSteps(); renderWall();
 })();
 </script>
 </body>

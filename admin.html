@@ -289,9 +289,9 @@ let DB = {
   ],
   purchases: [
     { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:19500,
-      status:'pending', created_at:'2026-09-11' },
+      status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:false },
     { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO서점', balance:14300,
-      status:'pending', created_at:'2026-09-11' },
+      status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:true },
     { id:13, name:'박OO', routine:'책방에서 만나요', bookstore:'△△책방', balance:20000,
       status:'pending', created_at:'2026-09-09' },
     { id:9,  name:'최OO', routine:'책방에서 만나요', bookstore:'△△책방', balance:2500,
@@ -463,16 +463,35 @@ function viewPending() {
     <div class="panel-d">적립금으로 책을 사고 사진을 올린 건입니다. 영수증 금액을 입력하면 도서기금에서 차감됩니다.</div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>상태</th><th class="right">정산</th></tr>
+    <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
       <td>${g.photo_path ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="사진 보기">보기</div>` : `<div class="thumb">사진</div>`}</td>
       <td><b>${esc(g.name)}</b></td>
       <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
       <td class="num">${fmtDate(g.created_at)}</td>
-      <td><span class="chip c-wait">정산 대기</span></td>
+      <td>${sharePhotoCell(g)}</td>
       <td class="right"><button class="btn btn-pink" onclick="openSettle(${g.id})">금액 입력</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">정산 대기 중인 건이 없습니다.</div>`}`;
+}
+
+// 아이가 공개에 동의한 사진만 여기 뜬다. 얼굴이 가려졌는지 눈으로 확인하고 올린다
+function sharePhotoCell(g) {
+  if (!g.book_photo) return `<span class="muted">동의 안 함</span>`;
+  return `<button class="btn ${g.photo_public ? 'btn-line' : 'btn-pink'}"
+    onclick="togglePhoto(${g.id})">${g.photo_public ? '공개 중 · 내리기' : '확인하고 공개'}</button>`;
+}
+
+async function togglePhoto(id) {
+  const g = DB.purchases.find(x => x.id === id); if (!g) return;
+  const next = !g.photo_public;
+  if (next && !confirm('얼굴이나 신원이 드러나는 부분이 없는지 사진을 확인하셨나요?\n공개하면 후원자 화면에 올라갑니다.')) return;
+  if (LIVE) {
+    const { error } = await sb.from('book_purchases').update({ photo_public: next }).eq('id', id);
+    if (error) return alert('변경에 실패했습니다: ' + error.message);
+  }
+  g.photo_public = next;
+  render();
 }
 
 function viewSettled() {
@@ -679,6 +698,7 @@ async function loadLive() {
     name: nameByUserId[p.user_id] || '(탈퇴 또는 프로필 없음)', routine: p.routines?.title || '-',
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, amount: p.amount, photo_path: p.proof_photo_url || null,
+    book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
     allocs: p.consumption_allocations || [], balance: 0,
   }));
 
