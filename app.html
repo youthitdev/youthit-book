@@ -124,6 +124,11 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
 .cover-prev { position:relative; border-radius:13px; overflow:hidden; aspect-ratio:16/9; }
+/* 책 사진은 세로로 긴 경우가 많아 자르면 안 된다. 비율 그대로 다 보여준다 */
+.book-prev { position:relative; border-radius:13px; overflow:hidden; background:#f0f0f4; }
+.book-prev img { display:block; width:100%; height:auto; max-height:60vh; object-fit:contain; }
+.book-prev button { position:absolute; top:8px; right:8px; width:28px; height:28px; border:none;
+  border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:15px; cursor:pointer; }
 .cover-prev img { width:100%; height:100%; object-fit:cover; display:block; }
 .cover-prev button { position:absolute; top:8px; right:8px; width:28px; height:28px; border:none;
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:15px; cursor:pointer; }
@@ -727,7 +732,7 @@ function viewHome() {
           <div style="font-weight:700;">${esc(nameOf(p.user_id))}</div>
           <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${esc(r?.title||'')}</div>
           ${p.book_photo_url ? `<div style="margin-top:10px;"><img src="${esc(p.book_photo_url)}" loading="lazy"
-              style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;display:block;">
+              style="width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:12px;display:block;background:#f0f0f4;">
               <div style="font-size:11.5px;color:var(--ink-3);margin-top:5px;">이 책으로 시작한대요</div></div>` : ''}
           ${p.note ? `<div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.6;">“${esc(p.note)}”</div>` : ''}
           <div style="display:flex;gap:8px;margin-top:12px;">
@@ -927,7 +932,7 @@ let applyBook = null;
 function drawApplyBook() {
   const box = $('apBookBox'); if (!box) return;
   box.innerHTML = applyBook
-    ? `<div class="cover-prev"><img src="${esc(applyBook)}" alt="">
+    ? `<div class="book-prev"><img src="${esc(applyBook)}" alt="">
          <button type="button" onclick="applyBook=null;drawApplyBook()">×</button></div>`
     : `<div class="cover-pick" onclick="document.getElementById('apBookInput').click()">
          <i class="ti ti-book" style="font-size:22px;"></i>책 사진 고르기</div>`;
