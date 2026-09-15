@@ -385,6 +385,16 @@ function toggleMode() {
 }
 function authError(msg) { const e = $('authErr'); e.textContent = msg; e.style.display = ''; }
 
+// Supabase 오류는 영어로 온다. 청소년이 보는 화면이라 그대로 두지 않는다
+function authMsg(m) {
+  const s = String(m || '');
+  if (/already registered/i.test(s))        return '이미 가입된 이메일이에요. 로그인으로 들어와 주세요.';
+  if (/at least 6|Password should be/i.test(s)) return '비밀번호는 6자 이상으로 해주세요.';
+  if (/valid email|invalid format/i.test(s))    return '이메일 주소를 다시 확인해주세요.';
+  if (/rate limit|too many/i.test(s))       return '잠시 뒤에 다시 시도해주세요.';
+  return '가입에 실패했어요. 잠시 뒤 다시 시도해주세요.';
+}
+
 async function submitAuth() {
   const email = $('auEmail').value.trim(), pw = $('auPw').value;
   if (!email || !pw) return authError('이메일과 비밀번호를 입력해주세요.');
@@ -393,8 +403,15 @@ async function submitAuth() {
   if (authMode === 'signup') {
     const name = $('auName').value.trim();
     if (!name) { btn.disabled=false; btn.textContent='가입하기'; return authError('이름을 입력해주세요.'); }
-    const { error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: signupRole } } });
-    if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(error.message); }
+    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: signupRole } } });
+    if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(authMsg(error.message)); }
+    // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
+    // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
+    // 이걸 놓치면 고른 역할이 반영되지 않은 채 기존 계정으로 들어가 버린다
+    if (data?.user && (data.user.identities || []).length === 0) {
+      btn.disabled=false; btn.textContent='가입하기';
+      return authError('이미 가입된 이메일이에요. 로그인으로 들어와 주세요.');
+    }
   } else {
     const { error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) { btn.disabled=false; btn.textContent='로그인'; return authError('이메일 또는 비밀번호를 다시 확인해주세요.'); }
