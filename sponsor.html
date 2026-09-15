@@ -87,13 +87,15 @@ section { margin-top: 44px; }
 .charge-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .charge-amt { font-size: 21px; font-weight: 800; letter-spacing: -0.6px; }
 .charge-date { font-size: 12px; color: var(--ink-3); }
-.split { display: flex; gap: 8px; margin-top: 14px; font-size: 12px; }
-.split div { flex: 1; background: #f7f5f0; border-radius: 10px; padding: 9px 12px; }
-.split b { display: block; font-size: 14px; font-weight: 700; margin-top: 2px; }
-.prog { margin-top: 16px; }
-.prog-bar { height: 8px; background: #eeeae2; border-radius: 99px; overflow: hidden; }
-.prog-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--green), #a8e02a); }
-.prog-txt { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+.seq { display: inline-block; font-size: 12px; font-weight: 700; color: var(--gold);
+  border: 1px solid rgba(255,255,255,0.28); border-radius: 99px; padding: 4px 11px; margin-bottom: 13px; }
+.since-q { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.18);
+  font-size: 14px; line-height: 1.75; color: rgba(255,255,255,0.92); }
+.since-q span { display: block; margin-top: 7px; font-size: 12px; color: rgba(255,255,255,0.6); }
+.charge-list div { display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 13.5px; color: var(--ink-2); padding: 7px 0; }
+.charge-list b { font-weight: 700; color: var(--ink); }
+.charge-total { margin-top: 4px; padding-top: 11px !important; border-top: 1px solid var(--line); }
 
 /* ── 완료 카드 ── */
 .done-card { background: linear-gradient(150deg, #2E33BC, #4a4fd6); color: #fff; border: none; }
@@ -192,8 +194,9 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
   </section>
 
   <section id="mySection" style="display:none;">
-    <div class="sec-title">내 후원</div>
-    <div class="sec-desc">후원하신 금액이 어디까지 전해졌는지 보여드려요.</div>
+    <div class="sec-title">함께한 뒤로</div>
+    <div class="sec-desc">후원금을 쪼개 계산하지 않아요. 당신이 함께한 뒤로 쌓인 전부입니다.</div>
+    <div id="mySince"></div>
     <div id="myCharges"></div>
   </section>
 
@@ -245,8 +248,7 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
 
 <script>
 // ════════════════════════════════════════════════════════
-// Supabase — 한끗루틴과 같은 프로젝트를 사용합니다
-// (15일 연속 인증 데이터를 조인해야 하므로 분리 불가)
+// Supabase — 한끗독서 전용 프로젝트입니다 (한끗루틴과 완전히 분리)
 // 아래 값을 채우면 데모 모드가 꺼지고 실제 데이터로 동작합니다.
 // ⚠️ 채우기 전에 supabase-schema.sql 을 먼저 적용하세요.
 // ════════════════════════════════════════════════════════
@@ -289,15 +291,13 @@ const DEMO = {
   ],
   wall: ['도서관지기', '이OO', '책읽는고래', '유스보이스 직원일동', 'ㅎㅈㅇ', '동네책방단골',
          '민들레', 'K.S.H', '한끗팬', '조용한후원자', '서점러버', 'JY'],
+  mySeq: 12,
+  // 첫 후원일 이후 전체가 얼마나 움직였는지. 내 돈의 몫이 아니다
+  sinceStats: { reading_days: 124, books: 7, students: 9 },
   myCharges: [
-    { id: 3, amount: 100000, book_fund_amount: 80000, operation_fee_amount: 20000,
-      remaining_amount: 34000, status: 'active', charged_at: '2026-09-02' },
-    { id: 2, amount: 50000, book_fund_amount: 40000, operation_fee_amount: 10000,
-      remaining_amount: 0, status: 'completed', charged_at: '2026-07-18',
-      completion: { students_count: 2, purchases_count: 2, reading_days: 31, total_amount: 40000 } },
-    { id: 1, amount: 30000, book_fund_amount: 24000, operation_fee_amount: 6000,
-      remaining_amount: 0, status: 'completed', charged_at: '2026-06-05',
-      completion: { students_count: 1, purchases_count: 1, reading_days: 18, total_amount: 24000 } },
+    { id: 3, amount: 10000, charged_at: '2026-09-02' },
+    { id: 2, amount: 50000, charged_at: '2026-07-18' },
+    { id: 1, amount: 30000, charged_at: '2026-06-05' },
   ],
 };
 
@@ -330,13 +330,27 @@ async function loadPublic() {
 }
 
 async function loadMine() {
-  if (!LIVE) { state.charges = DEMO.myCharges; return; }
+  if (!LIVE) {
+    state.charges = DEMO.myCharges; state.seq = DEMO.mySeq; state.since = DEMO.sinceStats;
+    return;
+  }
   const { data: sponsor } = await sb.from('sponsors').select('id').maybeSingle();
   if (!sponsor) { state.charges = []; return; }
   const { data } = await sb.from('charges')
-    .select('*, completion_events(students_count, purchases_count, reading_days, total_amount)')
+    .select('id, amount, charged_at')
     .eq('sponsor_id', sponsor.id).order('charged_at', { ascending: false });
-  state.charges = (data || []).map(c => ({ ...c, completion: (c.completion_events || [])[0] }));
+  state.charges = data || [];
+  if (!state.charges.length) return;
+
+  // 합류 시점 = 첫 후원일. 여러 번 후원했어도 가장 오래된 날 기준이라
+  // 오래 함께한 사람일수록 숫자가 커진다
+  const first = state.charges[state.charges.length - 1].charged_at;
+  const [seq, since] = await Promise.all([
+    sb.rpc('dokseo_my_seq'),
+    sb.rpc('dokseo_since_stats', { p_since: first }),
+  ]);
+  state.seq = seq.data || null;
+  state.since = since.data || { reading_days: 0, books: 0 };
 }
 
 // ── 렌더 ────────────────────────────────────────────────
@@ -372,44 +386,36 @@ function renderPool() {
       책방 영수증이 확인되면 도서기금에서 차감됩니다.</div>` : ''}`;
 }
 
+// 개인 금액을 쪼개 성과를 증명하려 하지 않는다. 1만원에서 운영비를 빼면
+// 책 한 권도 안 되기 때문에, 배분을 보여줄수록 초라해질 뿐이다.
+// 대신 합류 이후 전체 누적을 보여준다. 소액도 같은 숫자를 보고, 시간이 지나면 자란다
 function renderCharges() {
-  const box = document.getElementById('myCharges');
+  const box  = document.getElementById('mySince');
+  const list = document.getElementById('myCharges');
   if (!state.charges.length) {
     box.innerHTML = `<div class="card empty">아직 후원 내역이 없어요.</div>`;
+    list.innerHTML = '';
     return;
   }
-  box.innerHTML = state.charges.map(c => {
-    if (c.status === 'completed' && c.completion) {
-      const k = c.completion;
-      return `<div class="card done-card">
-        <div class="done-msg">당신이 채워준 마음이,<br><b>${k.students_count}명</b>의 아이에게<br><b>${k.reading_days}일</b>의 독서가 되었어요.</div>
-        <div class="done-meta">
-          <div>후원일<b>${fmtDate(c.charged_at)}</b></div>
-          <div>후원금<b>${won(c.amount)}원</b></div>
-          <div>손에 남은 책<b>${k.purchases_count}권</b></div>
-        </div>
-      </div>`;
-    }
-    const used = c.book_fund_amount - c.remaining_amount;
-    const pct = Math.round((used / c.book_fund_amount) * 100);
-    return `<div class="card">
-      <div class="charge-top">
-        <div class="charge-amt">${won(c.amount)}원</div>
-        <div class="charge-date">${fmtDate(c.charged_at)} · <span class="chip chip-active">전달 중</span></div>
-      </div>
-      <div class="split">
-        <div>도서기금<b>${won(c.book_fund_amount)}원</b></div>
-        <div>운영비<b>${won(c.operation_fee_amount)}원</b></div>
-      </div>
-      <div class="prog">
-        <div class="prog-bar"><i style="width:${pct}%"></i></div>
-        <div class="prog-txt">
-          <span>책이 된 금액 ${won(used)}원</span>
-          <span>${pct}%</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  const first = state.charges[state.charges.length - 1].charged_at;
+  const sc = state.since || {};
+  const q  = (state.quotes || [])[0];
+
+  box.innerHTML = `<div class="card done-card">
+    ${state.seq ? `<div class="seq">${state.seq}번째 어른</div>` : ''}
+    <div class="done-msg">${fmtDateKo(first)}부터<br>함께하고 있어요</div>
+    <div class="done-meta">
+      <div>읽은 날<b>${won(sc.reading_days || 0)}일</b></div>
+      <div>전해진 책<b>${won(sc.books || 0)}권</b></div>
+    </div>
+    ${q ? `<div class="since-q">“${esc(q.quote)}”<span>— ${esc(q.book_title || '')} · 아이가 옮겨 적은 문장</span></div>` : ''}
+  </div>`;
+
+  const total = state.charges.reduce((a, c) => a + c.amount, 0);
+  list.innerHTML = `<div class="card charge-list">
+    ${state.charges.map(c => `<div><span>${fmtDate(c.charged_at)}</span><b>${won(c.amount)}원</b></div>`).join('')}
+    <div class="charge-total"><span>지금까지 후원</span><b>${won(total)}원</b></div>
+  </div>`;
 }
 
 function renderFeed() {
@@ -496,6 +502,7 @@ function notReady() {
 }
 
 const fmtDate = d => { const [y, m, dd] = d.slice(0, 10).split('-'); return `${y}.${m}.${dd}`; };
+const fmtDateKo = d => { const [y, m, dd] = d.slice(0, 10).split('-'); return `${y}년 ${+m}월 ${+dd}일`; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 (async function init() {
