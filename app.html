@@ -104,6 +104,10 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; overflow:hidden; }
 .r-cover { margin:-16px -16px 13px; aspect-ratio:16/9; background:#eeeae2; }
 .r-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+.day-pick { display:flex; gap:7px; margin-top:-4px; }
+.day-pick button { flex:1; padding:9px; border:1px solid var(--line); border-radius:11px;
+  background:#fff; font-size:13px; font-weight:700; color:var(--ink-2); cursor:pointer; font-family:inherit; }
+.day-pick button.on { border-color:var(--pink); background:#fff5f9; color:var(--pink); }
 .cover-pick { width:100%; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
   background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
@@ -295,10 +299,15 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
         <div class="field-label">시작일 <span class="req">*</span></div>
         <input type="date" id="mStart" required onchange="makeHint()">
       </div>
-      <div style="flex:1;min-width:0;">
-        <div class="field-label">종료일 <span class="req">*</span></div>
-        <input type="date" id="mEnd" required onchange="makeHint()">
+      <div style="width:118px;flex-shrink:0;">
+        <div class="field-label">기간 <span class="req">*</span></div>
+        <input type="number" id="mDays" min="15" max="365" step="1" value="15" oninput="makeHint()">
       </div>
+    </div>
+    <div class="day-pick">
+      <button type="button" onclick="pickDays(15)">15일</button>
+      <button type="button" onclick="pickDays(30)">30일</button>
+      <button type="button" onclick="pickDays(66)">66일</button>
     </div>
     <div>
       <div class="field-label">모집 인원 <span class="req">*</span></div>
@@ -989,7 +998,10 @@ function openMake(id) {
   $('mEmoji').value  = r?.emoji || '📚';
   $('mDesc').value   = r?.description || '';
   $('mStart').value  = r?.start_date || '';
-  $('mEnd').value    = r?.end_date || '';
+  // 수정 화면에서는 저장된 시작·종료일로 기간을 역산한다
+  $('mDays').value = (r?.start_date && r?.end_date)
+    ? Math.max(MIN_DAYS, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1)
+    : MIN_DAYS;
   $('mPeople').value = r?.max_people ?? 8;
   $('mQuote').checked  = !!r?.quote_required;
   $('mCamera').checked = r ? !!r.camera_only : true;
@@ -999,25 +1011,49 @@ function openMake(id) {
   makeHint(); openOv('ovMake');
 }
 
+// 종료일은 직접 고르지 않는다. 시작일 + 기간으로 계산한다. 최소 15일
+const MIN_DAYS = 15;
+const addDays = (ymd, n) => {
+  const d = new Date(ymd + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  // toISOString() 은 UTC 로 바꿔서 한국 시간대에선 하루가 밀린다. 직접 만든다
+  const p = x => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+const makeDays = () => Math.max(MIN_DAYS, parseInt($('mDays').value || '0', 10) || MIN_DAYS);
+const makeEnd  = () => { const a = $('mStart').value; return a ? addDays(a, makeDays() - 1) : ''; };
+
+function pickDays(n) { $('mDays').value = n; makeHint(); }
+
 function makeHint() {
-  // 적립액은 끗짱이 정하지 않으니 여기서 꺼내지 않는다. 기간만 확인해준다
-  const a = $('mStart').value, b = $('mEnd').value;
-  const h = $('mHint');
-  if (!a || !b || b < a) { h.style.display = 'none'; return; }
-  const days = Math.round((new Date(b) - new Date(a)) / 86400e3) + 1;
-  h.style.display = '';
-  h.textContent = `${days}일 동안 진행돼요.`;
+  const n = parseInt($('mDays').value || '0', 10);
+  document.querySelectorAll('.day-pick button')
+    .forEach(b => b.classList.toggle('on', parseInt(b.textContent, 10) === n));
+
+  const a = $('mStart').value, h = $('mHint');
+  if (n && n < MIN_DAYS) {
+    h.style.display = ''; h.style.background = '#fff1f4'; h.style.color = '#b00038';
+    h.textContent = `기간은 ${MIN_DAYS}일 이상이어야 해요.`;
+    return;
+  }
+  if (!a) { h.style.display = 'none'; return; }
+  h.style.display = ''; h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
+  h.innerHTML = `${fmtDay(a)}부터 <b>${makeDays()}일</b> 동안 · <b>${fmtDay(makeEnd())}</b>에 끝나요`;
 }
+
+const fmtDay = d => { const [, m, dd] = d.split('-'); return `${+m}월 ${+dd}일`; };
 
 async function submitMake() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
   const title = $('mTitle').value.trim(), desc = $('mDesc').value.trim();
-  const s = $('mStart').value, e = $('mEnd').value;
+  const s = $('mStart').value;
+  const days = parseInt($('mDays').value || '0', 10);
   if (!title) return toast('루틴 이름을 적어주세요');
   if (!desc) return toast('끗짱 소개를 적어주세요');
-  if (!s || !e) return toast('시작일과 종료일을 골라주세요');
-  if (e < s) return toast('종료일이 시작일보다 빨라요');
+  if (!s) return toast('시작일을 골라주세요');
+  if (!days || days < MIN_DAYS) return toast(`기간은 ${MIN_DAYS}일 이상이어야 해요`);
+  const e = makeEnd();
 
   const btn = $('mSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
