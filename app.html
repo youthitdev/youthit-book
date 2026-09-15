@@ -63,12 +63,6 @@ header.k { background:var(--pink); }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
 .body { padding:18px; }
-.guide-pick { display:flex; flex-direction:column; gap:7px; margin-bottom:9px; }
-.guide-pick button { text-align:left; background:#fff; border:1px solid var(--line); border-radius:12px;
-  padding:11px 13px; font-size:13px; line-height:1.55; cursor:pointer; color:var(--ink); font-family:inherit; }
-.guide-pick button.on { border-color:var(--pink); background:#fff5f9; }
-.guide-pick b { display:block; font-size:13.5px; margin-bottom:2px; }
-.guide-pick span { color:var(--ink-3); font-size:12.5px; }
 .shelf { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
 .shelf span { background:#fff; border:1px solid var(--line); border-radius:99px;
   padding:7px 13px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
@@ -254,8 +248,10 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     </div>
     <div>
       <div class="field-label">이렇게 인증해 주세요 <span class="opt">선택</span></div>
-      <div class="guide-pick" id="mGuidePick"></div>
-      <textarea id="mGuide" rows="3" placeholder="위에서 하나 고르거나, 직접 적어도 돼요." maxlength="200" oninput="renderGuidePick()"></textarea>
+      <select id="mGuideSel" onchange="pickGuide()"></select>
+      <div id="mGuideDesc" class="hint" style="margin-top:7px;"></div>
+      <textarea id="mGuide" rows="3" placeholder="어떻게 인증하면 좋을지 적어주세요." maxlength="200"
+                style="display:none;margin-top:8px;"></textarea>
     </div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;min-width:0;">
@@ -843,26 +839,41 @@ async function decide(rid, uid, status) {
 // 자동으로 붙인다. 여기서는 얼마가 쌓이는지 알려주기만 한다.
 let makeId = null;
 
-// 인증 방법은 루틴마다 크게 다르지 않다. 대표적인 세 가지를 고르게 하고,
-// 그래도 다르게 하고 싶으면 직접 고쳐 쓰게 둔다
+// 인증 방법은 루틴마다 크게 다르지 않다. 대표적인 것들을 고르게 하고,
+// 그래도 다르게 하고 싶으면 '기타'로 직접 쓰게 둔다
 const GUIDES = [
   ['읽는 자리', '지금 읽고 있는 자리를 그대로 한 장 찍어주세요. 책상이든 침대든 버스 안이든 괜찮아요.'],
   ['펼친 책',   '오늘 읽은 데까지 펼쳐서 한 장 찍어주세요. 쪽수가 보이면 더 좋아요.'],
   ['남은 문장', '오늘 마음에 걸린 문장이 있는 쪽을 찍어주세요. 한 문장이면 충분해요.'],
+  ['필사',      '마음에 남은 문장을 공책에 옮겨 적고, 그 페이지를 찍어주세요.'],
 ];
 
-function renderGuidePick() {
-  const cur = $('mGuide').value.trim();
-  $('mGuidePick').innerHTML = GUIDES.map(([label, text], i) =>
-    `<button type="button" class="${text === cur ? 'on' : ''}" onclick="pickGuide(${i})">
-       <b>${label}</b><span>${esc(text)}</span></button>`).join('');
+function buildGuideSel(cur) {
+  const hit = GUIDES.findIndex(g => g[1] === cur);
+  const val = cur ? (hit >= 0 ? String(hit) : 'etc') : '';
+  $('mGuideSel').innerHTML =
+    `<option value="">고르지 않음</option>` +
+    GUIDES.map(([label], i) => `<option value="${i}">${label}</option>`).join('') +
+    `<option value="etc">기타 — 직접 적을게요</option>`;
+  $('mGuideSel').value = val;
+  pickGuide(cur);
 }
 
-function pickGuide(i) {
-  const [, text] = GUIDES[i];
-  // 같은 걸 다시 누르면 해제. 직접 쓰고 싶을 수 있다
-  $('mGuide').value = ($('mGuide').value.trim() === text) ? '' : text;
-  renderGuidePick();
+// cur 은 수정 화면에서 기존 문구를 그대로 살릴 때만 넘어온다
+function pickGuide(cur) {
+  const v = $('mGuideSel').value;
+  const ta = $('mGuide'), desc = $('mGuideDesc');
+  if (v === 'etc') {
+    ta.style.display = '';
+    // 수정 화면이면 원래 쓰던 문구를 살리고, 직접 바꿔 고른 거면 빈칸에서 시작한다
+    ta.value = (typeof cur === 'string') ? cur : '';
+    desc.textContent = '';
+    ta.focus();
+  } else {
+    ta.style.display = 'none';
+    ta.value = v === '' ? '' : GUIDES[+v][1];
+    desc.textContent = ta.value;
+  }
 }
 
 function openMake(id) {
@@ -873,12 +884,11 @@ function openMake(id) {
   $('mTitle').value  = r?.title || '';
   $('mEmoji').value  = r?.emoji || '📚';
   $('mDesc').value   = r?.description || '';
-  $('mGuide').value  = r?.cert_guide || '';
   $('mStart').value  = r?.start_date || '';
   $('mEnd').value    = r?.end_date || '';
   $('mPeople').value = r?.max_people ?? 8;
   $('mCamera').checked = !!r?.camera_only;
-  renderGuidePick();
+  buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
 
