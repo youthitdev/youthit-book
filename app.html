@@ -26,12 +26,25 @@ body {
 }
 .app { width:100%; max-width:480px; background:var(--bg); min-height:100vh; position:relative; padding-bottom:76px; }
 input, select, textarea, button { font-family:inherit; }
-input[type=text], input[type=email], input[type=password], input[type=number], select, textarea {
+input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], select, textarea {
   width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px;
   font-size:15px; color:var(--ink); background:#fff; outline:none;
 }
 input:focus, select:focus, textarea:focus { border-color:var(--blue); }
 textarea { resize:none; line-height:1.6; }
+/* 날짜 칸은 브라우저 기본 모양이라 혼자 튄다. 다른 입력칸과 같은 얼굴로 맞춘다 */
+input[type=date] {
+  -webkit-appearance:none; appearance:none; position:relative; height:46px; line-height:1.2;
+  padding-right:40px; background:#fff no-repeat right 13px center / 18px
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238d939e' stroke-width='2' stroke-linecap='round'><rect x='4' y='5' width='16' height='16' rx='3'/><path d='M8 3v4M16 3v4M4 11h16'/></svg>");
+}
+/* 날짜를 고르기 전에는 회색. 그리고 칸 아무 데나 눌러도 달력이 열리게 한다 */
+input[type=date]:invalid { color:var(--ink-3); }
+input[type=date]::-webkit-datetime-edit { padding:0; }
+input[type=date]::-webkit-calendar-picker-indicator {
+  position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; opacity:0; cursor:pointer;
+}
+select.ph { color:var(--ink-3); }
 .btn { width:100%; padding:15px; border:none; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
 .btn-primary { background:var(--blue); color:#fff; }
 .btn-primary:disabled { background:#c9cbe8; cursor:default; }
@@ -261,11 +274,11 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <div style="display:flex;gap:10px;">
       <div style="flex:1;min-width:0;">
         <div class="field-label">시작일 <span class="req">*</span></div>
-        <input type="date" id="mStart" onchange="makeHint()">
+        <input type="date" id="mStart" required onchange="makeHint()">
       </div>
       <div style="flex:1;min-width:0;">
         <div class="field-label">종료일 <span class="req">*</span></div>
-        <input type="date" id="mEnd" onchange="makeHint()">
+        <input type="date" id="mEnd" required onchange="makeHint()">
       </div>
     </div>
     <div>
@@ -863,7 +876,7 @@ function buildGuideSel(cur) {
   const hit = GUIDES.findIndex(g => g[1] === cur);
   const val = cur ? (hit >= 0 ? String(hit) : 'etc') : '';
   $('mGuideSel').innerHTML =
-    `<option value="">고르지 않음</option>` +
+    `<option value="">선택해주세요</option>` +
     GUIDES.map(([label], i) => `<option value="${i}">${label}</option>`).join('') +
     `<option value="etc">기타 — 직접 적을게요</option>`;
   $('mGuideSel').value = val;
@@ -873,6 +886,7 @@ function buildGuideSel(cur) {
 // cur 은 수정 화면에서 기존 문구를 그대로 살릴 때만 넘어온다
 function pickGuide(cur) {
   const v = $('mGuideSel').value;
+  $('mGuideSel').classList.toggle('ph', v === '');   // 안 고른 상태는 회색으로
   const ta = $('mGuide'), desc = $('mGuideDesc');
   if (v === 'etc') {
     ta.style.display = '';
