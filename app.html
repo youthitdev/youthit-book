@@ -163,7 +163,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .ph-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:8px; }
 .ph-box { aspect-ratio:1; border-radius:12px; background:#f0f0f4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--ink-3); font-size:11px; cursor:pointer; border:1.5px dashed #ddd; }
 .ph-box img { width:100%; height:100%; object-fit:cover; border-radius:12px; }
-.ph-wrap { position:relative; }
+.ph-wrap { position:relative; aspect-ratio:1; }
+.ph-wrap img { width:100%; height:100%; object-fit:cover; border-radius:12px; display:block; }
 .ph-del { position:absolute; top:5px; right:5px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; border:none; font-size:13px; cursor:pointer; line-height:1; }
 
 /* 피드 */
@@ -264,14 +265,14 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div class="ov-b">
     <div id="certGuide"></div>
     <div>
-      <div class="field-label">책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span></div>
+      <div class="field-label" id="cPhLabel">책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span></div>
       <div class="ph-grid" id="phGrid"></div>
       <input type="file" id="phInput" accept="image/*" multiple style="display:none;" onchange="pickPhotos(event)">
       <div class="hint" id="camHint">지금 읽고 있는 모습을 바로 찍어주세요</div>
     </div>
     <div>
       <div class="field-label">마음에 남은 문장 <span id="cQuoteReq" class="opt">선택</span></div>
-      <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300" oninput="drawPhotos()"></textarea>
+      <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300" oninput="checkCert()"></textarea>
     </div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;min-width:0;">
@@ -1279,6 +1280,8 @@ function openCert(rid) {
   certRid = rid; photos = []; certEditId = null;
   $('ovCLabel').textContent = '오늘의 인증';
   $('cSubmit').textContent = '인증하기';
+  $('cPhLabel').innerHTML = '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
+  $('camHint').style.display = '';
   $('ovCTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('certGuide').innerHTML = r.cert_guide
     ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
@@ -1332,7 +1335,8 @@ function checkCert() {
   const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
   const needPage  = !parseInt($('cPage').value || '0', 10);
   const needBook  = !$('cBook').value.trim();   // 비면 쪽수 범위 계산이 틀어진다
-  $('cSubmit').disabled = photos.length === 0 || needQuote || needPage || needBook;
+  const needPhoto = !certEditId && photos.length === 0;   // 수정 중이면 사진은 이미 있다
+  $('cSubmit').disabled = needPhoto || needQuote || needPage || needBook;
 }
 
 // 같은 책의 직전 인증부터 오늘까지. 새 책이거나 첫 인증이면 0부터
@@ -1386,6 +1390,8 @@ function editCert(id) {
   $('cBook').value  = c.book_title || '';
   $('cPage').value  = c.page_end || '';
   $('cMemo').value  = c.content || '';
+  $('cPhLabel').innerHTML = '올린 사진';
+  $('camHint').style.display = 'none';
   $('cSubmit').textContent = '수정하기';
   $('cSubmit').disabled = false;
   $('cPageHint').style.display = 'none';
