@@ -852,19 +852,13 @@ function openMake(id) {
 }
 
 function makeHint() {
-  // 수정 중이면 그 루틴의 단가, 새로 만들면 지금 설정값
-  const cur = makeId ? state.routines.find(x => x.id === makeId) : null;
-  const amt = cur?.amount_per_cert ?? state.settings.amount_per_cert ?? 1300;
-  const s = $('mStart').value, e = $('mEnd').value;
-  let days = 0;
-  if (s && e) days = Math.round((new Date(e) - new Date(s)) / 86400e3) + 1;
+  // 적립액은 끗짱이 정하지 않으니 여기서 꺼내지 않는다. 기간만 확인해준다
+  const a = $('mStart').value, b = $('mEnd').value;
   const h = $('mHint');
-  h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
-  h.innerHTML = days > 0
-    ? `인증 1회당 <b>${won(amt)}원</b>이 쌓여요. ${days}일 동안 매일 하면 한 사람당 <b>${won(amt*days)}원</b>이에요.
-       <span style="display:block;color:var(--ink-3);font-weight:400;margin-top:3px;">적립액은 유스보이스가 정합니다.</span>`
-    : `인증 1회당 <b>${won(amt)}원</b>이 쌓여요.
-       <span style="display:block;color:var(--ink-3);font-weight:400;margin-top:3px;">적립액은 유스보이스가 정합니다.</span>`;
+  if (!a || !b || b < a) { h.style.display = 'none'; return; }
+  const days = Math.round((new Date(b) - new Date(a)) / 86400e3) + 1;
+  h.style.display = '';
+  h.textContent = `${days}일 동안 진행돼요.`;
 }
 
 async function submitMake() {
