@@ -71,9 +71,14 @@ select.ph { color:var(--ink-3); }
 .auth > * { width:100%; max-width:360px; }
 .auth h1 { font-size:27px; font-weight:800; letter-spacing:-1px; line-height:1.35; }
 .auth .sub { font-size:14px; color:rgba(255,255,255,.72); margin-top:10px; margin-bottom:30px; }
-.auth input { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); color:#fff; margin-bottom:10px; }
+.auth input, .auth select { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); color:#fff; margin-bottom:10px; }
 .auth input::placeholder { color:rgba(255,255,255,.5); }
-.auth input:focus { border-color:rgba(255,255,255,.6); }
+.auth input:focus, .auth select:focus { border-color:rgba(255,255,255,.6); }
+/* 사파리는 select 안의 option 을 시스템 색으로 그린다. 흰 바탕에 흰 글자가 되지 않게 */
+.auth select option { color:var(--ink); background:#fff; }
+.au-row { display:flex; gap:8px; }
+.au-row select, .au-row input { flex:1; min-width:0; }
+.au-hint { font-size:11.5px; color:rgba(255,255,255,.6); margin:-4px 0 12px; }
 .auth .btn-primary { background:#fff; color:var(--blue); margin-top:6px; }
 .auth .swap { text-align:center; margin-top:18px; font-size:13px; color:rgba(255,255,255,.7); }
 .auth .swap b { color:#fff; cursor:pointer; text-decoration:underline; }
@@ -389,6 +394,11 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div id="authErr" class="auth-err" style="display:none;"></div>
   <div id="signupOnly" style="display:none;">
     <input type="text" id="auName" placeholder="이름">
+    <div class="au-row">
+      <select id="auSido"></select>
+      <input type="text" id="auGu" placeholder="시·군·구" maxlength="20">
+    </div>
+    <div class="au-hint">가까운 동네책방을 먼저 보여드리는 데 써요</div>
   </div>
   <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
   <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
@@ -639,9 +649,12 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <input type="text" id="pfName" maxlength="20" oninput="checkProfile()">
     </div>
     <div>
-      <div class="field-label">사는 곳 <span class="opt">선택</span></div>
-      <input type="text" id="pfRegion" maxlength="30" placeholder="예) 강원 속초">
-      <div class="hint">가까운 책방을 먼저 보여드리는 데 써요</div>
+      <div class="field-label">사는 곳 <span class="req">* 필수</span></div>
+      <div style="display:flex;gap:8px;">
+        <select id="pfSido" style="flex:1;min-width:0;" onchange="checkProfile()"></select>
+        <input type="text" id="pfGu" style="flex:1;min-width:0;" maxlength="20" placeholder="시·군·구" oninput="checkProfile()">
+      </div>
+      <div class="hint">가까운 책방을 먼저 보여드리는 데 써요. 다른 사람에게는 보이지 않아요.</div>
     </div>
     <div class="card" style="font-size:12.5px;color:var(--ink-3);line-height:1.7;">
       이메일과 역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
@@ -676,6 +689,25 @@ const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
 let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{} };
 let tab = 'home';
+// 지역은 자유 입력으로 두면 '속초' / '강원도 속초시' / '강원속초' 가 섞여
+// 책방 매칭이 깨진다. 시·도는 고르게 하고 시·군·구만 적게 한다
+const SIDO = ['서울','부산','대구','인천','광주','대전','울산','세종',
+              '경기','강원','충북','충남','전북','전남','경북','경남','제주'];
+
+function fillSido(id, picked) {
+  const el = $(id); if (!el) return;
+  el.innerHTML = `<option value="">시·도</option>`
+    + SIDO.map(v => `<option value="${v}"${v === picked ? ' selected' : ''}>${v}</option>`).join('');
+}
+
+// 저장은 '서울 성북구' 한 줄로. 책방의 region 과 같은 모양이어야 한다
+const joinRegion = (sido, gu) => [String(sido||'').trim(), String(gu||'').trim()].filter(Boolean).join(' ');
+const splitRegion = r => {
+  const p = String(r || '').trim().split(/\s+/);
+  const sido = SIDO.includes(p[0]) ? p[0] : '';
+  return { sido, gu: sido ? p.slice(1).join(' ') : String(r || '').trim() };
+};
+
 // 끗짱은 가입할 때 고르는 역할이 아니다. 청소년으로 30일을 읽으면 MY 탭에서 신청한다
 let authMode = 'login';
 
@@ -705,6 +737,7 @@ function toggleMode() {
   authMode = authMode === 'login' ? 'signup' : 'login';
   const up = authMode === 'signup';
   $('signupOnly').style.display = up ? '' : 'none';
+  if (up) fillSido('auSido', $('auSido').value);
   $('auBtn').textContent = up ? '가입하기' : '로그인';
   $('auSwap').innerHTML = up
     ? `이미 계정이 있나요? <b onclick="toggleMode()">로그인</b>`
@@ -730,8 +763,13 @@ async function submitAuth() {
 
   if (authMode === 'signup') {
     const name = $('auName').value.trim();
-    if (!name) { btn.disabled=false; btn.textContent='가입하기'; return authError('이름을 입력해주세요.'); }
-    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: 'youth' } } });
+    const sido = $('auSido').value, gu = $('auGu').value.trim();
+    const stop = m => { btn.disabled=false; btn.textContent='가입하기'; return authError(m); };
+    if (!name) return stop('이름을 입력해주세요.');
+    if (!sido) return stop('사는 곳의 시·도를 골라주세요.');
+    if (!gu)   return stop('사는 곳의 시·군·구를 적어주세요.');
+    const region = joinRegion(sido, gu);
+    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: 'youth', region } } });
     if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(authMsg(error.message)); }
     // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
     // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
@@ -760,7 +798,8 @@ async function loadMe(user) {
   if (!data) {
     const meta = user.user_metadata || {};
     const ins = await sb.from('profiles')
-      .insert({ id: user.id, name: meta.name || '이름없음', role: meta.role || 'youth' })
+      .insert({ id: user.id, name: meta.name || '이름없음', role: meta.role || 'youth',
+                region: meta.region || null })
       .select().single();
     data = ins.data;
   }
@@ -1923,18 +1962,22 @@ function viewMy() {
 
 // ── 내 정보 ────────────────────────────────────────────
 function openProfile() {
-  $('pfName').value   = me.name || '';
-  $('pfRegion').value = me.region || '';
+  $('pfName').value = me.name || '';
+  const r = splitRegion(me.region);
+  fillSido('pfSido', r.sido);
+  $('pfGu').value = r.gu;
   checkProfile(); openOv('ovProfile');
 }
 
-function checkProfile() { $('pfSubmit').disabled = !$('pfName').value.trim(); }
+function checkProfile() {
+  $('pfSubmit').disabled = !$('pfName').value.trim() || !$('pfSido').value || !$('pfGu').value.trim();
+}
 
 async function saveProfile() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
   const name = $('pfName').value.trim();
   if (!name) return toast('이름을 적어주세요');
-  const region = $('pfRegion').value.trim() || null;
+  const region = joinRegion($('pfSido').value, $('pfGu').value) || null;
 
   const btn = $('pfSubmit'); btn.disabled = true; btn.textContent = '저장 중…';
   // 역할은 바꾸지 않는다. 청소년이 스스로 끗짱이 되면 안 된다
@@ -2556,8 +2599,17 @@ function viewStores() {
 
   if (!near.length) return head + storeInviteLink(mine) + more;
 
-  return head + `<div class="sec-t" style="margin-top:20px;">📍 내 근처 <span class="sec-n">${near.length}곳</span></div>`
-    + near.map(storeRow).join('') + more + storeInviteLink(null);
+  // 같은 동네와 같은 시·도를 한 덩어리로 묶으면 정직하지 않다.
+  // 성동구 아이에게 강서구는 지하철 한 시간이다. 계단으로 나눠 보여준다
+  const town = near.filter(b => regionScore(b.region) === 2);
+  const far  = near.filter(b => regionScore(b.region) === 1);
+  const sec  = (icon, label, n) =>
+    `<div class="sec-t" style="margin-top:20px;">${icon} ${label} <span class="sec-n">${n}곳</span></div>`;
+
+  return head
+    + (town.length ? sec('📍', '우리 동네', town.length) + town.map(storeRow).join('') : '')
+    + (far.length  ? sec('🚌', `조금 멀어요 · ${sidoOf(mine)}`, far.length) + far.map(storeRow).join('') : '')
+    + more + storeInviteLink(null);
 }
 
 // 전국 목록. 시·군·구로 묶으면 '1곳' 짜리 그룹이 줄줄이 생기므로 시·도로 묶는다
