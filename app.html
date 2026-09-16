@@ -139,6 +139,17 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .day-pick button.on span { color:var(--pink); }
 .day-pick button.on { border-color:var(--pink); background:#fff5f9; color:var(--pink); }
+.kbook-pick { width:110px; aspect-ratio:3/4; border:1px dashed var(--line); border-radius:12px;
+  background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:4px; color:var(--ink-3); font-size:12px; cursor:pointer; }
+.kbook-prev { position:relative; width:110px; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#eeeae2; }
+.kbook-prev img { width:100%; height:100%; object-fit:cover; display:block; }
+.kbook-prev button { position:absolute; top:5px; right:5px; width:24px; height:24px; border:none;
+  border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:13px; cursor:pointer; }
+.kkut-card { display:flex; gap:13px; align-items:flex-start; }
+.kkut-book { width:84px; flex:none; aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#eeeae2; }
+.kkut-book img { width:100%; height:100%; object-fit:cover; display:block; }
+.kkut-note { font-size:12px; color:var(--green-d); font-weight:700; margin-top:9px; }
 .cover-pick { width:100%; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
   background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
@@ -330,6 +341,10 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <div class="field-label">끗짱 소개 <span class="req">* 필수</span></div>
       <textarea id="mDesc" rows="5" placeholder="안녕, 나는 속초에서 작은 책방을 하는 김유스야.&#10;혼자서는 잘 안 읽히는 책, 15일만 같이 읽어보자." maxlength="300"></textarea>
       <div class="hint">어떤 사람인지, 어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 루틴을 고를 때 이걸 봅니다.</div>
+      <div class="field-label" style="margin-top:16px;">내가 읽을 책 <span class="opt">선택</span></div>
+      <div id="mBookBox"></div>
+      <input type="file" id="mBookInput" accept="image/*" style="display:none;" onchange="pickKkutBook(event)">
+      <div class="hint">소개 옆에 붙어요. 아이들도 참여할 때 자기 책을 올립니다.</div>
     </div>
     <div>
       <div class="field-label">이렇게 인증해 주세요 <span class="opt">선택</span></div>
@@ -1063,7 +1078,14 @@ function openRoutine(id) {
       ${r.points_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당</div>
         <div style="font-weight:700;color:var(--green-d);">${won(r.points_per_cert)}P</div>` : ''}
     </div>
-    ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
+    ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱</div>
+      <div class="card kkut-card">
+        ${r.kkut_book_url ? `<div class="kkut-book"><img src="${esc(r.kkut_book_url)}" loading="lazy" alt=""></div>` : ''}
+        <div style="min-width:0;">
+          <div style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>
+          ${r.kkut_book_url ? `<div class="kkut-note">📖 나도 이 책을 읽어요</div>` : ''}
+        </div>
+      </div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
     ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
@@ -1173,6 +1195,7 @@ function hasBatchim(word) {
 }
 const withParticle = n => n + (hasBatchim(n) ? '과' : '와');
 const subjParticle = n => n + (hasBatchim(n) ? '이' : '가');
+let kkutBook = null, kkutBookUrl = null;   // 끗짱이 읽는 책
 let cover = null;       // 새로 고른 사진 (data URL)
 let coverUrl = null;    // 이미 올라가 있는 사진 주소
 
@@ -1190,6 +1213,25 @@ function clearCover(e) {
   cover = null; coverUrl = null;
   $('mCoverInput').value = '';
   drawCover();
+}
+
+function drawKkutBook() {
+  const src = kkutBook || kkutBookUrl;
+  $('mBookBox').innerHTML = src
+    ? `<div class="kbook-prev"><img src="${esc(src)}" alt="">
+         <button type="button" onclick="clearKkutBook(event)">×</button></div>`
+    : `<div class="kbook-pick" onclick="document.getElementById('mBookInput').click()">
+         <i class="ti ti-book" style="font-size:20px;"></i>책 사진</div>`;
+}
+function clearKkutBook(e) {
+  e.stopPropagation();
+  kkutBook = null; kkutBookUrl = null;
+  $('mBookInput').value = ''; drawKkutBook();
+}
+async function pickKkutBook(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try { kkutBook = await resize(f, 1280, .82); kkutBookUrl = null; drawKkutBook(); }
+  catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
 }
 
 async function pickCover(e) {
@@ -1259,6 +1301,8 @@ function openMake(id) {
   $('mTitleHint').textContent = `내 이름 ${subjParticle(`'${me.name}'`.replace(/'/g,''))} 들어가야 해요. 청소년이 루틴을 고를 때 누구랑 하는지가 기준이 됩니다.`;
   cover = null; coverUrl = r?.cover_url || null;
   $('mCoverInput').value = ''; drawCover();
+  kkutBook = null; kkutBookUrl = r?.kkut_book_url || null;
+  $('mBookInput').value = ''; drawKkutBook();
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
@@ -1321,6 +1365,15 @@ async function submitMake() {
     coverSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
 
+  let kkutBookSaved = kkutBookUrl;
+  if (kkutBook) {
+    const path = `${me.id}/kbook_${Date.now()}.jpg`;
+    const { error: up } = await sb.storage.from('routine-covers')
+      .upload(path, toBlob(kkutBook), { contentType: 'image/jpeg' });
+    if (up) { btn.disabled = false; btn.textContent = label; return toast('사진 업로드 실패: ' + up.message); }
+    kkutBookSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
+  }
+
   const row = {
     title, emoji: $('mEmoji').value.trim() || '📚', description: desc,
     cert_guide: $('mGuide').value.trim() || null,
@@ -1329,6 +1382,7 @@ async function submitMake() {
     quote_required: $('mQuote').checked,
     camera_only: $('mCamera').checked,
     cover_url: coverSaved,
+    kkut_book_url: kkutBookSaved,
     led_by: me.id,
   };
   const { error } = makeId
@@ -1785,7 +1839,7 @@ function enterDemo(role) {
   state.routines = [
     { id:901, title:'밤바다 곁에서 읽는 15일', emoji:'📚', description:'매일 조금씩, 끝까지 안 읽어도 괜찮아요. 한 장이면 충분합니다.',
       cert_guide:'책 읽는 자리를 그대로 한 장 찍어주세요.', start_date:dstr(7), end_date:dstr(-7),
-      max_people:8, points_per_cert:10, cover_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
+      max_people:8, points_per_cert:10, cover_url:null, kkut_book_url:null, camera_only:true, quote_required:true, status:'active', led_by: kid },
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
       max_people:10, points_per_cert:10, camera_only:true, status:'recruit', led_by:'demo-k2' },
