@@ -92,6 +92,10 @@ header.k { background:var(--pink); }
 .gate-s { font-size:13px; line-height:1.7; color:var(--ink-2); }
 .gate-why { font-size:12.5px; line-height:1.7; color:var(--ink-2); background:#f7f7f8; border-radius:12px; padding:13px 15px; }
 .gate-why b { display:block; margin-bottom:3px; color:var(--ink); }
+.gate-bar { height:8px; border-radius:99px; background:var(--bg); overflow:hidden; margin:16px 0 9px; }
+.gate-bar i { display:block; height:100%; background:var(--pink); border-radius:99px; transition:width .3s; }
+.gate-num { font-size:12.5px; color:var(--ink-3); }
+.gate-num b { color:var(--pink); font-size:14px; }
 #kkutBody .auth-err { background:#fff1f4; border:1px solid #ffc9d6; color:#b3003c; }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
@@ -255,10 +259,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 포인트가 쌓여요</div>
   <div id="authErr" class="auth-err" style="display:none;"></div>
   <div id="signupOnly" style="display:none;">
-    <div class="role-row">
-      <button type="button" class="role-btn on" id="roleYouth" onclick="pickRole('youth')">청소년</button>
-      <button type="button" class="role-btn" id="roleK" onclick="pickRole('kkutjjang')">끗짱</button>
-    </div>
     <input type="text" id="auName" placeholder="이름">
   </div>
   <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
@@ -286,8 +286,11 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 <!-- 끗짱 승인 대기 · 신청서 -->
 <div class="app" id="kkutScr" style="display:none;">
   <header id="kkutHdr" class="k">
-    <div><span class="h-title">한끗독서</span><span class="h-badge">끗짱</span></div>
-    <button onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+    <div style="display:flex;align-items:center;gap:11px;min-width:0;">
+      <button id="kkutBack" onclick="closeKkutGate()" style="display:none;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;line-height:1;"><i class="ti ti-arrow-left"></i></button>
+      <span class="h-title">한끗독서</span><span class="h-badge" id="kkutBadge">끗짱</span>
+    </div>
+    <button id="kkutOut" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
   </header>
   <div class="body" id="kkutBody" style="padding:18px;"></div>
 </div>
@@ -500,7 +503,8 @@ const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
 let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], settings:{} };
 let tab = 'home';
-let authMode = 'login', signupRole = 'youth';
+// 끗짱은 가입할 때 고르는 역할이 아니다. 청소년으로 30일을 읽으면 MY 탭에서 신청한다
+let authMode = 'login';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -524,11 +528,6 @@ function fmtPeriod(s, e) {
 }
 
 // ── 로그인 ─────────────────────────────────────────────
-function pickRole(r) {
-  signupRole = r;
-  $('roleYouth').classList.toggle('on', r === 'youth');
-  $('roleK').classList.toggle('on', r === 'kkutjjang');
-}
 function toggleMode() {
   authMode = authMode === 'login' ? 'signup' : 'login';
   const up = authMode === 'signup';
@@ -559,7 +558,7 @@ async function submitAuth() {
   if (authMode === 'signup') {
     const name = $('auName').value.trim();
     if (!name) { btn.disabled=false; btn.textContent='가입하기'; return authError('이름을 입력해주세요.'); }
-    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: signupRole } } });
+    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: 'youth' } } });
     if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(authMsg(error.message)); }
     // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
     // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
@@ -599,9 +598,31 @@ async function loadMe(user) {
 // 신청서에는 나이·연락처가 들어 있어 청소년에게 보이면 안 된다.
 // profiles 가 아니라 별도 테이블(kkut_applications)에 두고 RLS로 본인·관리자만 읽는다
 async function loadKkutApp() {
-  const { data } = await sb.from('kkut_applications').select('*').maybeSingle();
-  state.kkutApp = data || null;
+  const [app, el] = await Promise.all([
+    sb.from('kkut_applications').select('*').maybeSingle(),
+    sb.rpc('kkut_eligibility'),
+  ]);
+  state.kkutApp = app.data || null;
+  const e = Array.isArray(el.data) ? el.data[0] : el.data;
+  state.kkutElig = e || { days: 0, need: 30, invited: false, eligible: false };
   return state.kkutApp;
+}
+
+// MY 탭에서 열 때. 승인 대기 게이트와 같은 화면을 쓴다
+function openKkutApply() {
+  $('kkutBack').style.display = '';
+  $('kkutOut').style.display  = 'none';
+  $('kkutBadge').textContent  = '끗짱 신청';
+  $('appScr').style.display   = 'none';
+  $('kkutScr').style.display  = '';
+  window.scrollTo(0, 0);
+  renderKkutGate();
+}
+
+function closeKkutGate() {
+  $('kkutScr').style.display = 'none';
+  $('appScr').style.display  = '';
+  render();
 }
 
 function renderKkutGate() {
@@ -628,6 +649,27 @@ function renderKkutGate() {
     return;
   }
 
+  const el = state.kkutElig || { days:0, need:30, invited:false, eligible:false };
+  if (!a && !el.eligible) {
+    const pct = Math.min(100, Math.round(el.days / Math.max(el.need, 1) * 100));
+    $('kkutBody').innerHTML = `
+      <div class="gate-card">
+        <div class="gate-ico">🌱</div>
+        <div class="gate-t">${el.need}일을 채우면 끗짱을 신청할 수 있어요</div>
+        <div class="gate-s">
+          끗짱은 다른 사람의 15일을 맡는 자리예요.<br>
+          먼저 스스로 ${el.need}일을 읽어본 사람이 맡습니다.
+        </div>
+        <div class="gate-bar"><i style="width:${pct}%"></i></div>
+        <div class="gate-num"><b>${el.days}일</b> 읽었어요 · ${Math.max(0, el.need - el.days)}일 남았어요</div>
+      </div>
+      <div class="gate-why">
+        <b>연속으로 채우지 않아도 돼요.</b>
+        하루 빠져도 지금까지 읽은 날은 그대로 남습니다. 읽은 날을 다 더해서 ${el.need}일이면 돼요.
+      </div>`;
+    return;
+  }
+
   const rejected = a && a.status === 'rejected';
   const v = k => esc(a?.[k] ?? '');
 
@@ -646,6 +688,8 @@ function renderKkutGate() {
           끗짱은 청소년과 한 그룹에서 매일 책 이야기를 나누는 사람이에요.
           아이들이 안심하고 지낼 수 있도록, 어떤 분인지 먼저 알려주세요.
         </div>
+        ${el.invited ? `<div class="gate-num" style="margin-top:12px;">운영진이 모신 끗짱이에요</div>`
+          : `<div class="gate-num" style="margin-top:12px;"><b>${el.days}일</b> 읽고 오셨네요</div>`}
       </div>`}
 
     <div id="kkutErr" class="auth-err" style="display:none;margin:14px 0 0;"></div>
@@ -772,6 +816,9 @@ async function enter() {
       $('authScr').style.display = 'none';
       $('appScr').style.display  = 'none';
       $('kkutScr').style.display = '';
+      $('kkutBack').style.display = 'none';   // 돌아갈 앱이 없다
+      $('kkutOut').style.display  = '';
+      $('kkutBadge').textContent  = '끗짱';
       renderKkutGate();
       return;
     }
@@ -813,6 +860,8 @@ async function loadAll() {
     return;
   }
 
+  await loadKkutApp();
+
   const [p, c, bp, cm] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
@@ -835,7 +884,9 @@ async function loadAll() {
 
 // 참여 인원 수는 로그인 여부와 무관하게 보여준다.
 // 비로그인은 참여자 목록을 못 읽으므로 공개 집계(state.counts)를 쓴다.
-const peopleOf = rid => isGuest() ? (state.counts[rid] || 0) : partsOf(rid).length;
+// 참여 인원 수는 공개 집계(routine_people_count)를 쓴다.
+// 남의 루틴 참여자 행은 RLS가 막으므로 partsOf 로는 0명으로 보인다
+const peopleOf = rid => state.counts[rid] ?? partsOf(rid).length;
 const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
 const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
@@ -1124,7 +1175,7 @@ function shelfHtml() {
   const books = Object.entries(by).map(([t, s]) => [t, s.size])
                       .sort((a, b) => b[1] - a[1]).slice(0, 12);
   if (!books.length) return '';
-  return `<div class="sec-t" style="margin-top:0;">📚 지금 함께 읽는 책</div>
+  return `<div class="sec-t" style="margin-top:0;">📚 우리가 지금 읽는 책</div>
     <div class="shelf">${books.map(([t, n]) =>
       `<span>${esc(t)}${n > 1 ? `<i>${n}명</i>` : ''}</span>`).join('')}</div>`;
 }
@@ -1171,12 +1222,52 @@ function certCard(c) {
 function viewFeed() {
   const shelf = shelfHtml();
   const quotes = state.certs.filter(c => c.quote && c.quote.trim()).slice(0, 30);
-  return shelf + `<div class="sec-t">💬 요즘 옮겨 적은 문장</div>` + (quotes.length
+  return shelf + `<div class="sec-t">💬 우리 루틴에서 옮겨 적은 문장</div>` + (quotes.length
     ? quotes.map(c => `<div class="card" style="padding:15px 16px;">
         <div style="font-size:14.5px;line-height:1.75;">“${esc(c.quote)}”</div>
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
       </div>`).join('')
     : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 데서 한 문장 옮겨 적어보세요.</div>`);
+}
+
+// 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
+// 15·30·66일 사다리가 여기로 이어진다
+function kkutCard() {
+  if (!me || me.role === 'kkutjjang') return '';
+  const a  = state.kkutApp;
+  const el = state.kkutElig;
+  if (!el) return '';
+
+  if (a && a.status === 'pending') return `
+    <div class="sec-t">끗짱</div>
+    <div class="card" onclick="openKkutApply()" style="cursor:pointer;">
+      <div style="font-weight:700;">🕰️ 끗짱 신청을 심사하고 있어요</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">운영진이 읽어보고 연락드릴게요</div>
+    </div>`;
+
+  if (a && a.status === 'rejected') return `
+    <div class="sec-t">끗짱</div>
+    <div class="card" onclick="openKkutApply()" style="cursor:pointer;">
+      <div style="font-weight:700;">✉️ 신청 결과가 왔어요</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">내용을 고쳐서 다시 신청할 수 있어요</div>
+    </div>`;
+
+  if (el.eligible) return `
+    <div class="sec-t">끗짱</div>
+    <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
+      <div style="font-weight:700;">📖 이제 끗짱을 신청할 수 있어요</div>
+      <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.6;">
+        ${el.invited ? '운영진이 모신 끗짱이에요. ' : `${el.days}일을 읽었어요. `}직접 루틴을 열고 함께 읽을 사람을 모을 수 있어요.</div>
+    </div>`;
+
+  const pct = Math.min(100, Math.round(el.days / Math.max(el.need, 1) * 100));
+  return `
+    <div class="sec-t">끗짱</div>
+    <div class="card">
+      <div style="font-weight:700;">🌱 ${el.need}일을 채우면 끗짱을 신청할 수 있어요</div>
+      <div class="gate-bar" style="margin:12px 0 8px;"><i style="width:${pct}%"></i></div>
+      <div class="gate-num"><b>${el.days}일</b> · ${Math.max(0, el.need - el.days)}일 남았어요</div>
+    </div>`;
 }
 
 function viewMy() {
@@ -1196,6 +1287,7 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${books.length ? `<div class="sec-t">내가 읽은 책</div><div class="card">${books.map(b=>`<div style="font-size:14px;padding:6px 0;">📖 ${esc(b)}</div>`).join('')}</div>` : ''}
+    ${kkutCard()}
     <div class="sec-t">책방</div>
     <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
       <span style="font-weight:700;">함께하는 동네책방 보기</span><i class="ti ti-chevron-right" style="color:var(--ink-3);"></i>
