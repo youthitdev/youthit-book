@@ -318,7 +318,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .store-row { display:flex; gap:7px; align-items:flex-start; font-size:13px; color:#444; line-height:1.5; margin-top:5px; }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
 .store-btns { display:flex; gap:8px; margin-top:12px; }
-.store-btns a { flex:1; text-align:center; padding:9px; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
+.store-btns a { width:42px; height:42px; display:grid; place-items:center; border-radius:12px;
+  font-size:19px; line-height:1; text-decoration:none; background:#f7fbf0; border:1px solid #dfeec4; }
+.store-btns a:active { background:#eef6dd; }
 
 .store-invite { margin-top:22px; background:var(--card); border:1px dashed var(--line);
   border-radius:14px; padding:18px 16px; text-align:center; }
@@ -2547,8 +2549,8 @@ function storeCard(b) {
         ? rows.map(([i,t]) => `<div class="store-row"><i class="ti ${i}"></i><span>${t}</span></div>`).join('')
         : `<div class="store-row"><i class="ti ti-info-circle"></i><span>자세한 정보를 준비하고 있어요</span></div>`}
       ${(map||b.link) ? `<div class="store-btns">
-        ${map ? `<a href="${map}" target="_blank" rel="noopener" style="background:var(--green);color:#fff;">길찾기</a>` : ''}
-        ${b.link ? `<a href="${esc(b.link)}" target="_blank" rel="noopener" style="background:#f7fbf0;color:var(--green-d);border:1px solid #d8ebb8;">책방 소식</a>` : ''}
+        ${map ? `<a href="${map}" target="_blank" rel="noopener" title="길찾기" aria-label="길찾기">🗺️</a>` : ''}
+        ${b.link ? `<a href="${esc(b.link)}" target="_blank" rel="noopener" title="책방 소식" aria-label="책방 소식">📷</a>` : ''}
       </div>` : ''}
     </div>
   </details>`;
