@@ -175,7 +175,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .r-grid .r-top { flex-direction:column; align-items:flex-start; gap:6px; }
 .r-grid .r-title { font-size:13.5px; }
 .r-grid .r-meta { font-size:11px; }
-.r-grid .chip { font-size:10.5px; padding:3px 8px; }
+.r-grid .chip, .r-grid .tag { font-size:10.5px; padding:3px 7px; }
 .r-cover { margin:-16px -16px 13px; aspect-ratio:16/9; background:#eeeae2; }
 .r-cover img { width:100%; height:100%; object-fit:cover; display:block; }
 .day-pick { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:-4px; }
@@ -212,6 +212,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .r-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
 .r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
+.r-tags { display:flex; flex-wrap:wrap; align-items:center; gap:5px; flex-shrink:0; }
+.tag { font-size:11px; font-weight:600; color:var(--ink-3); background:var(--bg);
+       padding:3px 8px; border-radius:8px; white-space:nowrap; }
 
 /* 적립금 */
 .bal { background:#f7fbf0; border:1px solid #d8ebb8; border-radius:16px; padding:18px; margin-bottom:12px; }
@@ -1043,6 +1046,18 @@ function guestWall() {
 // 루틴 카드는 대표 사진이 붙어 커서, 목록은 전부 2열로 깐다
 const routineGrid = list => `<div class="r-grid">${list.map(routineCard).join('')}</div>`;
 
+// 카드에 붙는 해시태그. 끗짱이 따로 적지 않고 이미 가진 값에서 뽑는다.
+// 장르는 아직 넣지 않는다 — 어떤 장르가 필요한지는 책이 쌓여야 알 수 있고,
+// 장르는 루틴이 아니라 '책'의 속성이라 한 루틴 안에서도 제각각이다
+function routineTags(r) {
+  const t = [];
+  const d = routineDay(r);
+  if (d) t.push(`${d.total}일`);
+  // 필사는 매일 문장을 옮겨 적어야 하는 조건이다. 들어가기 전에 알려줘야 한다
+  if (r.quote_required) t.push('필사');
+  return t;
+}
+
 function routineCard(r) {
   const st = r.status === 'recruit' ? ['c-recruit','모집 중']
            : r.status === 'active'  ? ['c-active','진행 중'] : ['c-done','종료'];
@@ -1056,7 +1071,10 @@ function routineCard(r) {
         <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
         <div class="r-meta">${fmtPeriod(r.start_date, r.end_date)} · ${peopleOf(r.id)}/${r.max_people}명</div>
       </div>
-      <span class="chip ${st[0]}">${st[1]}</span>
+      <div class="r-tags">
+        <span class="chip ${st[0]}">${st[1]}</span>
+        ${routineTags(r).map(t => `<span class="tag">#${t}</span>`).join('')}
+      </div>
     </div>
     ${waiting ? `<div style="margin-top:9px;"><span class="chip c-wait">확인 중</span></div>` : ''}
     ${mine && r.points_per_cert ? `<div style="margin-top:9px;font-size:12.5px;color:var(--green-d);font-weight:700;">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}P</div>` : ''}
