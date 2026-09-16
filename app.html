@@ -320,10 +320,15 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .store-btns { display:flex; gap:8px; margin-top:12px; }
 .store-btns a { flex:1; text-align:center; padding:9px; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
 
-.store-invite { display:block; text-decoration:none; color:inherit; margin-top:22px;
-  background:var(--card); border:1px dashed var(--line); border-radius:14px; padding:16px; text-align:center; }
-.store-invite b { display:block; font-size:13.5px; font-weight:700; }
-.store-invite span { display:block; font-size:12px; color:var(--ink-3); margin-top:4px; }
+.store-invite { margin-top:22px; background:var(--card); border:1px dashed var(--line);
+  border-radius:14px; padding:18px 16px; text-align:center; }
+.store-invite b { display:block; font-size:14px; font-weight:700; }
+.store-invite span { display:block; font-size:12px; color:var(--ink-3); margin-top:5px; line-height:1.6; }
+.si-btns { display:flex; gap:8px; margin-top:14px; }
+.si-btns button { flex:1; padding:11px 8px; border-radius:11px; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:inherit; border:none; }
+.si-go  { background:var(--green); color:#fff; }
+.si-see { background:#fff; color:var(--ink-2); border:1px solid var(--line); }
 /* 서점 탭 맨 위 — 지금 갈 수 있나 */
 .sg { background:#f7fbf0; border:1px solid #d8ebb8; border-radius:15px; padding:16px 17px; }
 .sg b { display:block; font-size:14.5px; font-weight:800; }
@@ -2482,16 +2487,46 @@ function viewStores() {
       </summary>
       <div class="rg-b">${byRegion[rg].map(storeCard).join('')}</div>
     </details>`;
-  }).join('') + storeInviteLink();
+  }).join('') + storeInviteLink(mine && !keys.some(k => score(k) > 0) ? mine : null);
 }
 
-// 아이가 자기 동네 책방 사장님께 보여주는 경로. 아이 앱의 본업은 섭외가 아니라
-// 버튼이 아니라 목록 끝의 한 줄로 둔다
-function storeInviteLink() {
-  return `<a class="store-invite" href="store-invite.html" target="_blank" rel="noopener">
-    <b>우리 동네 책방도 함께하면 좋겠나요?</b>
-    <span>사장님께 이 페이지를 보여주세요 →</span>
-  </a>`;
+// 아이가 자기 동네 책방 사장님께 건네는 경로.
+// 운영진이 직접 섭외하는 것보다 "여기 우리 책방도 하면 좋겠는데요" 가 강하다.
+// 다만 아이 앱의 본업은 섭외가 아니라 목록 끝에 조용히 둔다
+function storeInviteLink(emptyRegion) {
+  return `<div class="store-invite">
+    <b>${emptyRegion
+      ? `${esc(emptyRegion)}에는 아직 함께하는 책방이 없어요`
+      : '우리 동네 책방도 함께하면 좋겠나요?'}</b>
+    <span>${emptyRegion
+      ? '자주 가는 책방이 있다면 사장님께 알려주세요. 저희가 연락드릴게요.'
+      : '사장님께 링크를 보내드리면 저희가 연락드려요'}</span>
+    <div class="si-btns">
+      <button class="si-go" onclick="shareInvite()">사장님께 보내기</button>
+      <button class="si-see" onclick="openInvite()">어떤 내용인지 보기</button>
+    </div>
+  </div>`;
+}
+
+const inviteUrl = () => new URL('store-invite.html', location.href).href;
+
+function openInvite() { window.open(inviteUrl(), '_blank', 'noopener'); }
+
+// 카톡·문자로 바로 넘긴다. 공유 시트가 없으면 링크를 복사해 준다
+async function shareInvite() {
+  const url  = inviteUrl();
+  const text = '우리 동네 책방이 한끗독서와 함께하면 좋겠어요.\n'
+             + '청소년이 책 한 권을 받아 가고, 책값은 3영업일 안에 책방으로 들어가요.';
+  if (navigator.share) {
+    try { await navigator.share({ title: '한끗독서 파트너 책방', text, url }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text + '\n' + url);
+    toast('링크를 복사했어요. 사장님께 붙여넣어 보내주세요');
+  } catch (e) {
+    openInvite();
+  }
 }
 // 목록에서는 이름만. 눌러야 주소·시간이 펼쳐진다.
 // 서점이 여덟 곳만 돼도 한 곳에 여섯 줄씩이면 스크롤이 끝없이 길어진다
