@@ -311,6 +311,18 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .store:active { background:#f4f4f6; }
 .store > i { font-size:17px; color:var(--ink-3); margin-left:auto; flex-shrink:0; }
 .store-n { font-size:15px; font-weight:700; }
+.store-g { font-size:12px; color:var(--ink-3); flex-shrink:0; }
+.store-more { display:flex; width:100%; align-items:center; gap:8px; margin-top:12px;
+  background:none; border:1px solid var(--line); border-radius:14px; padding:15px 16px;
+  cursor:pointer; font-family:inherit; color:var(--ink-2); font-size:14px; font-weight:700; }
+.store-more:active { background:#f4f4f6; }
+.store-more em { font-style:normal; font-size:12.5px; font-weight:600; color:var(--ink-3); }
+.store-more > i { font-size:17px; color:var(--ink-3); margin-left:auto; }
+.store-ask { background:var(--card); border:1px solid var(--line); border-radius:15px;
+  padding:18px 17px; margin-top:20px; text-align:center; }
+.store-ask b { display:block; font-size:14px; font-weight:700; line-height:1.55; }
+.store-ask span { display:block; font-size:12.5px; color:var(--ink-3); margin-top:5px; }
+.store-ask .btn { margin-top:14px; max-width:200px; margin-left:auto; margin-right:auto; }
 .store-i { font-size:13px; color:var(--ink-2); line-height:1.6; margin-bottom:10px; }
 .store-row { display:flex; gap:7px; align-items:flex-start; font-size:13px; color:#444; line-height:1.5; margin-top:5px; }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
@@ -586,6 +598,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <button class="btn btn-primary" id="rvSubmit" onclick="saveReview()">올리기</button>
     <button class="btn btn-line" id="rvDelete" style="display:none;" onclick="deleteReview()">지우기</button>
   </div>
+</div>
+
+<!-- 전국 책방 -->
+<div class="ov" id="ovAll">
+  <div class="ov-h"><button onclick="closeOv('ovAll')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">책 받으러 갈 곳</div><div class="t">함께하는 동네책방</div></div></div>
+  <div class="ov-b" id="ovAllBody"></div>
 </div>
 
 <!-- 서점 한 곳 (아래에서 올라오는 시트) -->
@@ -2479,52 +2498,93 @@ function storeGoal() {
     </div>`;
 }
 
+// 지역 표기가 '강원 속초' / '서울 성북구' 처럼 제각각이다
+const sidoOf = r => String(r || '').trim().split(/\s+/)[0] || '그 외';
+const guOf   = r => String(r || '').trim().split(/\s+/).slice(1).join(' ');
+
+// 내 동네인가 — 같은 동네면 2, 같은 시·도면 1
+function regionScore(rg) {
+  const mine = String(me?.region || '').trim();
+  if (!mine) return 0;
+  if (rg === mine || rg.startsWith(mine) || mine.startsWith(rg)) return 2;
+  const myCity = sidoOf(mine);
+  return myCity && String(rg).startsWith(myCity) ? 1 : 0;
+}
+
+function storeRow(b) {
+  const gu = guOf(b.region);
+  return `<button class="store" onclick="openStoreInfo(${b.id})">
+    <span class="store-n">${esc(b.name)}</span>
+    ${gu ? `<span class="store-g">${esc(gu)}</span>` : ''}
+    <i class="ti ti-chevron-right"></i>
+  </button>`;
+}
+
+// 아이가 서점 탭에 오는 이유는 '나는 어디로 가나' 하나다.
+// 전국 목록은 그 질문에 답하지 않으므로, 내 근처만 펼쳐 두고 나머지는 접어 보낸다.
+// 서점이 20곳이 되든 200곳이 되든 첫 화면 길이가 같다
 function viewStores() {
   const list = state.stores.filter(s => s.active);
   const head = storeGoal();
   if (!list.length) return head +
     `<div class="empty">아직 함께하는 책방이 없어요.<br>곧 늘어날 거예요.</div>`;
 
-  const byRegion = {};
-  list.forEach(b => {
-    const k = (b.region || '').trim() || '그 외';
-    (byRegion[k] = byRegion[k] || []).push(b);
-  });
-
-  // 내 동네를 맨 위로. 지역 표기가 '강원 속초' / '서울 성동구' 처럼 제각각이라
-  // 같은 동네(2점) → 같은 시·도(1점) 순으로 점수를 매긴다
   const mine = String(me?.region || '').trim();
-  const myCity = mine.split(/\s+/)[0] || '';
-  const score = rg => {
-    if (!mine) return 0;
-    if (rg === mine || rg.startsWith(mine) || mine.startsWith(rg)) return 2;
-    return myCity && rg.startsWith(myCity) ? 1 : 0;
-  };
-  const keys = Object.keys(byRegion).sort((a, b) => {
-    if (score(a) !== score(b)) return score(b) - score(a);
+  const near = list.filter(b => regionScore(b.region) > 0)
+                   .sort((a, b) => regionScore(b.region) - regionScore(a.region)
+                                || String(a.region).localeCompare(String(b.region), 'ko'));
+  const rest = list.length - near.length;
+
+  const more = rest > 0
+    ? `<button class="store-more" onclick="openAllStores()">
+         <span>다른 지역 책방 보기</span><em>${rest}곳</em>
+         <i class="ti ti-chevron-right"></i>
+       </button>`
+    : '';
+
+  // 사는 곳을 안 적었으면 그것부터 권한다. 적는 순간 이 화면이 짧아진다
+  if (!mine) return head + `
+    <div class="store-ask">
+      <b>사는 곳을 알려주면 가까운 책방을 먼저 보여드려요</b>
+      <span>지금은 ${list.length}곳이 전국에 흩어져 있어요.</span>
+      <button class="btn btn-line" onclick="go('my');openProfile()">사는 곳 적기</button>
+    </div>
+    <button class="store-more" onclick="openAllStores()">
+      <span>책방 모두 보기</span><em>${list.length}곳</em>
+      <i class="ti ti-chevron-right"></i>
+    </button>` + storeInviteLink(null);
+
+  if (!near.length) return head + storeInviteLink(mine) + more;
+
+  return head + `<div class="sec-t" style="margin-top:20px;">📍 내 근처 <span class="sec-n">${near.length}곳</span></div>`
+    + near.map(storeRow).join('') + more + storeInviteLink(null);
+}
+
+// 전국 목록. 시·군·구로 묶으면 '1곳' 짜리 그룹이 줄줄이 생기므로 시·도로 묶는다
+function openAllStores() {
+  const list = state.stores.filter(s => s.active);
+  const by = {};
+  list.forEach(b => { const k = sidoOf(b.region); (by[k] = by[k] || []).push(b); });
+  const keys = Object.keys(by).sort((a, b) => {
     if ((a === '그 외') !== (b === '그 외')) return a === '그 외' ? 1 : -1;
     return a.localeCompare(b, 'ko');
   });
+  const myS = me?.region ? sidoOf(me.region) : '';
 
-  // 지역은 접어 둔다. 내 동네(점수가 있는 곳)만 펼쳐 놓는다.
-  // 사는 곳을 안 적은 아이는 첫 지역 하나만 열어 준다 — 다 닫혀 있으면 빈 화면처럼 보인다
-  const anyNear = keys.some(k => score(k) > 0);
-  return head + keys.map((rg, i) => {
-    const open = anyNear ? score(rg) > 0 : i === 0;
-    return `<details class="rg"${open ? ' open' : ''}>
+  $('ovAllBody').innerHTML = keys.map((k, i) => `
+    <details class="rg"${(myS ? k === myS : i === 0) ? ' open' : ''}>
       <summary>
-        <span class="rg-n">${score(rg) ? '📍 ' : ''}${esc(rg)}</span>
-        <em>${byRegion[rg].length}곳</em>
+        <span class="rg-n">${k === myS ? '📍 ' : ''}${esc(k)}</span>
+        <em>${by[k].length}곳</em>
         <i class="ti ti-chevron-down"></i>
       </summary>
-      <div class="rg-b">${byRegion[rg].map(storeCard).join('')}</div>
-    </details>`;
-  }).join('') + storeInviteLink(mine && !keys.some(k => score(k) > 0) ? mine : null);
+      <div class="rg-b">${by[k]
+        .sort((a, b) => String(a.region).localeCompare(String(b.region), 'ko'))
+        .map(storeRow).join('')}</div>
+    </details>`).join('');
+  openOv('ovAll');
 }
 
-// 아이가 자기 동네 책방 사장님께 건네는 경로.
-// 운영진이 직접 섭외하는 것보다 "여기 우리 책방도 하면 좋겠는데요" 가 강하다.
-// 다만 아이 앱의 본업은 섭외가 아니라 목록 끝에 조용히 둔다
 function storeInviteLink(emptyRegion) {
   return `<div class="store-invite">
     <b>${emptyRegion
@@ -2562,15 +2622,6 @@ async function shareInvite() {
     openInvite();
   }
 }
-// 목록에서는 이름만. 누르면 시트가 올라온다.
-// 서점이 여덟 곳만 돼도 한 곳에 여섯 줄씩 펼치면 스크롤이 끝없이 길어진다
-function storeCard(b) {
-  return `<button class="store" onclick="openStoreInfo(${b.id})">
-    <span class="store-n">${esc(b.name)}</span>
-    <i class="ti ti-chevron-right"></i>
-  </button>`;
-}
-
 function openStoreInfo(id) {
   const b = state.stores.find(x => x.id === id); if (!b) return;
   const rows = [
