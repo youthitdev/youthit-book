@@ -135,6 +135,18 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .stats b { display:block; font-size:17px; font-weight:800; letter-spacing:-.5px; }
 .stats b small { font-size:11px; font-weight:700; margin-left:1px; }
 .stats span { display:block; font-size:10px; color:var(--ink-3); margin-top:3px; font-weight:600; }
+
+/* 홈 지표 — 넷을 한 줄에 우겨넣으면 글자가 눌린다. 2×2 로 펴고 이모지를 붙였다 */
+.hstats { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:20px; }
+.hs { background:var(--card); border:1px solid var(--line); border-radius:15px;
+      padding:13px 13px 12px; display:flex; align-items:center; gap:11px; min-width:0; }
+.hs i { width:38px; height:38px; border-radius:12px; flex-shrink:0;
+        display:grid; place-items:center; font-size:19px; font-style:normal; line-height:1; }
+.hs > div { min-width:0; }
+.hs b { display:block; font-size:20px; font-weight:800; letter-spacing:-.6px; line-height:1.1; }
+.hs b small { font-size:11.5px; font-weight:700; color:var(--ink-3); margin-left:2px; letter-spacing:0; }
+.hs span { display:block; font-size:11.5px; color:var(--ink-3); margin-top:3px; font-weight:600;
+           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .cgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .cg img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -1020,13 +1032,16 @@ function routineCard(r) {
 // 우리가 함께 만든 숫자. 익명 집계라 누구도 특정되지 않는다
 function statsStrip() {
   const st = state.stats || {};
-  const row = (n, unit, label) =>
-    `<div><b>${won(n || 0)}<small>${unit}</small></b><span>${label}</span></div>`;
-  return `<div class="stats">
-    ${row(st.students_total, '명', '독서 친구')}
-    ${row(st.cert_total, '일', '독서 일수')}
-    ${row(st.books_bought, '권', '교환 도서')}
-    ${row(st.sponsors_count, '명', '응원 어른')}
+  const cell = (emoji, tint, n, unit, label) =>
+    `<div class="hs">
+      <i style="background:${tint}">${emoji}</i>
+      <div><b>${won(n || 0)}<small>${unit}</small></b><span>${label}</span></div>
+    </div>`;
+  return `<div class="hstats">
+    ${cell('👫', '#EFF6E2', st.students_total, '명', '독서 친구')}
+    ${cell('📖', '#FFF4DE', st.cert_total,     '일', '독서 일수')}
+    ${cell('🎁', '#FFECF3', st.books_bought,   '권', '교환 도서')}
+    ${cell('💌', '#ECEDFB', st.sponsors_count, '명', '응원 어른')}
   </div>`;
 }
 
