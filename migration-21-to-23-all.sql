@@ -1,3 +1,8 @@
+-- 한끗독서 마이그레이션 21 · 22 · 23 한 번에
+-- 끗짱 승인제 + 자격 조건(30일) + 기록 열람 좁히기
+-- 2026-09-16. 위에서 아래로 한 번에 실행하면 된다
+
+
 -- 한끗독서 마이그레이션 21
 -- 끗짱 승인제 — 관리자가 승인해야 루틴을 만들 수 있다
 --
@@ -267,3 +272,264 @@ SELECT p.id, 30, '(승인제 도입 전 등록)', COALESCE(p.region, '-'), '-',
   FROM profiles p
  WHERE p.role = 'kkutjjang'
 ON CONFLICT (user_id) DO NOTHING;
+
+
+-- 한끗독서 마이그레이션 22
+-- 끗짱 자격 조건 — 14세 이상, 루틴을 30일 이상 해 본 사람
+--
+-- 【배경】 끗짱은 가입할 때 고르는 역할이 아니라, 청소년으로 30일을 읽고 나면
+--   열리는 다음 단계다. 15·30·66일 사다리가 여기로 이어진다.
+--   나이 하한 14세는 migration-21 의 CHECK 로 이미 걸려 있다.
+--
+-- 【30일을 어떻게 세나】 인증한 '날'의 수(DISTINCT cert_date)로 센다.
+--   루틴을 두 개 하면서 같은 날 두 번 인증해도 하루다.
+--   연속이 아니라 누적이다 — 하루 빠진 게 전부를 잃는 일이 되면 안 된다.
+--
+-- 【섭외한 어른 끗짱】 유스보이스가 데려온 끗짱은 30일이 있을 리 없다.
+--   관리자가 초대하면 30일 조건만 면제된다. 신청서는 본인이 쓰고 승인도 그대로 받는다.
+
+-- ────────────────────────────────────────────────────────────────────
+-- 1. 조건값은 설정으로 (코드를 안 고치고 바꾼다)
+-- ────────────────────────────────────────────────────────────────────
+ALTER TABLE dokseo_settings
+  ADD COLUMN IF NOT EXISTS kkut_min_cert_days int NOT NULL DEFAULT 30;
+
+COMMENT ON COLUMN dokseo_settings.kkut_min_cert_days IS
+  '끗짱을 신청하려면 인증한 날이 며칠 이상이어야 하는가. 0 이면 조건 없음';
+
+-- 관리자가 초대한 사람은 위 조건을 건너뛴다
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS kkut_invited boolean NOT NULL DEFAULT false;
+
+COMMENT ON COLUMN profiles.kkut_invited IS
+  '운영진이 섭외한 끗짱. 30일 조건만 면제된다. 승인은 그대로 받는다';
+
+-- ⚠️ migration-21 의 check_profile_write 가 role 만 고정하고 있다.
+--    kkut_invited 도 본인이 못 켜게 막는다 (켜면 조건을 건너뛴다)
+CREATE OR REPLACE FUNCTION check_profile_write() RETURNS trigger AS $$
+BEGIN
+  IF is_admin() OR auth.uid() IS NULL THEN RETURN NEW; END IF;
+
+  IF TG_OP = 'UPDATE' THEN
+    NEW.id           := OLD.id;
+    NEW.role         := OLD.role;          -- 역할은 승인 함수로만 바뀐다
+    NEW.kkut_invited := OLD.kkut_invited;  -- 초대는 관리자만 켠다
+    NEW.created_at   := OLD.created_at;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ────────────────────────────────────────────────────────────────────
+-- 2. 내가 읽은 날 수
+-- ────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION cert_days(p_user uuid DEFAULT auth.uid())
+RETURNS int AS $$
+  SELECT COALESCE(count(DISTINCT cert_date), 0)::int
+    FROM certifications WHERE user_id = p_user;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE EXECUTE ON FUNCTION cert_days(uuid) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION cert_days(uuid) TO authenticated;
+
+
+-- 신청 화면이 쓰는 것. 몇 일 채웠고 몇 일이 필요한지 한 번에 돌려준다
+CREATE OR REPLACE FUNCTION kkut_eligibility()
+RETURNS TABLE (days int, need int, invited boolean, eligible boolean) AS $$
+  SELECT d.days, n.need, p.invited,
+         COALESCE(p.invited OR d.days >= n.need, false)
+    FROM (SELECT cert_days() AS days) d,
+         (SELECT COALESCE((SELECT kkut_min_cert_days FROM dokseo_settings WHERE id = 1), 30) AS need) n,
+         (SELECT COALESCE((SELECT kkut_invited FROM profiles WHERE id = auth.uid()), false) AS invited) p;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE EXECUTE ON FUNCTION kkut_eligibility() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION kkut_eligibility() TO authenticated;
+
+-- ────────────────────────────────────────────────────────────────────
+-- 3. 신청서 트리거에 조건 추가
+-- ────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION check_kkut_application() RETURNS trigger AS $$
+DECLARE
+  v_need    int;
+  v_days    int;
+  v_invited boolean;
+BEGIN
+  -- auth.uid() 가 NULL = SQL 편집기·서버 쪽에서 직접 넣는 경우
+  IF is_admin() OR auth.uid() IS NULL THEN RETURN NEW; END IF;
+
+  NEW.user_id := auth.uid();
+
+  IF TG_OP = 'UPDATE' THEN
+    IF OLD.status <> 'rejected' THEN
+      RAISE EXCEPTION '심사 중이거나 이미 처리된 신청서는 수정할 수 없습니다';
+    END IF;
+  END IF;
+
+  SELECT COALESCE(kkut_min_cert_days, 30) INTO v_need FROM dokseo_settings WHERE id = 1;
+  v_need := COALESCE(v_need, 30);
+  SELECT COALESCE(kkut_invited, false) INTO v_invited FROM profiles WHERE id = auth.uid();
+  v_days := cert_days();
+
+  IF NOT COALESCE(v_invited, false) AND v_days < v_need THEN
+    RAISE EXCEPTION '루틴을 %일 이상 해야 끗짱을 신청할 수 있어요 (지금 %일)', v_need, v_days;
+  END IF;
+
+  NEW.status        := 'pending';
+  NEW.applied_at    := now();
+  NEW.reject_reason := NULL;
+  NEW.decided_at    := NULL;
+  NEW.decided_by    := NULL;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ────────────────────────────────────────────────────────────────────
+-- 4. 관리자 — 섭외한 끗짱 초대
+-- ────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION invite_kkut(p_email text, p_on boolean DEFAULT true)
+RETURNS text AS $$
+DECLARE v_id uuid; v_name text;
+BEGIN
+  IF NOT is_admin() THEN RAISE EXCEPTION '권한이 없습니다'; END IF;
+
+  SELECT id INTO v_id FROM auth.users WHERE lower(email) = lower(btrim(p_email));
+  IF v_id IS NULL THEN
+    RAISE EXCEPTION '그 이메일로 가입한 계정이 없습니다. 먼저 앱에 가입해 달라고 안내해 주세요';
+  END IF;
+
+  UPDATE profiles SET kkut_invited = p_on WHERE id = v_id RETURNING name INTO v_name;
+  IF v_name IS NULL THEN RAISE EXCEPTION '프로필이 없습니다'; END IF;
+
+  RETURN v_name;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+REVOKE EXECUTE ON FUNCTION invite_kkut(text, boolean) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION invite_kkut(text, boolean) TO authenticated;
+
+
+-- 한끗독서 마이그레이션 23
+-- 기록 열람을 같은 루틴 안으로 좁힌다
+--
+-- 【문제】 지금 정책이 이렇다.
+--     certs_read ON certifications FOR SELECT TO authenticated USING (true)
+--   로그인한 계정이면 누구나 전체 인증 기록을 읽는다. 사진 주소·필사 문장·
+--   읽은 쪽수·이름이 전부 나간다. parts_read, comments_read, profiles_read 도 같다.
+--   가입은 아무나 할 수 있으므로 사실상 열려 있는 셈이었다.
+--
+-- 【바꾸는 것】 볼 수 있는 사람은 셋뿐이다.
+--     ① 본인  ② 같은 루틴 참여자  ③ 그 루틴을 이끄는 끗짱  (+ 운영진)
+--
+-- 【집계는 그대로 보인다】 홈 지표·후원자 화면·랜딩 서가는 전부
+--   SECURITY DEFINER 함수(dokseo_reading_stats, dokseo_public_quotes 등)로
+--   익명 집계만 내보내므로 이 변경에 영향받지 않는다.
+--   참여 인원 수도 routine_people_count() 로 계속 나간다.
+--
+-- ⚠️ 사진 파일 자체는 cert-photos 공개 버킷에 있다. 주소를 아는 사람은
+--   여전히 열 수 있다 (주소는 추측할 수 없는 난수). 이 마이그레이션은
+--   '주소가 새로 흘러나가는 것'을 막는다. 버킷을 비공개로 돌리는 건
+--   서명 URL 작업이 따로 필요해 여기서 하지 않는다.
+
+-- ────────────────────────────────────────────────────────────────────
+-- 1. 내가 볼 수 있는 범위
+--    SECURITY DEFINER 라 RLS 를 타지 않는다 → 정책 안에서 재귀가 생기지 않는다
+--    집합을 한 번에 돌려주므로 행마다 함수를 부르지 않는다
+-- ────────────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION visible_routine_ids()
+RETURNS SETOF bigint AS $$
+  SELECT r.id FROM routines r WHERE r.led_by = auth.uid()
+  UNION
+  SELECT p.routine_id FROM routine_participants p
+   WHERE p.user_id = auth.uid() AND p.status = 'approved';
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE EXECUTE ON FUNCTION visible_routine_ids() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION visible_routine_ids() TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION visible_user_ids()
+RETURNS SETOF uuid AS $$
+  SELECT q.user_id
+    FROM routine_participants q
+   WHERE q.status = 'approved'
+     AND q.routine_id IN (SELECT visible_routine_ids())
+  UNION
+  SELECT r.led_by FROM routines r
+   WHERE r.led_by IS NOT NULL AND r.id IN (SELECT visible_routine_ids());
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE EXECUTE ON FUNCTION visible_user_ids() FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION visible_user_ids() TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION can_see_cert(p_cert bigint)
+RETURNS boolean AS $$
+  SELECT COALESCE((
+    SELECT c.user_id = auth.uid()
+        OR c.routine_id IN (SELECT visible_routine_ids())
+      FROM certifications c WHERE c.id = p_cert), false);
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
+REVOKE EXECUTE ON FUNCTION can_see_cert(bigint) FROM PUBLIC, anon;
+GRANT  EXECUTE ON FUNCTION can_see_cert(bigint) TO authenticated;
+
+-- ────────────────────────────────────────────────────────────────────
+-- 2. 정책 교체
+-- ────────────────────────────────────────────────────────────────────
+
+-- 인증 기록
+DROP POLICY IF EXISTS certs_read ON certifications;
+CREATE POLICY certs_read ON certifications FOR SELECT TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_admin()
+    OR routine_id IN (SELECT visible_routine_ids())
+  );
+
+-- 참여자 (참여 각오·읽을 책 사진이 들어 있다)
+DROP POLICY IF EXISTS parts_read ON routine_participants;
+CREATE POLICY parts_read ON routine_participants FOR SELECT TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_admin()
+    OR routine_id IN (SELECT visible_routine_ids())
+  );
+
+-- 댓글
+DROP POLICY IF EXISTS comments_read ON cert_comments;
+CREATE POLICY comments_read ON cert_comments FOR SELECT TO authenticated
+  USING (
+    user_id = auth.uid()
+    OR is_admin()
+    OR can_see_cert(cert_id)
+  );
+
+-- 프로필 (이름). 같은 루틴에 없는 사람의 이름은 알 필요가 없다
+DROP POLICY IF EXISTS profiles_read ON profiles;
+CREATE POLICY profiles_read ON profiles FOR SELECT TO authenticated
+  USING (
+    id = auth.uid()
+    OR is_admin()
+    OR id IN (SELECT visible_user_ids())
+  );
+
+-- ⚠️ 댓글을 남길 때도 볼 수 있는 인증에만 달 수 있어야 한다.
+--    (INSERT 정책이 user_id 만 봤기 때문에, 남의 루틴 인증 id 를 찍어 넣으면 달렸다)
+DROP POLICY IF EXISTS comments_own ON cert_comments;
+CREATE POLICY comments_own ON cert_comments FOR INSERT TO authenticated
+  WITH CHECK (user_id = auth.uid() AND can_see_cert(cert_id));
+
+-- ────────────────────────────────────────────────────────────────────
+-- 3. 인덱스 — 정책이 매 조회마다 타는 길
+-- ────────────────────────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS parts_user_status_idx
+  ON routine_participants (user_id, status);
+CREATE INDEX IF NOT EXISTS parts_routine_status_idx
+  ON routine_participants (routine_id, status);
+CREATE INDEX IF NOT EXISTS routines_led_by_idx
+  ON routines (led_by);
+CREATE INDEX IF NOT EXISTS certs_routine_idx
+  ON certifications (routine_id);
