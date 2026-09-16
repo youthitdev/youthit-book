@@ -1023,10 +1023,10 @@ function statsStrip() {
   const row = (n, unit, label) =>
     `<div><b>${won(n || 0)}<small>${unit}</small></b><span>${label}</span></div>`;
   return `<div class="stats">
-    ${row(st.students_total, '명', '함께 읽는 친구')}
-    ${row(st.cert_total, '일', '쌓인 인증')}
-    ${row(st.books_bought, '권', '바꾼 책')}
-    ${row(st.sponsors_count, '명', '응원하는 어른')}
+    ${row(st.students_total, '명', '독서 친구')}
+    ${row(st.cert_total, '일', '독서 일수')}
+    ${row(st.books_bought, '권', '교환 도서')}
+    ${row(st.sponsors_count, '명', '응원 멘토')}
   </div>`;
 }
 
