@@ -221,6 +221,18 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .bal-n { font-size:30px; font-weight:800; letter-spacing:-1.2px; margin-top:3px; }
 .bal-n small { font-size:15px; font-weight:700; margin-left:2px; }
 .bal-s { font-size:12.5px; color:var(--ink-2); margin-top:3px; }
+.bal-bar { height:9px; border-radius:99px; background:#e4efd0; overflow:hidden; margin:13px 0 9px; }
+.bal-bar i { display:block; height:100%; border-radius:99px; background:var(--green-d); transition:width .35s ease; }
+.bal-goal { display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+            font-size:13px; font-weight:700; color:var(--green-d); }
+.bal-goal b { font-size:15px; }
+.bal-goal-r { font-size:12px; font-weight:600; color:var(--ink-3); flex-shrink:0; }
+.bal-srcs { display:flex; flex-wrap:wrap; gap:7px 14px; margin-top:14px; padding-top:13px;
+            border-top:1px solid #dfeec4; }
+.bs { display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-3); font-weight:600; }
+.bs i { width:24px; height:24px; border-radius:8px; display:grid; place-items:center;
+        font-size:12px; font-style:normal; line-height:1; flex-shrink:0; }
+.bs b { color:var(--ink); font-size:13.5px; font-weight:800; }
 .vch { margin-top:13px; background:#fff; border-radius:12px; padding:12px 14px; font-size:13.5px; font-weight:700; color:var(--green-d); }
 .vch b { font-size:15px; }
 .vch span { display:block; font-size:12px; font-weight:400; color:var(--ink-3); margin-top:3px; }
@@ -964,7 +976,9 @@ function myPoints() {
   const cap = state.settings.comment_daily_cap ?? 5;
   const pm  = state.settings.points_per_milestone ?? 10;
   const ms  = state.settings.bonus_milestones || [10,30,66,100,200];
-  if (!me) return { points:0, cert_count:0, from_cert:0, from_comment:0, from_bonus:0,
+  const pr  = state.settings.points_per_review ?? 30;
+  const pb  = state.settings.points_per_bookreview ?? 30;
+  if (!me) return { points:0, cert_count:0, from_cert:0, from_comment:0, from_bonus:0, from_review:0,
                     next_milestone:ms[0], per, earned:0, used:0, left:0, to_next:per };
 
   const mine = state.certs.filter(c => c.user_id === me.id);
@@ -984,10 +998,16 @@ function myPoints() {
   const from_bonus = ms.filter(m => m <= cert_count).length * pm;
   const next_milestone = ms.find(m => m > cert_count) || null;
 
-  const points = from_cert + from_comment + from_bonus;
+  // 후기 — 서버 dokseo_points() 와 같은 식
+  const mineRv = state.reviews.filter(v => v.user_id === me.id);
+  const from_review = mineRv.filter(v => v.kind === 'routine').length * pr
+                    + mineRv.filter(v => v.kind === 'book').length * pb;
+
+  const points = from_cert + from_comment + from_bonus + from_review;
   const used = state.purchases.filter(p => p.user_id === me.id && p.status !== 'void').length;
   const earned = Math.floor(points / per);
-  return { points, cert_count, from_cert, from_comment, from_bonus, next_milestone, per, earned, used,
+  return { points, cert_count, from_cert, from_comment, from_bonus, from_review,
+           next_milestone, per, earned, used,
            left: Math.max(0, earned - used), to_next: per - (points % per) };
 }
 
@@ -1222,14 +1242,37 @@ function balanceBlock() {
   const p = myPoints();
   const pend = state.purchases.some(x => x.user_id === me.id && x.status === 'pending');
   const cap = won(state.settings.voucher_max_amount || 20000);
+  // 이번 교환권까지 얼마나 왔나. 250P 를 넘겨도 다음 한 장을 향해 다시 찬다
+  const into = p.points % p.per;
+  const pct  = Math.min(100, Math.round(into / Math.max(p.per, 1) * 100));
+  const mile = p.next_milestone
+    ? `${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}P`
+    : null;
+
+  const src = (emoji, tint, label, val) => val > 0
+    ? `<span class="bs"><i style="background:${tint}">${emoji}</i>${label} <b>${won(val)}P</b></span>` : '';
+
   return `<div class="bal">
       <div class="bal-l">📚 내 독서 포인트</div>
       <div class="bal-n">${won(p.points)}<small>P</small></div>
-      <div class="bal-s">인증 ${state.settings.points_per_cert ?? 10}P · 댓글 ${state.settings.points_per_comment ?? 1}P (하루 ${state.settings.comment_daily_cap ?? 5}개까지) · 후기 ${RV_PR()}P</div>
-      <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${p.next_milestone ? ` · ${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}P` : ''}</div>
+
+      <div class="bal-bar"><i style="width:${pct}%"></i></div>
+      <div class="bal-goal">
+        <span>${p.left > 0 ? `🎫 쓸 수 있는 교환권 <b>${p.left}장</b>` : `다음 교환권까지 <b>${won(p.to_next)}P</b>`}</span>
+        <span class="bal-goal-r">${won(into)} / ${won(p.per)}P</span>
+      </div>
+
+      <div class="bal-srcs">
+        ${src('📸', '#FFF4DE', '인증',  p.from_cert)}
+        ${src('💬', '#ECEDFB', '소통',  p.from_comment)}
+        ${src('📝', '#EFF6E2', '후기',  p.from_review)}
+        ${src('🎖️', '#FFECF3', '보너스', p.from_bonus)}
+      </div>
+      <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
+
       ${p.left > 0
-        ? `<div class="vch">🎫 쓸 수 있는 교환권 <b>${p.left}장</b><span>${cap}원 이하 책 한 권과 바꿀 수 있어요</span></div>`
-        : `<div class="vch vch-off">다음 교환권까지 <b>${won(p.to_next)}P</b><span>${won(p.per)}P를 모으면 ${cap}원 이하 책 한 권과 바꿔요</span></div>`}
+        ? `<div class="vch">🎫 ${cap}원 이하 책 한 권과 바꿀 수 있어요<span>가까운 동네책방에서 골라보세요</span></div>`
+        : ''}
       ${pend
         ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
