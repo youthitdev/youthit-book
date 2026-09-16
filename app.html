@@ -175,7 +175,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .r-grid .r-top { flex-direction:column; align-items:flex-start; gap:6px; }
 .r-grid .r-title { font-size:13.5px; }
 .r-grid .r-meta { font-size:11px; }
-.r-grid .r-desc { font-size:12px; margin-top:7px; line-height:1.55; }
 .r-grid .chip { font-size:10.5px; padding:3px 8px; }
 .r-cover { margin:-16px -16px 13px; aspect-ratio:16/9; background:#eeeae2; }
 .r-cover img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -213,7 +212,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .r-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
 .r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
-.r-desc { font-size:13px; color:var(--ink-2); margin-top:8px; line-height:1.6; }
 
 /* 적립금 */
 .bal { background:#f7fbf0; border:1px solid #d8ebb8; border-radius:16px; padding:18px; margin-bottom:12px; }
@@ -1060,7 +1058,6 @@ function routineCard(r) {
       </div>
       <span class="chip ${st[0]}">${st[1]}</span>
     </div>
-    ${r.description ? `<div class="r-desc">${esc(r.description).slice(0,70)}${r.description.length>70?'…':''}</div>` : ''}
     ${waiting ? `<div style="margin-top:9px;"><span class="chip c-wait">확인 중</span></div>` : ''}
     ${mine && r.points_per_cert ? `<div style="margin-top:9px;font-size:12.5px;color:var(--green-d);font-weight:700;">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}P</div>` : ''}
   </div>`;
