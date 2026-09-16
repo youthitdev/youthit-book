@@ -299,6 +299,12 @@ let DB = {
     { id:'s2', nickname:'민들레',     email:'dan@example.com' },
     { id:'s3', nickname:'조용한후원자', email:'quiet@example.com' },
   ],
+  reviews: [
+    { id:7001, kind:'routine', content:'처음엔 15일이 너무 길어 보였는데, 하루에 한 장이라고 생각하니까 할 만했어요.',
+      book_title:null, is_public:false, created_at:'2026-09-12' },
+    { id:7002, kind:'book', content:'책방에 가서 직접 고른 게 처음이었어요. 표지가 예뻐서 골랐는데 내용도 좋았습니다.',
+      book_title:'속초에서의 겨울', is_public:true, created_at:'2026-09-14' },
+  ],
   kkutApps: [
     { user_id:'k1', name:'김유스', email:'kkut@example.com', age:34,
       affiliation:'속초 오래된책방', region:'강원 속초', contact:'010-1234-5678',
@@ -503,6 +509,15 @@ async function inviteKkut() {
   alert(`${data} 님을 초대했어요.\n앱 MY 탭에서 끗짱 신청서를 쓸 수 있다고 알려주세요.`);
 }
 
+async function toggleReview(id) {
+  const r = (DB.reviews || []).find(x => x.id === id); if (!r) return;
+  if (!LIVE) { r.is_public = !r.is_public; render(); return; }
+  const { error } = await sb.from('reviews').update({ is_public: !r.is_public }).eq('id', id);
+  if (error) return alert('바꾸지 못했어요: ' + error.message);
+  r.is_public = !r.is_public;
+  render();
+}
+
 async function loadKkutApps() {
   const { data, error } = await sb.rpc('kkut_applications_admin');
   if (error) { console.warn('끗짱 신청 목록', error.message); return; }
@@ -514,11 +529,31 @@ async function loadKkutApps() {
 function viewQuotes() {
   const rows = DB.quotes || [];
   const on = rows.filter(q => q.quote_public).length;
+  const rv = DB.reviews || [];
+  const rvOn = rv.filter(r => r.is_public).length;
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">문장 고르기</div>
-    <div class="panel-d">공개로 켠 문장만 후원자 화면에 보여요. 지금 ${on}개 공개 중이에요.</div></div>
+    <div><div class="panel-t">문장 · 후기 고르기</div>
+    <div class="panel-d">공개로 켠 것만 후원자 화면에 보여요.
+      지금 문장 ${on}개, 후기 ${rvOn}개 공개 중이에요.</div></div>
   </div>
+
+  <div class="panel-t" style="font-size:14px;margin:4px 0 12px;">후기</div>
+  ${rv.length ? `<div class="tbl"><table>
+    <tr><th>후기</th><th>종류</th><th>책</th><th>날짜</th><th class="right">공개</th></tr>
+    ${rv.map(r => `<tr>
+      <td style="max-width:420px;white-space:pre-wrap;">${esc(r.content)}</td>
+      <td class="muted">${r.kind === 'book' ? '책' : '루틴'}</td>
+      <td class="muted">${esc(r.book_title) || '-'}</td>
+      <td class="num muted">${fmtDate(r.created_at)}</td>
+      <td class="right">
+        <button class="btn ${r.is_public ? 'btn-dark' : 'btn-line'}" onclick="toggleReview(${r.id})">
+          ${r.is_public ? '공개 중' : '공개하기'}</button>
+      </td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">아직 올라온 후기가 없습니다.</div>`}
+
+  <div class="panel-t" style="font-size:14px;margin:26px 0 12px;">문장</div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>문장</th><th>책</th><th>날짜</th><th class="right">공개</th></tr>
     ${rows.map(q => `<tr>
@@ -873,6 +908,10 @@ async function loadLive() {
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
     allocs: p.consumption_allocations || [],
   }));
+
+  const rv = await sb.from('reviews').select('id, kind, content, book_title, is_public, created_at')
+                     .order('created_at', { ascending: false }).limit(200);
+  DB.reviews = rv.data || [];
 
   await loadKkutApps();
 

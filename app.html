@@ -117,6 +117,12 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:8px; }
 .c-recruit { background:#FBEAF0; color:#993556; }
 .c-active { background:#EAF3DE; color:#3B6D11; }
+
+/* 후기 — 쓸 수 있는 것 */
+.rv-todo { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;
+           background:#fff8fb; border:1px solid #ffdcea; }
+.rv-p { flex-shrink:0; font-size:13px; font-weight:800; color:var(--pink);
+        background:#fff; border:1px solid #ffdcea; border-radius:99px; padding:6px 11px; }
 .c-done { background:#eee; color:#888; }
 .c-wait { background:#FFF4E5; color:#A86400; }
 
@@ -457,6 +463,26 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div class="ov-b" id="ovOneBody"></div>
 </div>
 
+<!-- 후기 쓰기 -->
+<div class="ov" id="ovReview">
+  <div class="ov-h"><button onclick="closeOv('ovReview')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s" id="ovRvLabel">후기</div><div class="t" id="ovRvTitle"></div></div></div>
+  <div class="ov-b">
+    <div id="rvIntro" class="card" style="font-size:13px;line-height:1.7;color:var(--ink-2);"></div>
+    <div id="rvBookWrap">
+      <div class="field-label">책 제목 <span class="req">* 필수</span></div>
+      <input type="text" id="rvBook" maxlength="60" placeholder="받은 책 제목을 적어주세요" oninput="checkReview()">
+    </div>
+    <div>
+      <div class="field-label" id="rvLabel">후기 <span class="req">* 필수</span></div>
+      <textarea id="rvContent" rows="8" maxlength="1000" oninput="checkReview()"></textarea>
+      <div class="hint" id="rvCount"></div>
+    </div>
+    <button class="btn btn-primary" id="rvSubmit" onclick="saveReview()">올리기</button>
+    <button class="btn btn-line" id="rvDelete" style="display:none;" onclick="deleteReview()">지우기</button>
+  </div>
+</div>
+
 <!-- 내 정보 -->
 <div class="ov" id="ovProfile">
   <div class="ov-h"><button onclick="closeOv('ovProfile')"><i class="ti ti-arrow-left"></i></button>
@@ -502,7 +528,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], settings:{} };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{} };
 let tab = 'home';
 // 끗짱은 가입할 때 고르는 역할이 아니다. 청소년으로 30일을 읽으면 MY 탭에서 신청한다
 let authMode = 'login';
@@ -857,25 +883,27 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.names = {};
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.names = {};
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm] = await Promise.all([
+  const [p, c, bp, cm, rv] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
     sb.from('cert_comments').select('*').order('created_at'),
+    sb.from('reviews').select('*').order('created_at', { ascending:false }).limit(200),
   ]);
   state.parts = p.data || [];
   state.certs = c.data || [];
   state.purchases = bp.data || [];
   state.comments = cm.data || [];
+  state.reviews = rv.data || [];
 
   const ids = [...new Set([...state.certs.map(x=>x.user_id), ...state.parts.map(x=>x.user_id),
-                           ...state.comments.map(x=>x.user_id)])];
+                           ...state.comments.map(x=>x.user_id), ...state.reviews.map(x=>x.user_id)])];
   if (ids.length) {
     const { data } = await sb.from('profiles').select('id,name').in('id', ids);
     state.names = {};
@@ -1151,7 +1179,7 @@ function balanceBlock() {
   return `<div class="bal">
       <div class="bal-l">📚 내 독서 포인트</div>
       <div class="bal-n">${won(p.points)}<small>P</small></div>
-      <div class="bal-s">인증 ${state.settings.points_per_cert ?? 10}P · 댓글 ${state.settings.points_per_comment ?? 1}P (하루 ${state.settings.comment_daily_cap ?? 5}개까지)</div>
+      <div class="bal-s">인증 ${state.settings.points_per_cert ?? 10}P · 댓글 ${state.settings.points_per_comment ?? 1}P (하루 ${state.settings.comment_daily_cap ?? 5}개까지) · 후기 ${RV_PR()}P</div>
       <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${p.next_milestone ? ` · ${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}P` : ''}</div>
       ${p.left > 0
         ? `<div class="vch">🎫 쓸 수 있는 교환권 <b>${p.left}장</b><span>${cap}원 이하 책 한 권과 바꿀 수 있어요</span></div>`
@@ -1220,15 +1248,173 @@ function certCard(c) {
 }
 
 // '모두' 탭 — 루틴을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
+// ── 후기 ───────────────────────────────────────────────
+// 루틴 후기 30P · 책인증후기 30P. 15일 완주 235P 에 후기 30P 가 붙어야
+// 250P 를 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
+const RV_PR = () => state.settings.points_per_review ?? 30;
+const RV_PB = () => state.settings.points_per_bookreview ?? 30;
+
+// 루틴이 끝났나 — 서버 트리거와 같은 기준 (status='done' 이거나 종료일이 지났거나)
+function routineEnded(r) {
+  if (!r) return false;
+  if (r.status === 'done') return true;
+  return !!r.end_date && r.end_date < todayKST();
+}
+
+const myRoutineReview = rid => state.reviews.find(v =>
+  v.kind === 'routine' && v.user_id === me.id && v.routine_id === rid);
+const myBookReview = pid => state.reviews.find(v =>
+  v.kind === 'book' && v.purchase_id === pid);
+
+// 지금 쓸 수 있는데 아직 안 쓴 것들
+function reviewTodos() {
+  if (!me || me.role === 'kkutjjang') return [];
+  const out = [];
+  myRoutines().forEach(r => {
+    if (routineEnded(r) && !myRoutineReview(r.id))
+      out.push({ kind:'routine', id:r.id, title:r.title, emoji:r.emoji || '📚' });
+  });
+  state.purchases
+    .filter(b => b.user_id === me.id && b.status !== 'void' && !myBookReview(b.id))
+    .forEach(b => out.push({ kind:'book', id:b.id,
+      title: state.routines.find(r => r.id === b.routine_id)?.title || '', emoji:'📗' }));
+  return out;
+}
+
+function reviewCard(v) {
+  const r = state.routines.find(x => x.id === v.routine_id);
+  const isBook = v.kind === 'book';
+  const own = me && v.user_id === me.id;
+  return `<div class="card" style="padding:15px 16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div style="min-width:0;">
+        <span class="chip ${isBook ? 'c-recruit' : 'c-active'}">${isBook ? '책 후기' : '루틴 후기'}</span>
+        <span style="font-size:12.5px;color:var(--ink-3);margin-left:7px;">${esc(nameOf(v.user_id))}</span>
+      </div>
+      ${own ? `<button class="f-act" title="고치기" onclick="openReview('${v.kind}', ${isBook ? v.purchase_id : v.routine_id})">✏️</button>` : ''}
+    </div>
+    <div style="font-size:14.5px;line-height:1.8;margin-top:10px;white-space:pre-wrap;">${esc(v.content)}</div>
+    <div style="font-size:11.5px;color:var(--ink-3);margin-top:9px;">
+      ${isBook ? `📖 ${esc(v.book_title || '')}` : `${r ? esc(r.title) : ''}`} · ${timeAgo(v.created_at)}
+    </div>
+  </div>`;
+}
+
 function viewFeed() {
-  const shelf = shelfHtml();
+  const todo = reviewTodos();
+  const list = state.reviews;
+
+  const todoHtml = todo.length ? `
+    <div class="sec-t" style="margin-top:0;">✍️ 쓸 수 있는 후기</div>
+    ${todo.map(t => `<div class="card rv-todo" onclick="openReview('${t.kind}', ${t.id})">
+      <div style="min-width:0;">
+        <div style="font-weight:700;font-size:14px;">${t.emoji} ${t.kind === 'routine'
+          ? `${esc(t.title)} 루틴이 끝났어요` : '받은 책 후기를 남겨주세요'}</div>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${t.kind === 'routine'
+          ? '15일 동안 어땠는지 적어주세요' : (t.title ? esc(t.title) : '어떤 책이었는지 적어주세요')}</div>
+      </div>
+      <span class="rv-p">+${t.kind === 'routine' ? RV_PR() : RV_PB()}P</span>
+    </div>`).join('')}` : '';
+
+  const listHtml = `<div class="sec-t">📝 우리 루틴 후기</div>` + (list.length
+    ? list.map(reviewCard).join('')
+    : `<div class="empty">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
+
   const quotes = state.certs.filter(c => c.quote && c.quote.trim()).slice(0, 30);
-  return shelf + `<div class="sec-t">💬 우리 루틴에서 옮겨 적은 문장</div>` + (quotes.length
+  const quoteHtml = `<div class="sec-t">💬 우리 루틴에서 옮겨 적은 문장</div>` + (quotes.length
     ? quotes.map(c => `<div class="card" style="padding:15px 16px;">
         <div style="font-size:14.5px;line-height:1.75;">“${esc(c.quote)}”</div>
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
       </div>`).join('')
     : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 데서 한 문장 옮겨 적어보세요.</div>`);
+
+  return todoHtml + listHtml + shelfHtml() + quoteHtml;
+}
+
+// ── 후기 쓰기 ──────────────────────────────────────────
+let rvCtx = null;   // { kind, id, review }
+
+function openReview(kind, id) {
+  const isBook = kind === 'book';
+  const existing = isBook ? myBookReview(id) : myRoutineReview(id);
+  const r = isBook
+    ? state.routines.find(x => x.id === state.purchases.find(b => b.id === id)?.routine_id)
+    : state.routines.find(x => x.id === id);
+  rvCtx = { kind, id, review: existing || null };
+
+  $('ovRvLabel').textContent = isBook ? '책인증후기' : '루틴 후기';
+  $('ovRvTitle').textContent = existing ? '후기 고치기' : '후기 쓰기';
+  $('rvIntro').innerHTML = isBook
+    ? `받은 책을 읽고 어땠는지 적어주세요. 올리면 <b>+${RV_PB()}P</b>예요.<br>
+       <span style="color:var(--ink-3);">같은 루틴 친구들에게만 보여요.</span>`
+    : `<b>${esc(r ? r.title : '')}</b> 어땠나요?<br>
+       처음과 지금이 뭐가 달라졌는지, 어떤 날이 기억에 남는지 적어주세요.
+       올리면 <b>+${RV_PR()}P</b>예요.`;
+
+  $('rvBookWrap').style.display = isBook ? '' : 'none';
+  $('rvBook').value = existing?.book_title || '';
+  $('rvContent').value = existing?.content || '';
+  $('rvContent').placeholder = isBook
+    ? '어떤 책이었는지, 읽고 나서 어땠는지 적어주세요.'
+    : '15일 동안 어땠는지 적어주세요. 잘 안 읽힌 날 이야기도 괜찮아요.';
+  $('rvDelete').style.display = existing ? '' : 'none';
+  $('rvSubmit').textContent = existing ? '고치기' : '올리기';
+  checkReview();
+  openOv('ovReview');
+}
+
+function checkReview() {
+  const n = $('rvContent').value.trim().length;
+  const needBook = rvCtx?.kind === 'book' && !$('rvBook').value.trim();
+  $('rvSubmit').disabled = n < 20 || needBook;
+  $('rvCount').textContent = n < 20
+    ? `스무 자 이상 적어주세요 · 지금 ${n}자`
+    : `${n}자`;
+}
+
+async function saveReview() {
+  if (!rvCtx) return;
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const btn = $('rvSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
+
+  const isBook = rvCtx.kind === 'book';
+  const row = {
+    user_id: me.id,
+    kind: rvCtx.kind,
+    content: $('rvContent').value.trim(),
+    // 루틴 후기는 routine_id, 책 후기는 purchase_id 로 건다.
+    // 책 후기의 routine_id 는 서버 트리거가 구매 기록에서 채운다
+    routine_id: isBook
+      ? (state.purchases.find(b => b.id === rvCtx.id)?.routine_id ?? null)
+      : rvCtx.id,
+    purchase_id: isBook ? rvCtx.id : null,
+    book_title: isBook ? $('rvBook').value.trim() : null,
+  };
+
+  const q = rvCtx.review
+    ? sb.from('reviews').update(row).eq('id', rvCtx.review.id)
+    : sb.from('reviews').insert(row);
+  const { error } = await q;
+
+  btn.disabled = false; btn.textContent = rvCtx.review ? '고치기' : '올리기';
+  if (error) return toast(error.message || '올리지 못했어요');
+
+  closeOv('ovReview');
+  await loadAll();
+  render();
+  toast(rvCtx.review ? '후기를 고쳤어요' : `후기 고마워요 · +${isBook ? RV_PB() : RV_PR()}P`);
+}
+
+async function deleteReview() {
+  if (!rvCtx?.review) return;
+  if (!confirm('후기를 지울까요? 받은 포인트도 같이 빠져요.')) return;
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const { error } = await sb.from('reviews').delete().eq('id', rvCtx.review.id);
+  if (error) return toast(error.message || '지우지 못했어요');
+  closeOv('ovReview');
+  await loadAll();
+  render();
+  toast('후기를 지웠어요');
 }
 
 // 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
@@ -2102,12 +2288,18 @@ function enterDemo(role) {
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
       max_people:10, points_per_cert:10, camera_only:true, status:'recruit', led_by:'demo-k2' },
+    // 끝난 루틴 — 후기 화면을 보여주려고 둔다
+    { id:903, title:'겨울의 초입, 15일', emoji:'❄️', description:'첫 루틴이었어요.',
+      cert_guide:null, start_date:dstr(40), end_date:dstr(24),
+      max_people:8, points_per_cert:10, camera_only:true, status:'done', led_by: kid },
   ];
   state.parts = [
     { routine_id:901, user_id:y1, status:'approved', book_title:'속초에서의 겨울', joined_at:day(7) },
     { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
     { routine_id:901, user_id:'u4', status:'approved', book_photo_url:null, note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
+    { routine_id:903, user_id:y1,   status:'approved', book_title:'긴 이별을 위한 짧은 편지', joined_at:day(40) },
+    { routine_id:903, user_id:'u2', status:'approved', joined_at:day(40) },
   ];
   state.names = { [uid]: me.name, [y1]:'서연', [kid]:'민지', u2:'하준', u3:'지우', u4:'예린' };
   state.certs = [
@@ -2130,8 +2322,18 @@ function enterDemo(role) {
     { id:1, cert_id:1, user_id:kid, content:'그 문장 저도 좋아해요. 오늘도 고생했어요!', created_at:day(1) },
     { id:2, cert_id:2, user_id:kid, content:'짧게라도 읽은 게 대단해요 🌱', created_at:day(1) },
   ];
-  state.purchases = [];
-  state.counts = { 901:3, 902:0 };
+  // 받은 책 한 권 — 책인증후기를 쓸 수 있는 상태
+  state.purchases = [
+    { id:5001, user_id:y1, routine_id:903, bookstore_id:1, status:'settled',
+      amount:16500, created_at:day(20), settled_at:day(19) },
+  ];
+  // 남이 쓴 후기 하나는 이미 올라와 있고, 내 것 두 개는 아직 비어 있다
+  state.reviews = [
+    { id:7001, user_id:'u2', kind:'routine', routine_id:903, purchase_id:null, book_title:null,
+      content:'처음엔 15일이 너무 길어 보였는데, 하루에 한 장이라고 생각하니까 할 만했어요.\n안 읽은 날도 있었지만 그 다음 날 또 찍었습니다. 그게 제일 마음에 들었어요.',
+      is_public:false, created_at:day(22) },
+  ];
+  state.counts = { 901:3, 902:0, 903:2 };
   state.stats = { students_total:31, cert_total:412, books_bought:47, sponsors_count:23 };
 
   $('authScr').style.display = 'none';
