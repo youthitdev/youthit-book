@@ -380,7 +380,7 @@ function pool() {
     spent,
     pending:    DB.purchases.filter(g => g.status === 'pending').length,
     delivered:  DB.purchases.filter(g => g.status === 'settled').length,
-    // 금액은 확정됐는데 아직 서점에 안 보낸 것. 5일 약속을 지키려면 이게 보여야 한다
+    // 금액은 확정됐는데 아직 서점에 안 보낸 것. 5영업일 약속을 지키려면 이게 보여야 한다
     unpaidCnt:  unpaid().length,
     unpaidSum:  unpaid().reduce((n, g) => n + (g.amount || 0), 0),
   };
@@ -723,7 +723,7 @@ function viewSettled() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">서점 입금</div>
-    <div class="panel-d">아이는 돈 없이 책을 가져갑니다. 책값은 유스보이스가 서점에 보냅니다 — 다녀간 뒤 5일 안에.</div></div>
+    <div class="panel-d">아이는 돈 없이 책을 가져갑니다. 책값은 유스보이스가 서점에 보냅니다 — 다녀간 뒤 5영업일 안에.</div></div>
   </div>
 
   ${wait.length ? `<div class="preview" style="margin-bottom:14px;">
