@@ -58,6 +58,8 @@ tr:hover td { background:#fcfcfd; }
 .btn-pink { background:var(--pink); color:#fff; }
 .btn-dark { background:var(--ink); color:#fff; }
 .btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
+.btn-danger { background:#fff; border:1px solid #ffc9d6; color:#b3003c; }
+.btn-danger:disabled { color:var(--ink-3); border-color:var(--line); cursor:not-allowed; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 
 /* 끗짱 승인 */
@@ -234,6 +236,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       </div>
     </div>
     <div class="modal-ft">
+      <button class="btn btn-danger" id="sDelete" style="display:none;margin-right:auto;"
+              onclick="deleteStore()">삭제</button>
       <button class="btn btn-line" onclick="closeModal('storeOverlay')">취소</button>
       <button class="btn btn-dark" onclick="submitStore()">저장</button>
     </div>
@@ -611,7 +615,38 @@ function openStore(id) {
   document.getElementById('storeModalTitle').textContent = s ? '서점 수정' : '서점 등록';
   Object.entries(STORE_FIELDS).forEach(([el, key]) => document.getElementById(el).value = s ? (s[key] || '') : '');
   document.getElementById('sActive').checked = s ? !!s.active : true;
+
+  // 거래가 한 건이라도 있으면 지울 수 없다.
+  // book_purchases.bookstore_id 가 ON DELETE SET NULL 이라, 지우면 지난 정산 기록에서
+  // '어느 책방이었는지' 가 통째로 사라진다. 회계 증빙이 비는 셈이다
+  const used = s ? ((DB.purchaseCounts || {})[s.id] || 0) : 0;
+  const del = document.getElementById('sDelete');
+  del.style.display = s ? '' : 'none';
+  del.disabled = used > 0;
+  del.title = used > 0 ? `거래가 ${used}건 있어 지울 수 없어요. 대신 체크를 풀어 목록에서 빼세요` : '';
+
   document.getElementById('storeOverlay').classList.add('on');
+}
+
+async function deleteStore() {
+  const s = (DB.bookstores || []).find(x => x.id === storeEditId);
+  if (!s) return;
+  const used = (DB.purchaseCounts || {})[s.id] || 0;
+  if (used > 0) {
+    alert(`거래가 ${used}건 있어 지울 수 없어요.\n\n지우면 지난 정산에서 어느 책방이었는지가 사라집니다.\n대신 '현재 파트너 서점' 체크를 풀어 목록에서 빼주세요.`);
+    return;
+  }
+  if (!confirm(`${s.name} 을(를) 지울까요?\n\n되돌릴 수 없습니다.\n잠시 쉬는 것뿐이면 체크를 푸는 쪽이 낫습니다.`)) return;
+
+  if (LIVE) {
+    const { error } = await sb.from('bookstores').delete().eq('id', s.id);
+    if (error) { alert('지우지 못했어요: ' + error.message); return; }
+    await loadLive();
+  } else {
+    DB.bookstores = DB.bookstores.filter(x => x.id !== s.id);
+  }
+  closeModal('storeOverlay');
+  render();
 }
 
 async function submitStore() {
