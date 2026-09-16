@@ -2547,8 +2547,10 @@ function openInvite() { window.open(inviteUrl(), '_blank', 'noopener'); }
 // 카톡·문자로 바로 넘긴다. 공유 시트가 없으면 링크를 복사해 준다
 async function shareInvite() {
   const url  = inviteUrl();
-  const text = '우리 동네 책방이 한끗독서와 함께하면 좋겠어요.\n'
-             + '청소년이 책 한 권을 받아 가고, 책값은 3영업일 안에 책방으로 들어가요.';
+  // 아이가 사장님께 보내는 말이다. '제가' 를 넣어야 단체의 홍보 문자가 아니라
+  // 우리 책방에 오는 아이가 보낸 것이 된다
+  const text = '우리 동네 책방도 한끗독서와 함께하면 좋겠어요.\n'
+             + '제가 책 한 권을 골라 가면, 책값은 유스보이스가 5일 안에 보내드려요.';
   if (navigator.share) {
     try { await navigator.share({ title: '한끗독서 파트너 책방', text, url }); return; }
     catch (e) { if (e && e.name === 'AbortError') return; }
