@@ -163,6 +163,18 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .rp-sub i { width:26px; height:26px; border-radius:9px; display:grid; place-items:center;
             font-size:13px; font-style:normal; line-height:1; flex-shrink:0; }
 .rp-sub b { color:var(--ink); font-size:14px; font-weight:800; }
+
+/* 루틴을 끝냈을 때 */
+.ec { padding:20px 18px 18px; text-align:center; margin-bottom:12px; }
+.ec-top { font-size:16px; font-weight:800; }
+.ec-sub { font-size:13px; color:var(--ink-3); margin-top:5px; }
+.ec-sub b { color:var(--ink); }
+.ec-next { margin-top:16px; padding-top:16px; border-top:1px solid var(--line); text-align:left; }
+.ec-next b { display:block; font-size:14.5px; font-weight:800; }
+.ec-next span { display:block; font-size:12.5px; color:var(--ink-3); line-height:1.65; margin-top:5px; }
+.ec-next.ok b { color:var(--green-d); }
+.ec-btns { display:flex; gap:8px; margin-top:14px; }
+.ec-btns .btn { flex:1; margin:0; }
 .cgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .cg img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -1196,8 +1208,8 @@ function viewCert() {
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${progressCard(d, cs.length, talk)}
-      ${r.status === 'done'
-        ? `<div class="card" style="text-align:center;color:var(--ink-3);">끝난 루틴이에요. 함께해줘서 고마워요 🌱</div>`
+      ${routineEnded(r)
+        ? endedCard(r)
         : done
           ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>`
           : `<button class="btn btn-primary" style="margin-bottom:12px;" onclick="openCert(${r.id})">오늘 인증하기</button>`}
@@ -1212,6 +1224,37 @@ function viewCert() {
 }
 
 // 루틴이 며칠짜리고 오늘이 며칠째인지
+// 루틴이 끝났을 때. 7일짜리를 다 해도 135P 라 그것만으로는 책을 못 받는다.
+// 포인트는 계정에 쌓이므로 '모자라다'가 아니라 '이어서 하면 된다'로 말한다
+function endedCard(r) {
+  const p  = myPoints();
+  const n  = myCerts(r.id).length;
+  const rv = myRoutineReview(r.id);
+  const pct = Math.min(100, Math.round((p.points % p.per) / Math.max(p.per, 1) * 100));
+
+  const next = p.left > 0
+    ? `<div class="ec-next ok">
+         <b>🎫 책을 받을 수 있어요</b>
+         <span>쓸 수 있는 교환권 ${p.left}장 · 가까운 동네책방에서 골라보세요</span>
+         <button class="btn btn-primary" style="margin-top:12px;" onclick="openStores()">책방 찾기</button>
+       </div>`
+    : `<div class="ec-next">
+         <b>책 한 권까지 ${won(p.to_next)}P 남았어요</b>
+         <div class="bal-bar" style="background:#e9e9ef;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
+         <span>포인트는 사라지지 않아요. 다음 루틴을 이어서 하면 채워집니다.</span>
+         <div class="ec-btns">
+           ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
+           <button class="btn btn-line" onclick="go('home')">루틴 둘러보기</button>
+         </div>
+       </div>`;
+
+  return `<div class="card ec">
+    <div class="ec-top">🌱 끝까지 함께해줘서 고마워요</div>
+    <div class="ec-sub">이 루틴에서 <b>${n}일</b>을 읽었어요</div>
+    ${next}
+  </div>`;
+}
+
 // 루틴 진행도. 숫자 셋을 나란히 두면 셋 다 비슷해 보여서
 // 제일 중요한 '며칠째'를 막대로 크게 세우고 나머지 둘은 밑에 붙였다
 function progressCard(d, certs, talk) {
@@ -1334,6 +1377,7 @@ function certCard(c) {
       <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
       <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
       ${me && c.user_id === me.id ? `<div style="display:flex;gap:4px;flex-shrink:0;">
+        <button class="f-act" title="공유" aria-label="공유" onclick="shareCert(${c.id})">📤</button>
         <button class="f-act" title="수정" aria-label="수정" onclick="editCert(${c.id})">✏️</button>
         <button class="f-act" title="삭제" aria-label="삭제" onclick="delCert(${c.id})">🗑️</button></div>` : ''}
     </div>
@@ -1350,6 +1394,162 @@ function certCard(c) {
       </div>
     </div>
   </div>`;
+}
+
+// ── 인증 공유 카드 ─────────────────────────────────────
+// 사진 + 문장 + 책 제목 + 읽은 쪽 + 누적 며칠째. 이름은 넣지 않는다 —
+// 밖으로 나가는 그림이라 아이가 특정되면 안 된다
+
+// 그 인증에서 '어디부터 어디까지' 읽었나.
+// pageRange() 는 지금 쓰는 중인 값이라 최신 인증을 보지만, 여기선
+// 그 인증보다 앞선 것 중 가장 최근을 봐야 지난 기록도 맞게 나온다
+function pageRangeOf(c) {
+  if (!c.page_end) return null;
+  const prev = state.certs
+    .filter(x => x.user_id === c.user_id && x.routine_id === c.routine_id
+              && x.book_title === c.book_title && x.page_end
+              && new Date(x.created_at) < new Date(c.created_at))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  const from = (prev && prev.page_end < c.page_end) ? prev.page_end : 0;
+  return { from, to: c.page_end };
+}
+
+// 그날까지 이 사람이 읽은 날이 며칠째인가 (연속이 아니라 누적)
+function dayIndexOf(c) {
+  const days = new Set(state.certs
+    .filter(x => x.user_id === c.user_id && x.cert_date <= c.cert_date)
+    .map(x => x.cert_date));
+  return days.size;
+}
+
+// 아이폰 사파리는 font 단축 표기에 까다롭다. 안 먹으면 굵기를 버린다
+function setFont(ctx, weight, size) {
+  ctx.font = `${weight} ${size}px sans-serif`;
+  if (ctx.font.indexOf(String(size)) === -1) ctx.font = `${size}px sans-serif`;
+}
+
+// 한글은 글자 단위로 끊어도 자연스럽다
+function wrapText(ctx, text, maxW, maxLines) {
+  const out = []; let line = ''; let cut = false;
+  for (const ch of String(text)) {
+    if (ch === '\n') {
+      out.push(line); line = '';
+      if (out.length >= maxLines) { cut = true; break; }
+      continue;
+    }
+    const t = line + ch;
+    if (ctx.measureText(t).width > maxW && line) {
+      out.push(line); line = ch;
+      if (out.length >= maxLines) { cut = true; break; }
+    } else line = t;
+  }
+  if (!cut && line) out.push(line);
+  // 딱 맞게 끝났는데 말줄임을 붙이면 안 된다. 그래서 잘렸는지를 따로 기억한다
+  if (cut) {
+    let last = out[out.length - 1];
+    while (last.length > 1 && ctx.measureText(last + '…').width > maxW) last = last.slice(0, -1);
+    out[out.length - 1] = last + '…';
+  }
+  return out;
+}
+
+function loadImg(url) {
+  return new Promise((ok, no) => {
+    const i = new Image();
+    i.crossOrigin = 'anonymous';   // 안 붙이면 캔버스가 오염돼 저장이 막힌다
+    i.onload = () => ok(i);
+    i.onerror = () => no(new Error('사진을 불러오지 못했어요'));
+    i.src = url;
+  });
+}
+
+async function buildShareCard(c) {
+  const W = 1080, PH = 1080, PAD = 72;
+  const quote = (c.quote || c.content || '').trim();
+  const pr    = pageRangeOf(c);
+  const meta  = [
+    c.book_title ? `📖 ${c.book_title}` : '',
+    pr ? `${pr.from}~${pr.to}p` : '',
+  ].filter(Boolean).join('   ');
+  const foot = `누적 ${dayIndexOf(c)}일째 · ${String(c.cert_date).replace(/-/g, '.')}`;
+
+  // 높이를 먼저 잰다 — 문장 길이에 따라 아래 칸이 달라진다
+  const m = document.createElement('canvas').getContext('2d');
+  setFont(m, 'bold', 46);
+  const qLines = quote ? wrapText(m, quote, W - PAD*2, 4) : [];
+  const panelH = PAD + (qLines.length ? qLines.length * 64 + 34 : 0)
+               + (meta ? 44 : 0) + 40 + 34 + PAD;
+
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = PH + panelH;
+  const x = cv.getContext('2d');
+
+  // 사진 — 정사각으로 가운데를 잘라 채운다
+  const url = (c.photo_urls || [])[0];
+  if (url) {
+    try {
+      const im = await loadImg(url);
+      const sc = Math.max(W / im.width, PH / im.height);
+      const w = im.width * sc, h = im.height * sc;
+      x.drawImage(im, (W - w) / 2, (PH - h) / 2, w, h);
+    } catch (e) {
+      x.fillStyle = '#e9e6df'; x.fillRect(0, 0, W, PH);
+    }
+  } else {
+    const g = x.createLinearGradient(0, 0, W, PH);
+    g.addColorStop(0, '#83CA00'); g.addColorStop(1, '#5d8a2a');
+    x.fillStyle = g; x.fillRect(0, 0, W, PH);
+    setFont(x, 'bold', 140); x.fillStyle = '#fff';
+    x.textAlign = 'center'; x.fillText('📖', W/2, PH/2 + 50); x.textAlign = 'left';
+  }
+
+  // 아래 칸
+  x.fillStyle = '#fff'; x.fillRect(0, PH, W, panelH);
+  let y = PH + PAD + 40;
+
+  if (qLines.length) {
+    setFont(x, 'bold', 46); x.fillStyle = '#16161a';
+    qLines
+      .map((l, i) => (i === 0 ? '“' + l : l) + (i === qLines.length - 1 ? '”' : ''))
+      .forEach((l, i) => x.fillText(l, PAD, y + i*64));
+    y += qLines.length * 64 + 34;
+  }
+  if (meta) {
+    setFont(x, 'normal', 32); x.fillStyle = '#5a5a66';
+    x.fillText(meta, PAD, y); y += 44;
+  }
+  setFont(x, 'normal', 30); x.fillStyle = '#9a9aa6';
+  x.fillText(foot, PAD, y + 8);
+
+  // 워드마크
+  setFont(x, 'bold', 32); x.fillStyle = '#5d8a2a';
+  x.textAlign = 'right'; x.fillText('한끗독서', W - PAD, y + 8); x.textAlign = 'left';
+
+  return new Promise(ok => cv.toBlob(ok, 'image/png'));
+}
+
+async function shareCert(id) {
+  const c = state.certs.find(x => x.id === id); if (!c) return;
+  if (!me || c.user_id !== me.id) return;   // 남의 기록은 내보내지 않는다
+  toast('카드를 만드는 중이에요…');
+  let blob;
+  try { blob = await buildShareCard(c); }
+  catch (e) { return toast(e.message || '카드를 만들지 못했어요'); }
+  if (!blob) return toast('카드를 만들지 못했어요');
+
+  const name = `한끗독서_${String(c.cert_date).replace(/-/g, '')}.png`;
+  const file = new File([blob], name, { type: 'image/png' });
+
+  // 아이폰·안드로이드는 공유 시트로. 안 되면 내려받기
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('사진으로 저장했어요');
 }
 
 // '모두' 탭 — 루틴을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
