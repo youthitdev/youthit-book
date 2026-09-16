@@ -305,16 +305,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .rg[open] > summary > i { transform:rotate(180deg); }
 .rg-b { padding-top:2px; }
 
-.store { background:var(--card); border-radius:14px; margin-bottom:8px; overflow:hidden; }
-.store > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px;
-  padding:15px 16px; }
-.store > summary::-webkit-details-marker { display:none; }
-.store > summary > i { font-size:17px; color:var(--ink-3); transition:transform .2s; margin-left:auto; }
-.store[open] > summary > i { transform:rotate(180deg); }
-.store[open] > summary { padding-bottom:6px; }
-.store-b { padding:0 16px 15px; }
+.store { display:flex; width:100%; align-items:center; gap:10px; text-align:left;
+  background:var(--card); border:none; border-radius:14px; margin-bottom:8px;
+  padding:16px; cursor:pointer; font-family:inherit; color:inherit; }
+.store:active { background:#f4f4f6; }
+.store > i { font-size:17px; color:var(--ink-3); margin-left:auto; flex-shrink:0; }
 .store-n { font-size:15px; font-weight:700; }
-.store-i { font-size:13px; color:var(--ink-2); line-height:1.6; margin-bottom:8px; }
+.store-i { font-size:13px; color:var(--ink-2); line-height:1.6; margin-bottom:10px; }
 .store-row { display:flex; gap:7px; align-items:flex-start; font-size:13px; color:#444; line-height:1.5; margin-top:5px; }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
 .store-btns { display:flex; gap:8px; margin-top:12px; }
@@ -348,6 +345,21 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .ov-b { flex:1; overflow-y:auto; padding:18px; }
 .ov-b > div:not(:last-child) { margin-bottom:16px; }
 
+/* 아래에서 올라오는 시트 */
+.sheet { position:fixed; inset:0; z-index:60; display:none; align-items:flex-end; justify-content:center;
+  background:rgba(0,0,0,.42); }
+.sheet.on { display:flex; animation:shFade .18s ease; }
+.sheet-in { background:var(--card); width:100%; max-width:480px; border-radius:22px 22px 0 0;
+  padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px)); max-height:82vh; overflow-y:auto;
+  animation:shUp .22s cubic-bezier(.2,.8,.3,1); }
+@keyframes shFade { from { opacity:0 } to { opacity:1 } }
+@keyframes shUp { from { transform:translateY(24px) } to { transform:translateY(0) } }
+.sheet-grip { width:38px; height:4px; border-radius:99px; background:var(--line); margin:0 auto 16px; }
+.sheet-hd { display:flex; align-items:flex-start; gap:12px; margin-bottom:14px; }
+.sheet-t { font-size:18px; font-weight:800; letter-spacing:-.4px; }
+.sheet-s { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+.sheet-x { flex-shrink:0; width:30px; height:30px; border:none; background:var(--bg); border-radius:50%;
+  font-size:14px; color:var(--ink-3); cursor:pointer; line-height:1; }
 .toast { position:fixed; bottom:92px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.86); color:#fff; padding:12px 20px; border-radius:12px; font-size:13.5px; z-index:100; display:none; max-width:88%; text-align:center; line-height:1.5; }
 .toast.on { display:block; }
 .spin { text-align:center; padding:60px 20px; color:var(--ink-3); font-size:13px; }
@@ -570,6 +582,21 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     </div>
     <button class="btn btn-primary" id="rvSubmit" onclick="saveReview()">올리기</button>
     <button class="btn btn-line" id="rvDelete" style="display:none;" onclick="deleteReview()">지우기</button>
+  </div>
+</div>
+
+<!-- 서점 한 곳 (아래에서 올라오는 시트) -->
+<div class="sheet" id="shStore" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t" id="shStoreName"></div>
+        <div class="sheet-s" id="shStoreRegion"></div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet()" aria-label="닫기">✕</button>
+    </div>
+    <div id="shStoreBody"></div>
   </div>
 </div>
 
@@ -2530,9 +2557,17 @@ async function shareInvite() {
     openInvite();
   }
 }
-// 목록에서는 이름만. 눌러야 주소·시간이 펼쳐진다.
-// 서점이 여덟 곳만 돼도 한 곳에 여섯 줄씩이면 스크롤이 끝없이 길어진다
+// 목록에서는 이름만. 누르면 시트가 올라온다.
+// 서점이 여덟 곳만 돼도 한 곳에 여섯 줄씩 펼치면 스크롤이 끝없이 길어진다
 function storeCard(b) {
+  return `<button class="store" onclick="openStoreInfo(${b.id})">
+    <span class="store-n">${esc(b.name)}</span>
+    <i class="ti ti-chevron-right"></i>
+  </button>`;
+}
+
+function openStoreInfo(id) {
+  const b = state.stores.find(x => x.id === id); if (!b) return;
   const rows = [
     b.address && ['ti-map-pin', esc(b.address)],
     b.hours && ['ti-clock', esc(b.hours)],
@@ -2541,20 +2576,22 @@ function storeCard(b) {
   ].filter(Boolean);
   // 길찾기는 지도 API 대신 카카오맵 링크로 넘긴다 (키·도메인 등록 불필요)
   const map = b.address ? `https://map.kakao.com/link/search/${encodeURIComponent(b.address)}` : null;
-  return `<details class="store">
-    <summary><span class="store-n">${esc(b.name)}</span><i class="ti ti-chevron-down"></i></summary>
-    <div class="store-b">
-      ${b.intro ? `<div class="store-i">${esc(b.intro)}</div>` : ''}
-      ${rows.length
-        ? rows.map(([i,t]) => `<div class="store-row"><i class="ti ${i}"></i><span>${t}</span></div>`).join('')
-        : `<div class="store-row"><i class="ti ti-info-circle"></i><span>자세한 정보를 준비하고 있어요</span></div>`}
-      ${(map||b.link) ? `<div class="store-btns">
-        ${map ? `<a href="${map}" target="_blank" rel="noopener" title="길찾기" aria-label="길찾기">🗺️</a>` : ''}
-        ${b.link ? `<a href="${esc(b.link)}" target="_blank" rel="noopener" title="책방 소식" aria-label="책방 소식">📷</a>` : ''}
-      </div>` : ''}
-    </div>
-  </details>`;
+
+  $('shStoreName').textContent = b.name;
+  $('shStoreRegion').textContent = b.region || '';
+  $('shStoreBody').innerHTML = `
+    ${b.intro ? `<div class="store-i">${esc(b.intro)}</div>` : ''}
+    ${rows.length
+      ? rows.map(([i,t]) => `<div class="store-row"><i class="ti ${i}"></i><span>${t}</span></div>`).join('')
+      : `<div class="store-row"><i class="ti ti-info-circle"></i><span>자세한 정보를 준비하고 있어요</span></div>`}
+    ${(map||b.link) ? `<div class="store-btns">
+      ${map ? `<a href="${map}" target="_blank" rel="noopener" title="길찾기" aria-label="길찾기">🗺️</a>` : ''}
+      ${b.link ? `<a href="${esc(b.link)}" target="_blank" rel="noopener" title="책방 소식" aria-label="책방 소식">📷</a>` : ''}
+    </div>` : ''}`;
+  $('shStore').classList.add('on');
 }
+
+function closeSheet(id) { $(id || 'shStore').classList.remove('on'); }
 
 // ── 책 받았어요 ────────────────────────────────────────
 // 아이는 돈을 내지 않는다. 서점 외상으로 받아오고, 책값은 유스보이스가 서점에 보낸다
