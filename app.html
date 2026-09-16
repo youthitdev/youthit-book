@@ -302,7 +302,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
 .store-btns { display:flex; gap:8px; margin-top:12px; }
 .store-btns a { flex:1; text-align:center; padding:9px; border-radius:10px; font-size:13px; font-weight:700; text-decoration:none; }
-.region-t { font-size:13px; font-weight:700; color:var(--green-d); margin:16px 0 8px; }
+.region-t { font-size:13px; font-weight:700; color:var(--green-d); margin:20px 0 9px; display:flex; align-items:baseline; gap:7px; }
+.region-t span { font-size:11.5px; font-weight:600; color:var(--ink-3); }
+/* 서점 탭 맨 위 — 지금 갈 수 있나 */
+.sg { background:#f7fbf0; border:1px solid #d8ebb8; border-radius:15px; padding:16px 17px; }
+.sg b { display:block; font-size:14.5px; font-weight:800; }
+.sg span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.7; margin-top:5px; }
+.sg.ok b { color:var(--green-d); }
 
 /* 오버레이 */
 .ov { position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; max-width:480px; margin:0 auto; }
@@ -348,6 +354,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <div class="on" data-tab="home" onclick="go('home')"><i class="ti ti-home"></i>홈</div>
     <div data-tab="cert" onclick="go('cert')"><i class="ti ti-camera"></i>인증</div>
     <div data-tab="feed" onclick="go('feed')"><i class="ti ti-message-circle"></i>후기</div>
+    <div data-tab="store" onclick="go('store')"><i class="ti ti-building-store"></i>서점</div>
     <div data-tab="my" onclick="go('my')"><i class="ti ti-user"></i>MY</div>
   </nav>
 </div>
@@ -480,13 +487,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     </div>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
   </div>
-</div>
-
-<!-- 책방 목록 -->
-<div class="ov" id="ovStores">
-  <div class="ov-h"><button onclick="closeOv('ovStores')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">책 사러 가기</div><div class="t">함께하는 동네책방</div></div></div>
-  <div class="ov-b" id="ovStoresBody"></div>
 </div>
 
 <!-- 책 받았어요 -->
@@ -1054,10 +1054,11 @@ function go(t) {
 function render() {
   const b = $('tabBody');
   // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
-  if (isGuest() && tab !== 'home') { b.innerHTML = guestWall(); return; }
+  if (isGuest() && tab !== 'home' && tab !== 'store') { b.innerHTML = guestWall(); return; }
   if (tab === 'home') b.innerHTML = viewHome();
   else if (tab === 'cert') b.innerHTML = viewCert();
   else if (tab === 'feed') b.innerHTML = viewFeed();
+  else if (tab === 'store') b.innerHTML = viewStores();
   else b.innerHTML = viewMy();
 }
 
@@ -1139,11 +1140,7 @@ function viewHome() {
       <div class="sec-t">지금 모집 중인 루틴</div>
       ${others.length ? routineGrid(others)
         : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}
-      <div class="sec-t">함께하는 동네책방</div>
-      <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-        <span style="font-weight:700;">책방 ${state.stores.filter(s=>s.active).length}곳 보기</span>
-        <i class="ti ti-chevron-right" style="color:var(--ink-3);"></i>
-      </div>`;
+      `;
   }
 
   let h = statsStrip();
@@ -1252,7 +1249,7 @@ function endedCard(r) {
     ? `<div class="ec-next ok">
          <b>🎫 책을 받을 수 있어요</b>
          <span>쓸 수 있는 교환권 ${p.left}장 · 가까운 동네책방에서 골라보세요</span>
-         <button class="btn btn-primary" style="margin-top:12px;" onclick="openStores()">책방 찾기</button>
+         <button class="btn btn-primary" style="margin-top:12px;" onclick="go('store')">책방 찾기</button>
        </div>`
     : `<div class="ec-next">
          <b>책 한 권까지 ${won(p.to_next)}P 남았어요</b>
@@ -1351,7 +1348,7 @@ function balanceBlock() {
       ${pend
         ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
-            <button class="btn-line" onclick="openStores()">책방 찾기</button>
+            <button class="btn-line" onclick="go('store')">책방 찾기</button>
             ${p.left > 0 ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 받았어요</button>` : ''}
           </div>`}
     </div>`;
@@ -1845,11 +1842,7 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${myBooksBlock()}
-    ${kkutCard()}
-    <div class="sec-t">책방</div>
-    <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-weight:700;">함께하는 동네책방 보기</span><i class="ti ti-chevron-right" style="color:var(--ink-3);"></i>
-    </div>`;
+    ${kkutCard()}`;
 }
 
 // ── 내 정보 ────────────────────────────────────────────
@@ -2402,16 +2395,63 @@ async function submitCert() {
 }
 
 // ── 책방 ───────────────────────────────────────────────
-function openStores() {
+// 서점 탭. 교환권을 쓰는 곳이자 이 서비스가 아이를 집 밖으로 부르는 유일한 곳이라
+// 탭 자리를 하나 내줬다. 다만 '아직 못 가는 곳 목록' 이 되지 않게 맨 위에 진행도를 둔다
+function storeGoal() {
+  if (isGuest()) return `<div class="sg">
+      <b>교환권으로 책을 바꾸는 동네책방이에요</b>
+      <span>매일 읽고 포인트를 모으면 여기서 책 한 권을 골라요.</span>
+    </div>`;
+  if (me.role === 'kkutjjang') return `<div class="sg">
+      <b>아이들이 책을 받으러 가는 곳이에요</b>
+      <span>아이는 돈을 내지 않아요. 책값은 유스보이스가 책방에 보냅니다.</span>
+    </div>`;
+
+  const p = myPoints();
+  const cap = won(state.settings.voucher_max_amount || 20000);
+  if (p.left > 0) return `<div class="sg ok">
+      <b>🎫 지금 갈 수 있어요 · 교환권 ${p.left}장</b>
+      <span>${cap}원 이하 책 한 권을 골라 오세요. 돈은 내지 않아요.</span>
+    </div>`;
+
+  const pct = Math.min(100, Math.round((p.points % p.per) / Math.max(p.per, 1) * 100));
+  return `<div class="sg">
+      <b>${won(p.to_next)}P만 더 모으면 여기서 책을 골라요</b>
+      <div class="bal-bar" style="background:#e9e9ef;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
+      <span>오늘 인증하면 ${state.settings.points_per_cert ?? 10}P 쌓여요.</span>
+    </div>`;
+}
+
+function viewStores() {
   const list = state.stores.filter(s => s.active);
-  const b = $('ovStoresBody');
-  if (!list.length) { b.innerHTML = `<div class="empty">아직 등록된 책방이 없어요</div>`; openOv('ovStores'); return; }
+  const head = storeGoal();
+  if (!list.length) return head +
+    `<div class="empty">아직 함께하는 책방이 없어요.<br>곧 늘어날 거예요.</div>`;
+
   const byRegion = {};
-  list.forEach(s => { const k = s.region || '그 외'; (byRegion[k] = byRegion[k]||[]).push(s); });
-  b.innerHTML = `<div style="font-size:13px;color:var(--ink-3);line-height:1.6;">교환권으로 책을 바꿀 수 있는 동네책방이에요. 가까운 곳으로 가면 돼요.</div>`
-    + Object.keys(byRegion).sort().map(rg => `<div class="region-t">${esc(rg)}</div>`
-      + byRegion[rg].map(storeCard).join('')).join('');
-  openOv('ovStores');
+  list.forEach(b => {
+    const k = (b.region || '').trim() || '그 외';
+    (byRegion[k] = byRegion[k] || []).push(b);
+  });
+
+  // 내 동네를 맨 위로. 지역 표기가 '강원 속초' / '서울 성동구' 처럼 제각각이라
+  // 같은 동네(2점) → 같은 시·도(1점) 순으로 점수를 매긴다
+  const mine = String(me?.region || '').trim();
+  const myCity = mine.split(/\s+/)[0] || '';
+  const score = rg => {
+    if (!mine) return 0;
+    if (rg === mine || rg.startsWith(mine) || mine.startsWith(rg)) return 2;
+    return myCity && rg.startsWith(myCity) ? 1 : 0;
+  };
+  const keys = Object.keys(byRegion).sort((a, b) => {
+    if (score(a) !== score(b)) return score(b) - score(a);
+    if ((a === '그 외') !== (b === '그 외')) return a === '그 외' ? 1 : -1;
+    return a.localeCompare(b, 'ko');
+  });
+
+  return head + keys.map(rg =>
+    `<div class="region-t">${score(rg) ? '📍 ' : ''}${esc(rg)}<span>${byRegion[rg].length}곳</span></div>`
+    + byRegion[rg].map(storeCard).join('')).join('');
 }
 function storeCard(b) {
   const rows = [
