@@ -147,6 +147,22 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .hs b small { font-size:11.5px; font-weight:700; color:var(--ink-3); margin-left:2px; letter-spacing:0; }
 .hs span { display:block; font-size:11.5px; color:var(--ink-3); margin-top:3px; font-weight:600;
            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* 루틴 진행도 (인증 탭) */
+.rprog { padding:16px 17px 15px; margin-bottom:12px; }
+.rp-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.rp-top b { font-size:24px; font-weight:800; letter-spacing:-.7px; }
+.rp-top b small { font-size:13px; font-weight:700; color:var(--ink-3); margin-left:2px; letter-spacing:0; }
+.rp-top .rp-em { font-size:19px; margin-left:5px; }
+.rp-top > span { font-size:12.5px; color:var(--ink-3); font-weight:600; }
+.rp-bar { height:9px; border-radius:99px; background:var(--bg); overflow:hidden; margin:11px 0 0; }
+.rp-bar i { display:block; height:100%; border-radius:99px; background:var(--green);
+            transition:width .35s ease; }
+.rp-sub { display:flex; gap:16px; margin-top:13px; padding-top:13px; border-top:1px solid var(--line); }
+.rp-sub > span { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-3); font-weight:600; }
+.rp-sub i { width:26px; height:26px; border-radius:9px; display:grid; place-items:center;
+            font-size:13px; font-style:normal; line-height:1; flex-shrink:0; }
+.rp-sub b { color:var(--ink); font-size:14px; font-weight:800; }
 .cgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .cg img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -1143,12 +1159,7 @@ function viewCert() {
     const done = didToday(r.id);
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
-      <div class="stats s3" style="margin-bottom:12px;">
-        <div><b>${d ? (d.ended ? '완주' : d.n) : '-'}${d && !d.ended ? `<small>일째</small>` : ''}</b>
-             <span>${d ? `${d.total}일 중` : '기간 미정'}</span></div>
-        <div><b>${won(cs.length)}</b><span>우리 인증</span></div>
-        <div><b>${won(talk)}</b><span>우리 소통</span></div>
-      </div>
+      ${progressCard(d, cs.length, talk)}
       ${r.status === 'done'
         ? `<div class="card" style="text-align:center;color:var(--ink-3);">끝난 루틴이에요. 함께해줘서 고마워요 🌱</div>`
         : done
@@ -1165,6 +1176,26 @@ function viewCert() {
 }
 
 // 루틴이 며칠짜리고 오늘이 며칠째인지
+// 루틴 진행도. 숫자 셋을 나란히 두면 셋 다 비슷해 보여서
+// 제일 중요한 '며칠째'를 막대로 크게 세우고 나머지 둘은 밑에 붙였다
+function progressCard(d, certs, talk) {
+  const pct = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
+  const head = d
+    ? (d.ended ? `<b>완주<span class="rp-em">🎉</span></b>` : `<b>${d.n}<small>일째</small></b>`)
+    : `<b>-</b>`;
+  return `<div class="card rprog">
+    <div class="rp-top">
+      ${head}
+      <span>${d ? `${d.total}일 중` : '기간 미정'}</span>
+    </div>
+    ${d ? `<div class="rp-bar"><i style="width:${pct}%"></i></div>` : ''}
+    <div class="rp-sub">
+      <span><i style="background:#FFF4DE">📸</i>우리 인증 <b>${won(certs)}</b></span>
+      <span><i style="background:#ECEDFB">💬</i>우리 소통 <b>${won(talk)}</b></span>
+    </div>
+  </div>`;
+}
+
 function routineDay(r) {
   if (!r.start_date || !r.end_date) return null;
   const d0 = new Date(r.start_date + 'T00:00:00');
