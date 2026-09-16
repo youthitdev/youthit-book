@@ -112,6 +112,15 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
 .sec-t { font-size:15px; font-weight:800; margin:22px 0 10px; letter-spacing:-.3px; }
+.sec-n { font-size:12.5px; font-weight:700; color:var(--ink-3); margin-left:4px; }
+/* 내가 읽은 책 — 참여할 때 올린 표지 */
+.bgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
+.bk-img { aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#efece6;
+          display:grid; place-items:center; }
+.bk-img img { width:100%; height:100%; object-fit:cover; display:block; }
+.bk-img span { font-size:26px; opacity:.45; }
+.bk-t { font-size:11.5px; line-height:1.45; color:var(--ink-2); margin-top:6px;
+        display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .sec-t:first-child { margin-top:0; }
 .empty { text-align:center; padding:40px 16px; color:var(--ink-3); font-size:13.5px; line-height:1.7; }
 .chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 9px; border-radius:8px; }
@@ -535,6 +544,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <button class="btn btn-primary" id="rvSubmit" onclick="saveReview()">올리기</button>
     <button class="btn btn-line" id="rvDelete" style="display:none;" onclick="deleteReview()">지우기</button>
   </div>
+</div>
+
+<!-- 내가 읽은 책 -->
+<div class="ov" id="ovBooks">
+  <div class="ov-h"><button onclick="closeOv('ovBooks')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">MY</div><div class="t">내가 읽은 책</div></div></div>
+  <div class="ov-b" id="ovBooksBody"></div>
 </div>
 
 <!-- 내 정보 -->
@@ -1762,6 +1778,56 @@ function kkutCard() {
     </div>`;
 }
 
+// 내가 읽은 책 — 루틴에 참여할 때 올린 표지 사진을 그대로 쓴다
+function myBooks() {
+  if (!me) return [];
+  const m = new Map();
+  const add = (title, photo, when) => {
+    const t = (title || '').trim();
+    if (!t && !photo) return;
+    const k = t || ('img:' + photo);
+    const cur = m.get(k) || { title: t, photo: null, last: '' };
+    if (photo && !cur.photo) cur.photo = photo;
+    if ((when || '') > cur.last) cur.last = when || '';
+    m.set(k, cur);
+  };
+  // 표지 사진은 참여할 때 올린 것에만 있다
+  state.parts.filter(x => x.user_id === me.id)
+    .forEach(x => add(x.book_title, x.book_photo_url, x.joined_at));
+  // 중간에 책을 바꿨으면 인증에만 남아 있다 (사진은 없다)
+  state.certs.filter(x => x.user_id === me.id)
+    .forEach(x => add(x.book_title, null, x.created_at));
+  return [...m.values()].sort((a, b) => String(b.last).localeCompare(String(a.last)));
+}
+
+function bookTile(b) {
+  return `<div class="bk">
+    <div class="bk-img">${b.photo
+      ? `<img src="${esc(b.photo)}" loading="lazy" alt="">`
+      : `<span>📖</span>`}</div>
+    ${b.title ? `<div class="bk-t">${esc(b.title)}</div>` : ''}
+  </div>`;
+}
+
+const BOOKS_PREVIEW = 6;   // 3열 × 2줄
+
+function myBooksBlock() {
+  const all = myBooks();
+  if (!all.length) return '';
+  const shown = all.slice(0, BOOKS_PREVIEW);
+  return `<div class="sec-t">내가 읽은 책 <span class="sec-n">${all.length}</span></div>
+    <div class="bgrid">${shown.map(bookTile).join('')}</div>
+    ${all.length > BOOKS_PREVIEW
+      ? `<button class="btn btn-line" style="margin-top:10px;" onclick="openBooks()">더보기 (${all.length - BOOKS_PREVIEW}권 더)</button>`
+      : ''}`;
+}
+
+function openBooks() {
+  const all = myBooks();
+  $('ovBooksBody').innerHTML = `<div class="bgrid">${all.map(bookTile).join('')}</div>`;
+  openOv('ovBooks');
+}
+
 function viewMy() {
   const total = state.certs.filter(c => c.user_id === me.id).length;
   const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
@@ -1778,7 +1844,7 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">${me.role==='kkutjjang'?'이끄는 루틴':'참여 루틴'}</div></div>
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
-    ${books.length ? `<div class="sec-t">내가 읽은 책</div><div class="card">${books.map(b=>`<div style="font-size:14px;padding:6px 0;">📖 ${esc(b)}</div>`).join('')}</div>` : ''}
+    ${myBooksBlock()}
     ${kkutCard()}
     <div class="sec-t">책방</div>
     <div class="card" onclick="openStores()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
@@ -1856,7 +1922,7 @@ function openRoutine(id) {
           <div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
           <div id="apBookBox"></div>
           <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
-          <div class="hint">시작할 책을 한 장 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
+          <div class="hint">시작할 책의 표지를 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
           <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
           <input type="text" id="applyBookTitle" placeholder="예) 속초에서의 겨울" maxlength="60" oninput="checkApply()">
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
@@ -2599,7 +2665,8 @@ function enterDemo(role) {
       max_people:8, points_per_cert:10, camera_only:true, status:'done', led_by: kid },
   ];
   state.parts = [
-    { routine_id:901, user_id:y1, status:'approved', book_title:'속초에서의 겨울', joined_at:day(7) },
+    { routine_id:901, user_id:y1, status:'approved', book_title:'속초에서의 겨울', joined_at:day(7),
+      book_photo_url:'https://qvpahwvihvkasrznboaa.supabase.co/storage/v1/object/public/routine-covers/20e305ef-c435-4712-b633-8795c724f136/cover_1789454390859.jpg' },
     { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
     { routine_id:901, user_id:'u4', status:'approved', book_photo_url:null, note:'책은 좋아하는데 혼자서는 잘 안 읽게 돼요.', joined_at:day(1) },
