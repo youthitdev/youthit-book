@@ -59,6 +59,24 @@ tr:hover td { background:#fcfcfd; }
 .btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 
+/* 끗짱 승인 */
+.kk { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:17px 18px; margin-bottom:13px; }
+.kk-h { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.kk-n { font-size:15.5px; font-weight:700; }
+.kk-m { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+.kk-g { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 16px; margin:14px 0; padding:12px 14px; background:var(--bg); border-radius:10px; }
+.kk-g > div { display:flex; gap:8px; font-size:12.5px; }
+.kk-g b { color:var(--ink-3); font-weight:600; flex-shrink:0; min-width:48px; }
+.kk-q { margin-top:12px; }
+.kk-q b { display:block; font-size:11.5px; color:var(--ink-3); margin-bottom:4px; }
+.kk-q p { margin:0; font-size:13.5px; line-height:1.7; white-space:pre-wrap; }
+.kk-q.no p { color:#b3003c; }
+.kk-a { display:flex; gap:8px; margin-top:16px; }
+.pill { font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:99px; flex-shrink:0; }
+.pill.ok   { background:#e8f6ec; color:#1b7a3c; }
+.pill.no   { background:#fdeaef; color:#b3003c; }
+.pill.wait { background:#fff4e0; color:#a35c00; }
+
 /* 모달 */
 .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
 .overlay.on { display:flex; }
@@ -122,7 +140,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="sum" id="summary"></div>
 
   <div class="tabs">
-    <button class="tab on" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
+    <button class="tab on" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
+    <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
@@ -279,6 +298,19 @@ let DB = {
     { id:'s2', nickname:'민들레',     email:'dan@example.com' },
     { id:'s3', nickname:'조용한후원자', email:'quiet@example.com' },
   ],
+  kkutApps: [
+    { user_id:'k1', name:'김유스', email:'kkut@example.com', age:34,
+      affiliation:'속초 오래된책방', region:'강원 속초', contact:'010-1234-5678',
+      intro:'속초에서 5년째 작은 책방을 하고 있습니다. 소설을 주로 읽고, 요즘은 에세이를 자주 봐요.\n동네 중학교에서 독서 동아리를 두 해 도왔습니다.',
+      motive:'책방에 혼자 오는 아이들을 자주 봅니다. 말을 붙이기는 어려워도, 같은 책을 읽는 사이라면 다르겠다 싶었어요.',
+      status:'pending', reject_reason:null, applied_at:'2026-09-14', decided_at:null, routine_count:0 },
+    { user_id:'k2', name:'박한끗', email:'han@example.com', age:41,
+      affiliation:'없음', region:'서울 은평', contact:'010-2222-3333',
+      intro:'회사 다니면서 주말에 책을 읽습니다.', 
+      motive:'좋은 일 같아서 신청합니다.',
+      status:'rejected', reject_reason:'청소년과 함께해 본 경험이나 어떤 마음인지가 잘 드러나지 않아, 이번에는 어렵게 되었습니다. 조금 더 적어서 다시 신청해 주세요.',
+      applied_at:'2026-09-10', decided_at:'2026-09-11', routine_count:0 },
+  ],
   charges: [
     { id:1, sponsor_id:'s1', amount:300000, book_fund_amount:240000, operation_fee_amount:60000,
       remaining_amount:0,      status:'completed', charged_at:'2026-06-05', source:'donus' },
@@ -320,7 +352,7 @@ let DB = {
   ],
 };
 
-let tab = 'pending';
+let tab = 'kkut';
 let settleTargetId = null;
 
 // ── 집계 ────────────────────────────────────────────────
@@ -363,6 +395,7 @@ function renderSummary() {
     <div class="sum-c"><div class="sum-l">남은 도서기금</div><div class="sum-v num">${won(fundLeft())}<small>원</small></div></div>
     <div class="sum-c ${p.pending ? 'hl' : ''}"><div class="sum-l">정산 대기</div><div class="sum-v num">${p.pending}<small>건</small></div></div>
     <div class="sum-c ${p.unpaidCnt ? 'hl' : ''}"><div class="sum-l">서점 입금 대기</div><div class="sum-v num">${won(p.unpaidSum)}<small>원</small></div></div>`;
+  document.getElementById('cntKkut').textContent = ` ${(DB.kkutApps || []).filter(a => a.status === 'pending').length}`;
   document.getElementById('cntPending').textContent = ` ${p.pending}`;
   document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
   document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
@@ -372,11 +405,91 @@ function renderSummary() {
 
 function renderPanel() {
   const el = document.getElementById('panel');
+  if (tab === 'kkut')     return el.innerHTML = viewKkut();
   if (tab === 'pending')  return el.innerHTML = viewPending();
   if (tab === 'settled')  return el.innerHTML = viewSettled();
   if (tab === 'stores')   return el.innerHTML = viewStores();
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   el.innerHTML = viewCharges();
+}
+
+// 끗짱 승인.
+// 청소년과 한 그룹에 들어가는 어른이라, 돈보다 먼저 봐야 하는 화면이라 첫 탭에 둔다.
+// 승인 전에는 루틴을 못 만들고 아이들 기록이 있는 화면도 열리지 않는다
+function viewKkut() {
+  const rows = DB.kkutApps || [];
+  const wait = rows.filter(a => a.status === 'pending');
+  const done = rows.filter(a => a.status !== 'pending');
+
+  const card = a => {
+    const badge = a.status === 'approved' ? '<span class="pill ok">승인</span>'
+                : a.status === 'rejected' ? '<span class="pill no">반려</span>'
+                : '<span class="pill wait">심사 대기</span>';
+    return `
+    <div class="kk">
+      <div class="kk-h">
+        <div>
+          <div class="kk-n">${esc(a.name)} <span class="muted" style="font-weight:500;">${a.age}세</span></div>
+          <div class="kk-m">${esc(a.affiliation)} · ${esc(a.region)}</div>
+        </div>
+        ${badge}
+      </div>
+      <div class="kk-g">
+        <div><b>연락처</b><span>${esc(a.contact)}</span></div>
+        <div><b>이메일</b><span>${esc(a.email)}</span></div>
+        <div><b>신청일</b><span>${fmtDate(a.applied_at)}</span></div>
+        <div><b>만든 루틴</b><span>${a.routine_count}개</span></div>
+      </div>
+      <div class="kk-q"><b>어떤 분인가요</b><p>${esc(a.intro)}</p></div>
+      <div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>
+      ${a.status === 'rejected' && a.reject_reason
+        ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
+      <div class="kk-a">
+        ${a.status !== 'approved'
+          ? `<button class="btn btn-dark" onclick="decideKkut('${a.user_id}', true)">승인하기</button>` : ''}
+        ${a.status !== 'rejected'
+          ? `<button class="btn btn-line" onclick="decideKkut('${a.user_id}', false)">반려하기</button>` : ''}
+      </div>
+    </div>`;
+  };
+
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">끗짱 승인</div>
+    <div class="panel-d">승인해야 루틴을 만들 수 있고, 청소년 기록 화면이 열립니다.
+      연락처로 한 번 통화해 보고 누르시는 걸 권합니다.</div></div>
+  </div>
+  ${wait.length ? wait.map(card).join('') : `<div class="empty">심사를 기다리는 신청이 없습니다.</div>`}
+  ${done.length ? `<div class="panel-t" style="margin:26px 0 12px;font-size:14px;">지난 심사 ${done.length}건</div>
+    ${done.map(card).join('')}` : ''}`;
+}
+
+async function decideKkut(userId, approve) {
+  const a = (DB.kkutApps || []).find(x => x.user_id === userId);
+  const who = a ? a.name : '이 사람';
+  let reason = null;
+
+  if (approve) {
+    if (!confirm(`${who} 님을 끗짱으로 승인할까요?\n\n승인하면 루틴을 만들고 청소년들의 기록을 볼 수 있게 됩니다.`)) return;
+  } else {
+    reason = prompt(`${who} 님에게 전할 반려 사유를 적어주세요.\n신청자 화면에 그대로 보입니다.`);
+    if (reason === null) return;
+    if (!reason.trim()) return alert('반려 사유를 적어주세요.');
+  }
+
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.rpc('decide_kkut_application',
+    { p_user: userId, p_approve: approve, p_reason: reason });
+  if (error) return alert('처리하지 못했어요: ' + error.message);
+
+  await loadKkutApps();
+  render();
+}
+
+async function loadKkutApps() {
+  const { data, error } = await sb.rpc('kkut_applications_admin');
+  if (error) { console.warn('끗짱 신청 목록', error.message); return; }
+  DB.kkutApps = data || [];
 }
 
 // 후원자 화면에 내보낼 문장 고르기.
@@ -743,6 +856,8 @@ async function loadLive() {
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
     allocs: p.consumption_allocations || [],
   }));
+
+  await loadKkutApps();
 
   // 책방별 구매 건수
   DB.purchaseCounts = {};

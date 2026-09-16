@@ -84,6 +84,15 @@ select.ph { color:var(--ink-3); }
 /* 헤더/탭 */
 header { position:sticky; top:0; z-index:20; background:var(--green); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
 header.k { background:var(--pink); }
+
+/* 끗짱 승인 대기 화면 */
+.gate-card { background:#fff; border:1px solid var(--line); border-radius:15px; padding:22px 18px; text-align:center; }
+.gate-ico { font-size:34px; line-height:1; margin-bottom:10px; }
+.gate-t { font-size:17px; font-weight:800; margin-bottom:8px; }
+.gate-s { font-size:13px; line-height:1.7; color:var(--ink-2); }
+.gate-why { font-size:12.5px; line-height:1.7; color:var(--ink-2); background:#f7f7f8; border-radius:12px; padding:13px 15px; }
+.gate-why b { display:block; margin-bottom:3px; color:var(--ink); }
+#kkutBody .auth-err { background:#fff1f4; border:1px solid #ffc9d6; color:#b3003c; }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
 .body { padding:18px; }
@@ -272,6 +281,15 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <div data-tab="feed" onclick="go('feed')"><i class="ti ti-message-circle"></i>후기</div>
     <div data-tab="my" onclick="go('my')"><i class="ti ti-user"></i>MY</div>
   </nav>
+</div>
+
+<!-- 끗짱 승인 대기 · 신청서 -->
+<div class="app" id="kkutScr" style="display:none;">
+  <header id="kkutHdr" class="k">
+    <div><span class="h-title">한끗독서</span><span class="h-badge">끗짱</span></div>
+    <button onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+  </header>
+  <div class="body" id="kkutBody" style="padding:18px;"></div>
 </div>
 
 <!-- 루틴 상세 -->
@@ -577,6 +595,140 @@ async function loadMe(user) {
   return data;
 }
 
+// ── 끗짱 승인 ──────────────────────────────────────────
+// 신청서에는 나이·연락처가 들어 있어 청소년에게 보이면 안 된다.
+// profiles 가 아니라 별도 테이블(kkut_applications)에 두고 RLS로 본인·관리자만 읽는다
+async function loadKkutApp() {
+  const { data } = await sb.from('kkut_applications').select('*').maybeSingle();
+  state.kkutApp = data || null;
+  return state.kkutApp;
+}
+
+function renderKkutGate() {
+  const a = state.kkutApp;
+
+  if (a && a.status === 'pending') {
+    $('kkutBody').innerHTML = `
+      <div class="gate-card">
+        <div class="gate-ico">🕰️</div>
+        <div class="gate-t">신청서를 잘 받았어요</div>
+        <div class="gate-s">
+          운영진이 읽어보고 연락드릴게요. 보통 2~3일 걸려요.<br>
+          적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드립니다.
+        </div>
+      </div>
+      <div class="gate-why">
+        <b>왜 기다려야 하나요?</b>
+        끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.
+        아이들이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 엽니다.
+      </div>
+      <div style="text-align:center;margin-top:18px;">
+        <b style="font-size:13px;color:var(--ink-3);cursor:pointer;" onclick="reloadKkutGate()">새로고침</b>
+      </div>`;
+    return;
+  }
+
+  const rejected = a && a.status === 'rejected';
+  const v = k => esc(a?.[k] ?? '');
+
+  $('kkutBody').innerHTML = `
+    ${rejected ? `
+      <div class="gate-card" style="background:#fff5f5;border-color:#ffd9d9;">
+        <div class="gate-ico">✉️</div>
+        <div class="gate-t">이번에는 함께하기 어려웠어요</div>
+        <div class="gate-s" style="white-space:pre-wrap;">${esc(a.reject_reason || '')}</div>
+        <div class="gate-s" style="margin-top:10px;">내용을 고쳐서 다시 신청할 수 있어요.</div>
+      </div>` : `
+      <div class="gate-card">
+        <div class="gate-ico">📖</div>
+        <div class="gate-t">끗짱으로 함께해 주셔서 고마워요</div>
+        <div class="gate-s">
+          끗짱은 청소년과 한 그룹에서 매일 책 이야기를 나누는 사람이에요.
+          아이들이 안심하고 지낼 수 있도록, 어떤 분인지 먼저 알려주세요.
+        </div>
+      </div>`}
+
+    <div id="kkutErr" class="auth-err" style="display:none;margin:14px 0 0;"></div>
+
+    <div style="margin-top:18px;">
+      <div class="field-label">이름</div>
+      <input type="text" value="${esc(me.name)}" disabled style="background:#f4f4f5;color:var(--ink-3);">
+      <div class="hint">가입할 때 적은 이름이에요. MY에서 바꿀 수 있어요.</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <div style="width:110px;flex-shrink:0;">
+        <div class="field-label">나이 <span class="req">* 필수</span></div>
+        <input type="number" id="kAge" min="14" max="100" value="${v('age')}" placeholder="34">
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="field-label">활동 지역 <span class="req">* 필수</span></div>
+        <input type="text" id="kRegion" maxlength="30" value="${v('region')}" placeholder="강원 속초">
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">소속 <span class="req">* 필수</span></div>
+      <input type="text" id="kAff" maxlength="60" value="${v('affiliation')}" placeholder="유스보이스 / 속초 OO책방 / 프리랜서">
+      <div class="hint">직장·학교·단체를 적어주세요. 없으면 '없음'이라고 적어도 괜찮아요.</div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">연락처 <span class="req">* 필수</span></div>
+      <input type="tel" id="kContact" maxlength="40" value="${v('contact')}" placeholder="010-0000-0000">
+      <div class="hint">운영진이 확인 연락을 드릴 번호예요. 청소년에게는 보이지 않습니다.</div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">어떤 분인가요 <span class="req">* 필수</span></div>
+      <textarea id="kIntro" rows="5" maxlength="500" placeholder="하는 일, 요즘 읽는 책, 청소년을 만나본 경험이 있다면 그 이야기까지 적어주세요.">${v('intro')}</textarea>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">어떤 마음으로 함께하고 싶으신가요 <span class="req">* 필수</span></div>
+      <textarea id="kMotive" rows="5" maxlength="500" placeholder="왜 끗짱을 하고 싶은지, 아이들과 어떻게 지내고 싶은지 적어주세요.">${v('motive')}</textarea>
+    </div>
+
+    <div class="gate-why" style="margin-top:18px;">
+      <b>적어주신 내용은 운영진만 봅니다.</b>
+      나이·연락처·소속은 청소년에게 보이지 않아요.
+      아이들에게 보이는 소개는 루틴을 만들 때 따로 적습니다.
+    </div>
+
+    <button class="btn btn-primary" id="kSubmit" style="margin-top:18px;" onclick="submitKkutApp()">
+      ${rejected ? '고쳐서 다시 신청하기' : '신청서 보내기'}
+    </button>`;
+}
+
+async function reloadKkutGate() {
+  await loadKkutApp();
+  renderKkutGate();
+}
+
+async function submitKkutApp() {
+  const err = m => { const e = $('kkutErr'); e.textContent = m; e.style.display = ''; window.scrollTo(0,0); };
+  const age     = parseInt($('kAge').value, 10);
+  const region  = $('kRegion').value.trim();
+  const aff     = $('kAff').value.trim();
+  const contact = $('kContact').value.trim();
+  const intro   = $('kIntro').value.trim();
+  const motive  = $('kMotive').value.trim();
+
+  if (!(age >= 14 && age <= 100)) return err('나이를 확인해주세요.');
+  if (!region)  return err('활동 지역을 적어주세요.');
+  if (!aff)     return err('소속을 적어주세요. 없으면 없음이라고 적어도 괜찮아요.');
+  if (!contact) return err('연락처를 적어주세요.');
+  if (intro.length  < 20) return err('어떤 분인지 조금만 더 적어주세요. (20자 이상)');
+  if (motive.length < 20) return err('어떤 마음으로 함께하고 싶은지 조금만 더 적어주세요. (20자 이상)');
+
+  const btn = $('kSubmit'); btn.disabled = true; btn.textContent = '보내는 중…';
+  const row = { user_id: me.id, age, region, affiliation: aff, contact, intro, motive };
+  // status·applied_at 은 보내지 않는다. 서버 트리거가 정한다
+  const { error } = await sb.from('kkut_applications')
+    .upsert(row, { onConflict: 'user_id' });
+
+  if (error) {
+    btn.disabled = false; btn.textContent = '신청서 보내기';
+    return err(error.message || '보내지 못했어요. 잠시 뒤 다시 시도해주세요.');
+  }
+  await reloadKkutGate();
+}
+
 // 로그인 없이도 루틴을 둘러볼 수 있다. 청소년의 이름·사진·인증 기록은
 // RLS가 익명에게 막고 있으므로, 게스트에게는 루틴과 책방만 보인다.
 const isGuest = () => !me;
@@ -612,7 +764,21 @@ async function enter() {
   me = await loadMe(user);
   if (!me) { authError('프로필을 불러오지 못했어요. 다시 시도해주세요.'); return; }
 
+  // 끗짱은 관리자 승인을 받아야 들어온다. 청소년을 만나는 자리라서,
+  // 승인 전에는 아이들의 이름·사진·기록이 있는 화면을 아예 열지 않는다
+  if (me.role === 'kkutjjang') {
+    await loadKkutApp();
+    if (state.kkutApp?.status !== 'approved') {
+      $('authScr').style.display = 'none';
+      $('appScr').style.display  = 'none';
+      $('kkutScr').style.display = '';
+      renderKkutGate();
+      return;
+    }
+  }
+
   $('authScr').style.display = 'none';
+  $('kkutScr').style.display = 'none';
   $('appScr').style.display = '';
   const isK = me.role === 'kkutjjang';
   $('hdr').classList.toggle('k', isK);
