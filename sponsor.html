@@ -143,6 +143,17 @@ section { margin-top: 44px; }
 .quote p { font-size: 15.5px; line-height: 1.75; color: var(--ink); }
 .quote cite { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
 
+/* ── 만원이면 무엇이 되나요 ── */
+.ng { display: flex; align-items: baseline; gap: 12px; padding: 13px 2px; }
+.ng + .ng { border-top: 1px solid var(--line); }
+.ng-a { width: 72px; flex: none; font-size: 13.5px; color: var(--ink-3); font-weight: 700; }
+.ng-n { font-size: 17px; font-weight: 800; letter-spacing: -0.4px; }
+.ng i { margin-left: auto; font-style: normal; font-size: 12px; color: var(--ink-3); font-weight: 700; }
+/* 맨 위에 문장 하나. 숫자보다 이게 먼저 눈에 들어와야 한다 */
+.q-one { border-left: 3px solid var(--green); border-radius: 4px 18px 18px 4px; }
+.q-one p { font-size: 17px; line-height: 1.8; letter-spacing: -0.3px; }
+.q-one cite { display: block; font-style: normal; font-size: 12px; color: var(--ink-3); margin-top: 12px; }
+
 /* ── 읽는 책 ── */
 .books { display: flex; flex-wrap: wrap; gap: 7px; }
 .books span { background: #f7f5f0; border-radius: 10px; padding: 8px 13px; font-size: 13px; color: var(--ink-2); }
@@ -194,6 +205,22 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
     <div class="sec-title">지금까지 함께 만든 것</div>
     <div class="sec-desc">후원해주신 분들과 청소년들이 함께 쌓은 기록이에요.</div>
     <div class="pool" id="poolGrid"></div>
+  </section>
+
+  <section id="oneQuoteSec" style="display:none;">
+    <div class="card q-one">
+      <p id="oq"></p>
+      <cite id="oqc"></cite>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-title">만원이면 무엇이 되나요</div>
+    <div class="sec-desc">후원금을 쪼개 계산하지는 않아요. 크기를 가늠해보시라고 적어둡니다.</div>
+    <div class="card">
+      <div id="nights"></div>
+      <div class="notice" id="nightsNote"></div>
+    </div>
   </section>
 
   <section id="mySection" style="display:none;">
@@ -386,6 +413,40 @@ function renderPool() {
 
 }
 
+// 후원금을 "권"으로 세면 1만원은 반 권이라 초라해진다. 이 서비스는 책을
+// 사주는 게 아니라 매일 한 장을 펴게 하는 것이니, 단위를 "밤"으로 바꾼다.
+// 250P 로 책 한 권을 바꾸고 인증 한 번이 10P 이므로 한 권 = 스물다섯 밤이다
+const PER_BOOK = 25;
+const ONES = ['', '한', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉'];
+const TENS = ['', '열', '스물', '서른', '마흔', '쉰', '예순', '일흔', '여든', '아흔'];
+function nightWord(n) {
+  if (n < 1) return '';
+  if (n > 99) return won(n);                 // 백을 넘으면 숫자가 읽기 쉽다
+  return (TENS[Math.floor(n / 10)] || '') + (ONES[n % 10] || '');
+}
+
+function renderNights() {
+  const p = state.pool || {};
+  // 실제로 들어온 돈과 실제로 산 책값으로 계산한다. 가정한 값이 아니다
+  const rate  = p.total_donated ? p.book_fund / p.total_donated : 0.8;
+  const price = p.books_bought ? Math.round(p.spent / p.books_bought) : 16500;
+
+  document.getElementById('nights').innerHTML = [10000, 30000, 50000, 100000].map(a => {
+    const n  = Math.floor(a * rate / price * PER_BOOK);
+    const bk = Math.floor(a * rate / price);
+    return `<div class="ng">
+      <span class="ng-a">${manwon(a)}만원</span>
+      <span class="ng-n">${nightWord(n)} 밤</span>
+      ${bk >= 1 ? `<i>책 ${bk}권</i>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('nightsNote').innerHTML =
+    `후원금의 <b>${Math.round(rate * 100)}%</b>가 책으로 갑니다. 나머지는 운영에 씁니다.<br>
+     아이가 <b>스물다섯 밤</b>을 읽으면 책 한 권과 바꿔요. 그 책값을 후원금이 냅니다.<br>
+     책 한 권은 지금까지 평균 <b>${won(price)}원</b>이었어요.`;
+}
+
 function renderPhotos() {
   const ph = state.photos || [];
   document.getElementById('photosSection').style.display = ph.length ? '' : 'none';
@@ -445,8 +506,17 @@ function renderReading() {
 
   // 문장은 운영진이 공개로 고른 것만 내려옴 (dokseo_public_quotes)
   const q = state.quotes || [];
-  document.getElementById('quotesSection').style.display = q.length ? '' : 'none';
-  document.getElementById('quotes').innerHTML = q.map(x => `
+  // 맨 위에 한 개를 따로 세운다. 링크를 열자마자 숫자가 아니라 문장을 보게
+  const one = document.getElementById('oneQuoteSec');
+  one.style.display = q.length ? '' : 'none';
+  if (q.length) {
+    document.getElementById('oq').textContent = '\u201c' + q[0].quote + '\u201d';
+    document.getElementById('oqc').textContent =
+      (q[0].book_title ? q[0].book_title + ' · ' : '') + fmtDate(q[0].day) + ' · 한 아이가 옮겨 적은 문장';
+  }
+  const rest = q.slice(1);                    // 위에 세운 건 빼고
+  document.getElementById('quotesSection').style.display = rest.length ? '' : 'none';
+  document.getElementById('quotes').innerHTML = rest.map(x => `
     <div class="quote">
       <p>“${esc(x.quote)}”</p>
       <cite>${x.book_title ? esc(x.book_title) + ' · ' : ''}${fmtDate(x.day)}</cite>
@@ -486,7 +556,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 (async function init() {
   if (LIVE) document.getElementById('demoFlag').style.display = 'none';
   await loadPublic();
-  renderPool(); renderPhotos(); renderFeed(); renderReading(); renderSteps(); renderWall();
+  renderPool(); renderNights(); renderPhotos(); renderFeed(); renderReading(); renderSteps(); renderWall();
 })();
 </script>
 </body>
