@@ -79,8 +79,12 @@ def spark(cx, cy, R, w, inner_ratio=SPARK_INNER, ang=SPARK_ANGLE):
     return {'kind': 'spark', 'segs': segs, 'w': w, 'color': GOLD, 'alpha': 1.0,
             'bbox': (cx - R - w, cy - R - w, cx + R + w, cy + R + w)}
 
-def poly(d, color=(255,255,255), alpha=1.0):
+def scale_about(pts, k, cx=96.0, cy=96.0):
+    return [(cx + (x - cx) * k, cy + (y - cy) * k) for x, y in pts]
+
+def poly(d, color=(255,255,255), alpha=1.0, k=1.0):
     p = flatten(d)
+    if k != 1.0: p = scale_about(p, k)
     xs = [q[0] for q in p]; ys = [q[1] for q in p]
     return {'kind': 'poly', 'pts': p, 'color': color, 'alpha': alpha,
             'bbox': (min(xs), min(ys), max(xs), max(ys))}
@@ -90,8 +94,13 @@ def ring(cx, cy, r, w, color=(255,255,255), alpha=1.0):
             'bbox': (cx - r - w, cy - r - w, cx + r + w, cy + r + w)}
 
 # ── 그리기 ──────────────────────────────────────────────
-def render(size, c0, c1, shapes, maskable=False):
-    scale, off = (0.72, 26.88) if maskable else (1.0, 0.0)
+# bleed=True  모서리를 깎지 않고 꽉 채운다 (홈 화면용)
+# k           내용 크기. 안드로이드 maskable 은 0.72 로 줄여 안전영역에 넣고,
+#             아이폰은 스퀘어클로 조금만 깎으므로 0.88 이면 충분하다.
+#             전에는 아이폰에도 0.72 짜리를 줘서 그림이 작아 보였다
+def render(size, c0, c1, shapes, bleed=False, k=1.0):
+    scale, off = k, BASE * (1 - k) / 2
+    maskable = bleed
     k = BASE / size                      # 출력 픽셀 → 192 좌표
     px_ = bytearray(size * size * 4)
     step, o0 = 1.0 / SS, 1.0 / (2 * SS)
@@ -153,17 +162,24 @@ def write_png(path, size, px_):
     print(f'  {path}  {size}×{size}')
 
 # ── 한끗독서 ────────────────────────────────────────────
-BOOK   = lambda: [poly(BOOK_L), poly(BOOK_R, alpha=0.82), spark(142, 46, 22, 9)]
+# 책이 가로는 고리와 같은데 세로로 짧아 작아 보였다 (74×65 대 74×74).
+# 가운데를 기준으로 키운다
+BOOK_K = 1.15
+BOOK   = lambda: [poly(BOOK_L, k=BOOK_K), poly(BOOK_R, alpha=0.82, k=BOOK_K),
+                  spark(142, 46, 22, 9)]
 BLUE   = ((0x3A, 0x40, 0xD6), (0x2A, 0x2F, 0xA8))
 PINK   = ((0xFF, 0x3D, 0x7F), (0xE0, 0x00, 0x5C))
 
 if __name__ == '__main__':
     print('한끗독서 아이콘 굽는 중…')
-    jobs = [('icon-192.png',           192, BLUE, False),
-            ('icon-512.png',           512, BLUE, False),
-            ('icon-192-maskable.png',  192, BLUE, True),
-            ('icon-512-maskable.png',  512, BLUE, True),
-            ('icon-admin.png',         192, PINK, False)]
-    for name, size, (c0, c1), mask in jobs:
-        write_png(name, size, render(size, c0, c1, BOOK(), mask))
-    print('끝. 탭 아이콘은 모서리 바깥 투명, maskable 은 꽉 참.')
+    #        파일                      크기  색    꽉참   내용크기
+    jobs = [('icon-192.png',           192, BLUE, False, 1.00),   # 탭 — 모서리 투명
+            ('icon-512.png',           512, BLUE, False, 1.00),
+            ('icon-192-maskable.png',  192, BLUE, True,  0.72),   # 안드로이드
+            ('icon-512-maskable.png',  512, BLUE, True,  0.72),
+            ('icon-apple.png',         192, BLUE, True,  0.88),   # 아이폰 홈 화면
+            ('icon-apple-512.png',     512, BLUE, True,  0.88),
+            ('icon-admin.png',         192, PINK, False, 1.00)]
+    for name, size, (c0, c1), bleed, k in jobs:
+        write_png(name, size, render(size, c0, c1, BOOK(), bleed, k))
+    print('끝. 탭은 모서리 투명, 홈 화면(maskable·apple)은 꽉 참.')
