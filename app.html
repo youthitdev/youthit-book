@@ -201,6 +201,15 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .tc-t { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .tc-day { font-size:13px; color:var(--ink-3); margin-top:5px; }
 .tc-day b { color:var(--ink); font-size:15px; }
+/* 진행상황과 읽는 책을 나란히. 책은 오른쪽 */
+.tc-row { display:flex; gap:14px; align-items:center; margin-top:11px; }
+.tc-prog { flex:1; min-width:0; }
+.tc-book { width:78px; height:100px; flex:none; border-radius:11px; overflow:hidden;
+  background:#eeeae2; display:flex; align-items:center; justify-content:center;
+  font-size:27px; box-shadow:0 1px 5px rgba(0,0,0,.09); }
+.tc-book img { width:100%; height:100%; object-fit:cover; display:block; }
+.tc-bk { font-size:12.5px; color:var(--ink-3); margin-top:9px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tc-wait { font-size:12.5px; color:var(--ink-3); margin-top:5px; line-height:1.55; }
@@ -1384,14 +1393,24 @@ function todayCard(r) {
          <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>`
       : `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`;
 
+  // 루틴 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
+  // 참여할 때 올린 사진이다. 없으면(컬럼이 생기기 전에 참여했으면) 루틴 사진으로 물러선다
+  const part  = myPart(r.id);
+  const photo = part?.book_photo_url || r.cover_url || '';
+
   return `<div class="tcard">
-    ${r.cover_url ? `<div class="tc-img"><img src="${esc(r.cover_url)}" alt=""></div>` : ''}
     <div class="tc-b">
       <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
-      <div class="tc-day">${d
-        ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
-        : '기간 미정'}</div>
-      ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:11px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      <div class="tc-row">
+        <div class="tc-prog">
+          <div class="tc-day">${d
+            ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
+            : '기간 미정'}</div>
+          ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:11px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+          ${part?.book_title ? `<div class="tc-bk">📖 ${esc(part.book_title)}</div>` : ''}
+        </div>
+        <div class="tc-book">${photo ? `<img src="${esc(photo)}" alt="">` : '📖'}</div>
+      </div>
       ${action}
     </div>
   </div>`;
