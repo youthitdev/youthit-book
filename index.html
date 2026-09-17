@@ -118,12 +118,9 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .now{max-width:620px;margin:36px auto 0;background:var(--green-l);border:1px solid #dcecc0;
   border-radius:18px;padding:28px 30px;text-align:center}
 .now p{font-size:16px;line-height:1.95;color:var(--ink-2)}
-.now b{color:var(--ink);font-weight:800;font-size:20px;letter-spacing:-.4px}
-.now-note{font-size:11.5px;color:var(--ink-3);margin-top:12px}
-.now-live{margin-top:20px;padding-top:20px;border-top:1px solid #dcecc0}
-.now-live b{color:var(--green-d)}
+.now b{color:var(--green-d);font-weight:800;font-size:20px;letter-spacing:-.4px}
 @media(max-width:640px){.now{padding:24px 20px}.now p{font-size:15px}.now b{font-size:18px}}
-.voices{display:grid;gap:12px;margin-top:16px}
+.voices{display:grid;gap:12px;margin-top:32px}
 .voice{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);
   border-radius:4px 16px 16px 4px;padding:20px 22px}
 .voice p{font-size:14.5px;line-height:1.8;color:var(--ink)}
@@ -288,14 +285,10 @@ footer a{color:var(--ink-3)}
     <h2>작년 한 해,<br>240명의 청소년이 해냈습니다</h2>
     <p class="sec-lead">한끗독서는 유스보이스가 1년간 운영해온 '한끗루틴'의 독서 버전입니다.</p>
 
-    <!-- 지난 실적과 지금을 한 덩어리로. 240명은 제목이 이미 말하고 있어
-         격자로 또 쓰면 같은 말을 두 번 하는 셈이었다 -->
-    <div class="now">
-      <p>지난 한 해 <b>33</b>개의 루틴에서 <b>2,700</b>번의 인증이 쌓였고,<br>
-         <b>33</b>명의 끗짱이 그 곁에 있었습니다.</p>
-      <div class="now-note">2025년 4월 ~ 2026년 4월 운영 결과</div>
-      <!-- 지금 한끗독서 — 숫자가 어느 정도 쌓여야 뜬다 (아래 스크립트) -->
-      <p id="nowText" class="now-live" style="display:none"></p>
+    <!-- 지난 실적은 제목과 리드가 이미 말하고 있어 따로 적지 않는다.
+         여기는 '지금' 만. 숫자가 어느 정도 쌓여야 뜬다 (아래 스크립트) -->
+    <div class="now" id="nowSec" style="display:none">
+      <p id="nowText"></p>
     </div>
 
     <div class="voices">
@@ -440,7 +433,7 @@ footer a{color:var(--ink-3)}
     if (!st || (st.students_total || 0) < MIN_STUDENTS) return;
 
     const n = v => `<b>${Number(v || 0).toLocaleString('ko-KR')}</b>`;
-    const parts = [`그리고 지금, ${n(st.students_total)}명의 청소년이 매일 한 장을 읽고 있습니다.`];
+    const parts = [`지금 ${n(st.students_total)}명의 청소년이 매일 한 장을 읽고 있습니다.`];
     const mid = [
       st.cert_total          ? `쌓인 날이 ${n(st.cert_total)}일` : '',
       pool && pool.books_bought ? `전해진 책이 ${n(pool.books_bought)}권` : '',
@@ -449,9 +442,8 @@ footer a{color:var(--ink-3)}
     if (pool && pool.sponsors_count)
       parts.push(`${n(pool.sponsors_count)}명의 어른이 그 곁에 있습니다.`);
 
-    const el = document.getElementById('nowText');
-    el.innerHTML = parts.join('<br>');
-    el.style.display = '';
+    document.getElementById('nowText').innerHTML = parts.join('<br>');
+    document.getElementById('nowSec').style.display = '';
   } catch (e) { /* 숫자가 없어도 페이지는 그대로 */ }
 })();
 </script>
