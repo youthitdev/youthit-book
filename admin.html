@@ -54,11 +54,17 @@ tr:hover td { background:#fcfcfd; }
 .c-wait { background:#fff4e5; color:#a86400; }
 .c-done { background:#f2f9e5; color:#4e7a00; }
 .c-act  { background:#eef0ff; color:var(--blue); }
+.c-off  { background:#f0f0f2; color:var(--ink-3); }
 .btn { border:none; border-radius:9px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
 .btn-pink { background:var(--pink); color:#fff; }
 .btn-dark { background:var(--ink); color:#fff; }
 .btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
 .btn-danger { background:#fff; border:1px solid #ffc9d6; color:#b3003c; }
+.r-sel { border:1px solid var(--line); border-radius:9px; padding:6px 8px; font-size:12.5px;
+         font-family:inherit; font-weight:700; cursor:pointer; }
+.r-sel.s-recruit { background:#fff4e5; color:#a86400; border-color:#f6e2c2; }
+.r-sel.s-active  { background:#eef0ff; color:var(--blue); border-color:#d9ddff; }
+.r-sel.s-done    { background:#f0f0f2; color:var(--ink-3); }
 .btn-danger:disabled { color:var(--ink-3); border-color:var(--line); cursor:not-allowed; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 
@@ -144,6 +150,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
   <div class="tabs">
     <button class="tab on" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
+    <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
@@ -182,6 +189,20 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('settleOverlay')">취소</button>
       <button class="btn btn-pink" id="settleBtn" onclick="submitSettle()">정산 확정</button>
+    </div>
+  </div>
+</div>
+
+<!-- 루틴 참여자 -->
+<div class="overlay" id="peopleOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t" id="peopleTitle">참여자</div>
+      <div class="modal-d">이 루틴에 참여한 청소년과 인증 횟수입니다.</div>
+    </div>
+    <div class="modal-bd" id="peopleBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('peopleOverlay')">닫기</button>
     </div>
   </div>
 </div>
@@ -407,6 +428,7 @@ function renderSummary() {
     <div class="sum-c ${p.pending ? 'hl' : ''}"><div class="sum-l">정산 대기</div><div class="sum-v num">${p.pending}<small>건</small></div></div>
     <div class="sum-c ${p.unpaidCnt ? 'hl' : ''}"><div class="sum-l">서점 입금 대기</div><div class="sum-v num">${won(p.unpaidSum)}<small>원</small></div></div>`;
   document.getElementById('cntKkut').textContent = ` ${(DB.kkutApps || []).filter(a => a.status === 'pending').length}`;
+  document.getElementById('cntRoutines').textContent = ` ${(DB.routines || []).length}`;
   document.getElementById('cntPending').textContent = ` ${p.pending}`;
   document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
   document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
@@ -417,11 +439,127 @@ function renderSummary() {
 function renderPanel() {
   const el = document.getElementById('panel');
   if (tab === 'kkut')     return el.innerHTML = viewKkut();
+  if (tab === 'routines') return el.innerHTML = viewRoutines();
   if (tab === 'pending')  return el.innerHTML = viewPending();
   if (tab === 'settled')  return el.innerHTML = viewSettled();
   if (tab === 'stores')   return el.innerHTML = viewStores();
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   el.innerHTML = viewCharges();
+}
+
+// 루틴 관리.
+// 전에는 상태를 바꾸려면 SQL 을 쳐야 했다 (UPDATE routines SET status=...).
+// 끗짱이 만든 루틴이라도 운영진은 다 볼 수 있어야 하고, 종료 처리는
+// 사람이 눌러야 한다 — 종료일이 지나도 상태를 바꿔주는 장치가 없다
+const R_STATUS = { recruit: ['모집 중', 'c-wait'], active: ['진행 중', 'c-act'], done: ['종료', 'c-off'] };
+// 표가 좁아야 조작 칸이 안 잘린다. 연도는 빼고 월.일만
+const md = d => d ? String(d).slice(5).replace('-', '.') : '–';
+
+async function loadRoutines() {
+  const [rs, ps, cs] = await Promise.all([
+    sb.from('routines').select('*').order('start_date', { ascending: false }),
+    sb.from('routine_participants').select('routine_id, user_id, status'),
+    sb.from('certifications').select('routine_id, user_id, cert_date').limit(5000),
+  ]);
+  DB.routines = rs.data || [];
+  DB.parts    = (ps.data || []).filter(p => p.status === 'approved');
+  DB.certs    = cs.data || [];
+
+  // 끗짱과 참여자 이름 — profiles 는 FK 로 안 엮여 있어 따로 모은다
+  const ids = [...new Set([...DB.routines.map(r => r.led_by), ...DB.parts.map(p => p.user_id)])]
+              .filter(Boolean);
+  DB.names = DB.names || {};
+  if (ids.length) {
+    const { data } = await sb.from('profiles').select('id, name').in('id', ids);
+    (data || []).forEach(p => DB.names[p.id] = p.name);
+  }
+}
+
+const rName  = id => (DB.names || {})[id] || '(이름 없음)';
+const rParts = id => (DB.parts || []).filter(p => p.routine_id === id);
+const rCerts = id => (DB.certs || []).filter(c => c.routine_id === id);
+
+// 종료일이 지났는데 아직 진행 중이면 알려준다 — 그냥 두면 아이 화면에
+// '오늘 인증하기' 가 계속 떠 있는다
+function rOverdue(r) {
+  if (r.status === 'done' || !r.end_date) return false;
+  const today = new Date(Date.now() + 9*3600e3).toISOString().slice(0, 10);
+  return r.end_date < today;
+}
+
+function viewRoutines() {
+  const rows = DB.routines || [];
+  const late = rows.filter(rOverdue);
+
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">루틴</div>
+    <div class="panel-d">끗짱이 만든 루틴도 여기서 다 보입니다. 상태를 바꾸면 청소년 앱에 바로 반영돼요.</div></div>
+  </div>
+
+  ${late.length ? `<div class="preview" style="margin-bottom:14px;">
+    <div class="preview-t">종료일이 지났는데 아직 안 닫힌 루틴</div>
+    ${late.map(r => `<div class="preview-row">
+      <span><b>${esc(r.title)}</b> <span class="muted">${fmtDate(r.end_date)}에 끝났어요</span></span>
+      <button class="btn btn-dark" onclick="setRoutineStatus(${r.id}, 'done')">종료 처리</button>
+    </div>`).join('')}
+  </div>` : ''}
+
+  ${rows.length ? `<div class="tbl"><table>
+    <tr><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>상태</th><th class="right"></th></tr>
+    ${rows.map(r => `<tr>
+      <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
+          ${rOverdue(r) ? `<div class="muted" style="color:#b3003c;">종료일이 지났어요</div>` : ''}</td>
+      <td class="muted">${esc(rName(r.led_by))}</td>
+      <td class="num muted" style="white-space:nowrap;">${md(r.start_date)}~${md(r.end_date)}</td>
+      <td class="num right">${rParts(r.id).length}/${r.max_people}</td>
+      <td class="num right">${rCerts(r.id).length}</td>
+      <td><select class="r-sel s-${r.status}" onchange="setRoutineStatus(${r.id}, this.value)">
+          ${['recruit','active','done'].map(v =>
+            `<option value="${v}"${v === r.status ? ' selected' : ''}>${R_STATUS[v][0]}</option>`).join('')}
+        </select></td>
+      <td class="right"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button></td>
+    </tr>`).join('')}
+  </table></div>` : `<div class="empty">아직 만들어진 루틴이 없습니다.</div>`}`;
+}
+
+async function setRoutineStatus(id, status) {
+  const r = (DB.routines || []).find(x => x.id === id);
+  if (!r || r.status === status) return;
+  const label = R_STATUS[status][0];
+
+  if (status === 'done' && rParts(id).length) {
+    if (!confirm(`${r.title} 을(를) 종료할까요?\n\n참여 중인 청소년 ${rParts(id).length}명의 화면에서 '오늘 인증하기' 가 사라지고\n후기를 쓸 수 있게 됩니다. 쌓인 기록과 포인트는 그대로예요.`)) {
+      render(); return;                       // 드롭다운을 원래대로 되돌린다
+    }
+  }
+  if (!LIVE) { r.status = status; render(); return; }
+
+  const { error } = await sb.from('routines').update({ status }).eq('id', id);
+  if (error) { alert('바꾸지 못했어요: ' + error.message); render(); return; }
+  r.status = status;
+  render();
+}
+
+function openRoutinePeople(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  const ps = rParts(id);
+  const cs = rCerts(id);
+  const body = ps.length
+    ? `<div class="tbl"><table>
+         <tr><th>청소년</th><th class="right">인증</th><th>마지막 인증</th></tr>
+         ${ps.map(p => {
+           const mine = cs.filter(c => c.user_id === p.user_id);
+           const last = mine.map(c => c.cert_date).sort().pop();
+           return `<tr><td>${esc(rName(p.user_id))}</td>
+             <td class="num right">${mine.length}회</td>
+             <td class="num muted">${last ? fmtDate(last) : '아직 없어요'}</td></tr>`;
+         }).join('')}
+       </table></div>`
+    : `<div class="empty">아직 참여한 청소년이 없습니다.</div>`;
+  document.getElementById('peopleTitle').textContent = `${r.emoji || '📚'} ${r.title}`;
+  document.getElementById('peopleBody').innerHTML = body;
+  document.getElementById('peopleOverlay').classList.add('on');
 }
 
 // 끗짱 승인.
@@ -947,6 +1085,8 @@ async function loadLive() {
   const rv = await sb.from('reviews').select('id, kind, content, book_title, is_public, created_at')
                      .order('created_at', { ascending: false }).limit(200);
   DB.reviews = rv.data || [];
+
+  await loadRoutines();
 
   await loadKkutApps();
 
