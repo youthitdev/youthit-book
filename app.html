@@ -266,6 +266,15 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .ec-next.ok b { color:var(--green-d); }
 .ec-btns { display:flex; gap:8px; margin-top:14px; }
 .ec-btns .btn { flex:1; margin:0; }
+/* 기록 격자 위의 머리줄 — 몇 장인지와 '내 기록만' 걸개 */
+.cg-head { display:flex; align-items:center; justify-content:space-between;
+  margin:20px 0 10px; }
+.cg-head > span { font-size:15px; font-weight:800; letter-spacing:-.3px; }
+.cg-head > span b { color:var(--green-d); }
+.seg { display:flex; background:#eeeef3; border-radius:10px; padding:2.5px; gap:2px; }
+.seg button { border:0; background:none; font-size:12px; font-weight:700; color:var(--ink-3);
+  padding:5px 11px; border-radius:8px; cursor:pointer; font-family:inherit; }
+.seg button.on { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
 .cgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .cg img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -1221,6 +1230,9 @@ const peopleOf = rid => state.counts[rid] ?? partsOf(rid).length;
 const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
 const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
+// 인증 탭에서 '내 기록만' 걸어둔 상태. 탭을 옮겨도 남는다
+let certOnlyMine = false;
+function setCertMine(v) { certOnlyMine = v; render(); }
 const myCerts   = rid => me ? certsOf(rid).filter(c => c.user_id === me.id) : [];
 const nameOf    = uid => state.names[uid] || '익명';
 const myRoutines = () => me ? state.routines.filter(r => {
@@ -1534,6 +1546,7 @@ function viewCert() {
     const d  = routineDay(r);
     const cs = certsOf(r.id);
     const talk = state.comments.filter(m => cs.some(c => c.id === m.cert_id)).length;
+    // 위쪽 진행 카드는 늘 전체 기준이다. '내 기록만' 은 격자에만 건다
     const done = didToday(r.id);
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
@@ -1543,14 +1556,33 @@ function viewCert() {
         : done
           ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>`
           : `<button class="btn btn-primary" style="margin-bottom:12px;" onclick="openCert(${r.id})">오늘 인증하기</button>`}
-      ${cs.length
-        ? `<div class="cgrid">${cs.map(c => `<div class="cg" onclick="openOneCert(${c.id})">
-             ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
-                                     : `<div class="cg-no">📖</div>`}
-             ${c.user_id === me.id ? `<i class="cg-me">내 기록</i>` : ''}
-           </div>`).join('')}</div>`
-        : `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`}`;
+      ${certGrid(cs)}`;
   }).join('');
+}
+
+// 인증 사진 격자. 세 칸씩 놓고, 위에 '전체 / 내 기록' 을 건다
+function certGrid(all) {
+  const mine = all.filter(c => c.user_id === me.id);
+  const cs   = certOnlyMine ? mine : all;
+
+  const head = `<div class="cg-head">
+    <span>우리 기록 <b>${all.length}</b></span>
+    ${mine.length ? `<div class="seg">
+      <button class="${certOnlyMine ? '' : 'on'}" onclick="setCertMine(false)">전체</button>
+      <button class="${certOnlyMine ? 'on' : ''}" onclick="setCertMine(true)">내 기록 ${mine.length}</button>
+    </div>` : ''}
+  </div>`;
+
+  if (!all.length)
+    return `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`;
+  if (!cs.length)
+    return head + `<div class="empty">아직 내가 남긴 기록이 없어요.</div>`;
+
+  return head + `<div class="cgrid">${cs.map(c => `<div class="cg" onclick="openOneCert(${c.id})">
+    ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
+                            : `<div class="cg-no">📖</div>`}
+    ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 기록</i>` : ''}
+  </div>`).join('')}</div>`;
 }
 
 // 루틴이 며칠짜리고 오늘이 며칠째인지
