@@ -115,11 +115,12 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
   background:var(--green-l);border-radius:9px;padding:7px 13px}
 
 /* 성과 */
-.now{max-width:620px;margin:36px auto 0;background:var(--green-l);border:1px solid #dcecc0;
-  border-radius:18px;padding:28px 30px;text-align:center}
-.now p{font-size:16px;line-height:1.95;color:var(--ink-2)}
-.now b{color:var(--green-d);font-weight:800;font-size:20px;letter-spacing:-.4px}
-@media(max-width:640px){.now{padding:24px 20px}.now p{font-size:15px}.now b{font-size:18px}}
+/* 히어로 아래 '지금' 한 줄 */
+.live{display:inline-block;margin-top:22px;background:var(--green-l);border:1px solid #dcecc0;
+  border-radius:99px;padding:11px 22px}
+.live p{font-size:14px;line-height:1.6;color:var(--ink-2)}
+.live b{color:var(--green-d);font-weight:800;font-size:16px;letter-spacing:-.2px}
+@media(max-width:640px){.live{border-radius:16px;padding:12px 18px}.live p{font-size:13.5px}}
 .voices{display:grid;gap:12px;margin-top:32px}
 .voice{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);
   border-radius:4px 16px 16px 4px;padding:20px 22px}
@@ -184,6 +185,8 @@ footer a{color:var(--ink-3)}
       <a class="btn btn-line" href="app.html">청소년 참여하기</a>
     </div>
     <div class="hero-note">사단법인 유스보이스 · 전국 독립서점과 함께합니다</div>
+    <!-- 지금 한끗독서. DB 를 못 읽으면 조용히 빠진다 -->
+    <div class="live" id="nowSec" style="display:none"><p id="nowText"></p></div>
   </div>
 </div>
 
@@ -284,12 +287,6 @@ footer a{color:var(--ink-3)}
     <div class="sec-label">이미 증명된 방식</div>
     <h2>작년 한 해,<br>240명의 청소년이 해냈습니다</h2>
     <p class="sec-lead">한끗독서는 유스보이스가 1년간 운영해온 '한끗루틴'의 독서 버전입니다.</p>
-
-    <!-- 지난 실적은 제목과 리드가 이미 말하고 있어 따로 적지 않는다.
-         여기는 '지금' 만. 숫자가 어느 정도 쌓여야 뜬다 (아래 스크립트) -->
-    <div class="now" id="nowSec" style="display:none">
-      <p id="nowText"></p>
-    </div>
 
     <div class="voices">
       <div class="voice">
@@ -420,9 +417,7 @@ footer a{color:var(--ink-3)}
     document.getElementById('shelfSec').style.display = '';
   } catch (e) { /* 랜딩은 DB가 죽어도 그대로 보여야 한다 */ }
 
-  // 지금 한끗독서 숫자. 아직 적을 때는 아예 띄우지 않는다 —
-  // 지난 1년 240명 옆에 '1명' 이 붙으면 오히려 힘이 빠진다
-  const MIN_STUDENTS = 10;
+  // 지금 한끗독서 숫자. 히어로 바로 아래 한 줄로 둔다
   try {
     const call = (fn) => fetch(URL + '/rest/v1/rpc/' + fn, {
       method: 'POST',
@@ -430,19 +425,13 @@ footer a{color:var(--ink-3)}
       body: '{}',
     }).then(r => r.ok ? r.json() : null);
     const [st, pool] = await Promise.all([call('dokseo_reading_stats'), call('dokseo_pool_status')]);
-    if (!st || (st.students_total || 0) < MIN_STUDENTS) return;
+    if (!st || !st.students_total) return;
 
     const n = v => `<b>${Number(v || 0).toLocaleString('ko-KR')}</b>`;
-    const parts = [`지금 ${n(st.students_total)}명의 청소년이 매일 한 장을 읽고 있습니다.`];
-    const mid = [
-      st.cert_total          ? `쌓인 날이 ${n(st.cert_total)}일` : '',
-      pool && pool.books_bought ? `전해진 책이 ${n(pool.books_bought)}권` : '',
-    ].filter(Boolean).join(', ');
-    if (mid) parts.push('그동안 ' + mid + '.');
-    if (pool && pool.sponsors_count)
-      parts.push(`${n(pool.sponsors_count)}명의 어른이 그 곁에 있습니다.`);
-
-    document.getElementById('nowText').innerHTML = parts.join('<br>');
+    // 히어로에 붙는 줄이라 짧아야 한다. 사람과 책 두 가지만
+    let t = `지금 ${n(st.students_total)}명의 청소년이 읽고 있습니다`;
+    if (pool && pool.books_bought) t += `, 지금까지 ${n(pool.books_bought)}권이 전해졌어요`;
+    document.getElementById('nowText').innerHTML = t + '.';
     document.getElementById('nowSec').style.display = '';
   } catch (e) { /* 숫자가 없어도 페이지는 그대로 */ }
 })();
