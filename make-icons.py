@@ -62,11 +62,17 @@ def seg_dist(px_, py, x1, y1, x2, y2):
         ((px_ - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)))
     return math.hypot(px_ - (x1 + t * dx), py - (y1 + t * dy))
 
-def spark(cx, cy, R, w, inner_ratio=0.36):
+# 유스보이스 로고를 픽셀 단위로 재서 맞춘 값.
+# 선 굵기는 마크 지름의 약 8% 인데, 그대로 쓰면 32px 파비콘에서 흐려진다.
+# 11% 로 조금만 두껍게 해 눈에 띄게 얇으면서 작은 크기에서도 버티게 했다
+SPARK_ANGLE = 37      # 대각선 각도 (로고 실측 ±36~39)
+SPARK_INNER = 0.26    # 가운데 빈 구멍 / 바깥 반지름
+
+def spark(cx, cy, R, w, inner_ratio=SPARK_INNER, ang=SPARK_ANGLE):
     """유스보이스 마크 — 가운데가 빈 6갈래. 세로 2 + 대각선 4"""
     inner = R * inner_ratio
     segs = []
-    for a in (-90, 90, -150, -30, 150, 30):
+    for a in (-90, 90, -180 + ang, -ang, 180 - ang, ang):
         r = math.radians(a)
         segs.append((cx + math.cos(r)*inner, cy + math.sin(r)*inner,
                      cx + math.cos(r)*R,     cy + math.sin(r)*R))
@@ -147,7 +153,7 @@ def write_png(path, size, px_):
     print(f'  {path}  {size}×{size}')
 
 # ── 한끗독서 ────────────────────────────────────────────
-BOOK   = lambda: [poly(BOOK_L), poly(BOOK_R, alpha=0.82), spark(142, 46, 22, 9)]
+BOOK   = lambda: [poly(BOOK_L), poly(BOOK_R, alpha=0.82), spark(142, 44, 24, 5.5)]
 BLUE   = ((0x3A, 0x40, 0xD6), (0x2A, 0x2F, 0xA8))
 PINK   = ((0xFF, 0x3D, 0x7F), (0xE0, 0x00, 0x5C))
 
