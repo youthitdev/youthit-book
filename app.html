@@ -28,35 +28,26 @@
   background:linear-gradient(160deg,#2640D9,#1C36C8);
   transition:opacity .45s ease; }
 .sp.hide { opacity:0; pointer-events:none; }
-.sp-book { position:relative; width:176px; height:131px; }
-.sp-svg { display:block; width:100%; height:100%; }
-.sp-cv { fill:rgba(255,255,255,.45); }   /* 겉표지 — 아이콘의 #8294FB 와 같은 값 */
-.sp-pl { fill:#fff; }
-.sp-pr { fill:rgba(255,255,255,.82); }
-/* 넘어가는 장 — 책등을 축으로 scaleX 가 1 → -1 로 간다.
-   원근 없는 장 넘김이 정확히 이 모양이다.
-
-   viewBox 를 책등 기준 좌우 대칭("-256 …")으로 잡았다. 그래서 변형의 기본
-   기준점(뷰박스 한가운데)이 곧 책등이다 — 좌표를 따로 적어줄 일이 없고,
-   나중에 책 모양을 바꿔도 축이 어긋나지 않는다.
-
-   왼쪽 페이지는 오른쪽을 뒤집어 만들었다. 그래서 scaleX(-1) 로 끝났을 때
-   아래 페이지와 정확히 겹친다. 뒷면이 보이는 순간 흰색으로 바뀐다. */
-.sp-flip { transform-box:view-box; transform-origin:50% 50%;
-  fill:rgba(255,255,255,.82); stroke:#16277F; stroke-width:7; stroke-opacity:0; }
+.sp-book { position:relative; width:168px; height:124px; perspective:900px; }
+.sp-pg { position:absolute; top:0; width:82px; height:124px; background:#fff; }
+.sp-l { left:0;  border-radius:7px 2px 2px 7px; }
+.sp-r { right:0; border-radius:2px 7px 7px 2px; background:rgba(255,255,255,.82); }
+.sp-spine { position:absolute; left:50%; top:2px; width:4px; height:120px;
+  transform:translateX(-50%); background:rgba(0,0,0,.12); border-radius:2px; }
+/* 넘어가는 장 — 책등을 축으로 돈다. 뒷면이 보이는 순간 흰색으로 바뀐다 */
+.sp-flip { position:absolute; top:0; left:50%; width:82px; height:124px;
+  transform-origin:left center; border-radius:2px 7px 7px 2px;
+  background:rgba(255,255,255,.82); backface-visibility:visible;
+  box-shadow:-2px 0 10px rgba(0,0,0,.14); opacity:0; }
 .sp-f1 { animation:spTurn 1.15s cubic-bezier(.45,.05,.3,1) .25s both; }
 .sp-f2 { animation:spTurn 1.15s cubic-bezier(.45,.05,.3,1) .75s both; }
 @keyframes spTurn {
-  /* 넘어가는 동안만 테두리를 준다. 왼쪽에 안착할 때쯤엔 아래 흰 페이지와
-     같은 흰색이라, 테두리가 없으면 장이 넘어가는 게 안 보인다. */
-  0%   { transform:scaleX(1);  fill:rgba(255,255,255,.82); stroke-opacity:0; }
-  14%  {                                                   stroke-opacity:.34; }
-  49%  {                       fill:rgba(255,255,255,.82); }
-  50%  {                       fill:#fff; }
-  86%  {                                                   stroke-opacity:.34; }
-  100% { transform:scaleX(-1); fill:#fff;                  stroke-opacity:0; }
+  0%   { opacity:1; transform:rotateY(0deg);    background:rgba(255,255,255,.82); }
+  49%  {             background:rgba(255,255,255,.82); }
+  50%  {             background:#fff; }
+  100% { opacity:1; transform:rotateY(-180deg); background:#fff; }
 }
-.sp-spark { position:absolute; left:59px; top:-51px; width:104px; height:72px;
+.sp-spark { position:absolute; left:55px; top:-74px; width:104px; height:72px;
   animation:spPop .55s cubic-bezier(.34,1.56,.64,1) 1.55s both; }
 @keyframes spPop {
   0%   { opacity:0; transform:scale(.3) rotate(-40deg); }
@@ -467,16 +458,16 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 <!-- 첫 화면. 책장이 두 장 넘어가고 광선이 켜진다 -->
 <div class="sp" id="sp">
   <div class="sp-book">
-    <!-- 선 그림에서 면만 떠냈다. 선이 있던 자리는 파란 틈으로 남는다.
-         책등이 x=0 이고, 왼쪽은 오른쪽을 그대로 뒤집은 것이다. -->
-    <svg class="sp-svg" viewBox="-256 55 512 380" aria-hidden="true">
-      <path class="sp-cv" d="M-205 118 L-221 118 L-240 124 L-240 423 L-225 423 L-182 414 L-138 413 L-101 418 L-55 432 L-40 432 L-40 418 L-55 404 L-88 382 L-139 362 L-193 356 L-203 350 Z"/>
-      <path class="sp-cv" d="M205 118 L221 118 L240 124 L240 423 L225 423 L182 414 L138 413 L101 418 L55 432 L40 432 L40 418 L55 404 L88 382 L139 362 L193 356 L203 350 Z"/>
-      <path class="sp-pl" d="M-175 55 L-195 55 L-195 347 L-150 353 L-109 367 L-56 399 L-19 435 L-5 435 L-5 157 L-23 133 L-43 113 L-80 86 L-134 63 Z"/>
-      <path class="sp-pr" d="M175 55 L195 55 L195 347 L150 353 L109 367 L56 399 L19 435 L5 435 L5 157 L23 133 L43 113 L80 86 L134 63 Z"/>
-      <path class="sp-flip sp-f1" d="M175 55 L195 55 L195 347 L150 353 L109 367 L56 399 L19 435 L5 435 L5 157 L23 133 L43 113 L80 86 L134 63 Z"/>
-      <path class="sp-flip sp-f2" d="M175 55 L195 55 L195 347 L150 353 L109 367 L56 399 L19 435 L5 435 L5 157 L23 133 L43 113 L80 86 L134 63 Z"/>
-    </svg>
+    <div class="sp-pg sp-l"></div>
+    <div class="sp-pg sp-r"></div>
+    <div class="sp-flip sp-f1"></div>
+    <div class="sp-flip sp-f2"></div>
+    <div class="sp-spine"></div>
+    <!-- 앱 아이콘(logo-source.png)의 노란 픽셀에서 그대로 잰 것이다.
+         별 — 가로 반지름 112 · 세로 116, 허리 56, 끝은 굵기 24로 둥글린다.
+              뾰족하게 두면 원본과 다르다. 원본 끝은 뭉툭하다.
+         광선 — 굵기 37, 각각 65도 · 36도 · 11도.
+         겹쳐보면 원본과 98% 일치한다. -->
     <svg class="sp-spark" viewBox="-1 -1 443 305" aria-hidden="true">
       <path d="M124 59 Q147 152 236 175 Q147 198 124 291 Q101 198 12 175 Q101 152 124 59 Z"
             fill="#FFD600" stroke="#FFD600" stroke-width="24" stroke-linejoin="round"/>
