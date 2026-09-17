@@ -197,25 +197,28 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .tcard { background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:12px; }
 .tc-img { aspect-ratio:16/9; background:#eeeae2; }
 .tc-img img { width:100%; height:100%; object-fit:cover; display:block; }
-.tc-b { padding:17px 18px 18px; }
-.tc-t { font-size:17px; font-weight:800; letter-spacing:-.4px; }
-.tc-day { font-size:13px; color:var(--ink-3); margin-top:5px; }
+.tc-b { padding:14px 15px 15px; }
+.tc-t { font-size:16px; font-weight:800; letter-spacing:-.4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
-/* 진행상황과 읽는 책을 나란히. 책은 오른쪽 */
-.tc-row { display:flex; gap:14px; align-items:center; margin-top:11px; }
+/* 제목까지 왼쪽에 넣고 책 사진을 오른쪽에 세운다.
+   제목을 윗줄에 따로 두면 그만큼 카드가 길어진다. 아래로 모집 중 루틴과
+   진행 중 루틴이 더 붙을 자리라, 첫 카드는 짧을수록 좋다 */
+.tc-row { display:flex; gap:13px; align-items:flex-start; }
 .tc-prog { flex:1; min-width:0; }
-.tc-book { width:78px; aspect-ratio:3/4; flex:none; border-radius:11px; overflow:hidden;
+.tc-book { width:66px; aspect-ratio:3/4; flex:none; border-radius:10px; overflow:hidden;
   background:#eeeae2; display:flex; align-items:center; justify-content:center;
-  font-size:27px; box-shadow:0 1px 5px rgba(0,0,0,.09); }
+  font-size:24px; box-shadow:0 1px 5px rgba(0,0,0,.09); }
 .tc-book img { width:100%; height:100%; object-fit:cover; display:block; }
-.tc-bk { font-size:12.5px; color:var(--ink-3); margin-top:9px;
+.tc-bk { font-size:12px; color:var(--ink-3); margin-top:7px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tc-wait { font-size:12.5px; color:var(--ink-3); margin-top:5px; line-height:1.55; }
-.tcard .btn { margin-top:14px; }
-.tc-done { margin-top:14px; text-align:center; font-size:14px; font-weight:700;
-           color:var(--green-d); background:#f4faea; border-radius:12px; padding:13px; }
+.tcard .btn { margin-top:12px; }
+.tc-done { margin-top:12px; text-align:center; font-size:13.5px; font-weight:700;
+           color:var(--green-d); background:#f4faea; border-radius:11px; padding:10px; }
 .tc-done + .btn { margin-top:9px; }
 /* 포인트 한 줄 */
 .tc-pt { display:flex; align-items:center; gap:10px; background:#f7fbf0; border:1px solid #d8ebb8;
@@ -1420,13 +1423,13 @@ function todayCard(r) {
 
   return `<div class="tcard">
     <div class="tc-b">
-      <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
       <div class="tc-row">
         <div class="tc-prog">
+          <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
           <div class="tc-day">${d
             ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
             : '기간 미정'}</div>
-          ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:11px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+          ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
           ${part?.book_title ? `<div class="tc-bk">📖 ${esc(part.book_title)}</div>` : ''}
         </div>
         <div class="tc-book">${photo ? `<img src="${esc(photo)}" alt="">` : '📖'}</div>
