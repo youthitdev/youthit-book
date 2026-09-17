@@ -177,8 +177,19 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 /* 후기 — 쓸 수 있는 것 */
 .rv-todo { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;
            background:#fff8fb; border:1px solid #ffdcea; }
-.rv-p { flex-shrink:0; font-size:13px; font-weight:800; color:var(--pink);
+.rv-r { flex-shrink:0; display:flex; align-items:center; gap:7px; }
+.rv-p { font-size:13px; font-weight:800; color:var(--pink);
         background:#fff; border:1px solid #ffdcea; border-radius:99px; padding:6px 11px; }
+/* 남은 날. 이틀 안쪽이면 붉게 — 지나면 30P 가 사라지기 때문에 */
+.rv-d { font-size:11.5px; font-weight:800; color:var(--ink-3); }
+.rv-d.hot { color:#E0004C; }
+/* 홈 위의 알림 줄 */
+.rv-alert { display:flex; align-items:center; gap:10px; cursor:pointer;
+  background:#fff8fb; border:1px solid #ffdcea; border-radius:14px;
+  padding:13px 15px; margin-bottom:12px; }
+.rv-alert b { font-size:13.5px; font-weight:800; }
+.rv-alert span { flex:1; font-size:12px; color:var(--ink-3); margin-top:2px; display:block; }
+.rv-alert i { color:var(--pink); font-size:16px; font-style:normal; }
 .c-done { background:#eee; color:#888; }
 .c-wait { background:#FFF4E5; color:#A86400; }
 
@@ -1486,7 +1497,20 @@ function viewHome() {
     return h + (others.length ? `<div class="sec-t">다른 끗짱의 루틴</div>` + routineGrid(others) : '');
   }
 
-  // 청소년 — 지금 하는 루틴이 맨 위
+  // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
+  // 진짜 알림(푸시·문자)은 아직 없다. 앱을 열었을 때만 보인다
+  const due = reviewTodos().filter(t => t.left !== null && t.left !== undefined && t.left <= 7);
+  if (due.length) {
+    const t = due.sort((a, b) => a.left - b.left)[0];
+    h += `<div class="rv-alert" onclick="go('feed')">
+      <div style="min-width:0;">
+        <b>${t.left === 0 ? '오늘까지예요' : `후기 쓸 수 있는 날이 ${t.left}일 남았어요`}</b>
+        <span>${t.emoji} ${esc(t.title)} · 지나면 +${RV_PR()}P를 못 받아요</span>
+      </div>
+      <i class="ti ti-chevron-right"></i>
+    </div>`;
+  }
+
   if (mine.length) {
     h += mine.map(todayCard).join('');
     const p = myPoints();
@@ -1866,6 +1890,22 @@ async function shareCert(id) {
 const RV_PR = () => state.settings.points_per_review ?? 30;
 const RV_PB = () => state.settings.points_per_bookreview ?? 30;
 
+// 루틴 후기 기한. 서버 review_due() 와 같은 식으로 센다 —
+// max(종료일, 기능 켠 날) + 7일. 일찍 종료돼도 종료일까지는 기다려준다
+function reviewDue(r) {
+  if (!r?.end_date) return null;
+  const grace = state.settings.review_grace_from || '2000-01-01';
+  const base  = r.end_date > grace ? r.end_date : grace;
+  const d = new Date(base + 'T00:00:00');
+  d.setDate(d.getDate() + (state.settings.review_deadline_days ?? 7));
+  return d.toISOString().slice(0, 10);
+}
+// 오늘 기준 남은 날. 0 이면 오늘까지, 음수면 지났다
+function reviewLeft(r) {
+  const due = reviewDue(r); if (!due) return null;
+  return Math.round((new Date(due + 'T00:00:00') - new Date(todayKST() + 'T00:00:00')) / 86400e3);
+}
+
 // 루틴이 끝났나 — 서버 트리거와 같은 기준 (status='done' 이거나 종료일이 지났거나)
 function routineEnded(r) {
   if (!r) return false;
@@ -1883,9 +1923,11 @@ function reviewTodos() {
   if (!me || me.role === 'kkutjjang') return [];
   const out = [];
   myRoutines().forEach(r => {
-    if (routineEnded(r) && !myRoutineReview(r.id))
-      out.push({ kind:'routine', id:r.id, title:r.title, emoji:r.emoji || '📚',
-                 days: routineDay(r)?.total || 0 });
+    if (!routineEnded(r) || myRoutineReview(r.id)) return;
+    const left = reviewLeft(r);
+    if (left !== null && left < 0) return;          // 기한이 지났다
+    out.push({ kind:'routine', id:r.id, title:r.title, emoji:r.emoji || '📚',
+               days: routineDay(r)?.total || 0, left });
   });
   state.purchases
     .filter(b => b.user_id === me.id && b.status !== 'void' && !myBookReview(b.id))
@@ -1927,7 +1969,11 @@ function viewFeed() {
           ? (t.days ? `${t.days}일 동안 어땠는지 적어주세요` : '어땠는지 적어주세요')
           : (t.title ? esc(t.title) : '어떤 책이었는지 적어주세요')}</div>
       </div>
-      <span class="rv-p">+${t.kind === 'routine' ? RV_PR() : RV_PB()}P</span>
+      <div class="rv-r">
+        ${t.left !== null && t.left !== undefined
+          ? `<span class="rv-d${t.left <= 2 ? ' hot' : ''}">${t.left === 0 ? '오늘까지' : `D-${t.left}`}</span>` : ''}
+        <span class="rv-p">+${t.kind === 'routine' ? RV_PR() : RV_PB()}P</span>
+      </div>
     </div>`).join('')}` : '';
 
   const listHtml = `<div class="sec-t">📝 우리 루틴 후기</div>` + (list.length
@@ -1948,6 +1994,14 @@ function viewFeed() {
 // ── 후기 쓰기 ──────────────────────────────────────────
 let rvCtx = null;   // { kind, id, review }
 
+// 기한을 미리 알린다. 놓치고 나서 아는 것보다 낫다
+function rvDueLine(r) {
+  const left = reviewLeft(r); if (left === null || left === undefined) return '';
+  const due = reviewDue(r).slice(5).replace('-', '월 ') + '일';
+  return `<br><span style="color:${left <= 2 ? '#E0004C' : 'var(--ink-3)'};">
+    ${due}까지 쓸 수 있어요${left === 0 ? ' — 오늘까지예요' : ` (${left}일 남음)`}.</span>`;
+}
+
 function openReview(kind, id) {
   const isBook = kind === 'book';
   const existing = isBook ? myBookReview(id) : myRoutineReview(id);
@@ -1963,7 +2017,7 @@ function openReview(kind, id) {
        <span style="color:var(--ink-3);">같은 루틴 친구들에게만 보여요.</span>`
     : `<b>${esc(r ? r.title : '')}</b> 어땠나요?<br>
        처음과 지금이 뭐가 달라졌는지, 어떤 날이 기억에 남는지 적어주세요.
-       올리면 <b>+${RV_PR()}P</b>예요.`;
+       올리면 <b>+${RV_PR()}P</b>예요.${existing ? '' : rvDueLine(r)}`;
 
   $('rvBookWrap').style.display = isBook ? '' : 'none';
   $('rvBook').value = existing?.book_title || '';
