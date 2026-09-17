@@ -185,7 +185,7 @@ footer { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--line);
   <div class="hero">
     <div class="hero-eyebrow">청소년 독서 후원</div>
     <h1><em>매일 읽는 습관</em>과 책을<br>선물합니다</h1>
-    <p>읽은 날마다 적립금이 쌓이고,<br>그 돈으로 동네책방에서 직접 고른 책이 손에 남습니다.</p>
+    <p>읽은 날마다 포인트가 쌓이고,<br>모이면 동네책방에서 직접 고른 책이 손에 남습니다.</p>
     <!-- TODO: 도너스 후원 페이지 URL 확정되면 교체 -->
     <a class="btn-primary" href="#" onclick="return notReady()">후원하기</a>
     <div class="hero-note">결제와 기부금영수증은 도너스를 통해 처리됩니다</div>
@@ -420,8 +420,8 @@ function renderFeed() {
 function renderSteps() {
   document.getElementById('stepsBox').innerHTML = [
     ['후원금이 들어오면', '모여서 한 기금이 됩니다. 책과 곁을 지키는 사람, 창작과 기록에 쓰입니다.'],
-    ['청소년이 하루를 읽으면', '읽고 인증할 때마다 그날의 적립금이 쌓입니다.'],
-    ['쌓인 적립금으로', '동네책방에 직접 가서 읽고 싶은 책을 고릅니다.'],
+    ['청소년이 하루를 읽으면', '읽고 인증할 때마다 그날의 포인트가 쌓입니다.'],
+    ['포인트가 모이면', '교환권으로 동네책방에서 읽고 싶은 책을 고릅니다.'],
     ['책이 아이에게 갈 때', '"너를 응원하는 어른들이 이 책을 보냈다"고 전합니다.'],
     ['책방 영수증이 확인되면', '실제 결제된 금액만 기록합니다. 추정하지 않습니다.'],
   ].map(([t, d], i) => `<div class="step">
