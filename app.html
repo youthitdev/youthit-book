@@ -151,6 +151,32 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .stats span { display:block; font-size:10px; color:var(--ink-3); margin-top:3px; font-weight:600; }
 
 /* 홈 지표 — 넷을 한 줄에 우겨넣으면 글자가 눌린다. 2×2 로 펴고 이모지를 붙였다 */
+/* 오늘 하는 루틴 — 홈 맨 위 주인공 */
+.tcard { background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:12px; }
+.tc-img { aspect-ratio:16/9; background:#eeeae2; }
+.tc-img img { width:100%; height:100%; object-fit:cover; display:block; }
+.tc-b { padding:17px 18px 18px; }
+.tc-t { font-size:17px; font-weight:800; letter-spacing:-.4px; }
+.tc-day { font-size:13px; color:var(--ink-3); margin-top:5px; }
+.tc-day b { color:var(--ink); font-size:15px; }
+.tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
+.tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
+.tc-wait { font-size:12.5px; color:var(--ink-3); margin-top:5px; line-height:1.55; }
+.tcard .btn { margin-top:14px; }
+.tc-done { margin-top:14px; text-align:center; font-size:14px; font-weight:700;
+           color:var(--green-d); background:#f4faea; border-radius:12px; padding:13px; }
+.tc-done + .btn { margin-top:9px; }
+/* 포인트 한 줄 */
+.tc-pt { display:flex; align-items:center; gap:10px; background:#f7fbf0; border:1px solid #d8ebb8;
+         border-radius:14px; padding:13px 16px; margin-bottom:20px; cursor:pointer; }
+.tc-pt b { font-size:17px; font-weight:800; color:var(--green-d); }
+.tc-pt span { flex:1; font-size:12.5px; color:var(--ink-2); font-weight:600; }
+.tc-pt i { color:var(--ink-3); font-size:16px; }
+/* 함께 쌓은 것 — 숫자판 대신 줄글 */
+.stat-p p { font-size:14.5px; line-height:1.85; color:var(--ink-2); }
+.stat-p p + p { margin-top:2px; }
+.stat-p b { color:var(--ink); font-weight:800; font-size:17px; letter-spacing:-.3px; }
+.stat-you { margin-top:10px !important; color:var(--green-d) !important; font-weight:700; }
 .hstats { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:20px; }
 .hs { background:var(--card); border:1px solid var(--line); border-radius:15px;
       padding:13px 13px 12px; display:flex; align-items:center; gap:11px; min-width:0; }
@@ -1225,46 +1251,113 @@ function routineCard(r) {
   </div>`;
 }
 
-// 우리가 함께 만든 숫자. 익명 집계라 누구도 특정되지 않는다
+// 우리가 함께 만든 숫자. 익명 집계라 누구도 특정되지 않는다.
+// 숫자판 넷을 홈 맨 위에 두니 '독서 친구 1명' 이 자랑이 아니라
+// '아무도 없네' 로 읽혔다. MY 맨 아래로 내리고 줄글로 바꾼다 —
+// 문장 안에서는 작은 숫자도 초라해 보이지 않는다
 function statsStrip() {
   const st = state.stats || {};
-  const cell = (emoji, tint, n, unit, label) =>
-    `<div class="hs">
-      <i style="background:${tint}">${emoji}</i>
-      <div><b>${won(n || 0)}<small>${unit}</small></b><span>${label}</span></div>
+  const n  = v => `<b>${won(v || 0)}</b>`;
+  const people = st.students_total || 0;
+
+  // 아직 혼자일 때 '1명이 함께 읽고 있어요' 는 말이 안 된다
+  const lead = people <= 1
+    ? `이제 막 시작했어요.<br>곧 함께 읽는 친구가 늘어날 거예요.`
+    : `지금 ${n(people)}명이 함께 읽고 있어요.`;
+
+  const body = [
+    st.cert_total    ? `그동안 ${n(st.cert_total)}일이 쌓였고` : '',
+    st.books_bought  ? `${n(st.books_bought)}권이 아이들에게 갔어요.` : '',
+  ].filter(Boolean).join(', ');
+
+  const cheer = st.sponsors_count
+    ? `곁에서 ${n(st.sponsors_count)}명의 어른이 응원하고 있고요.` : '';
+
+  return `<div class="sec-t">함께 쌓은 것</div>
+    <div class="card stat-p">
+      <p>${lead}</p>
+      ${body  ? `<p>${body}</p>` : ''}
+      ${cheer ? `<p>${cheer}</p>` : ''}
+      ${people > 1 ? `<p class="stat-you">그중 한 명이 너예요.</p>` : ''}
     </div>`;
-  return `<div class="hstats">
-    ${cell('👫', '#EFF6E2', st.students_total, '명', '독서 친구')}
-    ${cell('📖', '#FFF4DE', st.cert_total,     '일', '독서 일수')}
-    ${cell('🎁', '#FFECF3', st.books_bought,   '권', '교환 도서')}
-    ${cell('💌', '#ECEDFB', st.sponsors_count, '명', '응원 어른')}
+}
+
+// 홈은 '오늘 뭘 하지' 에 답하는 화면이다.
+// 전에는 전체 집계 넷 → 루틴 목록 → 눌러서 인증이라, 앱을 열고 두 화면을
+// 지나야 오늘 할 일이 나왔다. 지금 하는 루틴을 맨 위 큰 카드로 올린다.
+// 참여 루틴은 늘 한 개다 (정원 8명 소그룹, 한 번에 하나) — 목록으로 두면
+// 2열 그리드에 반쪽이 비지만, 주인공으로 두면 그게 정상이 된다
+function todayCard(r) {
+  const d    = routineDay(r);
+  const done = didToday(r.id);
+  const pct  = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
+  const ended = routineEnded(r);
+  const rv    = myRoutineReview(r.id);
+
+  const action = ended
+    ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
+       ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}`
+    : done
+      ? `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
+         <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>`
+      : `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`;
+
+  return `<div class="tcard">
+    ${r.cover_url ? `<div class="tc-img"><img src="${esc(r.cover_url)}" alt=""></div>` : ''}
+    <div class="tc-b">
+      <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+      <div class="tc-day">${d
+        ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
+        : '기간 미정'}</div>
+      ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:11px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${action}
+    </div>
+  </div>`;
+}
+
+// 끗짱에게는 '오늘 인증하기' 가 없다. 대신 아이들이 몇 명 했는지가 궁금하다
+function kkutTodayCard(r) {
+  const ps    = partsOf(r.id);
+  const today = certsOf(r.id).filter(c => c.cert_date === todayKST());
+  const d     = routineDay(r);
+  const names = ps.filter(p => !today.some(c => c.user_id === p.user_id))
+                  .map(p => nameOf(p.user_id));
+  return `<div class="tcard">
+    ${r.cover_url ? `<div class="tc-img"><img src="${esc(r.cover_url)}" alt=""></div>` : ''}
+    <div class="tc-b">
+      <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+      <div class="tc-day">${d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정'}</div>
+      <div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>
+      ${names.length && !d?.ended
+        ? `<div class="tc-wait">아직 안 한 친구 · ${names.map(esc).join(', ')}</div>` : ''}
+      <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
+    </div>
   </div>`;
 }
 
 function viewHome() {
-  const mine = myRoutines();
+  const mine   = myRoutines();
   const others = state.routines.filter(r => !mine.includes(r) && r.status !== 'done');
+  const recruit = `<div class="sec-t">지금 모집 중인 루틴</div>` + (others.length
+    ? routineGrid(others)
+    : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`);
 
   if (isGuest()) {
-    return statsStrip() + `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
+    return `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
         <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth()">시작하기</button>
-      </div>
-      <div class="sec-t">지금 모집 중인 루틴</div>
-      ${others.length ? routineGrid(others)
-        : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}
-      `;
+      </div>` + recruit;
   }
 
-  let h = statsStrip();
+  let h = '';
 
   if (me.role === 'kkutjjang') {
     const pend = state.parts.filter(p => p.status === 'pending' &&
       state.routines.some(r => r.id === p.routine_id && r.led_by === me.id));
     if (pend.length) {
-      h += `<div class="sec-t">확인이 필요한 신청</div>`;
+      h += `<div class="sec-t" style="margin-top:0;">확인이 필요한 신청</div>`;
       h += pend.map(p => {
         const r = state.routines.find(x => x.id === p.routine_id);
         return `<div class="card">
@@ -1281,25 +1374,33 @@ function viewHome() {
         </div>`;
       }).join('');
     }
-  }
-
-  if (me.role === 'kkutjjang') {
+    h += mine.map(kkutTodayCard).join('');
     h += `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
-      <span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>
+      <span class="sec-t" style="margin:0;">${mine.length ? '루틴 더 만들기' : '내가 이끄는 루틴'}</span>
       <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
     </div>`;
-    h += mine.length ? routineGrid(mine)
-       : `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
-  } else {
-    h += `<div class="sec-t">참여 중인 루틴</div>`;
-    h += mine.length ? routineGrid(mine)
-       : `<div class="empty">아직 참여 중인 루틴이 없어요.<br>아래에서 모집 중인 루틴을 찾아보세요.</div>`;
+    if (!mine.length) h += `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
+    return h + (others.length ? `<div class="sec-t">다른 끗짱의 루틴</div>` + routineGrid(others) : '');
   }
 
-  if (others.length) {
-    h += `<div class="sec-t">모집 중인 루틴</div>` + routineGrid(others);
+  // 청소년 — 지금 하는 루틴이 맨 위
+  if (mine.length) {
+    h += mine.map(todayCard).join('');
+    const p = myPoints();
+    h += `<div class="tc-pt">
+      <b>${won(p.points)}P</b>
+      <span>${p.left > 0 ? `🎫 쓸 수 있는 교환권 ${p.left}장` : `다음 책까지 ${won(p.to_next)}P`}</span>
+      <i class="ti ti-chevron-right" onclick="go('my')"></i>
+    </div>`;
+  } else {
+    h += `<div class="card" style="text-align:center;padding:26px 20px;">
+      <div style="font-size:30px;">📚</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">첫 루틴을 골라볼까요?</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;">
+        끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
+    </div>`;
   }
-  return h;
+  return h + recruit;
 }
 
 function viewCert() {
@@ -1957,7 +2058,8 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${myBooksBlock()}
-    ${kkutCard()}`;
+    ${kkutCard()}
+    ${statsStrip()}`;
 }
 
 // ── 내 정보 ────────────────────────────────────────────
