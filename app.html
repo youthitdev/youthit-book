@@ -204,7 +204,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 /* 진행상황과 읽는 책을 나란히. 책은 오른쪽 */
 .tc-row { display:flex; gap:14px; align-items:center; margin-top:11px; }
 .tc-prog { flex:1; min-width:0; }
-.tc-book { width:78px; height:100px; flex:none; border-radius:11px; overflow:hidden;
+.tc-book { width:78px; aspect-ratio:3/4; flex:none; border-radius:11px; overflow:hidden;
   background:#eeeae2; display:flex; align-items:center; justify-content:center;
   font-size:27px; box-shadow:0 1px 5px rgba(0,0,0,.09); }
 .tc-book img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -314,10 +314,18 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
 .cover-prev { position:relative; border-radius:13px; overflow:hidden; aspect-ratio:16/9; }
 /* 책 사진은 세로로 긴 경우가 많아 자르면 안 된다. 비율 그대로 다 보여준다 */
-.book-prev { position:relative; border-radius:13px; overflow:hidden; background:#f0f0f4; }
-.book-prev img { display:block; width:100%; height:auto; max-height:60vh; object-fit:contain; }
-.book-prev button { position:absolute; top:8px; right:8px; width:28px; height:28px; border:none;
-  border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:15px; cursor:pointer; }
+/* 참여할 때 고른 책 사진 미리보기.
+   사진 전체를 보여주지 않는다. 홈 카드에 나갈 3:4 틀로 잘라서 보여준다 —
+   말로 "세로로 찍으세요" 하는 것보다, 잘린 결과를 바로 보는 편이 통한다.
+   이상하면 ×로 지우고 다시 찍는다. .tc-book 도 같은 3:4 다 */
+.book-prev { display:flex; flex-direction:column; align-items:center; gap:9px; }
+.bp-wrap { position:relative; width:132px; }
+.bp-frame { width:100%; aspect-ratio:3/4; border-radius:12px; overflow:hidden;
+  background:#f0f0f4; box-shadow:0 2px 9px rgba(0,0,0,.13); }
+.bp-frame img { width:100%; height:100%; object-fit:cover; display:block; }
+.bp-x { position:absolute; top:-7px; right:-7px; width:27px; height:27px; border:none;
+  border-radius:50%; background:rgba(0,0,0,.62); color:#fff; font-size:15px; cursor:pointer; }
+.bp-note { font-size:12px; color:var(--ink-3); font-weight:600; }
 .cover-prev img { width:100%; height:100%; object-fit:cover; display:block; }
 .cover-prev button { position:absolute; top:8px; right:8px; width:28px; height:28px; border:none;
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:15px; cursor:pointer; }
@@ -2269,7 +2277,7 @@ function openRoutine(id) {
           <div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
           <div id="apBookBox"></div>
           <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
-          <div class="hint">시작할 책의 표지를 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
+          <div class="hint">시작할 책의 표지를 <b>세로로</b> 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
           <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
           <input type="text" id="applyBookTitle" placeholder="예) 속초에서의 겨울" maxlength="60" oninput="checkApply()">
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
@@ -2285,8 +2293,14 @@ let applyBook = null;
 function drawApplyBook() {
   const box = $('apBookBox'); if (!box) return;
   box.innerHTML = applyBook
-    ? `<div class="book-prev"><img src="${esc(applyBook)}" alt="">
-         <button type="button" onclick="applyBook=null;drawApplyBook();checkApply()">×</button></div>`
+    ? `<div class="book-prev">
+         <div class="bp-wrap">
+           <div class="bp-frame"><img src="${esc(applyBook)}" alt=""></div>
+           <button type="button" class="bp-x" title="다시 고르기"
+             onclick="applyBook=null;drawApplyBook();checkApply()">×</button>
+         </div>
+         <div class="bp-note">홈 화면에 이렇게 보여요</div>
+       </div>`
     : `<div class="cover-pick" onclick="document.getElementById('apBookInput').click()">
          <i class="ti ti-book" style="font-size:22px;"></i>책 사진 고르기</div>`;
 }
