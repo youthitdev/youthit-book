@@ -67,6 +67,37 @@ tr:hover td { background:#fcfcfd; }
 .r-sel.s-done    { background:#f0f0f2; color:var(--ink-3); }
 .btn-danger:disabled { color:var(--ink-3); border-color:var(--line); cursor:not-allowed; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
+/* ── 월간 보고 ── */
+.rp-pick { display:flex; align-items:center; gap:8px; }
+.rp-pick b { font-size:14px; min-width:92px; text-align:center; }
+.btn-s { border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 11px;
+  font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--ink); }
+.btn-s.go { background:var(--ink); color:#fff; border-color:var(--ink); }
+.rp-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
+  border-bottom:1px solid var(--line); }
+.rp-n { background:#fff; padding:16px 12px; text-align:center; }
+.rp-n b { font-size:20px; font-weight:800; letter-spacing:-.6px; }
+.rp-n b small { font-size:12px; font-weight:700; margin-left:1px; }
+.rp-n span { display:block; font-size:11.5px; color:var(--ink-3); margin-top:3px; font-weight:600; }
+.rp-warn { margin:14px 20px 0; background:#FFF7E6; border:1px solid #F5D98B; border-radius:10px;
+  padding:11px 14px; font-size:12.5px; color:#8A5A00; line-height:1.6; }
+.rp-sec { padding:20px 20px 8px; font-size:13.5px; font-weight:700; }
+.rp-sec i { font-style:normal; color:var(--ink-3); font-weight:700; margin-left:3px; }
+.rp-sec small { font-weight:600; color:var(--ink-3); font-size:11.5px; margin-left:6px; }
+.rp-books { display:flex; flex-wrap:wrap; gap:7px; padding:0 20px; }
+.rp-books span { background:#f5f5f8; border-radius:9px; padding:7px 12px; font-size:12.5px; }
+.rp-books i { font-style:normal; color:var(--ink-3); margin-left:6px; font-size:11.5px; }
+.rp-q { margin:0 20px 8px; border-left:3px solid var(--ink); background:#fafafc;
+  border-radius:3px 10px 10px 3px; padding:12px 14px; }
+.rp-q p { font-size:13.5px; line-height:1.7; }
+.rp-q cite { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3); margin-top:7px; }
+.rp-empty { padding:0 20px; font-size:12.5px; color:var(--ink-3); }
+.rp-text { display:block; width:calc(100% - 40px); margin:0 20px; border:1px solid var(--line);
+  border-radius:10px; padding:13px 14px; font-size:13px; line-height:1.7; font-family:inherit;
+  resize:vertical; color:var(--ink); }
+.rp-note { margin:8px 20px 22px; font-size:12px; color:var(--ink-3); line-height:1.6; }
+.rp-sec + .btn-s, .rp-text + .btn-s { margin-left:20px; }
+@media (max-width:640px) { .rp-grid { grid-template-columns:repeat(2,1fr); } }
 
 /* 끗짱 승인 */
 .kk { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:17px 18px; margin-bottom:13px; }
@@ -156,6 +187,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
+    <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
 
   <div class="panel" id="panel"></div>
@@ -444,7 +476,131 @@ function renderPanel() {
   if (tab === 'settled')  return el.innerHTML = viewSettled();
   if (tab === 'stores')   return el.innerHTML = viewStores();
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
+  if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
+}
+
+// ── 월간 보고 ──────────────────────────────────────────────
+// 매달 손으로 쿼리 여러 개를 돌려 숫자를 옮겨 적으면 반드시 틀린다.
+// dokseo_monthly_report() 하나가 다 모아주고, 여기서는 읽어서 보여주고
+// 문자 본문까지 만들어 복사시킨다. 보내는 건 아직 사람이 한다
+let RP = { y: 0, m: 0, data: null, loading: false };
+
+function viewReport() {
+  if (!RP.y) {
+    const t = new Date(Date.now() + 9 * 3600e3);
+    RP.y = t.getUTCFullYear(); RP.m = t.getUTCMonth() + 1;
+  }
+  const head = `
+  <div class="panel-hd">
+    <div><div class="panel-t">월간 보고</div>
+    <div class="panel-d">후원자에게 보낼 한 달치입니다. 아이 이름은 어디에도 담기지 않아요.</div></div>
+    <div class="rp-pick">
+      <button class="btn-s" onclick="rpMove(-1)">‹</button>
+      <b>${RP.y}년 ${RP.m}월</b>
+      <button class="btn-s" onclick="rpMove(1)">›</button>
+      <button class="btn-s go" onclick="rpLoad()">불러오기</button>
+    </div>
+  </div>`;
+
+  if (RP.loading) return head + `<div class="empty">불러오는 중…</div>`;
+  if (!RP.data)   return head + `<div class="empty">월을 고르고 「불러오기」를 눌러주세요.</div>`;
+
+  const d = RP.data;
+  const num = (v, u, label) => `<div class="rp-n"><b>${won(v)}<small>${u}</small></b><span>${label}</span></div>`;
+  const list = (arr, fn, empty) => arr && arr.length
+    ? arr.map(fn).join('') : `<div class="rp-empty">${empty}</div>`;
+
+  return head + `
+  <div class="rp-grid">
+    ${num(d.readers, '명', '읽은 청소년')}
+    ${num(d.certs, '건', '인증')}
+    ${num(d.books, '권', '전해진 책')}
+    ${num(d.donated, '원', '이 달 후원금')}
+    ${num(d.new_readers, '명', '처음 인증한 사람')}
+    ${num(d.joins, '건', '루틴 참여')}
+    ${num(d.book_spent, '원', '책값')}
+    ${num(d.pool?.remaining, '원', '남은 도서기금')}
+  </div>
+
+  ${d.books_waiting ? `<div class="rp-warn">정산을 기다리는 책이 <b>${d.books_waiting}권</b> 있어요.
+    정산하지 않으면 「전해진 책」에 안 잡힙니다.</div>` : ''}
+
+  <div class="rp-sec">아이들이 읽은 책 <i>${(d.books_read || []).length}</i></div>
+  <div class="rp-books">${list(d.books_read,
+    b => `<span><b>${esc(b.title)}</b>${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`,
+    '이 달에 적힌 책 제목이 없어요.')}</div>
+
+  <div class="rp-sec">책을 고른 책방 <i>${(d.stores || []).length}</i></div>
+  <div class="rp-books">${list(d.stores,
+    x => `<span><b>${esc(x.name)}</b><i>${x.books}권</i></span>`,
+    '이 달에 정산된 책이 없어요.')}</div>
+
+  <div class="rp-sec">아이들의 후기 <i>${(d.reviews || []).length}</i>
+    <small>공개로 켠 것만</small></div>
+  <div>${list(d.reviews,
+    r => `<div class="rp-q"><p>${esc(r.content)}</p>
+            <cite>${r.kind === 'book' ? '📗 ' + esc(r.book_title || '') : '📚 루틴 후기'}</cite></div>`,
+    '공개로 켠 후기가 없어요. 「문장 고르기」 탭에서 골라주세요.')}</div>
+
+  <div class="rp-sec">옮겨 적은 문장 <i>${(d.quotes || []).length}</i>
+    <small>공개로 켠 것만</small></div>
+  <div>${list(d.quotes,
+    q => `<div class="rp-q"><p>“${esc(q.quote)}”</p>
+            <cite>${esc(q.book_title || '')}</cite></div>`,
+    '공개로 켠 문장이 없어요.')}</div>
+
+  <div class="rp-sec">보낼 문자</div>
+  <textarea id="rpText" class="rp-text" rows="14">${esc(rpMessage(d))}</textarea>
+  <button class="btn-s go" style="margin-top:10px;" onclick="rpCopy()">문자 본문 복사하기</button>
+  <div class="rp-note">이름 자리(○○○)만 바꿔서 보내면 됩니다.
+    문장은 <b>분기마다 갈아 끼우세요</b> — 같은 문장이 두 번 가면 자동 발송으로 읽힙니다.</div>`;
+}
+
+function rpMove(k) {
+  let y = RP.y, m = RP.m + k;
+  if (m < 1) { m = 12; y--; } else if (m > 12) { m = 1; y++; }
+  RP.y = y; RP.m = m; RP.data = null; render();
+}
+
+async function rpLoad() {
+  if (!LIVE) return alert('데모 모드에서는 불러올 수 없어요.');
+  RP.loading = true; render();
+  const { data, error } = await sb.rpc('dokseo_monthly_report', { p_year: RP.y, p_month: RP.m });
+  RP.loading = false;
+  if (error) { RP.data = null; render(); return alert('불러오지 못했어요: ' + error.message); }
+  RP.data = data; render();
+}
+
+// 문자 본문. 숫자가 0 인 줄은 아예 빼서 "아무 일도 없었다" 로 읽히지 않게 한다
+function rpMessage(d) {
+  const L = [`[유스보이스] 한끗독서 ${d.year}년 ${d.month}월`, '', '○○○님, 함께해주셔서 고맙습니다.', ''];
+
+  if (d.readers) L.push(`이번 달 청소년 ${won(d.readers)}명이 ${won(d.certs)}일을 읽었어요.`);
+  if (d.new_readers) L.push(`그중 ${won(d.new_readers)}명은 이번 달에 처음 인증했어요.`);
+  if (d.books) L.push(`동네책방에서 책 ${won(d.books)}권을 직접 골라 갔어요.`);
+
+  const bk = (d.books_read || []).slice(0, 5).map(b => b.title);
+  if (bk.length) { L.push('', '요즘 읽고 있는 책이에요.', bk.map(t => '· ' + t).join('\n')); }
+
+  const say = (d.reviews || [])[0] || (d.quotes || [])[0];
+  if (say) {
+    L.push('', '한 아이가 남긴 말이에요.',
+           '\u201c' + (say.content || say.quote) + '\u201d');
+  }
+
+  L.push('', '무엇에 쓰였는지 여기서 보실 수 있어요.',
+         'https://youthitdev.github.io/youthit-book/sponsor.html',
+         '', '무료수신거부 0808-000-000');
+  return L.join('\n');
+}
+
+function rpCopy() {
+  const t = document.getElementById('rpText');
+  t.select(); t.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(t.value)
+    .then(() => alert('복사했어요. 문자나 메일에 붙여넣으세요.'))
+    .catch(() => alert('복사하지 못했어요. 직접 선택해서 복사해주세요.'));
 }
 
 // 루틴 관리.
