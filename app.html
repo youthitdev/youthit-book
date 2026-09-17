@@ -220,12 +220,17 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .tc-done { margin-top:12px; text-align:center; font-size:13.5px; font-weight:700;
            color:var(--green-d); background:#f4faea; border-radius:11px; padding:10px; }
 .tc-done + .btn { margin-top:9px; }
+/* 인증 탭 한 줄 요약 */
+.cline { font-size:13px; color:var(--ink-3); margin:-4px 0 12px; }
+.cline b { color:var(--ink); font-weight:800; font-size:15px; }
 /* 포인트 한 줄 */
 .tc-pt { display:flex; align-items:center; gap:10px; background:#f7fbf0; border:1px solid #d8ebb8;
          border-radius:14px; padding:13px 16px; margin-bottom:20px; cursor:pointer; }
 .tc-pt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tc-pt span { flex:1; font-size:12.5px; color:var(--ink-2); font-weight:600; }
 .tc-pt i { color:var(--ink-3); font-size:16px; }
+.tc-keep { font-size:12.5px; color:var(--ink-3); line-height:1.6;
+  margin:-14px 0 20px; padding:0 4px; }
 /* 함께 쌓은 것 — 숫자판 대신 줄글 */
 .stat-p p { font-size:14.5px; line-height:1.85; color:var(--ink-2); }
 .stat-p p + p { margin-top:2px; }
@@ -242,33 +247,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .hs span { display:block; font-size:11.5px; color:var(--ink-3); margin-top:3px; font-weight:600;
            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* 루틴 진행도 (인증 탭) */
-.rprog { padding:16px 17px 15px; margin-bottom:12px; }
-.rp-top { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-.rp-top b { font-size:24px; font-weight:800; letter-spacing:-.7px; }
-.rp-top b small { font-size:13px; font-weight:700; color:var(--ink-3); margin-left:2px; letter-spacing:0; }
-.rp-top .rp-em { font-size:19px; margin-left:5px; }
-.rp-top > span { font-size:12.5px; color:var(--ink-3); font-weight:600; }
-.rp-bar { height:9px; border-radius:99px; background:var(--bg); overflow:hidden; margin:11px 0 0; }
-.rp-bar i { display:block; height:100%; border-radius:99px; background:var(--green);
-            transition:width .35s ease; }
-.rp-sub { display:flex; gap:16px; margin-top:13px; padding-top:13px; border-top:1px solid var(--line); }
-.rp-sub > span { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-3); font-weight:600; }
-.rp-sub i { width:26px; height:26px; border-radius:9px; display:grid; place-items:center;
-            font-size:13px; font-style:normal; line-height:1; flex-shrink:0; }
-.rp-sub b { color:var(--ink); font-size:14px; font-weight:800; }
 
-/* 루틴을 끝냈을 때 */
-.ec { padding:20px 18px 18px; text-align:center; margin-bottom:12px; }
-.ec-top { font-size:16px; font-weight:800; }
-.ec-sub { font-size:13px; color:var(--ink-3); margin-top:5px; }
-.ec-sub b { color:var(--ink); }
-.ec-next { margin-top:16px; padding-top:16px; border-top:1px solid var(--line); text-align:left; }
-.ec-next b { display:block; font-size:14.5px; font-weight:800; }
-.ec-next span { display:block; font-size:12.5px; color:var(--ink-3); line-height:1.65; margin-top:5px; }
-.ec-next.ok b { color:var(--green-d); }
-.ec-btns { display:flex; gap:8px; margin-top:14px; }
-.ec-btns .btn { flex:1; margin:0; }
 /* 기록 격자 위의 머리줄 — 몇 장인지와 '내 기록만' 걸개 */
 .cg-head { display:flex; align-items:center; justify-content:space-between;
   margin:20px 0 10px; }
@@ -1516,6 +1495,10 @@ function viewHome() {
       <span>${p.left > 0 ? `🎫 쓸 수 있는 교환권 ${p.left}장` : `다음 책까지 ${won(p.to_next)}P`}</span>
       <i class="ti ti-chevron-right" onclick="go('my')"></i>
     </div>`;
+    // 7일 루틴을 다 해도 135P 라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
+    // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
+    if (p.left === 0 && mine.some(routineEnded))
+      h += `<div class="tc-keep">포인트는 사라지지 않아요. 다음 루틴을 이어서 하면 채워집니다.</div>`;
   } else {
     h += `<div class="card" style="text-align:center;padding:26px 20px;">
       <div style="font-size:30px;">📚</div>
@@ -1557,13 +1540,15 @@ function viewCert() {
     const d  = routineDay(r);
     const cs = certsOf(r.id);
     const talk = state.comments.filter(m => cs.some(c => c.id === m.cert_id)).length;
-    // 위쪽 진행 카드는 늘 전체 기준이다. '내 기록만' 은 격자에만 건다
+    // 진행도와 포인트는 홈과 MY 에 있다. 여기서는 한 줄로만 짚고 격자를 앞세운다 —
+    // 사진 보러 들어온 탭인데 사진까지 카드 두 개를 지나야 했다
     const done = didToday(r.id);
+    const line = [d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정',
+                  `인증 ${won(cs.length)}`, `소통 ${won(talk)}`].join(' · ');
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
-      ${progressCard(d, cs.length, talk)}
-      ${routineEnded(r)
-        ? endedCard(r)
+      <div class="cline">${line}</div>
+      ${routineEnded(r) ? ''
         : done
           ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>`
           : `<button class="btn btn-primary" style="margin-bottom:12px;" onclick="openCert(${r.id})">오늘 인증하기</button>`}
@@ -1597,57 +1582,6 @@ function certGrid(all) {
 }
 
 // 루틴이 며칠짜리고 오늘이 며칠째인지
-// 루틴이 끝났을 때. 7일짜리를 다 해도 135P 라 그것만으로는 책을 못 받는다.
-// 포인트는 계정에 쌓이므로 '모자라다'가 아니라 '이어서 하면 된다'로 말한다
-function endedCard(r) {
-  const p  = myPoints();
-  const n  = myCerts(r.id).length;
-  const rv = myRoutineReview(r.id);
-  const pct = Math.min(100, Math.round((p.points % p.per) / Math.max(p.per, 1) * 100));
-
-  const next = p.left > 0
-    ? `<div class="ec-next ok">
-         <b>🎫 책을 받을 수 있어요</b>
-         <span>쓸 수 있는 교환권 ${p.left}장 · 가까운 동네책방에서 골라보세요</span>
-         <button class="btn btn-primary" style="margin-top:12px;" onclick="go('store')">책방 찾기</button>
-       </div>`
-    : `<div class="ec-next">
-         <b>책 한 권까지 ${won(p.to_next)}P 남았어요</b>
-         <div class="bal-bar" style="background:#e9e9ef;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
-         <span>포인트는 사라지지 않아요. 다음 루틴을 이어서 하면 채워집니다.</span>
-         <div class="ec-btns">
-           ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
-           <button class="btn btn-line" onclick="go('home')">루틴 둘러보기</button>
-         </div>
-       </div>`;
-
-  return `<div class="card ec">
-    <div class="ec-top">🌱 끝까지 함께해줘서 고마워요</div>
-    <div class="ec-sub">이 루틴에서 <b>${n}일</b>을 읽었어요</div>
-    ${next}
-  </div>`;
-}
-
-// 루틴 진행도. 숫자 셋을 나란히 두면 셋 다 비슷해 보여서
-// 제일 중요한 '며칠째'를 막대로 크게 세우고 나머지 둘은 밑에 붙였다
-function progressCard(d, certs, talk) {
-  const pct = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
-  const head = d
-    ? (d.ended ? `<b>완주<span class="rp-em">🎉</span></b>` : `<b>${d.n}<small>일째</small></b>`)
-    : `<b>-</b>`;
-  return `<div class="card rprog">
-    <div class="rp-top">
-      ${head}
-      <span>${d ? `${d.total}일 중` : '기간 미정'}</span>
-    </div>
-    ${d ? `<div class="rp-bar"><i style="width:${pct}%"></i></div>` : ''}
-    <div class="rp-sub">
-      <span><i style="background:#FFF4DE">📸</i>우리 인증 <b>${won(certs)}</b></span>
-      <span><i style="background:#ECEDFB">💬</i>우리 소통 <b>${won(talk)}</b></span>
-    </div>
-  </div>`;
-}
-
 function routineDay(r) {
   if (!r.start_date || !r.end_date) return null;
   const d0 = new Date(r.start_date + 'T00:00:00');
