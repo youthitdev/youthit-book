@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""아이콘 생성기.  python3 make-icons.py
+"""관리자 아이콘 생성기.  python3 make-icons.py
+
+청소년 앱·랜딩·후원자 아이콘은 bake-icons.py 가 만든다.
 
 SVG 를 손으로 고치면 PNG 가 따로 놀기 때문에 한 곳에서 같이 굽는다.
 바깥 라이브러리 없이 순수 파이썬으로 그린다 (맥에 SVG 래스터라이저가 없다).
@@ -171,15 +173,9 @@ BLUE   = ((0x3A, 0x40, 0xD6), (0x2A, 0x2F, 0xA8))
 PINK   = ((0xFF, 0x3D, 0x7F), (0xE0, 0x00, 0x5C))
 
 if __name__ == '__main__':
-    print('한끗독서 아이콘 굽는 중…')
-    #        파일                      크기  색    꽉참   내용크기
-    jobs = [('icon-192.png',           192, BLUE, False, 1.00),   # 탭 — 모서리 투명
-            ('icon-512.png',           512, BLUE, False, 1.00),
-            ('icon-192-maskable.png',  192, BLUE, True,  0.72),   # 안드로이드
-            ('icon-512-maskable.png',  512, BLUE, True,  0.72),
-            ('icon-apple.png',         192, BLUE, True,  0.88),   # 아이폰 홈 화면
-            ('icon-apple-512.png',     512, BLUE, True,  0.88),
-            ('icon-admin.png',         192, PINK, False, 1.00)]
-    for name, size, (c0, c1), bleed, k in jobs:
-        write_png(name, size, render(size, c0, c1, BOOK(), bleed, k))
-    print('끝. 탭은 모서리 투명, 홈 화면(maskable·apple)은 꽉 참.')
+    print('관리자 아이콘 굽는 중…')
+    # 청소년 앱·랜딩·후원자 아이콘은 여기서 만들지 않는다.
+    # 2026-09-17 부터 logo-source.png 한 장을 bake-icons.py 로 굽는다.
+    # 관리자만 여기 남았다 — 실수로 관리자 창을 닫지 않게 색으로 구분하는 핑크다.
+    write_png('icon-admin.png', 192, render(192, *PINK, BOOK(), False, 1.00))
+    print('끝. icon-admin.png')
