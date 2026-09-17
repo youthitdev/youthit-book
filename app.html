@@ -1884,7 +1884,8 @@ function reviewTodos() {
   const out = [];
   myRoutines().forEach(r => {
     if (routineEnded(r) && !myRoutineReview(r.id))
-      out.push({ kind:'routine', id:r.id, title:r.title, emoji:r.emoji || '📚' });
+      out.push({ kind:'routine', id:r.id, title:r.title, emoji:r.emoji || '📚',
+                 days: routineDay(r)?.total || 0 });
   });
   state.purchases
     .filter(b => b.user_id === me.id && b.status !== 'void' && !myBookReview(b.id))
@@ -1923,7 +1924,8 @@ function viewFeed() {
         <div style="font-weight:700;font-size:14px;">${t.emoji} ${t.kind === 'routine'
           ? `${esc(t.title)} 루틴이 끝났어요` : '받은 책 후기를 남겨주세요'}</div>
         <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${t.kind === 'routine'
-          ? '15일 동안 어땠는지 적어주세요' : (t.title ? esc(t.title) : '어떤 책이었는지 적어주세요')}</div>
+          ? (t.days ? `${t.days}일 동안 어땠는지 적어주세요` : '어땠는지 적어주세요')
+          : (t.title ? esc(t.title) : '어떤 책이었는지 적어주세요')}</div>
       </div>
       <span class="rv-p">+${t.kind === 'routine' ? RV_PR() : RV_PB()}P</span>
     </div>`).join('')}` : '';
@@ -1966,9 +1968,11 @@ function openReview(kind, id) {
   $('rvBookWrap').style.display = isBook ? '' : 'none';
   $('rvBook').value = existing?.book_title || '';
   $('rvContent').value = existing?.content || '';
+  // 루틴 길이는 7·15·30일이 섞여 있다. 15일을 박아두면 4일짜리에도 15일이라 나온다
+  const rvDays = isBook ? 0 : (routineDay(r)?.total || 0);
   $('rvContent').placeholder = isBook
     ? '어떤 책이었는지, 읽고 나서 어땠는지 적어주세요.'
-    : '15일 동안 어땠는지 적어주세요. 잘 안 읽힌 날 이야기도 괜찮아요.';
+    : `${rvDays ? rvDays + '일 동안' : '루틴 하는 동안'} 어땠는지 적어주세요. 잘 안 읽힌 날 이야기도 괜찮아요.`;
   $('rvDelete').style.display = existing ? '' : 'none';
   $('rvSubmit').textContent = existing ? '고치기' : '올리기';
   checkReview();
