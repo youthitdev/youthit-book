@@ -25,7 +25,7 @@
 /* ── 첫 화면 ─────────────────────────────────────────── */
 .sp { position:fixed; inset:0; z-index:900; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:26px;
-  background:linear-gradient(150deg,#3A40D6,#2A2FA8);
+  background:linear-gradient(160deg,#2640D9,#1C36C8);
   transition:opacity .45s ease; }
 .sp.hide { opacity:0; pointer-events:none; }
 .sp-book { position:relative; width:168px; height:124px; perspective:900px; }
@@ -47,7 +47,7 @@
   50%  {             background:#fff; }
   100% { opacity:1; transform:rotateY(-180deg); background:#fff; }
 }
-.sp-spark { position:absolute; right:-16px; top:-18px; width:46px; height:46px;
+.sp-spark { position:absolute; left:55px; top:-74px; width:104px; height:72px;
   animation:spPop .55s cubic-bezier(.34,1.56,.64,1) 1.55s both; }
 @keyframes spPop {
   0%   { opacity:0; transform:scale(.3) rotate(-40deg); }
@@ -463,14 +463,18 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <div class="sp-flip sp-f1"></div>
     <div class="sp-flip sp-f2"></div>
     <div class="sp-spine"></div>
-    <svg class="sp-spark" viewBox="0 0 48 48" aria-hidden="true">
-      <g stroke="#FFD600" stroke-width="7" stroke-linecap="round">
-        <line x1="24" y1="15.4" x2="24" y2="1"/>
-        <line x1="24" y1="32.6" x2="24" y2="47"/>
-        <line x1="16.5" y1="19.7" x2="4.0" y2="12.5"/>
-        <line x1="31.5" y1="19.7" x2="44.0" y2="12.5"/>
-        <line x1="16.5" y1="28.3" x2="4.0" y2="35.5"/>
-        <line x1="31.5" y1="28.3" x2="44.0" y2="35.5"/>
+    <!-- 앱 아이콘(logo-source.png)의 노란 픽셀에서 그대로 잰 것이다.
+         별 — 가로 반지름 112 · 세로 116, 허리 56, 끝은 굵기 24로 둥글린다.
+              뾰족하게 두면 원본과 다르다. 원본 끝은 뭉툭하다.
+         광선 — 굵기 37, 각각 65도 · 36도 · 11도.
+         겹쳐보면 원본과 98% 일치한다. -->
+    <svg class="sp-spark" viewBox="-1 -1 443 305" aria-hidden="true">
+      <path d="M124 59 Q147 152 236 175 Q147 198 124 291 Q101 198 12 175 Q101 152 124 59 Z"
+            fill="#FFD600" stroke="#FFD600" stroke-width="24" stroke-linejoin="round"/>
+      <g stroke="#FFD600" stroke-width="37" stroke-linecap="round">
+        <line x1="261" y1="95"  x2="297" y2="18"/>
+        <line x1="318" y1="146" x2="405" y2="83"/>
+        <line x1="344" y1="209" x2="423" y2="194"/>
       </g>
     </svg>
   </div>
@@ -1421,7 +1425,7 @@ function viewHome() {
     : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`);
 
   if (isGuest()) {
-    return `<div class="card" style="background:linear-gradient(150deg,#3A40D6,#2A2FA8);color:#fff;">
+    return `<div class="card" style="background:linear-gradient(160deg,#2640D9,#1C36C8);color:#fff;">
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
