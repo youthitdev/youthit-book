@@ -234,8 +234,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 <div class="overlay" id="photoOverlay">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-t">후원자 화면에 올릴 사진</div>
-      <div class="modal-d">아이가 공개에 동의한 사진입니다. 눈으로 확인하고 올려주세요.</div>
+      <div class="modal-t">후원자 화면에 올릴 책인증</div>
+      <div class="modal-d">아이가 공개에 동의한 책인증입니다. 눈으로 확인하고 올려주세요.</div>
     </div>
     <div class="modal-bd">
       <img id="phImg" alt="" style="width:100%;height:auto;max-height:52vh;object-fit:contain;
@@ -246,7 +246,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <div>· 교복 명찰, 학생증, 이름이 찍히지 않았나요</div>
         <div>· 집 주소나 문패가 배경에 보이지 않나요</div>
       </div>
-      <div class="ph-warn">한 번 올라가면 되돌리기 어렵습니다. 아이 사진입니다.</div>
+      <div class="ph-warn">한 번 올라가면 되돌리기 어렵습니다. 아이가 보낸 책인증입니다.</div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('photoOverlay')">닫기</button>
@@ -1017,16 +1017,16 @@ function viewPending() {
 
 // 사진이 세 장이다. 이름을 헷갈리면 엉뚱한 걸 보고 공개하게 된다.
 //
-//   책 사진(비공개)  아이가 책 받고 찍은 것. dokseo-proofs, 늘 있다.
+//   책인증(비공개)   아이가 책 받고 찍은 것. dokseo-proofs, 늘 있다.
 //                    운영진이 확인하는 건 이것 — 서명 URL 로 연다
-//   책 사진(공개본)  같은 사진의 사본. 아이가 공개에 동의했을 때만 cert-photos 에
+//   책인증(공개본)   같은 사진의 사본. 아이가 공개에 동의했을 때만 cert-photos 에
 //                    한 장 더 올라간다. 후원자 화면에 나가는 건 이쪽이다
 //   영수증           서점이 보낸 것을 운영진이 정산할 때 올린다. dokseo-receipts.
 //                    전에는 올리기만 하고 볼 방법이 없었다
 function photoCell(g) {
   const a = g.photo_path
-    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="아이가 보낸 책 사진">책 사진</div>`
-    : `<div class="thumb">책 사진</div>`;
+    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="아이가 책 받고 찍은 사진">책인증</div>`
+    : `<div class="thumb">책인증</div>`;
   const b = g.receipt
     ? `<div class="thumb" style="cursor:pointer;" onclick="viewReceipt('${esc(g.receipt)}')" title="서점이 보낸 영수증">영수증</div>`
     : '';
