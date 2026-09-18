@@ -126,6 +126,11 @@ tr:hover td { background:#fcfcfd; }
 .modal-d { font-size:12.5px; color:var(--ink-3); margin-top:2px; }
 .modal-bd { padding:20px 22px; }
 .modal-ft { padding:14px 22px 20px; display:flex; gap:8px; }
+.ph-check { margin-top:14px; background:#f7f7fa; border-radius:12px; padding:13px 15px;
+  font-size:12.5px; color:var(--ink-2); line-height:1.85; }
+.ph-check b { display:block; font-size:13px; color:var(--ink); margin-bottom:4px; }
+.ph-warn { margin-top:10px; font-size:12.5px; color:#C2185B; font-weight:700; line-height:1.6; }
+.thumb + .thumb { margin-top:4px; }
 .modal-ft .btn { flex:1; padding:12px; }
 .field { margin-bottom:16px; }
 .label { font-size:12.5px; font-weight:700; margin-bottom:6px; }
@@ -226,6 +231,30 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 </div>
 
 <!-- 루틴 참여자 -->
+<div class="overlay" id="photoOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">후원자 화면에 올릴 사진</div>
+      <div class="modal-d">아이가 공개에 동의한 사진입니다. 눈으로 확인하고 올려주세요.</div>
+    </div>
+    <div class="modal-bd">
+      <img id="phImg" alt="" style="width:100%;height:auto;max-height:52vh;object-fit:contain;
+           border-radius:12px;display:block;background:#f2f2f5;">
+      <div class="ph-check">
+        <b>이 세 가지를 봐주세요</b>
+        <div>· 얼굴이 책으로 가려졌나요</div>
+        <div>· 교복 명찰, 학생증, 이름이 찍히지 않았나요</div>
+        <div>· 집 주소나 문패가 배경에 보이지 않나요</div>
+      </div>
+      <div class="ph-warn">한 번 올라가면 되돌리기 어렵습니다. 아이 사진입니다.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('photoOverlay')">닫기</button>
+      <button class="btn btn-pink" id="phGo" onclick="confirmPhoto()">확인했어요 · 공개하기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="peopleOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -976,7 +1005,7 @@ function viewPending() {
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
-      <td>${g.photo_path ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="사진 보기">보기</div>` : `<div class="thumb">사진</div>`}</td>
+      <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b></td>
       <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
       <td class="num">${fmtDate(g.created_at)}</td>
@@ -986,17 +1015,45 @@ function viewPending() {
   </table></div>` : `<div class="empty">정산 대기 중인 건이 없습니다.</div>`}`;
 }
 
-// 아이가 공개에 동의한 사진만 여기 뜬다. 얼굴이 가려졌는지 눈으로 확인하고 올린다
+// 사진이 두 장 섞여 있다. 섞어 두면 엉뚱한 걸 보고 공개하게 된다.
+//   영수증  — 서점이 보낸 증빙. dokseo-proofs 버킷(비공개), 서명 URL 로 연다
+//   아이 사진 — 책으로 얼굴을 가리고 찍은 것. 후원자 화면에 나가는 건 이쪽이다
+function photoCell(g) {
+  const a = g.photo_path
+    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="서점 영수증">영수증</div>`
+    : `<div class="thumb">영수증</div>`;
+  const b = g.book_photo
+    ? `<div class="thumb" style="cursor:pointer;" onclick="openPhoto(${g.id}, true)" title="아이가 보낸 책 사진">아이 사진</div>`
+    : '';
+  return a + b;
+}
+
 function sharePhotoCell(g) {
   if (!g.book_photo) return `<span class="muted">동의 안 함</span>`;
   return `<button class="btn ${g.photo_public ? 'btn-line' : 'btn-pink'}"
-    onclick="togglePhoto(${g.id})">${g.photo_public ? '공개 중 · 내리기' : '확인하고 공개'}</button>`;
+    onclick="${g.photo_public ? `togglePhoto(${g.id}, false)` : `openPhoto(${g.id})`}"
+    >${g.photo_public ? '공개 중 · 내리기' : '확인하고 공개'}</button>`;
 }
 
-async function togglePhoto(id) {
+// 보지 않고는 못 켠다. 예/아니오 창은 사진을 안 봐도 눌러진다
+let phCtx = null;
+function openPhoto(id, viewOnly) {
+  const g = DB.purchases.find(x => x.id === id); if (!g || !g.book_photo) return;
+  phCtx = g;
+  document.getElementById('phImg').src = g.book_photo;
+  document.getElementById('phGo').style.display = (viewOnly || g.photo_public) ? 'none' : '';
+  document.getElementById('photoOverlay').classList.add('on');
+}
+
+function confirmPhoto() {
+  const g = phCtx; if (!g) return;
+  closeModal('photoOverlay');
+  togglePhoto(g.id, true);
+}
+
+async function togglePhoto(id, next) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
-  const next = !g.photo_public;
-  if (next && !confirm('얼굴이나 신원이 드러나는 부분이 없는지 사진을 확인하셨나요?\n공개하면 후원자 화면에 올라갑니다.')) return;
+  if (!next && !confirm('후원자 화면에서 이 사진을 내릴까요?')) return;
   if (LIVE) {
     const { error } = await sb.from('book_purchases').update({ photo_public: next }).eq('id', id);
     if (error) return alert('변경에 실패했습니다: ' + error.message);
@@ -1017,7 +1074,8 @@ function viewSettled() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">서점 입금</div>
-    <div class="panel-d">아이는 돈 없이 책을 가져갑니다. 책값은 유스보이스가 서점에 보냅니다 — 다녀간 뒤 5영업일 안에.</div></div>
+    <div class="panel-d">아이는 돈 없이 책을 가져갑니다. 책값은 유스보이스가 서점에 보냅니다 — 다녀간 뒤 5영업일 안에.<br>
+      정산을 마친 뒤에도 사진 공개는 여기서 할 수 있어요.</div></div>
   </div>
 
   ${wait.length ? `<div class="preview" style="margin-bottom:14px;">
@@ -1029,12 +1087,15 @@ function viewSettled() {
   </div>` : ''}
 
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>청소년</th><th>서점</th><th class="right">책값</th><th>정산일</th><th>입금</th></tr>
+    <tr><th>사진</th><th>청소년</th><th>서점</th><th class="right">책값</th><th>정산일</th>
+        <th>후원자 공개</th><th>입금</th></tr>
     ${rows.map(g => `<tr>
+      <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b><div class="muted">${esc(g.routine)}</div></td>
       <td>${esc(g.bookstore)}</td>
       <td class="right num"><b>${won(g.amount)}원</b></td>
       <td class="num">${fmtDate(g.settled_at)}</td>
+      <td>${sharePhotoCell(g)}</td>
       <td>${g.paid_at
         ? `<span class="chip c-done">${fmtDate(g.paid_at)} 입금</span>
            <button class="btn btn-line" style="margin-left:6px;" onclick="markPaid(${g.id}, false)">되돌리기</button>`
