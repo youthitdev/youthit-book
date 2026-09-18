@@ -1015,15 +1015,20 @@ function viewPending() {
   </table></div>` : `<div class="empty">정산 대기 중인 건이 없습니다.</div>`}`;
 }
 
-// 사진이 두 장 섞여 있다. 섞어 두면 엉뚱한 걸 보고 공개하게 된다.
-//   영수증  — 서점이 보낸 증빙. dokseo-proofs 버킷(비공개), 서명 URL 로 연다
-//   아이 사진 — 책으로 얼굴을 가리고 찍은 것. 후원자 화면에 나가는 건 이쪽이다
+// 사진이 세 장이다. 이름을 헷갈리면 엉뚱한 걸 보고 공개하게 된다.
+//
+//   책 사진(비공개)  아이가 책 받고 찍은 것. dokseo-proofs, 늘 있다.
+//                    운영진이 확인하는 건 이것 — 서명 URL 로 연다
+//   책 사진(공개본)  같은 사진의 사본. 아이가 공개에 동의했을 때만 cert-photos 에
+//                    한 장 더 올라간다. 후원자 화면에 나가는 건 이쪽이다
+//   영수증           서점이 보낸 것을 운영진이 정산할 때 올린다. dokseo-receipts.
+//                    전에는 올리기만 하고 볼 방법이 없었다
 function photoCell(g) {
   const a = g.photo_path
-    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="서점 영수증">영수증</div>`
-    : `<div class="thumb">영수증</div>`;
-  const b = g.book_photo
-    ? `<div class="thumb" style="cursor:pointer;" onclick="openPhoto(${g.id}, true)" title="아이가 보낸 책 사진">아이 사진</div>`
+    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="아이가 보낸 책 사진">책 사진</div>`
+    : `<div class="thumb">책 사진</div>`;
+  const b = g.receipt
+    ? `<div class="thumb" style="cursor:pointer;" onclick="viewReceipt('${esc(g.receipt)}')" title="서점이 보낸 영수증">영수증</div>`
     : '';
   return a + b;
 }
@@ -1185,7 +1190,8 @@ async function submitSettle() {
   const note = document.getElementById('settleNote').value.trim();
 
   if (LIVE) {
-    // 영수증은 비공개 버킷(dokseo-receipts). 올리다 실패해도 정산은 막지 않는다
+    // 영수증은 서점이 문자·카톡으로 보내온 것을 운영진이 올린다. 서점에는
+    // 로그인 화면이 없다. 비공개 버킷이고, 올리다 실패해도 정산은 막지 않는다
     let receiptPath = null;
     const f = document.getElementById('settleReceipt').files[0];
     if (f) {
@@ -1296,6 +1302,7 @@ async function loadLive() {
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, paid_at: p.paid_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
+    receipt: p.receipt_url || null,
     allocs: p.consumption_allocations || [],
   }));
 
@@ -1315,13 +1322,15 @@ async function loadLive() {
 
 }
 
-// 책 구매 사진은 비공개 버킷에 있어서 볼 때마다 짧은 서명 URL을 새로 발급받음
-async function viewProof(path) {
+// 둘 다 비공개 버킷이라 볼 때마다 짧은 서명 URL 을 새로 발급받는다
+async function openSigned(bucket, path, what) {
   if (!LIVE) { alert('데모 모드에서는 사진이 없어요.'); return; }
-  const { data, error } = await sb.storage.from('dokseo-proofs').createSignedUrl(path, 60);
-  if (error) { alert('사진을 열지 못했어요: ' + error.message); return; }
+  const { data, error } = await sb.storage.from(bucket).createSignedUrl(path, 60);
+  if (error) { alert(what + '을 열지 못했어요: ' + error.message); return; }
   window.open(data.signedUrl, '_blank', 'noopener');
 }
+const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
+const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
 function switchTab(t) {
