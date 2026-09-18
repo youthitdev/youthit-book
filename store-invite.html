@@ -33,8 +33,11 @@ section{padding:62px 0}
 
 header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .hd{max-width:760px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.logo{font-size:17px;font-weight:800;letter-spacing:-.5px}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:8px}
 .logo span{color:var(--green-d)}
+/* 누구를 위한 화면인지 제목 옆에 붙인다. 청소년 앱은 「청소년」, 여기는 「서점」 */
+.logo i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--green-d);
+  background:#eef7dd;border-radius:8px;padding:4px 9px;letter-spacing:0}
 .hd a{font-size:13px;font-weight:700;text-decoration:none;padding:9px 15px;border-radius:11px;
   background:var(--green);color:#fff;white-space:nowrap}
 
@@ -133,7 +136,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 
 <header>
   <div class="hd">
-    <div class="logo">한끗<span>독서</span></div>
+    <div class="logo">한끗<span>독서</span><i>서점</i></div>
     <a href="#apply">신청하기</a>
   </div>
 </header>
