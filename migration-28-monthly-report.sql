@@ -12,7 +12,12 @@ RETURNS jsonb AS $$
 DECLARE
   d0 date; d1 date; r jsonb;
 BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION '권한이 없습니다'; END IF;
+  -- SQL 편집기에는 auth.email() 이 없어 is_admin() 이 false 가 된다.
+  -- 익명은 아래 REVOKE 로 실행 자체가 막혀 있고, 로그인한 사람은 auth.uid() 가
+  -- 항상 있으므로, uid 가 없는 경우(=SQL 편집기)만 통과시키는 게 안전하다
+  IF auth.uid() IS NOT NULL AND NOT is_admin() THEN
+    RAISE EXCEPTION '권한이 없습니다';
+  END IF;
   IF p_year IS NULL OR p_month IS NULL OR p_month < 1 OR p_month > 12 THEN
     RAISE EXCEPTION '연월이 올바르지 않습니다';
   END IF;
