@@ -186,6 +186,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .bk-chip b { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bk-chip.on { border-color:var(--green); background:var(--green-l); color:var(--green-d); }
 .bk-chip.add { padding-left:12px; color:var(--ink-3); }
+.bk-chip.did { opacity:.45; cursor:default; }
+.bk-full b { color:var(--ink-2); }
 .bk-full { font-size:12px; color:var(--ink-3); margin-top:8px; }
 /* 후기 — 쓸 수 있는 것 */
 .rv-todo { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;
@@ -1317,6 +1319,18 @@ const myRoutines = () => me ? state.routines.filter(r => {
   return me.role === 'kkutjjang' ? r.led_by === me.id : (p && p.status === 'approved');
 }) : [];
 const didToday = rid => myCerts(rid).some(c => c.cert_date === todayKST());
+// 책마다 하루 한 번이다. 오늘 이미 올린 책과, 아직 안 올린 책을 나눈다
+const doneToday = rid => myCerts(rid)
+  .filter(c => c.cert_date === todayKST()).map(c => c.book_title);
+const leftToday = rid => {
+  const done = doneToday(rid);
+  const books = booksOf(rid);
+  return books.length ? books.filter(b => !done.includes(b.title)) : [];
+};
+// 등록한 책을 오늘 다 올렸나 (등록한 책이 없으면 하루 한 번으로 본다)
+const allDoneToday = rid => booksOf(rid).length
+  ? leftToday(rid).length === 0
+  : didToday(rid);
 
 // 잔액 = (내 인증 수 × 인증당 적립액) − 정산 완료된 구매 합계
 // 서버 dokseo_points() 와 같은 식. 포인트는 루틴을 가리지 않고 계정에 쌓인다.
@@ -1474,13 +1488,19 @@ function todayCard(r) {
   const ended = routineEnded(r);
   const rv    = myRoutineReview(r.id);
 
+  // 책마다 하루 한 번. 남은 책이 있으면 그 책으로 바로 열어준다
+  const rest = leftToday(r.id);
   const action = ended
     ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
        ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}`
-    : done
-      ? `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
-         <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>`
-      : `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`;
+    : !done
+      ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`
+      : rest.length
+        ? `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
+           <button class="btn btn-line" onclick="openCert(${r.id}, '${esc(rest[0].title).replace(/'/g, "\\'")}')">
+             「${esc(rest[0].title)}」도 인증하기</button>`
+        : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
+           <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>`;
 
   // 루틴 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
   // 두 권 넘게 읽으면(병렬독서) 오른쪽 한 장 대신 막대 아래 한 줄로 내린다 —
@@ -1665,9 +1685,13 @@ function viewCert() {
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       <div class="cline">${line}</div>
       ${routineEnded(r) ? ''
-        : done
-          ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>`
-          : `<button class="btn btn-primary" style="margin-bottom:12px;" onclick="openCert(${r.id})">오늘 인증하기</button>`}
+        : !done
+          ? `<button class="btn btn-primary" style="margin-bottom:12px;" onclick="openCert(${r.id})">오늘 인증하기</button>`
+          : leftToday(r.id).length
+            ? `<button class="btn btn-line" style="margin-bottom:12px;"
+                 onclick="openCert(${r.id}, '${esc(leftToday(r.id)[0].title).replace(/'/g, "\\'")}')">
+                 「${esc(leftToday(r.id)[0].title)}」도 인증하기</button>`
+            : `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>`}
       ${certGrid(cs)}`;
   }).join('');
 }
@@ -2351,10 +2375,14 @@ function openRoutine(id) {
       : p && p.status==='approved' ? (
           r.status === 'done'
             ? `<div class="card" style="text-align:center;color:var(--ink-3);">끝난 루틴이에요. 함께해줘서 고마워요 🌱</div>`
-            : didToday(r.id)
-              ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>
-                 <button class="btn btn-line" onclick="closeOv('ovRoutine');go('feed')">다른 사람 기록 보기</button>`
-              : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');openCert(${r.id})">오늘 인증하기</button>`)
+            : !didToday(r.id)
+              ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');openCert(${r.id})">오늘 인증하기</button>`
+              : leftToday(r.id).length
+                ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>
+                   <button class="btn btn-line" onclick="closeOv('ovRoutine');openCert(${r.id}, '${esc(leftToday(r.id)[0].title).replace(/'/g, "\\'")}')">
+                     「${esc(leftToday(r.id)[0].title)}」도 인증하기</button>`
+                : `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>
+                   <button class="btn btn-line" onclick="closeOv('ovRoutine');go('feed')">다른 사람 기록 보기</button>`)
       : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">확인 중이에요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : me.role==='kkutjjang' ? ''
@@ -2807,10 +2835,15 @@ function drawBookChips() {
   const books = booksOf(certRid);
   const now = $('cBook').value.trim();
 
-  let h = books.map(b => `<button type="button" class="bk-chip${!newBookOn && b.title === now ? ' on' : ''}"
+  const done = doneToday(certRid);
+  let h = books.map(b => {
+    const ok = done.includes(b.title) && b.title !== now;   // 오늘 이미 올린 책
+    return `<button type="button" class="bk-chip${!newBookOn && b.title === now ? ' on' : ''}${ok ? ' did' : ''}"
+      ${ok ? 'disabled title="오늘은 이 책을 이미 올렸어요"' : ''}
       onclick="useBook('${esc(b.title).replace(/'/g, "\\'")}')">
       ${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : `<em>📖</em>`}
-      <b>${esc(b.title)}</b></button>`).join('');
+      <b>${esc(b.title)}</b>${ok ? ' ✓' : ''}</button>`;
+  }).join('');
 
   if (books.length < BOOK_MAX)
     h += `<button type="button" class="bk-chip add${newBookOn ? ' on' : ''}"
@@ -2818,6 +2851,9 @@ function drawBookChips() {
 
   if (books.length >= BOOK_MAX)
     h += `<span class="bk-full">한 번에 ${BOOK_MAX}권까지예요</span>`;
+  // 두 권째부터는 포인트가 안 붙는다. 올리고 나서 알면 속은 기분이 든다
+  if (done.length)
+    h += `<span class="bk-full">오늘 ${done.length}권 올렸어요 · <b>포인트는 하루에 한 번이에요</b></span>`;
   box.innerHTML = h;
   $('cNewBook').style.display = newBookOn ? '' : 'none';
   drawNewCover();
