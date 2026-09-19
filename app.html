@@ -226,26 +226,17 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
-/* 제목까지 왼쪽에 넣고 책 사진을 오른쪽에 세운다.
-   제목을 윗줄에 따로 두면 그만큼 카드가 길어진다. 아래로 모집 중 루틴과
-   진행 중 루틴이 더 붙을 자리라, 첫 카드는 짧을수록 좋다 */
-.tc-row { display:flex; gap:13px; align-items:flex-start; }
-.tc-prog { flex:1; min-width:0; }
-.tc-book { width:66px; aspect-ratio:3/4; flex:none; border-radius:10px; overflow:hidden;
-  background:#eeeae2; display:flex; align-items:center; justify-content:center;
-  font-size:24px; box-shadow:0 1px 5px rgba(0,0,0,.09); }
-.tc-book img { width:100%; height:100%; object-fit:cover; display:block; }
-.tc-bk { font-size:12px; color:var(--ink-3); margin-top:7px;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-/* 여러 권 읽을 때. 눌러서 그 책으로 바로 인증한다 */
+/* 읽는 책. 권수만큼 한 줄을 나눠 채운다. 눌러서 그 책으로 바로 인증한다.
+   높이를 고정하고 폭만 나누므로 한 권이든 세 권이든 카드 길이가 같다.
+   비율을 3:4 로 두면 한 권일 때 타일이 카드 폭을 통째로 먹어 카드가 길어진다 */
 .tc-shelf { display:flex; gap:8px; margin-top:12px; }
-/* 폭을 고정한다. flex:1 로 두면 두 권일 때 타일이 카드 폭을 반씩 먹어
-   카드가 통째로 길어진다 — 한 권일 때 오른쪽 사진과 같은 66px 로 맞춘다 */
-.tc-bt { width:66px; flex:none; cursor:pointer; }
-.tc-bt-i { width:100%; aspect-ratio:3/4; border-radius:9px; overflow:hidden; background:#eeeae2;
-  display:flex; align-items:center; justify-content:center; font-size:20px;
+.tc-bt { flex:1; min-width:0; cursor:pointer; }
+.tc-bt-i { height:96px; border-radius:10px; overflow:hidden; background:#eeeae2;
+  display:flex; align-items:center; justify-content:center; font-size:22px;
   box-shadow:0 1px 4px rgba(0,0,0,.09); }
-.tc-bt-i img { width:100%; height:100%; object-fit:cover; display:block; }
+/* 잘라내지 않고 다 보여준다. 한 권일 때 칸이 가로로 길어지는데 cover 로
+   자르면 표지의 가운데 띠만 남아 제목이 잘린다 */
+.tc-bt-i img { width:100%; height:100%; object-fit:contain; display:block; }
 .tc-bt span { display:block; font-size:11px; color:var(--ink-3); margin-top:5px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
@@ -1449,12 +1440,13 @@ function todayCard(r) {
   // 두 권 넘게 읽으면(병렬독서) 오른쪽 한 장 대신 막대 아래 한 줄로 내린다 —
   // 오른쪽에 셋을 욱여넣으면 표지가 알아볼 수 없이 작아지고, 사진 줄을
   // 따로 더하면 카드가 다시 길어진다. 자리를 옮기는 것으로 끝낸다
+  // 참여할 때 적은 책만 있고 목록이 비어 있을 수도 있다 (옛 참여자)
   const part  = myPart(r.id);
-  const books = booksOf(r.id);
-  const many  = books.length > 1;
-  const photo = books[0]?.cover_url || part?.book_photo_url || r.cover_url || '';
+  let books = booksOf(r.id);
+  if (!books.length && part?.book_title)
+    books = [{ title: part.book_title, cover_url: part.book_photo_url }];
 
-  const shelf = many
+  const shelf = books.length
     ? `<div class="tc-shelf">${books.map(b => `
         <div class="tc-bt" onclick="event.stopPropagation();openCert(${r.id}, '${esc(b.title).replace(/'/g, "\\'")}')">
           <div class="tc-bt-i">${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : '📖'}</div>
@@ -1464,18 +1456,11 @@ function todayCard(r) {
 
   return `<div class="tcard">
     <div class="tc-b">
-      <div class="tc-row">
-        <div class="tc-prog">
-          <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
-          <div class="tc-day">${d
-            ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
-            : '기간 미정'}</div>
-          ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
-          ${many ? '' : (books[0]?.title || part?.book_title
-            ? `<div class="tc-bk">📖 ${esc(books[0]?.title || part.book_title)}</div>` : '')}
-        </div>
-        ${many ? '' : `<div class="tc-book">${photo ? `<img src="${esc(photo)}" alt="">` : '📖'}</div>`}
-      </div>
+      <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+      <div class="tc-day">${d
+        ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
+        : '기간 미정'}</div>
+      ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${shelf}
       ${action}
     </div>
