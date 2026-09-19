@@ -239,7 +239,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* 여러 권 읽을 때. 눌러서 그 책으로 바로 인증한다 */
 .tc-shelf { display:flex; gap:8px; margin-top:12px; }
-.tc-bt { flex:1; min-width:0; cursor:pointer; }
+/* 폭을 고정한다. flex:1 로 두면 두 권일 때 타일이 카드 폭을 반씩 먹어
+   카드가 통째로 길어진다 — 한 권일 때 오른쪽 사진과 같은 66px 로 맞춘다 */
+.tc-bt { width:66px; flex:none; cursor:pointer; }
 .tc-bt-i { width:100%; aspect-ratio:3/4; border-radius:9px; overflow:hidden; background:#eeeae2;
   display:flex; align-items:center; justify-content:center; font-size:20px;
   box-shadow:0 1px 4px rgba(0,0,0,.09); }
