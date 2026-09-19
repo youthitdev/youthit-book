@@ -789,8 +789,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <div class="sheet-grip"></div>
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
-        <div class="sheet-t">읽는 책</div>
-        <div class="sheet-s">한 루틴에서 세 권까지 나눠 읽을 수 있어요.</div>
+        <div class="sheet-t">병렬독서</div>
+        <div class="sheet-s">한 루틴에서 세 권까지 나눠 읽을 수 있어요.
+          책마다 하루 한 번 인증해요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shBooks')" aria-label="닫기">✕</button>
     </div>
@@ -1526,9 +1527,7 @@ function todayCard(r) {
       <div class="tc-hd">
         <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
         ${books.length || !routineEnded(r)
-          ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">${
-              routineEnded(r) ? '병렬 독서'
-              : books.length < BOOK_MAX ? '+ 책' : '책 바꾸기'}</button>`
+          ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`
           : ''}
       </div>
       <div class="tc-day">${d
