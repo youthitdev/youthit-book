@@ -1527,7 +1527,7 @@ function todayCard(r) {
         <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
         ${books.length || !routineEnded(r)
           ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">${
-              routineEnded(r) ? '책 정리'
+              routineEnded(r) ? '병렬 독서'
               : books.length < BOOK_MAX ? '+ 책' : '책 바꾸기'}</button>`
           : ''}
       </div>
