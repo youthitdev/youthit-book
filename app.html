@@ -226,6 +226,24 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
+/* 카드 제목 줄에 붙는 작은 버튼 */
+.tc-hd { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.tc-add { flex:none; border:1px solid var(--line); background:#fff; border-radius:9px;
+  padding:5px 10px; font-size:11.5px; font-weight:700; color:var(--ink-2);
+  cursor:pointer; font-family:inherit; }
+/* 시트 안의 책 한 줄 */
+.sb-row { display:flex; align-items:center; gap:11px; padding:11px 0; }
+.sb-row + .sb-row { border-top:1px solid var(--line); }
+.sb-i { width:44px; height:59px; flex:none; border-radius:8px; overflow:hidden; background:#eeeae2;
+  display:flex; align-items:center; justify-content:center; font-size:18px; }
+.sb-i img { width:100%; height:100%; object-fit:cover; display:block; }
+.sb-t { flex:1; min-width:0; }
+.sb-t b { display:block; font-size:14px; font-weight:700;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sb-t span { font-size:12px; color:var(--ink-3); }
+.sb-x { flex:none; border:1px solid var(--line); background:#fff; border-radius:9px;
+  padding:7px 11px; font-size:12px; font-weight:700; color:var(--ink-3);
+  cursor:pointer; font-family:inherit; }
 /* 읽는 책. 권수만큼 한 줄을 나눠 채운다. 눌러서 그 책으로 바로 인증한다.
    높이를 고정하고 폭만 나누므로 한 권이든 세 권이든 카드 길이가 같다.
    비율을 3:4 로 두면 한 권일 때 타일이 카드 폭을 통째로 먹어 카드가 길어진다 */
@@ -763,6 +781,21 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 </div>
 
 <!-- 서점 한 곳 (아래에서 올라오는 시트) -->
+<!-- 읽는 책 관리. 더하기만 있으면 잘못 넣었을 때 세 칸이 영영 막힌다 -->
+<div class="sheet" id="shBooks" onclick="if(event.target===this)closeSheet('shBooks')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">읽는 책</div>
+        <div class="sheet-s">한 루틴에서 세 권까지 나눠 읽을 수 있어요.</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shBooks')" aria-label="닫기">✕</button>
+    </div>
+    <div id="shBooksBody"></div>
+  </div>
+</div>
+
 <div class="sheet" id="shStore" onclick="if(event.target===this)closeSheet()">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -1470,7 +1503,12 @@ function todayCard(r) {
 
   return `<div class="tcard">
     <div class="tc-b">
-      <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+      <div class="tc-hd">
+        <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+        ${routineEnded(r) ? '' :
+          `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">${
+            books.length < BOOK_MAX ? '+ 책' : '책 바꾸기'}</button>`}
+      </div>
       <div class="tc-day">${d
         ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
         : '기간 미정'}</div>
@@ -2661,7 +2699,100 @@ function openCert(rid, pickTitle) {
   drawPhotos(); pageHint(); checkCert(); openOv('ovCert');
 }
 
-// ── 읽는 책 고르기 ────────────────────────────────────
+// ── 읽는 책 관리 (홈 카드의 「+ 책」) ──────────────────
+// 더하기만 있으면 잘못 넣었을 때 세 칸이 영영 막힌다. 한 시트에 같이 둔다
+let sbRid = null, sbCover = null;
+
+function openBookSheet(rid) {
+  sbRid = rid; sbCover = null;
+  drawBookSheet();
+  $('shBooks').classList.add('on');
+}
+
+function drawBookSheet() {
+  const books = booksOf(sbRid);
+  const rows = books.map(b => `<div class="sb-row">
+      <div class="sb-i">${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : '📖'}</div>
+      <div class="sb-t"><b>${esc(b.title)}</b>
+        <span>${pageOf(sbRid, b.title) ? `${won(pageOf(sbRid, b.title))}쪽까지 읽었어요` : '아직 인증 전'}</span></div>
+      <button class="sb-x" onclick="dropBook('${esc(b.title).replace(/'/g, "\\'")}')">빼기</button>
+    </div>`).join('') || '<div class="empty" style="padding:18px;">아직 등록한 책이 없어요.</div>';
+
+  const add = books.length < BOOK_MAX ? `
+    <div style="margin-top:16px;">
+      <div class="field-label">새로 시작하는 책 <span class="req">* 필수</span></div>
+      <input type="text" id="sbTitle" placeholder="책 제목" maxlength="60" oninput="checkAddBook()">
+      <div class="field-label" style="margin-top:14px;">표지 <span class="opt">선택</span></div>
+      <div id="sbCoverBox"></div>
+      <input type="file" id="sbCoverInput" accept="image/*" style="display:none;" onchange="pickSbCover(event)">
+      <button class="btn btn-primary" id="sbSave" style="margin-top:14px;" disabled onclick="addBook()">책 더하기</button>
+    </div>`
+    : `<div class="hint" style="margin-top:14px;">세 권이 다 찼어요. 그만 읽는 책을 빼면 새로 더할 수 있어요.</div>`;
+
+  $('shBooksBody').innerHTML = rows + add;
+  drawSbCover();
+}
+
+function drawSbCover() {
+  const box = $('sbCoverBox'); if (!box) return;
+  box.innerHTML = sbCover
+    ? `<div class="book-prev"><div class="bp-wrap">
+         <div class="bp-frame"><img src="${esc(sbCover)}" alt=""></div>
+         <button type="button" class="bp-x" onclick="sbCover=null;drawSbCover()">×</button>
+       </div><div class="bp-note">홈 화면에 이렇게 보여요</div></div>`
+    : `<div class="cover-pick" onclick="document.getElementById('sbCoverInput').click()">
+         <i class="ti ti-book" style="font-size:20px;"></i>표지 사진 고르기</div>`;
+}
+
+async function pickSbCover(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try { sbCover = await resize(f, 1280, .82); drawSbCover(); }
+  catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+  e.target.value = '';
+}
+
+function checkAddBook() {
+  const b = $('sbSave'); if (b) b.disabled = !$('sbTitle').value.trim();
+}
+
+async function addBook() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const title = $('sbTitle').value.trim(); if (!title) return;
+  if (booksOf(sbRid).some(b => b.title === title)) return toast('이미 있는 책이에요');
+
+  const btn = $('sbSave'); btn.disabled = true; btn.textContent = '저장 중…';
+  let cover = null;
+  if (sbCover) {
+    const p = `${me.id}/cover_${sbRid}_${Date.now()}.jpg`;
+    const { error } = await sb.storage.from('cert-photos')
+      .upload(p, toBlob(sbCover), { contentType:'image/jpeg' });
+    if (!error) cover = sb.storage.from('cert-photos').getPublicUrl(p).data.publicUrl;
+  }
+  const { error } = await sb.from('routine_books')
+    .insert({ routine_id: sbRid, user_id: me.id, title, cover_url: cover });
+  btn.disabled = false; btn.textContent = '책 더하기';
+  if (error) return toast(error.message);
+
+  sbCover = null;
+  await loadAll(); drawBookSheet(); render();
+  toast('책을 더했어요');
+}
+
+// 목록에서만 뺀다. 이미 쌓은 인증과 포인트는 그대로 남는다
+async function dropBook(title) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const n = pageOf(sbRid, title);
+  if (!confirm(`「${title}」을(를) 목록에서 뺄까요?\n` +
+    (n ? `지금까지 ${won(n)}쪽까지 읽은 기록과 포인트는 그대로 남아요.`
+       : '기록은 그대로 남아요.'))) return;
+  const { error } = await sb.from('routine_books').delete()
+    .eq('routine_id', sbRid).eq('user_id', me.id).eq('title', title);
+  if (error) return toast('빼지 못했어요: ' + error.message);
+  await loadAll(); drawBookSheet(); render();
+  toast('목록에서 뺐어요');
+}
+
+// ── 인증 화면의 읽는 책 고르기 ────────────────────────
 let newCover = null, newBookOn = false;
 
 function drawBookChips() {
