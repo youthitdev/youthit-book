@@ -230,7 +230,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
    높이를 고정하고 폭만 나누므로 한 권이든 세 권이든 카드 길이가 같다.
    비율을 3:4 로 두면 한 권일 때 타일이 카드 폭을 통째로 먹어 카드가 길어진다 */
 .tc-shelf { display:flex; gap:8px; margin-top:12px; }
-.tc-bt { flex:1; min-width:0; cursor:pointer; }
+/* 늘 세 권 기준 폭이다. 권수에 따라 늘어나면 한 권일 때 표지가 가로로
+   길쭉해지고, 책이 늘 때마다 크기가 줄어 자리가 흔들린다 */
+.tc-bt { width:calc((100% - 16px) / 3); flex:none; min-width:0; cursor:pointer; }
 .tc-bt-i { height:96px; border-radius:10px; overflow:hidden; background:#eeeae2;
   display:flex; align-items:center; justify-content:center; font-size:22px;
   box-shadow:0 1px 4px rgba(0,0,0,.09); }
@@ -239,6 +241,9 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 .tc-bt-i img { width:100%; height:100%; object-fit:contain; display:block; }
 .tc-bt span { display:block; font-size:11px; color:var(--ink-3); margin-top:5px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
+/* 그 책을 어디까지 읽었는지. 책마다 따로 센다 */
+.tc-bt i { display:block; font-style:normal; font-size:11px; font-weight:700;
+  color:var(--green-d); text-align:center; margin-top:1px; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tc-wait { font-size:12.5px; color:var(--ink-3); margin-top:5px; line-height:1.55; }
@@ -1258,6 +1263,12 @@ const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.u
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
 // 이 루틴에서 내가 읽는 책. 한 번에 세 권까지 (병렬독서)
 const BOOK_MAX  = 3;
+// 그 책을 어디까지 읽었나. 인증마다 책 제목이 따로 있어 책별로 센다
+const pageOf = (rid, title) => {
+  const ns = myCerts(rid).filter(c => c.book_title === title && c.page_end)
+                         .map(c => c.page_end);
+  return ns.length ? Math.max(...ns) : 0;
+};
 const booksOf   = rid => me
   ? (state.rbooks || []).filter(b => b.routine_id === rid && b.user_id === me.id)
   : [];
@@ -1451,6 +1462,7 @@ function todayCard(r) {
         <div class="tc-bt" onclick="event.stopPropagation();openCert(${r.id}, '${esc(b.title).replace(/'/g, "\\'")}')">
           <div class="tc-bt-i">${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : '📖'}</div>
           <span>${esc(b.title)}</span>
+          ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : ''}
         </div>`).join('')}</div>`
     : '';
 
