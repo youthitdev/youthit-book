@@ -68,6 +68,15 @@ tr:hover td { background:#fcfcfd; }
 .btn-danger:disabled { color:var(--ink-3); border-color:var(--line); cursor:not-allowed; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 /* ── 월간 보고 ── */
+/* 열어달라고 기다리는 루틴 한 건 */
+.rw { display:flex; align-items:flex-start; gap:12px; padding:12px 0; }
+.rw + .rw { border-top:1px solid var(--line); }
+.rw-t { flex:1; min-width:0; }
+.rw-t b { font-size:14px; }
+.rw-t > span { display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
+.rw-d { font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:6px; white-space:pre-wrap; }
+.rw-r { font-size:12.5px; color:#b3003c; margin-top:6px; font-weight:600; }
+.rw-b { flex:none; display:flex; gap:6px; }
 .rp-pick { display:flex; align-items:center; gap:8px; }
 .rp-pick b { font-size:14px; min-width:92px; text-align:center; }
 .btn-s { border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 11px;
@@ -636,7 +645,8 @@ function rpCopy() {
 // 전에는 상태를 바꾸려면 SQL 을 쳐야 했다 (UPDATE routines SET status=...).
 // 끗짱이 만든 루틴이라도 운영진은 다 볼 수 있어야 하고, 종료 처리는
 // 사람이 눌러야 한다 — 종료일이 지나도 상태를 바꿔주는 장치가 없다
-const R_STATUS = { recruit: ['모집 중', 'c-wait'], active: ['진행 중', 'c-act'], done: ['종료', 'c-off'] };
+const R_STATUS = { pending: ['승인 대기', 'c-wait'], recruit: ['모집 중', 'c-wait'],
+                   active: ['진행 중', 'c-act'], done: ['종료', 'c-off'] };
 // 표가 좁아야 조작 칸이 안 잘린다. 연도는 빼고 월.일만
 const md = d => d ? String(d).slice(5).replace('-', '.') : '–';
 
@@ -667,6 +677,7 @@ const rCerts = id => (DB.certs || []).filter(c => c.routine_id === id);
 // 종료일이 지났는데 아직 진행 중이면 알려준다 — 그냥 두면 아이 화면에
 // '오늘 인증하기' 가 계속 떠 있는다
 function rOverdue(r) {
+  if (r.status === 'pending') return false;   // 아직 열지도 않았다
   if (r.status === 'done' || !r.end_date) return false;
   const today = new Date(Date.now() + 9*3600e3).toISOString().slice(0, 10);
   return r.end_date < today;
@@ -675,12 +686,33 @@ function rOverdue(r) {
 function viewRoutines() {
   const rows = DB.routines || [];
   const late = rows.filter(rOverdue);
+  // 끗짱이 만든 루틴은 열어주기 전까지 아이들에게 안 보인다
+  const wait = rows.filter(r => r.status === 'pending');
 
   return `
   <div class="panel-hd">
     <div><div class="panel-t">루틴</div>
-    <div class="panel-d">끗짱이 만든 루틴도 여기서 다 보입니다. 상태를 바꾸면 청소년 앱에 바로 반영돼요.</div></div>
+    <div class="panel-d">끗짱이 만든 루틴은 열어줘야 아이들에게 보입니다.
+      상태를 바꾸면 청소년 앱에 바로 반영돼요.</div></div>
   </div>
+
+  ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#F5D98B;background:#FFFBF0;">
+    <div class="preview-t">열어달라고 기다리는 루틴 ${wait.length}건</div>
+    ${wait.map(r => `<div class="rw">
+      <div class="rw-t">
+        <b>${r.emoji || '📚'} ${esc(r.title)}</b>
+        <span class="muted">${esc(rName(r.led_by))} · ${md(r.start_date)}~${md(r.end_date)}
+          · ${r.max_people}명 · 인증 ${r.points_per_cert || 10}P</span>
+        ${r.description ? `<p class="rw-d">${esc(r.description)}</p>` : ''}
+        ${r.cert_guide ? `<p class="rw-d">🎯 ${esc(r.cert_guide)}</p>` : ''}
+        ${r.reject_reason ? `<p class="rw-r">돌려보냄 · ${esc(r.reject_reason)}</p>` : ''}
+      </div>
+      <div class="rw-b">
+        <button class="btn btn-dark" onclick="decideRoutine(${r.id}, true)">열기</button>
+        <button class="btn btn-line" onclick="decideRoutine(${r.id}, false)">돌려보내기</button>
+      </div>
+    </div>`).join('')}
+  </div>` : ''}
 
   ${late.length ? `<div class="preview" style="margin-bottom:14px;">
     <div class="preview-t">종료일이 지났는데 아직 안 닫힌 루틴</div>
@@ -699,10 +731,12 @@ function viewRoutines() {
       <td class="num muted" style="white-space:nowrap;">${md(r.start_date)}~${md(r.end_date)}</td>
       <td class="num right">${rParts(r.id).length}/${r.max_people}</td>
       <td class="num right">${rCerts(r.id).length}</td>
-      <td><select class="r-sel s-${r.status}" onchange="setRoutineStatus(${r.id}, this.value)">
-          ${['recruit','active','done'].map(v =>
-            `<option value="${v}"${v === r.status ? ' selected' : ''}>${R_STATUS[v][0]}</option>`).join('')}
-        </select></td>
+      <td>${r.status === 'pending'
+        ? `<span class="chip c-wait">승인 대기</span>`
+        : `<select class="r-sel s-${r.status}" onchange="setRoutineStatus(${r.id}, this.value)">
+            ${['recruit','active','done'].map(v =>
+              `<option value="${v}"${v === r.status ? ' selected' : ''}>${R_STATUS[v][0]}</option>`).join('')}
+          </select>`}</td>
       <td class="right"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 만들어진 루틴이 없습니다.</div>`}`;
@@ -724,6 +758,23 @@ async function setRoutineStatus(id, status) {
   if (error) { alert('바꾸지 못했어요: ' + error.message); render(); return; }
   r.status = status;
   render();
+}
+
+async function decideRoutine(id, open) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  let reason = null;
+  if (open) {
+    if (!confirm(`「${r.title}」을(를) 열까요?\n모집 중으로 바뀌고 아이들이 신청할 수 있게 됩니다.`)) return;
+  } else {
+    reason = prompt('돌려보내는 이유를 적어주세요.\n끗짱 화면에 그대로 보입니다.');
+    if (reason === null) return;
+    if (!reason.trim()) return alert('사유를 적어주세요.');
+  }
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.rpc('decide_routine',
+    { p_id: id, p_open: open, p_reason: reason });
+  if (error) return alert('처리하지 못했어요: ' + error.message);
+  await loadLive(); render();
 }
 
 function openRoutinePeople(id) {

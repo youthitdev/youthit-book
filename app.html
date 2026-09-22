@@ -228,6 +228,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
+/* 끗짱 루틴이 아직 안 열렸을 때 */
+.k-wait { margin-top:10px; background:#FFF7E6; border:1px solid #F5D98B; border-radius:11px;
+  padding:11px 13px; }
+.k-wait.bad { background:#FFF0F4; border-color:#FFC6D8; }
+.k-wait b { display:block; font-size:13px; font-weight:800; color:#8A5A00; }
+.k-wait.bad b { color:#B3003C; }
+.k-wait span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:3px; }
 /* 카드 제목 줄에 붙는 작은 버튼 */
 .tc-hd { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .tc-add { flex:none; border:1px solid var(--line); background:#fff; border-radius:9px;
@@ -1547,12 +1554,19 @@ function kkutTodayCard(r) {
   const d     = routineDay(r);
   const names = ps.filter(p => !today.some(c => c.user_id === p.user_id))
                   .map(p => nameOf(p.user_id));
+  // 운영진이 열어줘야 아이들에게 보인다
+  const waiting = r.status === 'pending';
   return `<div class="tcard">
     ${r.cover_url ? `<div class="tc-img"><img src="${esc(r.cover_url)}" alt=""></div>` : ''}
     <div class="tc-b">
       <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+      ${waiting ? `<div class="k-wait${r.reject_reason ? ' bad' : ''}">
+        ${r.reject_reason
+          ? `<b>고쳐서 다시 내주세요</b><span>${esc(r.reject_reason)}</span>`
+          : `<b>운영진이 확인하고 있어요</b><span>열리면 아이들이 신청할 수 있어요.</span>`}
+      </div>` : ''}
       <div class="tc-day">${d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정'}</div>
-      <div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>
+      ${waiting ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
       ${names.length && !d?.ended
         ? `<div class="tc-wait">아직 안 한 친구 · ${names.map(esc).join(', ')}</div>` : ''}
       <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
@@ -2686,7 +2700,8 @@ async function submitMake() {
   if (error) return toast('저장에 실패했어요: ' + error.message);
 
   await loadAll(); closeOv('ovMake'); render();
-  toast(makeId ? '수정했어요' : '루틴을 만들었어요! 이제 청소년이 신청할 수 있어요');
+  toast(makeId ? '다시 냈어요. 운영진이 확인할 거예요'
+                : '냈어요! 운영진이 확인하고 열어주면 아이들이 신청할 수 있어요');
 }
 
 // ── 인증 ───────────────────────────────────────────────
