@@ -594,6 +594,8 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       <input type="text" id="auGu" placeholder="시·군·구" maxlength="20">
     </div>
     <div class="au-hint">가까운 동네책방을 먼저 보여드리는 데 써요</div>
+    <input type="date" id="auBirth" max="2099-12-31">
+    <div class="au-hint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
   </div>
   <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
   <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
@@ -890,6 +892,11 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
       </div>
       <div class="hint">가까운 책방을 먼저 보여드리는 데 써요. 다른 사람에게는 보이지 않아요.</div>
     </div>
+    <div id="pfBirthWrap" style="display:none;">
+      <div class="field-label">생년월일 <span class="req">* 필수</span></div>
+      <input type="date" id="pfBirth" onchange="checkProfile()">
+      <div class="hint">만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b></div>
+    </div>
     <div class="card" style="font-size:12.5px;color:var(--ink-3);line-height:1.7;">
       이메일과 역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
     </div>
@@ -1002,8 +1009,14 @@ async function submitAuth() {
     if (!name) return stop('이름을 입력해주세요.');
     if (!sido) return stop('사는 곳의 시·도를 골라주세요.');
     if (!gu)   return stop('사는 곳의 시·군·구를 적어주세요.');
+    const birth = $('auBirth').value;
+    if (!birth) return stop('생년월일을 골라주세요.');
+    // 만 14세 미만은 법정대리인 동의가 있어야 개인정보를 받을 수 있다.
+    // 동의서를 받아 관리하는 것 자체가 부담이라 14세부터 쓰게 한다
+    if (ageOf(birth) < 14) return stop('한끗독서는 만 14세부터 함께할 수 있어요.');
     const region = joinRegion(sido, gu);
-    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { name, role: 'youth', region } } });
+    const { data, error } = await sb.auth.signUp({ email, password: pw,
+      options: { data: { name, role: 'youth', region, birth_date: birth } } });
     if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(authMsg(error.message)); }
     // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
     // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
@@ -1336,6 +1349,16 @@ const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.u
 //   isYouth  포인트·교환권·책을 받는 사람인가
 //   canLead  루틴을 만들 수 있는가 (끗짱)
 // 청소년 끗짱은 둘 다 참이다 — 계속 읽고, 루틴도 만든다
+// 만 나이. 생일이 지났는지까지 본다
+function ageOf(birth) {
+  if (!birth) return null;
+  const b = new Date(birth + 'T00:00:00'), t = new Date(todayKST() + 'T00:00:00');
+  let a = t.getFullYear() - b.getFullYear();
+  const m = t.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < b.getDate())) a--;
+  return a;
+}
+
 const isYouth = () => !!me && me.role !== 'adult';
 const canLead = () => !!me && !!me.can_lead;
 
@@ -2533,11 +2556,17 @@ function openProfile() {
   const r = splitRegion(me.region);
   fillSido('pfSido', r.sido);
   $('pfGu').value = r.gu;
+  // 생년월일은 비어 있을 때만 받는다. 한 번 적으면 서버가 못 바꾸게 막는다 —
+  // 나이를 바꿔가며 우회하는 길을 닫는다
+  $('pfBirthWrap').style.display = me.birth_date ? 'none' : '';
+  $('pfBirth').value = me.birth_date || '';
   checkProfile(); openOv('ovProfile');
 }
 
 function checkProfile() {
-  $('pfSubmit').disabled = !$('pfName').value.trim() || !$('pfSido').value || !$('pfGu').value.trim();
+  const needBirth = !me.birth_date && !$('pfBirth').value;
+  $('pfSubmit').disabled = !$('pfName').value.trim() || !$('pfSido').value
+    || !$('pfGu').value.trim() || needBirth;
 }
 
 async function saveProfile() {
@@ -2546,13 +2575,22 @@ async function saveProfile() {
   if (!name) return toast('이름을 적어주세요');
   const region = joinRegion($('pfSido').value, $('pfGu').value) || null;
 
+  const row = { name, region };
+  if (!me.birth_date) {
+    const b = $('pfBirth').value;
+    if (!b) return toast('생년월일을 골라주세요');
+    if (ageOf(b) < 14) return toast('한끗독서는 만 14세부터 함께할 수 있어요');
+    row.birth_date = b;
+  }
+
   const btn = $('pfSubmit'); btn.disabled = true; btn.textContent = '저장 중…';
   // 역할은 바꾸지 않는다. 청소년이 스스로 끗짱이 되면 안 된다
-  const { error } = await sb.from('profiles').update({ name, region }).eq('id', me.id);
+  const { error } = await sb.from('profiles').update(row).eq('id', me.id);
   btn.disabled = false; btn.textContent = '저장하기';
   if (error) return toast('저장에 실패했어요: ' + error.message);
 
   me.name = name; me.region = region;
+  if (row.birth_date) me.birth_date = row.birth_date;
   state.names[me.id] = name;
   closeOv('ovProfile'); render();
   toast('바꿨어요');
