@@ -1607,9 +1607,7 @@ function todayCard(r) {
           ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`
           : ''}
       </div>
-      <div class="tc-day">${d
-        ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`)
-        : '기간 미정'}</div>
+      <div class="tc-day">${routineLine(r, d)}</div>
       ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${shelf}
       ${action}
@@ -1653,7 +1651,7 @@ function kkutTodayCard(r) {
           ? `<b>고쳐서 다시 내주세요</b><span>${esc(r.reject_reason)}</span>`
           : `<b>운영진이 확인하고 있어요</b><span>열리면 아이들이 신청할 수 있어요.</span>`}
       </div>` : ''}
-      <div class="tc-day">${d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정'}</div>
+      <div class="tc-day">${routineLine(r, d)}</div>
       ${d && !waiting ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${waiting || d?.ended ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
       ${waiting || d?.ended ? '' : shelf}
@@ -1709,6 +1707,8 @@ function viewHome() {
     const led  = mine.filter(r => r.led_by === me.id);
     const join = mine.filter(r => r.led_by !== me.id);
 
+    // 제목이 없으면 카드만 쌓여 보여서 「남의 루틴인가」 싶어진다
+    if (led.length) h += `<div class="sec-t" style="margin-top:0;">내가 맡은 루틴 <b style="color:var(--pink);">${led.length}</b></div>`;
     h += led.map(kkutTodayCard).join('');
     h += `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
       <span class="sec-t" style="margin:0;">${led.length ? '루틴 더 만들기' : '내가 이끄는 루틴'}</span>
@@ -1807,7 +1807,7 @@ function youthCertBlock(mine) {
     // 진행도와 포인트는 홈과 MY 에 있다. 여기서는 한 줄로만 짚고 격자를 앞세운다 —
     // 사진 보러 들어온 탭인데 사진까지 카드 두 개를 지나야 했다
     const done = didToday(r.id);
-    const line = [d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정',
+    const line = [routineLine(r, d),
                   `인증 ${won(cs.length)}`, `소통 ${won(talk)}`].join(' · ');
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
@@ -1850,6 +1850,15 @@ function certGrid(all) {
 }
 
 // 루틴이 며칠짜리고 오늘이 며칠째인지
+// 기간 줄. 「8일째 · 15일 중」인데 상태가 done 이면 열려 있는 것처럼 보인다 —
+// 종료일이 아직 안 지났는데 사람이 닫은 경우다. 그럴 땐 닫혔다고 말한다
+function routineLine(r, d) {
+  if (!d) return '기간 미정';
+  if (d.ended) return `완주 · ${d.total}일`;
+  if (r.status === 'done') return `종료됨 · ${d.n}일까지 함께했어요`;
+  return `<b>${d.n}일째</b> · ${d.total}일 중`;
+}
+
 function routineDay(r) {
   if (!r.start_date || !r.end_date) return null;
   const d0 = new Date(r.start_date + 'T00:00:00');
