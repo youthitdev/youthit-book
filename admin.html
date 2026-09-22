@@ -68,6 +68,13 @@ tr:hover td { background:#fcfcfd; }
 .btn-danger:disabled { color:var(--ink-3); border-color:var(--line); cursor:not-allowed; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 /* ── 월간 보고 ── */
+/* 청소년 확인 한 줄 */
+.vq { display:flex; align-items:flex-start; gap:12px; padding:12px 0; }
+.vq + .vq { border-top:1px solid var(--line); }
+.vq-t { flex:1; min-width:0; }
+.vq-t b { font-size:14px; }
+.vq-t > span { margin-left:7px; font-size:12px; }
+.vq-b { flex:none; display:flex; gap:6px; align-items:center; }
 /* 후원 내역 위의 기금 요약 */
 .fund { margin:16px 20px 0; background:#f7f7fa; border-radius:14px; padding:16px 18px;
   display:flex; flex-wrap:wrap; gap:26px; align-items:baseline; }
@@ -208,6 +215,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
+    <button class="tab" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
 
@@ -508,6 +516,7 @@ function renderSummary() {
   document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
   document.getElementById('cntStores').textContent = ` ${(DB.bookstores || []).length}`;
   document.getElementById('cntQuotes').textContent = ` ${(DB.quotes || []).filter(q => q.quote_public).length}`;
+  document.getElementById('cntVerify').textContent = ` ${(DB.verify || []).filter(v => v.status === 'pending').length}`;
 }
 
 function renderPanel() {
@@ -518,8 +527,74 @@ function renderPanel() {
   if (tab === 'settled')  return el.innerHTML = viewSettled();
   if (tab === 'stores')   return el.innerHTML = viewStores();
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
+  if (tab === 'verify')   return el.innerHTML = viewVerify();
   if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
+}
+
+// ── 청소년 확인 ────────────────────────────────────────────
+// 도서기금은 청소년에게 쓰는 돈이다. 책이 나가기 전에 한 번 확인한다.
+// ⚠️ 승인하면 서류 파일을 바로 지운다. 가지고 있는 것 자체가 위험이다
+function viewVerify() {
+  const rows = DB.verify || [];
+  const wait = rows.filter(r => r.status === 'pending');
+  const back = rows.filter(r => r.status === 'rejected');
+
+  const card = r => `<div class="vq">
+    <div class="vq-t"><b>${esc(r.name)}</b>
+      <span class="muted">${esc(r.region || '지역 미상')}</span>
+      ${r.reason ? `<p class="rw-r">돌려보냄 · ${esc(r.reason)}</p>` : ''}</div>
+    <div class="vq-b">
+      ${r.doc_path
+        ? `<button class="btn btn-line" onclick="viewDoc('${esc(r.doc_path)}')">서류 보기</button>`
+        : `<span class="muted">서류 없음</span>`}
+      ${r.status === 'pending' ? `
+        <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">확인함</button>
+        <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">돌려보내기</button>` : ''}
+    </div>
+  </div>`;
+
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">청소년 확인</div>
+    <div class="panel-d">책을 받기 전에 한 번 확인합니다. 읽고 포인트 모으는 건 확인 전에도 됩니다.<br>
+      <b>승인하면 서류 파일은 바로 지워집니다.</b> 확인했다는 사실만 남아요.</div></div>
+  </div>
+  ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#F5D98B;background:#FFFBF0;">
+    <div class="preview-t">확인을 기다리는 사람 ${wait.length}명</div>
+    ${wait.map(card).join('')}</div>` : ''}
+  ${back.length ? `<div class="preview">
+    <div class="preview-t">돌려보낸 사람 ${back.length}명</div>
+    ${back.map(card).join('')}</div>` : ''}
+  ${!rows.length ? `<div class="empty">확인을 기다리는 사람이 없습니다.</div>` : ''}`;
+}
+
+async function viewDoc(path) { openSigned('dokseo-verify', path, '서류'); }
+
+async function decideVerify(userId, approve) {
+  const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
+  let kind = null, reason = null;
+
+  if (approve) {
+    kind = prompt(`${r.name} 님을 무엇으로 확인했나요?\n(학생증 · 청소년증 · 재학증명서 등)`, '학생증');
+    if (kind === null) return;
+    if (!confirm(`${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워집니다. 되돌릴 수 없어요.`)) return;
+  } else {
+    reason = prompt(`${r.name} 님에게 전할 사유를 적어주세요.\n앱 화면에 그대로 보입니다.`);
+    if (reason === null) return;
+    if (!reason.trim()) return alert('사유를 적어주세요.');
+  }
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+
+  // 파일을 먼저 지우고 상태를 바꾼다. 순서가 반대면 경로를 잃고 파일만 남는다
+  if (r.doc_path) {
+    const { error } = await sb.storage.from('dokseo-verify').remove([r.doc_path]);
+    if (error && !confirm('서류 파일을 지우지 못했어요: ' + error.message + '\n그래도 진행할까요?')) return;
+  }
+  const { error } = await sb.rpc('decide_verify',
+    { p_user: userId, p_approve: approve, p_kind: kind, p_reason: reason });
+  if (error) return alert('처리하지 못했어요: ' + error.message);
+  await loadLive(); render();
 }
 
 // ── 월간 보고 ──────────────────────────────────────────────
@@ -1344,7 +1419,7 @@ async function submitCharge() {
 
 // ── LIVE 데이터 로드 ────────────────────────────────────
 async function loadLive() {
-  const [settings, sponsors, charges, purchases, stores, quotes] = await Promise.all([
+  const [settings, sponsors, charges, purchases, stores, quotes, verify] = await Promise.all([
     sb.from('dokseo_settings').select('book_fund_rate, voucher_max_amount').single(),
     sb.from('sponsors').select('id, nickname, email'),
     sb.from('charges').select('*'),
@@ -1356,7 +1431,9 @@ async function loadLive() {
     sb.from('certifications').select('id, quote, book_title, quote_public, created_at')
       .not('quote', 'is', null)
       .order('created_at', { ascending: false }).limit(200),
+    sb.rpc('verify_queue'),
   ]);
+  DB.verify   = verify.data || [];
   DB.settings = settings.data || DB.settings;
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];

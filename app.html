@@ -226,6 +226,24 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
+/* 청소년 확인 */
+.vf { display:flex; align-items:center; gap:13px; }
+.vf.approved { background:#f4faea; border:1px solid #d8ebb8; }
+.vf.pending  { background:#FFF7E6; border:1px solid #F5D98B; }
+.vf.rejected { background:#FFF0F4; border:1px solid #FFC6D8; }
+.vf.soon     { background:#fff8fb; border:1px solid #ffdcea; }
+.vf-i { font-size:24px; flex:none; }
+.vf-t { flex:1; min-width:0; }
+.vf-t b { display:block; font-size:14.5px; font-weight:800; }
+.vf-t span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:3px; }
+.vf-t i { display:block; font-style:normal; font-size:12px; color:var(--pink);
+  font-weight:700; margin-top:6px; line-height:1.5; }
+.vf-x { flex:none; color:var(--ink-3); font-size:20px; }
+.vf-ok, .vf-no { border-radius:12px; padding:13px 15px; font-size:12.5px; line-height:1.7; }
+.vf-ok { background:#f7f7fa; color:var(--ink-2); }
+.vf-no { background:#FFF0F4; color:#B3003C; margin-top:9px; }
+.vf-ok b, .vf-no b { display:block; font-size:13px; color:var(--ink); margin-bottom:3px; }
+.vf-no b { color:#B3003C; }
 /* 끗짱 적립 */
 .cr { background:#fff8fb; border:1px solid #ffdcea; }
 .cr-top b { font-size:26px; font-weight:800; color:var(--pink); letter-spacing:-1px; }
@@ -803,6 +821,21 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 </div>
 
 <!-- 서점 한 곳 (아래에서 올라오는 시트) -->
+<!-- 청소년 확인 서류. 도서기금은 청소년에게 쓰는 돈이라 책을 받기 전에 한 번 확인한다 -->
+<div class="sheet" id="shVerify" onclick="if(event.target===this)closeSheet('shVerify')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">청소년 확인</div>
+        <div class="sheet-s">책을 받을 때 한 번만 확인해요. 읽고 포인트 모으는 건 지금도 돼요.</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shVerify')" aria-label="닫기">✕</button>
+    </div>
+    <div id="shVerifyBody"></div>
+  </div>
+</div>
+
 <!-- 읽는 책 관리. 더하기만 있으면 잘못 넣었을 때 세 칸이 영영 막힌다 -->
 <div class="sheet" id="shBooks" onclick="if(event.target===this)closeSheet('shBooks')">
   <div class="sheet-in">
@@ -1825,7 +1858,9 @@ function balanceBlock() {
         ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="go('store')">책방 찾기</button>
-            ${p.left > 0 ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 받았어요</button>` : ''}
+            ${p.left > 0 ? (me.verify_status === 'approved'
+              ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 받았어요</button>`
+              : `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`) : ''}
           </div>`}
     </div>`;
 }
@@ -2247,6 +2282,117 @@ async function deleteReview() {
 
 // 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
 // 15·30·66일 사다리가 여기로 이어진다
+// ── 청소년 확인 ────────────────────────────────────────
+// 도서기금은 청소년에게 쓰는 돈이다. 그런데 가입할 때는 나이를 안 묻는다.
+// 읽는 건 누구나 하게 두고, 책을 받는 순간에만 확인한다 —
+// 가입 직후부터 서류를 요구하면 시작을 못 한다
+const VERIFY = {
+  none:     ['🪪', '청소년 확인이 필요해요', '책을 받으려면 한 번 확인해야 해요. 지금 내두면 편해요.'],
+  pending:  ['🕰️', '확인하고 있어요',       '운영진이 보고 있어요. 하루 이틀이면 끝나요.'],
+  rejected: ['✉️', '다시 내주세요',          ''],
+  approved: ['✅', '청소년 확인이 끝났어요',  '이제 포인트가 모이면 책을 받을 수 있어요.'],
+};
+
+function verifyBlock() {
+  if (!isYouth()) return '';
+  const st = me.verify_status || 'none';
+  const [ico, title, desc] = VERIFY[st] || VERIFY.none;
+  const p = myPoints();
+  // 포인트가 쌓이기 시작하면 더 눈에 띄게. 250P 채우고 나서야 알면 늦다
+  const soon = st !== 'approved' && p.points >= Math.round(p.per * 0.4);
+
+  return `<div class="sec-t">청소년 확인</div>
+    <div class="card vf ${st}${soon ? ' soon' : ''}"
+         ${st === 'approved' ? '' : 'onclick="openVerify()" style="cursor:pointer;"'}>
+      <div class="vf-i">${ico}</div>
+      <div class="vf-t">
+        <b>${title}</b>
+        <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.') : desc}</span>
+        ${soon ? `<i>${won(p.to_next)}P만 더 모으면 책을 받을 수 있어요. 그 전에 확인을 끝내두세요.</i>` : ''}
+      </div>
+      ${st === 'approved' ? '' : '<div class="vf-x">›</div>'}
+    </div>`;
+}
+
+let vfDoc = null;
+
+function openVerify() {
+  vfDoc = null;
+  drawVerify();
+  $('shVerify').classList.add('on');
+}
+
+function drawVerify() {
+  const st = me.verify_status || 'none';
+  if (st === 'pending') {
+    $('shVerifyBody').innerHTML = `<div class="empty" style="padding:26px 10px;">
+      🕰️ 운영진이 보고 있어요.<br>하루 이틀이면 끝나요.</div>`;
+    return;
+  }
+  $('shVerifyBody').innerHTML = `
+    ${st === 'rejected' && me.verify_reason
+      ? `<div class="k-wait bad" style="margin-top:0;"><b>이래서 다시 내야 해요</b>
+           <span>${esc(me.verify_reason)}</span></div>` : ''}
+    <div class="vf-ok">
+      <b>이런 걸로 확인해요</b>
+      <div>학생증 · 청소년증 · 재학증명서 · 교복 입은 학생증 사진</div>
+      <div>이름과 생년월일(또는 학년)이 보이면 돼요.</div>
+    </div>
+    <div class="vf-no">
+      <b>⚠️ 주민등록번호는 가려주세요</b>
+      <div>뒷자리가 보이면 받을 수 없어요. 손가락이나 스티커로 가리고 찍어주세요.</div>
+    </div>
+    <div class="field-label" style="margin-top:16px;">서류 사진 <span class="req">* 필수</span></div>
+    <div id="vfBox"></div>
+    <input type="file" id="vfInput" accept="image/*" style="display:none;" onchange="pickVerifyDoc(event)">
+    <button class="btn btn-primary" id="vfSave" style="margin-top:14px;" disabled onclick="submitVerify()">
+      내기</button>
+    <div class="hint" style="margin-top:10px;">확인이 끝나면 <b>서류는 바로 지웁니다.</b>
+      확인했다는 사실만 남아요.</div>`;
+  drawVfDoc();
+}
+
+function drawVfDoc() {
+  const box = $('vfBox'); if (!box) return;
+  box.innerHTML = vfDoc
+    ? `<div class="book-prev"><div class="bp-wrap">
+         <div class="bp-frame"><img src="${esc(vfDoc)}" alt=""></div>
+         <button type="button" class="bp-x" onclick="vfDoc=null;drawVfDoc();checkVerify()">×</button>
+       </div><div class="bp-note">이 사진으로 낼게요</div></div>`
+    : `<div class="cover-pick" onclick="document.getElementById('vfInput').click()">
+         <i class="ti ti-id" style="font-size:20px;"></i>서류 사진 고르기</div>`;
+  checkVerify();
+}
+
+function checkVerify() { const b = $('vfSave'); if (b) b.disabled = !vfDoc; }
+
+async function pickVerifyDoc(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try { vfDoc = await resize(f, 1600, .86); drawVfDoc(); }
+  catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+  e.target.value = '';
+}
+
+async function submitVerify() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  if (!vfDoc) return;
+  const btn = $('vfSave'); btn.disabled = true; btn.textContent = '내는 중…';
+
+  const path = `${me.id}/verify_${Date.now()}.jpg`;
+  const { error: up } = await sb.storage.from('dokseo-verify')
+    .upload(path, toBlob(vfDoc), { contentType: 'image/jpeg' });
+  if (up) { btn.disabled = false; btn.textContent = '내기'; return toast('올리지 못했어요: ' + up.message); }
+
+  const { error } = await sb.from('profiles')
+    .update({ verify_status: 'pending', verify_doc_path: path }).eq('id', me.id);
+  btn.disabled = false; btn.textContent = '내기';
+  if (error) return toast('저장하지 못했어요: ' + error.message);
+
+  me.verify_status = 'pending'; me.verify_doc_path = path; vfDoc = null;
+  closeSheet('shVerify'); render();
+  toast('냈어요. 운영진이 확인하면 알려드릴게요');
+}
+
 // 끗짱이 함께한 날에 유스보이스가 낸 책값.
 // ⚠️ 주어는 반드시 유스보이스다. 「끗짱님이 기부했다」고 쓰면 거짓이 된다 —
 //    돈은 끗짱 것이 아니고, 기부금영수증도 못 준다
@@ -2369,6 +2515,7 @@ function viewMy() {
         onclick="openProfile()">내 정보 수정</button>
     </div>
     ${isYouth() ? balanceBlock() : ''}
+    ${verifyBlock()}
     ${creditBlock()}
     <div class="card" style="display:flex;text-align:center;">
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
