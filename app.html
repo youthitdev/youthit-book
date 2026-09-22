@@ -665,7 +665,7 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   <div class="ov-b">
     <div>
       <div class="field-label">루틴 이름 <span class="req">* 필수</span></div>
-      <input type="text" id="mTitle" placeholder="예) 김유스와 함께 책읽기" maxlength="40">
+      <input type="text" id="mTitle" placeholder="예) 밤에 읽는 15일" maxlength="40">
       <div class="hint" id="mTitleHint"></div>
     </div>
     <div>
@@ -2525,16 +2525,6 @@ async function decide(rid, uid, status) {
 // 서버 트리거가 자동으로 붙인다.
 let makeId = null;
 
-// 받침에 따라 조사를 고른다. '김유스와' / '하준과', '민지가' / '하준이'
-function hasBatchim(word) {
-  const last = (word || '').trim().slice(-1);
-  if (!last) return false;
-  const code = last.charCodeAt(0);
-  if (code < 0xAC00 || code > 0xD7A3) return false;   // 한글이 아니면 없는 것으로
-  return (code - 0xAC00) % 28 !== 0;
-}
-const withParticle = n => n + (hasBatchim(n) ? '과' : '와');
-const subjParticle = n => n + (hasBatchim(n) ? '이' : '가');
 let kkutBook = null, kkutBookUrl = null;   // 끗짱이 읽는 책
 let cover = null;       // 새로 고른 사진 (data URL)
 let coverUrl = null;    // 이미 올라가 있는 사진 주소
@@ -2627,7 +2617,7 @@ function openMake(id) {
   $('ovMakeTitle').textContent = r ? '루틴 수정' : '루틴 만들기';
   $('mSubmit').textContent = r ? '수정하기' : '루틴 만들기';
   // 청소년이 고르는 기준은 '누구랑'이라 이름이 제목에 들어가야 한다. 미리 채워둔다
-  $('mTitle').value  = r?.title || `${withParticle(me.name)} 함께 `;
+  $('mTitle').value  = r?.title || '';
   $('mEmoji').value  = r?.emoji || '📚';
   $('mDesc').value   = r?.description || '';
   $('mStart').value  = r?.start_date || '';
@@ -2638,7 +2628,9 @@ function openMake(id) {
   $('mPeople').value = r?.max_people ?? 8;
   $('mQuote').checked  = !!r?.quote_required;
   $('mCamera').checked = r ? !!r.camera_only : true;
-  $('mTitleHint').textContent = `내 이름 ${subjParticle(`'${me.name}'`.replace(/'/g,''))} 들어가야 해요. 청소년이 루틴을 고를 때 누구랑 하는지가 기준이 됩니다.`;
+  // 이름을 넣으라고 강제하지 않는다. 누구랑 하는지는 카드에 끗짱 이름이
+  // 따로 나오고, 제목까지 묶어버리면 「밤에 읽는 15일」 같은 걸 못 쓴다
+  $('mTitleHint').textContent = '어떤 루틴인지 한눈에 보이게 적어주세요. 청소년이 이 이름을 보고 고릅니다.';
   cover = null; coverUrl = r?.cover_url || null;
   $('mCoverInput').value = ''; drawCover();
   kkutBook = null; kkutBookUrl = r?.kkut_book_url || null;
@@ -2686,7 +2678,6 @@ async function submitMake() {
   const s = $('mStart').value;
   const days = parseInt($('mDays').value || '0', 10);
   if (!title) return toast('루틴 이름을 적어주세요');
-  if (!title.includes(me.name)) return toast(`루틴 이름에 내 이름 ${subjParticle(me.name)} 들어가야 해요`);
   if (!desc) return toast('끗짱 소개를 적어주세요');
   if (!s) return toast('시작일을 골라주세요');
   if (!days || days < MIN_DAYS) return toast(`기간은 ${MIN_DAYS}일 이상이어야 해요`);
