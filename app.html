@@ -221,8 +221,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
 /* 홈 지표 — 넷을 한 줄에 우겨넣으면 글자가 눌린다. 2×2 로 펴고 이모지를 붙였다 */
 /* 오늘 하는 루틴 — 홈 맨 위 주인공 */
 .tcard { background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:12px; }
-.tc-img { aspect-ratio:16/9; background:#eeeae2; }
-.tc-img img { width:100%; height:100%; object-fit:cover; display:block; }
 .tc-b { padding:14px 15px 15px; }
 .tc-t { font-size:16px; font-weight:800; letter-spacing:-.4px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -276,6 +274,14 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   display:flex; align-items:center; justify-content:center; font-size:22px;
   box-shadow:0 1px 4px rgba(0,0,0,.09); }
 .tc-bt-i img { width:100%; height:100%; object-fit:cover; display:block; }
+/* 끗짱 카드의 아이 타일 */
+.tc-bt-i.kid { aspect-ratio:1; border-radius:14px; background:#f2f2f6; color:var(--ink-3);
+  font-size:18px; font-weight:800; box-shadow:none; }
+.tc-bt-i.kid.on { background:var(--green-l); color:var(--green-d); }
+.tc-bt i { display:block; font-style:normal; font-size:10.5px; font-weight:700;
+  color:var(--green-d); text-align:center; margin-top:1px; }
+.tc-bt i.off { color:var(--ink-3); font-weight:600; }
+.tc-bt.more .tc-bt-i { background:#fff; border:1px dashed var(--line); }
 .tc-bt span { display:block; font-size:11px; color:var(--ink-3); margin-top:5px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
 /* 그 책을 어디까지 읽었는지. 책마다 따로 센다 */
@@ -283,7 +289,6 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   color:var(--green-d); text-align:center; margin-top:1px; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
-.tc-wait { font-size:12.5px; color:var(--ink-3); margin-top:5px; line-height:1.55; }
 .tcard .btn { margin-top:12px; }
 .tc-done { margin-top:12px; text-align:center; font-size:13.5px; font-weight:700;
            color:var(--green-d); background:#f4faea; border-radius:11px; padding:10px; }
@@ -1550,12 +1555,27 @@ function kkutTodayCard(r) {
   const ps    = partsOf(r.id);
   const today = certsOf(r.id).filter(c => c.cert_date === todayKST());
   const d     = routineDay(r);
-  const names = ps.filter(p => !today.some(c => c.user_id === p.user_id))
-                  .map(p => nameOf(p.user_id));
-  // 운영진이 열어줘야 아이들에게 보인다
-  const waiting = r.status === 'pending';
+  const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
+  const waiting = r.status === 'pending';   // 운영진이 열어줘야 아이들에게 보인다
+
+  // 청소년 카드의 책 타일과 같은 자리. 거기는 「오늘 뭘 읽을까」로 이어지고
+  // 여기는 「누구한테 말 걸까」로 이어진다.
+  // 안 한 아이만 세우면 「못 한 사람 명단」이 된다. 전부 놓고 한 아이에만
+  // 표시한다 — 같은 정보인데 「빠진 사람」이 아니라 「우리」로 읽힌다
+  const shelf = ps.length ? `<div class="tc-shelf">${ps.slice(0, 3).map(p => {
+    const done = today.some(c => c.user_id === p.user_id);
+    const nm = nameOf(p.user_id);
+    return `<div class="tc-bt" onclick="event.stopPropagation();go('cert')">
+      <div class="tc-bt-i kid${done ? ' on' : ''}">${done ? '✓' : esc(nm.slice(0, 1))}</div>
+      <span>${esc(nm)}</span>
+      <i class="${done ? '' : 'off'}">${done ? '오늘 했어요' : '아직'}</i>
+    </div>`;
+  }).join('')}${ps.length > 3
+      ? `<div class="tc-bt more" onclick="event.stopPropagation();go('cert')">
+           <div class="tc-bt-i kid">+${ps.length - 3}</div><span>더 보기</span></div>` : ''}
+    </div>` : '';
+
   return `<div class="tcard">
-    ${r.cover_url ? `<div class="tc-img"><img src="${esc(r.cover_url)}" alt=""></div>` : ''}
     <div class="tc-b">
       <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${waiting ? `<div class="k-wait${r.reject_reason ? ' bad' : ''}">
@@ -1564,13 +1584,14 @@ function kkutTodayCard(r) {
           : `<b>운영진이 확인하고 있어요</b><span>열리면 아이들이 신청할 수 있어요.</span>`}
       </div>` : ''}
       <div class="tc-day">${d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정'}</div>
+      ${d && !waiting ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${waiting ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
-      ${names.length && !d?.ended
-        ? `<div class="tc-wait">아직 안 한 친구 · ${names.map(esc).join(', ')}</div>` : ''}
+      ${waiting ? '' : shelf}
       <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
     </div>
   </div>`;
 }
+
 
 function viewHome() {
   const mine   = myRoutines();
