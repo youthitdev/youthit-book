@@ -896,7 +896,7 @@ const splitRegion = r => {
   return { sido, gu: sido ? p.slice(1).join(' ') : String(r || '').trim() };
 };
 
-// 끗짱은 가입할 때 고르는 역할이 아니다. 청소년으로 30일을 읽으면 MY 탭에서 신청한다
+// 끗짱은 가입할 때 고르는 역할이 아니다. MY 탭에서 신청하고 운영진이 승인한다
 let authMode = 'login';
 
 const $ = id => document.getElementById(id);
@@ -1004,7 +1004,7 @@ async function loadKkutApp() {
   ]);
   state.kkutApp = app.data || null;
   const e = Array.isArray(el.data) ? el.data[0] : el.data;
-  state.kkutElig = e || { days: 0, need: 30, invited: false, eligible: false };
+  state.kkutElig = e || { days: 0, need: 0, invited: true, eligible: true };
   return state.kkutApp;
 }
 
@@ -1045,27 +1045,6 @@ function renderKkutGate() {
       </div>
       <div style="text-align:center;margin-top:18px;">
         <b style="font-size:13px;color:var(--ink-3);cursor:pointer;" onclick="reloadKkutGate()">새로고침</b>
-      </div>`;
-    return;
-  }
-
-  const el = state.kkutElig || { days:0, need:30, invited:false, eligible:false };
-  if (!a && !el.eligible) {
-    const pct = Math.min(100, Math.round(el.days / Math.max(el.need, 1) * 100));
-    $('kkutBody').innerHTML = `
-      <div class="gate-card">
-        <div class="gate-ico">🌱</div>
-        <div class="gate-t">${el.need}일을 채우면 끗짱을 신청할 수 있어요</div>
-        <div class="gate-s">
-          끗짱은 다른 사람의 15일을 맡는 자리예요.<br>
-          먼저 스스로 ${el.need}일을 읽어본 사람이 맡습니다.
-        </div>
-        <div class="gate-bar"><i style="width:${pct}%"></i></div>
-        <div class="gate-num"><b>${el.days}일</b> 읽었어요 · ${Math.max(0, el.need - el.days)}일 남았어요</div>
-      </div>
-      <div class="gate-why">
-        <b>연속으로 채우지 않아도 돼요.</b>
-        하루 빠져도 지금까지 읽은 날은 그대로 남습니다. 읽은 날을 다 더해서 ${el.need}일이면 돼요.
       </div>`;
     return;
   }
@@ -1210,7 +1189,7 @@ async function enter() {
 
   // 끗짱은 관리자 승인을 받아야 들어온다. 청소년을 만나는 자리라서,
   // 승인 전에는 아이들의 이름·사진·기록이 있는 화면을 아예 열지 않는다
-  if (me.role === 'kkutjjang') {
+  if (canLead() || state.kkutApp) {
     await loadKkutApp();
     if (state.kkutApp?.status !== 'approved') {
       $('authScr').style.display = 'none';
@@ -1227,7 +1206,7 @@ async function enter() {
   $('authScr').style.display = 'none';
   $('kkutScr').style.display = 'none';
   $('appScr').style.display = '';
-  const isK = me.role === 'kkutjjang';
+  const isK = canLead();
   $('hdr').classList.toggle('k', isK);
   $('hdrRole').textContent = isK ? '끗짱' : '청소년';
   $('hdrBtn').textContent = '로그아웃';
@@ -1305,6 +1284,13 @@ async function loadAll() {
 const peopleOf = rid => state.counts[rid] ?? partsOf(rid).length;
 const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
 const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
+// 역할은 두 축이다.
+//   isYouth  포인트·교환권·책을 받는 사람인가
+//   canLead  루틴을 만들 수 있는가 (끗짱)
+// 청소년 끗짱은 둘 다 참이다 — 계속 읽고, 루틴도 만든다
+const isYouth = () => !!me && me.role !== 'adult';
+const canLead = () => !!me && !!me.can_lead;
+
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
 // 이 루틴에서 내가 읽는 책. 한 번에 세 권까지 (병렬독서)
 const BOOK_MAX  = 3;
@@ -1324,7 +1310,9 @@ const myCerts   = rid => me ? certsOf(rid).filter(c => c.user_id === me.id) : []
 const nameOf    = uid => state.names[uid] || '익명';
 const myRoutines = () => me ? state.routines.filter(r => {
   const p = myPart(r.id);
-  return me.role === 'kkutjjang' ? r.led_by === me.id : (p && p.status === 'approved');
+  // 청소년 끗짱은 자기가 만든 루틴과 참여한 루틴을 둘 다 본다.
+  // 전에는 끗짱이 되는 순간 참여 기록이 통째로 사라졌다
+  return (canLead() && r.led_by === me.id) || (p && p.status === 'approved');
 }) : [];
 const didToday = rid => myCerts(rid).some(c => c.cert_date === todayKST());
 // 책마다 하루 한 번이다. 오늘 이미 올린 책과, 아직 안 올린 책을 나눈다
@@ -1592,7 +1580,7 @@ function viewHome() {
 
   let h = '';
 
-  if (me.role === 'kkutjjang') {
+  if (canLead()) {
     const pend = state.parts.filter(p => p.status === 'pending' &&
       state.routines.some(r => r.id === p.routine_id && r.led_by === me.id));
     if (pend.length) {
@@ -1660,9 +1648,20 @@ function viewHome() {
 }
 
 function viewCert() {
-  if (me.role === 'kkutjjang') {
-    const mine = myRoutines();
-    if (!mine.length) return `<div class="empty">맡은 루틴이 없어요</div>`;
+  // 청소년 끗짱은 위에 맡은 루틴(누가 했나), 아래에 참여 루틴(내 기록)을 본다
+  const led  = canLead() ? state.routines.filter(r => r.led_by === me.id) : [];
+  const join = state.routines.filter(r => {
+    const p = myPart(r.id); return p && p.status === 'approved';
+  });
+  return (led.length ? kkutCertBlock(led) : '')
+       + (join.length ? youthCertBlock(join) : '')
+       + (led.length || join.length ? ''
+          : `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
+             : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`);
+}
+
+// 끗짱 몫 — 오늘 누가 인증했나
+function kkutCertBlock(mine) {
     return mine.map(r => {
       const ps = partsOf(r.id);
       const today = certsOf(r.id).filter(c => c.cert_date === todayKST());
@@ -1682,9 +1681,8 @@ function viewCert() {
     }).join('');
   }
 
-  const mine = myRoutines();
-  if (!mine.length) return `<div class="empty">참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.</div>`;
-
+// 청소년 몫 — 내 기록
+function youthCertBlock(mine) {
   return mine.map(r => {
     const d  = routineDay(r);
     const cs = certsOf(r.id);
@@ -2049,7 +2047,7 @@ const myBookReview = pid => state.reviews.find(v =>
 
 // 지금 쓸 수 있는데 아직 안 쓴 것들
 function reviewTodos() {
-  if (!me || me.role === 'kkutjjang') return [];
+  if (!isYouth()) return [];
   const out = [];
   myRoutines().forEach(r => {
     if (!routineEnded(r) || myRoutineReview(r.id)) return;
@@ -2219,7 +2217,7 @@ async function deleteReview() {
 // 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
 // 15·30·66일 사다리가 여기로 이어진다
 function kkutCard() {
-  if (!me || me.role === 'kkutjjang') return '';
+  if (!isYouth()) return '';
   const a  = state.kkutApp;
   const el = state.kkutElig;
   if (!el) return '';
@@ -2238,21 +2236,14 @@ function kkutCard() {
       <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">내용을 고쳐서 다시 신청할 수 있어요</div>
     </div>`;
 
-  if (el.eligible) return `
-    <div class="sec-t">끗짱</div>
-    <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
-      <div style="font-weight:700;">📖 이제 끗짱을 신청할 수 있어요</div>
-      <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.6;">
-        ${el.invited ? '운영진이 모신 끗짱이에요. ' : `${el.days}일을 읽었어요. `}직접 루틴을 열고 함께 읽을 사람을 모을 수 있어요.</div>
-    </div>`;
-
-  const pct = Math.min(100, Math.round(el.days / Math.max(el.need, 1) * 100));
+  // 읽은 날 수는 조건이 아니라 참고다. 소속·나이·지원동기를 보고 사람이 판단한다
   return `
     <div class="sec-t">끗짱</div>
-    <div class="card">
-      <div style="font-weight:700;">🌱 ${el.need}일을 채우면 끗짱을 신청할 수 있어요</div>
-      <div class="gate-bar" style="margin:12px 0 8px;"><i style="width:${pct}%"></i></div>
-      <div class="gate-num"><b>${el.days}일</b> · ${Math.max(0, el.need - el.days)}일 남았어요</div>
+    <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
+      <div style="font-weight:700;">📖 끗짱을 신청할 수 있어요</div>
+      <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.6;">
+        ${el.days ? `${el.days}일을 읽었어요. ` : ''}직접 루틴을 열고 함께 읽을 사람을 모을 수 있어요.<br>
+        <span style="color:var(--ink-3);">끗짱이 되어도 지금처럼 읽고 포인트를 모을 수 있어요.</span></div>
     </div>`;
 }
 
@@ -2312,14 +2303,14 @@ function viewMy() {
   return `<div class="card" style="text-align:center;padding:26px 18px;">
       <div class="f-av" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px;">${esc(me.name[0]||'?')}</div>
       <div style="font-size:17px;font-weight:800;">${esc(me.name)}</div>
-      <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${me.role==='kkutjjang'?'끗짱':'청소년'}${me.region?` · ${esc(me.region)}`:''}</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${[canLead()?'끗짱':'', isYouth()?'청소년':'어른'].filter(Boolean).join(' · ')}${me.region?` · ${esc(me.region)}`:''}</div>
       <button class="btn btn-line" style="margin-top:16px;max-width:200px;margin-left:auto;margin-right:auto;"
         onclick="openProfile()">내 정보 수정</button>
     </div>
-    ${me.role === 'kkutjjang' ? '' : balanceBlock()}
+    ${isYouth() ? balanceBlock() : ''}
     <div class="card" style="display:flex;text-align:center;">
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
-      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">${me.role==='kkutjjang'?'이끄는 루틴':'참여 루틴'}</div></div>
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">${canLead()?'맡은 루틴':'참여 루틴'}</div></div>
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${myBooksBlock()}
@@ -2398,7 +2389,7 @@ function openRoutine(id) {
                    <button class="btn btn-line" onclick="closeOv('ovRoutine');go('feed')">다른 사람 기록 보기</button>`)
       : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">확인 중이에요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
-      : me.role==='kkutjjang' ? ''
+      : !isYouth() ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : `<div>
@@ -3082,7 +3073,7 @@ function storeGoal() {
       <b>교환권으로 책을 바꾸는 동네책방이에요</b>
       <span>매일 읽고 포인트를 모으면 여기서 책 한 권을 골라요.</span>
     </div>`;
-  if (me.role === 'kkutjjang') return `<div class="sg">
+  if (!isYouth()) return `<div class="sg">
       <b>아이들이 책을 받으러 가는 곳이에요</b>
       <span>아이는 돈을 내지 않아요. 책값은 유스보이스가 책방에 보냅니다.</span>
     </div>`;
@@ -3474,7 +3465,9 @@ function enterDemo(role) {
   const dstr = n => new Date(Date.now() - n*86400e3 + 9*3600e3).toISOString().slice(0,10);
 
   const isK = role === 'kkutjjang';
-  me = { id: uid, name: isK ? '민지' : '서연', role, region: '강원 속초' };
+  // 데모의 끗짱은 섭외해 온 어른으로 본다 (adult + can_lead)
+  me = { id: uid, name: isK ? '민지' : '서연',
+         role: isK ? 'adult' : 'youth', can_lead: isK, region: '강원 속초' };
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
   const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
 
