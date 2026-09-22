@@ -26,10 +26,14 @@ COMMENT ON COLUMN profiles.role IS 'youth 포인트·교환권·책을 받는 �
 -- ── 2. 기존 끗짱을 옮긴다 ──────────────────────────────
 -- 지금 끗짱은 섭외해 온 분이라 adult 로 본다. 청소년 끗짱이 생기면
 -- 승인 창에서 youth 로 두면 된다
+--
+-- ⚠️ 제약을 먼저 풀고 값을 바꾼다. 옛 CHECK 은 ('youth','kkutjjang') 이라
+--    'adult' 를 넣는 순간 걸린다. 순서가 반대면 통째로 롤백된다
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+
 UPDATE profiles SET can_lead = true WHERE role = 'kkutjjang';
 UPDATE profiles SET role = 'adult'  WHERE role = 'kkutjjang';
 
-ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
 ALTER TABLE profiles ADD CONSTRAINT profiles_role_check CHECK (role IN ('youth', 'adult'));
 ALTER TABLE profiles ALTER COLUMN role SET DEFAULT 'youth';
 
