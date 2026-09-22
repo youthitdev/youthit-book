@@ -2310,19 +2310,18 @@ async function deleteReview() {
 // 읽는 건 누구나 하게 두고, 책을 받는 순간에만 확인한다 —
 // 가입 직후부터 서류를 요구하면 시작을 못 한다
 const VERIFY = {
-  none:     ['🪪', '청소년 확인이 필요해요', '책을 받으려면 한 번 확인해야 해요. 지금 내두면 편해요.'],
+  none:     ['🪪', '청소년 확인이 필요해요', '루틴에 참여하려면 한 번 확인해야 해요.'],
   pending:  ['🕰️', '확인하고 있어요',       '운영진이 보고 있어요. 하루 이틀이면 끝나요.'],
   rejected: ['✉️', '다시 내주세요',          ''],
-  approved: ['✅', '청소년 확인이 끝났어요',  '이제 포인트가 모이면 책을 받을 수 있어요.'],
+  approved: ['✅', '청소년 확인이 끝났어요',  '이제 루틴에 참여할 수 있어요.'],
 };
 
 function verifyBlock() {
   if (!isYouth()) return '';
   const st = me.verify_status || 'none';
   const [ico, title, desc] = VERIFY[st] || VERIFY.none;
-  const p = myPoints();
-  // 포인트가 쌓이기 시작하면 더 눈에 띄게. 250P 채우고 나서야 알면 늦다
-  const soon = st !== 'approved' && p.points >= Math.round(p.per * 0.4);
+  // 참여 앞에서 이미 막히므로 포인트가 쌓인 뒤 따로 재촉할 일이 없다
+  const soon = st === 'none' && !myRoutines().length;
 
   return `<div class="sec-t">청소년 확인</div>
     <div class="card vf ${st}${soon ? ' soon' : ''}"
@@ -2331,7 +2330,7 @@ function verifyBlock() {
       <div class="vf-t">
         <b>${title}</b>
         <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.') : desc}</span>
-        ${soon ? `<i>${won(p.to_next)}P만 더 모으면 책을 받을 수 있어요. 그 전에 확인을 끝내두세요.</i>` : ''}
+        ${soon ? `<i>확인이 끝나야 루틴에 참여할 수 있어요.</i>` : ''}
       </div>
       ${st === 'approved' ? '' : '<div class="vf-x">›</div>'}
     </div>`;
@@ -2414,6 +2413,28 @@ async function submitVerify() {
   me.verify_status = 'pending'; me.verify_doc_path = path; vfDoc = null;
   closeSheet('shVerify'); render();
   toast('냈어요. 운영진이 확인하면 알려드릴게요');
+}
+
+// 루틴은 아이들이 자기 사진과 기록을 서로 보는 자리다. 확인된 사람만 들어온다.
+// 끗짱은 소속·나이·지원동기를 받고 통화까지 하고 승인하는데, 정작 그 방에
+// 들어오는 참여자는 아무 확인 없이 들어왔다. 앞뒤가 안 맞았다
+function verifyGate() {
+  const st = me.verify_status || 'none';
+  if (st === 'pending') return `<div class="card vf pending">
+    <div class="vf-i">🕰️</div>
+    <div class="vf-t"><b>확인이 끝나면 참여할 수 있어요</b>
+      <span>운영진이 보고 있어요. 하루 이틀이면 끝나요.</span></div>
+  </div>`;
+  return `<div class="card vf ${st === 'rejected' ? 'rejected' : 'soon'}">
+    <div class="vf-i">🪪</div>
+    <div class="vf-t">
+      <b>${st === 'rejected' ? '서류를 다시 내주세요' : '먼저 청소년 확인을 해주세요'}</b>
+      <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
+        : '루틴은 서로의 사진과 기록을 보는 자리예요. 그래서 한 번 확인해요.'}</span>
+    </div>
+  </div>
+  <button class="btn btn-primary" style="margin-top:10px;"
+    onclick="closeOv('ovRoutine');openVerify()">청소년 확인하러 가기</button>`;
 }
 
 // 끗짱이 함께한 날에 유스보이스가 낸 책값.
@@ -2639,6 +2660,7 @@ function openRoutine(id) {
       : !isYouth() ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
+      : me.verify_status !== 'approved' ? verifyGate()
       : `<div>
           <div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
           <div id="apBookBox"></div>
