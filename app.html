@@ -70,7 +70,8 @@ body {
   word-break:keep-all; overflow-wrap:break-word; -webkit-font-smoothing:antialiased;
   display:flex; justify-content:center; min-height:100vh; align-items:flex-start;
 }
-.app { width:100%; max-width:480px; background:var(--bg); min-height:100vh; position:relative; padding-bottom:76px; }
+.app { width:100%; max-width:480px; background:var(--bg); min-height:100vh; position:relative;
+  padding-bottom:calc(92px + env(safe-area-inset-bottom)); }
 input, select, textarea, button { font-family:inherit; }
 input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], select, textarea {
   width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px;
@@ -152,10 +153,18 @@ header.k { background:var(--pink); }
 .shelf span { background:#fff; border:1px solid var(--line); border-radius:99px;
   padding:7px 13px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
 .shelf i { font-style:normal; font-size:11px; color:var(--green-d); font-weight:700; }
-nav { position:fixed; bottom:0; left:0; right:0; max-width:480px; margin:0 auto; background:#fff; border-top:1px solid var(--line); display:flex; z-index:30; }
-nav div { flex:1; padding:9px 0 10px; text-align:center; color:var(--ink-3); cursor:pointer; font-size:10.5px; font-weight:600; }
-nav div.on { color:var(--blue); }
-nav i { display:block; font-size:21px; margin-bottom:1px; }
+/* 바닥에 붙이지 않고 띄운다. 아이폰 홈 인디케이터와 겹치지 않게
+   safe-area 만큼 더 올린다 */
+nav { position:fixed; left:0; right:0; max-width:480px; margin:0 auto; z-index:30;
+  bottom:calc(10px + env(safe-area-inset-bottom)); padding:0 14px;
+  display:flex; justify-content:center; pointer-events:none; }
+.nav-in { pointer-events:auto; display:flex; width:100%; background:#fff;
+  border-radius:99px; padding:6px; box-shadow:0 6px 24px rgba(20,22,26,.14);
+  border:1px solid rgba(20,22,26,.06); }
+nav div { flex:1; padding:8px 0 7px; text-align:center; color:var(--ink-3);
+  cursor:pointer; font-size:10px; font-weight:700; border-radius:99px; }
+nav div.on { color:var(--blue); background:#f2f3fb; }
+nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
 .sec-t { font-size:15px; font-weight:800; margin:22px 0 10px; letter-spacing:-.3px; }
@@ -611,13 +620,13 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
     <button id="hdrBtn" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
   </header>
   <div class="body" id="tabBody"><div class="spin">불러오는 중…</div></div>
-  <nav>
+  <nav><div class="nav-in">
     <div class="on" data-tab="home" onclick="go('home')"><i class="ti ti-home"></i>홈</div>
     <div data-tab="cert" onclick="go('cert')"><i class="ti ti-camera"></i>인증</div>
     <div data-tab="feed" onclick="go('feed')"><i class="ti ti-message-circle"></i>후기</div>
     <div data-tab="store" onclick="go('store')"><i class="ti ti-building-store"></i>서점</div>
     <div data-tab="my" onclick="go('my')"><i class="ti ti-user"></i>MY</div>
-  </nav>
+  </div></nav>
 </div>
 
 <!-- 끗짱 승인 대기 · 신청서 -->
