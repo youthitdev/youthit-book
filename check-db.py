@@ -41,6 +41,8 @@ MUST_BLOCK = {
     'dokseo_monthly_report':   {'p_year': 2026, 'p_month': 1},
     'review_due':              {'p_routine': 0},
     'decide_routine':          {'p_id': 0, 'p_open': True},
+    'kkut_credit_summary':     {},
+    'kkut_credit_month':       {'p_year': 2026, 'p_month': 1},
 }
 # 익명도 볼 수 있어야 하는 것 — 랜딩·후원자 화면이 이걸로 돈다
 MUST_WORK  = ['dokseo_reading_stats', 'dokseo_pool_status', 'routine_people_count',

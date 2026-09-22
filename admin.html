@@ -522,7 +522,7 @@ function renderPanel() {
 // 매달 손으로 쿼리 여러 개를 돌려 숫자를 옮겨 적으면 반드시 틀린다.
 // dokseo_monthly_report() 하나가 다 모아주고, 여기서는 읽어서 보여주고
 // 문자 본문까지 만들어 복사시킨다. 보내는 건 아직 사람이 한다
-let RP = { y: 0, m: 0, data: null, loading: false };
+let RP = { y: 0, m: 0, data: null, credit: null, loading: false };
 
 function viewReport() {
   if (!RP.y) {
@@ -560,6 +560,10 @@ function viewReport() {
     ${num(d.book_spent, '원', '책값')}
     ${num(d.pool?.remaining, '원', '남은 도서기금')}
   </div>
+
+  ${RP.credit && RP.credit.amount ? `<div class="rp-warn" style="background:#FFF4F8;border-color:#FFC6D8;color:#8A0040;">
+    끗짱 ${RP.credit.kkuts}명이 ${won(RP.credit.days)}일을 함께해
+    <b>${won(RP.credit.amount)}원</b>이 책값으로 나갔어요. 유스보이스가 낸 몫입니다.</div>` : ''}
 
   ${d.books_waiting ? `<div class="rp-warn">정산을 기다리는 책이 <b>${d.books_waiting}권</b> 있어요.
     정산하지 않으면 「전해진 책」에 안 잡힙니다.</div>` : ''}
@@ -604,10 +608,15 @@ function rpMove(k) {
 async function rpLoad() {
   if (!LIVE) return alert('데모 모드에서는 불러올 수 없어요.');
   RP.loading = true; render();
-  const { data, error } = await sb.rpc('dokseo_monthly_report', { p_year: RP.y, p_month: RP.m });
+  const [rep, cr] = await Promise.all([
+    sb.rpc('dokseo_monthly_report', { p_year: RP.y, p_month: RP.m }),
+    sb.rpc('kkut_credit_month',     { p_year: RP.y, p_month: RP.m }),
+  ]);
   RP.loading = false;
-  if (error) { RP.data = null; render(); return alert('불러오지 못했어요: ' + error.message); }
-  RP.data = data; render();
+  if (rep.error) { RP.data = null; render(); return alert('불러오지 못했어요: ' + rep.error.message); }
+  RP.data = rep.data;
+  RP.credit = cr.data || null;
+  render();
 }
 
 // 문자 본문. 숫자가 0 인 줄은 아예 빼서 "아무 일도 없었다" 로 읽히지 않게 한다
@@ -617,6 +626,9 @@ function rpMessage(d) {
   if (d.readers) L.push(`이번 달 청소년 ${won(d.readers)}명이 ${won(d.certs)}일을 읽었어요.`);
   if (d.new_readers) L.push(`그중 ${won(d.new_readers)}명은 이번 달에 처음 인증했어요.`);
   if (d.books) L.push(`동네책방에서 책 ${won(d.books)}권을 직접 골라 갔어요.`);
+
+  if (RP.credit && RP.credit.amount)
+    L.push(`끗짱 ${won(RP.credit.kkuts)}명이 ${won(RP.credit.days)}일을 함께했어요.`);
 
   const bk = (d.books_read || []).slice(0, 5).map(b => b.title);
   if (bk.length) { L.push('', '요즘 읽고 있는 책이에요.', bk.map(t => '· ' + t).join('\n')); }

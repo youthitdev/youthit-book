@@ -228,6 +228,14 @@ nav i { display:block; font-size:21px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
+/* 끗짱 적립 */
+.cr { background:#fff8fb; border:1px solid #ffdcea; }
+.cr-top b { font-size:26px; font-weight:800; color:var(--pink); letter-spacing:-1px; }
+.cr-top span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:5px; }
+.cr-line { margin-top:12px; padding-top:12px; border-top:1px solid #ffdcea;
+  font-size:13.5px; line-height:1.7; color:var(--ink-2); }
+.cr-line b { color:var(--ink); font-weight:800; }
+.cr-note { margin-top:9px; font-size:11.5px; color:var(--ink-3); line-height:1.6; }
 /* 끗짱 루틴이 아직 안 열렸을 때 */
 .k-wait { margin-top:10px; background:#FFF7E6; border:1px solid #F5D98B; border-radius:11px;
   padding:11px 13px; }
@@ -998,13 +1006,15 @@ async function loadMe(user) {
 // 신청서에는 나이·연락처가 들어 있어 청소년에게 보이면 안 된다.
 // profiles 가 아니라 별도 테이블(kkut_applications)에 두고 RLS로 본인·관리자만 읽는다
 async function loadKkutApp() {
-  const [app, el] = await Promise.all([
+  const [app, el, cr] = await Promise.all([
     sb.from('kkut_applications').select('*').maybeSingle(),
     sb.rpc('kkut_eligibility'),
+    sb.rpc('kkut_credit_summary'),
   ]);
   state.kkutApp = app.data || null;
   const e = Array.isArray(el.data) ? el.data[0] : el.data;
   state.kkutElig = e || { days: 0, need: 0, invited: true, eligible: true };
+  state.credit = cr.data || null;
   return state.kkutApp;
 }
 
@@ -2216,6 +2226,36 @@ async function deleteReview() {
 
 // 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
 // 15·30·66일 사다리가 여기로 이어진다
+// 끗짱이 함께한 날에 유스보이스가 낸 책값.
+// ⚠️ 주어는 반드시 유스보이스다. 「끗짱님이 기부했다」고 쓰면 거짓이 된다 —
+//    돈은 끗짱 것이 아니고, 기부금영수증도 못 준다
+function creditBlock() {
+  if (!canLead()) return '';
+  const c = state.credit; if (!c || !c.my_days) return '';
+  const price = c.book_price || 16500;
+  const books = Math.floor((c.total || 0) / price);
+
+  return `<div class="sec-t">함께한 만큼</div>
+    <div class="card cr">
+      <div class="cr-top">
+        <b>${won(c.mine)}원</b>
+        <span>끗짱님이 함께한 <b>${won(c.my_days)}일</b> 동안
+          ${esc(c.funder)}가 아이들 책값으로 냈어요</span>
+      </div>
+      <div class="cr-line">
+        ${books >= 1
+          ? `끗짱들이 함께 모은 <b>${won(c.total)}원</b>으로 지금까지 <b>책 ${books}권</b>이 전해졌어요.`
+          : `끗짱들이 함께 모은 <b>${won(c.total)}원</b>이에요.
+             <b>${won(Math.max(0, price - (c.total || 0)))}원</b>이 더 모이면 책 한 권이 돼요.`}
+      </div>
+      <div class="cr-note">아이가 읽은 날마다 ${won(c.per_day)}원씩이에요.
+        끗짱님 돈이 아니라, 끗짱님이 곁에 있어서 나가는 돈이에요.</div>
+      <a class="btn btn-line" style="margin-top:14px;display:block;text-align:center;
+         text-decoration:none;" href="index.html#donate" target="_blank" rel="noopener">
+        더 보태고 싶다면</a>
+    </div>`;
+}
+
 function kkutCard() {
   if (!isYouth()) return '';
   const a  = state.kkutApp;
@@ -2308,6 +2348,7 @@ function viewMy() {
         onclick="openProfile()">내 정보 수정</button>
     </div>
     ${isYouth() ? balanceBlock() : ''}
+    ${creditBlock()}
     <div class="card" style="display:flex;text-align:center;">
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">${canLead()?'맡은 루틴':'참여 루틴'}</div></div>
