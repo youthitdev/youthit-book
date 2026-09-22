@@ -1703,13 +1703,28 @@ function viewHome() {
         </div>`;
       }).join('');
     }
-    h += mine.map(kkutTodayCard).join('');
+    // 맡은 루틴과 참여 중인 루틴은 다른 카드로 그린다.
+    // 맡은 건 「누가 인증했나」, 참여한 건 「오늘 인증하기」다.
+    // 인증 탭은 이미 갈라놨는데 홈이 안 따라가고 있었다
+    const led  = mine.filter(r => r.led_by === me.id);
+    const join = mine.filter(r => r.led_by !== me.id);
+
+    h += led.map(kkutTodayCard).join('');
     h += `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
-      <span class="sec-t" style="margin:0;">${mine.length ? '루틴 더 만들기' : '내가 이끄는 루틴'}</span>
+      <span class="sec-t" style="margin:0;">${led.length ? '루틴 더 만들기' : '내가 이끄는 루틴'}</span>
       <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
     </div>`;
-    if (!mine.length) h += `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
-    return h + (others.length ? `<div class="sec-t">다른 끗짱의 루틴</div>` + routineGrid(others) : '');
+    if (!led.length) h += `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
+
+    if (join.length) {
+      h += `<div class="sec-t">내가 참여 중인 루틴</div>`;
+      h += join.map(todayCard).join('');
+    }
+
+    // 어른 끗짱은 참여를 못 한다. 고를 수도 없는 목록을 띄울 이유가 없다.
+    // 청소년 끗짱에게는 자기가 고를 자리라 남긴다
+    return h + (isYouth() && others.length
+      ? `<div class="sec-t">지금 모집 중인 루틴</div>` + routineGrid(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
