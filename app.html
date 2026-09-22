@@ -301,10 +301,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   display:flex; align-items:center; justify-content:center; font-size:22px;
   box-shadow:0 1px 4px rgba(0,0,0,.09); }
 .tc-bt-i img { width:100%; height:100%; object-fit:cover; display:block; }
-/* 끗짱 카드의 아이 타일 */
-.tc-bt-i.kid { aspect-ratio:1; border-radius:14px; background:#f2f2f6; color:var(--ink-3);
-  font-size:18px; font-weight:800; box-shadow:none; }
-.tc-bt-i.kid.on { background:var(--green-l); color:var(--green-d); }
+/* 끗짱 카드의 아이 타일. 사람 자리라 작은 동그라미다 —
+   책 표지와 같은 3:4 를 주면 얼굴 한 칸이 표지만 해진다 */
+.tc-bt-i.kid { aspect-ratio:auto; width:52px; height:52px; margin:0 auto;
+  border-radius:50%; background:#f2f2f6; color:var(--ink-3);
+  font-size:17px; font-weight:800; box-shadow:none; }
+.tc-bt-i.kid.on { background:var(--green); color:#fff; }
 .tc-bt i { display:block; font-style:normal; font-size:10.5px; font-weight:700;
   color:var(--green-d); text-align:center; margin-top:1px; }
 .tc-bt i.off { color:var(--ink-3); font-weight:600; }
@@ -1627,7 +1629,10 @@ function kkutTodayCard(r) {
   // 여기는 「누구한테 말 걸까」로 이어진다.
   // 안 한 아이만 세우면 「못 한 사람 명단」이 된다. 전부 놓고 한 아이에만
   // 표시한다 — 같은 정보인데 「빠진 사람」이 아니라 「우리」로 읽힌다
-  const shelf = ps.length ? `<div class="tc-shelf">${ps.slice(0, 3).map(p => {
+  // 한 줄에 세 칸이다. 넷 이상이면 두 명만 놓고 셋째 칸을 「더 보기」로 —
+  // 세 명을 다 놓으면 더 보기가 카드 밖으로 잘린다
+  const show = ps.length > 3 ? 2 : 3;
+  const shelf = ps.length ? `<div class="tc-shelf">${ps.slice(0, show).map(p => {
     const done = today.some(c => c.user_id === p.user_id);
     const nm = nameOf(p.user_id);
     return `<div class="tc-bt" onclick="event.stopPropagation();go('cert')">
@@ -1635,9 +1640,9 @@ function kkutTodayCard(r) {
       <span>${esc(nm)}</span>
       <i class="${done ? '' : 'off'}">${done ? '오늘 했어요' : '아직'}</i>
     </div>`;
-  }).join('')}${ps.length > 3
+  }).join('')}${ps.length > show
       ? `<div class="tc-bt more" onclick="event.stopPropagation();go('cert')">
-           <div class="tc-bt-i kid">+${ps.length - 3}</div><span>더 보기</span></div>` : ''}
+           <div class="tc-bt-i kid">+${ps.length - show}</div><span>더 보기</span></div>` : ''}
     </div>` : '';
 
   return `<div class="tcard">
@@ -1650,8 +1655,9 @@ function kkutTodayCard(r) {
       </div>` : ''}
       <div class="tc-day">${d ? (d.ended ? `완주 · ${d.total}일` : `<b>${d.n}일째</b> · ${d.total}일 중`) : '기간 미정'}</div>
       ${d && !waiting ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
-      ${waiting ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
-      ${waiting ? '' : shelf}
+      ${waiting || d?.ended ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
+      ${waiting || d?.ended ? '' : shelf}
+      ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
       <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
     </div>
   </div>`;
