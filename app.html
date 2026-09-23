@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>한끗독서</title>
-<meta name="theme-color" content="#2E33BC">
+<meta name="theme-color" content="#1F4E46">
 <!-- 한 파일짜리 앱이라 브라우저가 옛 버전을 붙들면 고친 게 안 보인다 -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -19,14 +19,16 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
-  --ink:#16161a; --ink-2:#5a5a66; --ink-3:#9a9aa6;
-  --bg:#f5f5f7; --card:#fff; --line:#ebebf0;
-  --blue:#2E33BC; --green:#83CA00; --green-d:#5d8a2a; --gold:#FFD600; --pink:#FF006C;
+  --ink:#1C1A17; --ink-2:#5D574E; --ink-3:#9A948A;
+  --bg:#FAF7F1; --card:#fff; --line:#E9E3D8;
+  /* --blue 는 이제 짙은 잉크 그린이다. 이름만 옛것이 남았다 —
+     백 군데 넘게 쓰여서, 이름을 바꾸면 색이 아니라 코드를 고치는 일이 된다 */
+  --blue:#1F4E46; --green:#83CA00; --green-d:#4E7A1C; --gold:#E8A33D; --pink:#C2533F;
 }
 /* ── 첫 화면 ─────────────────────────────────────────── */
 .sp { position:fixed; inset:0; z-index:900; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:26px;
-  background:linear-gradient(160deg,#2640D9,#1C36C8);
+  background:linear-gradient(160deg,#265C52,#173A34);
   transition:opacity .45s ease; }
 .sp.hide { opacity:0; pointer-events:none; }
 .sp-book { position:relative; width:168px; height:124px; perspective:900px; }
@@ -95,7 +97,7 @@ input[type=date]::-webkit-calendar-picker-indicator {
 select.ph { color:var(--ink-3); }
 .btn { width:100%; padding:15px; border:none; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
 .btn-primary { background:var(--blue); color:#fff; }
-.btn-primary:disabled { background:#c9cbe8; cursor:default; }
+.btn-primary:disabled { background:#BFCBC2; cursor:default; }
 .btn-green { background:var(--green); color:#fff; }
 .btn-line { background:#fff; border:1px solid var(--line); color:var(--ink-2); }
 .field-label { font-size:13px; font-weight:700; margin-bottom:7px; }
@@ -103,14 +105,14 @@ select.ph { color:var(--ink-3); }
 .opt { color:var(--ink-3); font-size:11px; font-weight:400; }
 .hint { font-size:11.5px; color:var(--ink-3); margin-top:6px; }
 /* 고른 인증 방법은 참고 문구가 아니라 청소년이 실제로 보게 될 문장이다 */
-.guide-prev { display:none; margin-top:9px; background:#fff5f9; border:1px solid #ffd6e6;
+.guide-prev { display:none; margin-top:9px; background:#FCF2EF; border:1px solid #ffd6e6;
   border-radius:12px; padding:12px 14px; font-size:13.5px; line-height:1.65; color:var(--ink); }
 .guide-prev b { display:block; font-size:11px; color:var(--pink); font-weight:700;
   letter-spacing:.3px; margin-bottom:5px; }
 
 /* 로그인 */
 /* body 가 flex 라 너비를 안 주면 내용 크기만큼만 늘어난다. 화면을 꽉 채우고 폼만 가운데로 */
-.auth { width:100%; min-height:100vh; background:linear-gradient(160deg,#3A40D6,#2A2FA8); color:#fff;
+.auth { width:100%; min-height:100vh; background:linear-gradient(160deg,#2A6055,#1A443C); color:#fff;
   padding:0 26px; display:flex; flex-direction:column; justify-content:center; align-items:center; }
 .auth > * { width:100%; max-width:360px; }
 .auth h1 { font-size:27px; font-weight:800; letter-spacing:-1px; line-height:1.35; }
@@ -161,13 +163,13 @@ header.k { background:var(--pink); }
 .gate-ico { font-size:34px; line-height:1; margin-bottom:10px; }
 .gate-t { font-size:17px; font-weight:800; margin-bottom:8px; }
 .gate-s { font-size:13px; line-height:1.7; color:var(--ink-2); }
-.gate-why { font-size:12.5px; line-height:1.7; color:var(--ink-2); background:#f7f7f8; border-radius:12px; padding:13px 15px; }
+.gate-why { font-size:12.5px; line-height:1.7; color:var(--ink-2); background:#F5F1EA; border-radius:12px; padding:13px 15px; }
 .gate-why b { display:block; margin-bottom:3px; color:var(--ink); }
 .gate-bar { height:8px; border-radius:99px; background:var(--bg); overflow:hidden; margin:16px 0 9px; }
 .gate-bar i { display:block; height:100%; background:var(--pink); border-radius:99px; transition:width .3s; }
 .gate-num { font-size:12.5px; color:var(--ink-3); }
 .gate-num b { color:var(--pink); font-size:14px; }
-#kkutBody .auth-err { background:#fff1f4; border:1px solid #ffc9d6; color:#b3003c; }
+#kkutBody .auth-err { background:#FAECE8; border:1px solid #EDC6BC; color:#8E3527; }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
 .body { padding:18px; }
@@ -185,7 +187,7 @@ nav { position:fixed; left:0; right:0; max-width:480px; margin:0 auto; z-index:3
   border:1px solid rgba(20,22,26,.06); }
 nav div { flex:1; padding:8px 0 7px; text-align:center; color:var(--ink-3);
   cursor:pointer; font-size:10px; font-weight:700; border-radius:99px; }
-nav div.on { color:var(--blue); background:#f2f3fb; }
+nav div.on { color:var(--blue); background:#EDF2EC; }
 nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
@@ -213,7 +215,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   font-family:inherit; }
 .bk-chip img { width:22px; height:22px; border-radius:50%; object-fit:cover; flex:none; }
 .bk-chip em { font-style:normal; width:22px; height:22px; border-radius:50%; flex:none;
-  background:#f0f0f4; display:grid; place-items:center; font-size:12px; }
+  background:#F2EEE6; display:grid; place-items:center; font-size:12px; }
 .bk-chip b { font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bk-chip.on { border-color:var(--green); background:var(--green-l); color:var(--green-d); }
 .bk-chip.add { padding-left:12px; color:var(--ink-3); }
@@ -222,22 +224,22 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .bk-full { font-size:12px; color:var(--ink-3); margin-top:8px; }
 /* 후기 — 쓸 수 있는 것 */
 .rv-todo { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;
-           background:#fff8fb; border:1px solid #ffdcea; }
+           background:#FDF6F4; border:1px solid #F5E0DA; }
 .rv-r { flex-shrink:0; display:flex; align-items:center; gap:7px; }
 .rv-p { font-size:13px; font-weight:800; color:var(--pink);
-        background:#fff; border:1px solid #ffdcea; border-radius:99px; padding:6px 11px; }
+        background:#fff; border:1px solid #F5E0DA; border-radius:99px; padding:6px 11px; }
 /* 남은 날. 이틀 안쪽이면 붉게 — 지나면 30P 가 사라지기 때문에 */
 .rv-d { font-size:11.5px; font-weight:800; color:var(--ink-3); }
-.rv-d.hot { color:#E0004C; }
+.rv-d.hot { color:#A8432F; }
 /* 홈 위의 알림 줄 */
 .rv-alert { display:flex; align-items:center; gap:10px; cursor:pointer;
-  background:#fff8fb; border:1px solid #ffdcea; border-radius:14px;
+  background:#FDF6F4; border:1px solid #F5E0DA; border-radius:14px;
   padding:13px 15px; margin-bottom:12px; }
 .rv-alert b { font-size:13.5px; font-weight:800; }
 .rv-alert span { flex:1; font-size:12px; color:var(--ink-3); margin-top:2px; display:block; }
 .rv-alert i { color:var(--pink); font-size:16px; font-style:normal; }
 .c-done { background:#eee; color:#888; }
-.c-wait { background:#FFF4E5; color:#A86400; }
+.c-wait { background:#FFF4E5; color:#8A5A16; }
 
 /* 루틴 카드 */
 .r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; overflow:hidden; }
@@ -260,9 +262,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 청소년 확인 */
 .vf { display:flex; align-items:center; gap:13px; }
 .vf.approved { background:#f4faea; border:1px solid #d8ebb8; }
-.vf.pending  { background:#FFF7E6; border:1px solid #F5D98B; }
-.vf.rejected { background:#FFF0F4; border:1px solid #FFC6D8; }
-.vf.soon     { background:#fff8fb; border:1px solid #ffdcea; }
+.vf.pending  { background:#F9EEDC; border:1px solid #E5C795; }
+.vf.rejected { background:#FAEBE7; border:1px solid #EDC6BC; }
+.vf.soon     { background:#FDF6F4; border:1px solid #F5E0DA; }
 .vf-i { font-size:24px; flex:none; }
 .vf-t { flex:1; min-width:0; }
 .vf-t b { display:block; font-size:14.5px; font-weight:800; }
@@ -272,23 +274,23 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .vf-x { flex:none; color:var(--ink-3); font-size:20px; }
 .vf-ok, .vf-no { border-radius:12px; padding:13px 15px; font-size:12.5px; line-height:1.7; }
 .vf-ok { background:#f7f7fa; color:var(--ink-2); }
-.vf-no { background:#FFF0F4; color:#B3003C; margin-top:9px; }
+.vf-no { background:#FAEBE7; color:#8E3527; margin-top:9px; }
 .vf-ok b, .vf-no b { display:block; font-size:13px; color:var(--ink); margin-bottom:3px; }
-.vf-no b { color:#B3003C; }
+.vf-no b { color:#8E3527; }
 /* 끗짱 적립 */
-.cr { background:#fff8fb; border:1px solid #ffdcea; }
+.cr { background:#FDF6F4; border:1px solid #F5E0DA; }
 .cr-top b { font-size:26px; font-weight:800; color:var(--pink); letter-spacing:-1px; }
 .cr-top span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:5px; }
-.cr-line { margin-top:12px; padding-top:12px; border-top:1px solid #ffdcea;
+.cr-line { margin-top:12px; padding-top:12px; border-top:1px solid #F5E0DA;
   font-size:13.5px; line-height:1.7; color:var(--ink-2); }
 .cr-line b { color:var(--ink); font-weight:800; }
 .cr-note { margin-top:9px; font-size:11.5px; color:var(--ink-3); line-height:1.6; }
 /* 끗짱 루틴이 아직 안 열렸을 때 */
-.k-wait { margin-top:10px; background:#FFF7E6; border:1px solid #F5D98B; border-radius:11px;
+.k-wait { margin-top:10px; background:#F9EEDC; border:1px solid #E5C795; border-radius:11px;
   padding:11px 13px; }
-.k-wait.bad { background:#FFF0F4; border-color:#FFC6D8; }
+.k-wait.bad { background:#FAEBE7; border-color:#EDC6BC; }
 .k-wait b { display:block; font-size:13px; font-weight:800; color:#8A5A00; }
-.k-wait.bad b { color:#B3003C; }
+.k-wait.bad b { color:#8E3527; }
 .k-wait span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:3px; }
 /* 카드 제목 줄에 붙는 작은 버튼 */
 .tc-hd { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
@@ -403,9 +405,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .day-pick span { display:block; font-size:10px; color:var(--ink-3); margin-top:2px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .day-pick button.on span { color:var(--pink); }
-.day-pick button.on { border-color:var(--pink); background:#fff5f9; color:var(--pink); }
+.day-pick button.on { border-color:var(--pink); background:#FCF2EF; color:var(--pink); }
 .kbook-pick { width:110px; aspect-ratio:3/4; border:1px dashed var(--line); border-radius:12px;
-  background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:4px; color:var(--ink-3); font-size:12px; cursor:pointer; }
 .kbook-prev { position:relative; width:110px; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#eeeae2; }
 .kbook-prev img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -416,7 +418,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kkut-book img { width:100%; height:100%; object-fit:cover; display:block; }
 .kkut-note { font-size:12px; color:var(--green-d); font-weight:700; margin-top:9px; }
 .cover-pick { width:100%; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
-  background:#fafaf8; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
 .cover-prev { position:relative; border-radius:13px; overflow:hidden; aspect-ratio:16/9; }
 /* 책 사진은 세로로 긴 경우가 많아 자르면 안 된다. 비율 그대로 다 보여준다 */
@@ -427,7 +429,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .book-prev { display:flex; flex-direction:column; align-items:center; gap:9px; }
 .bp-wrap { position:relative; width:132px; }
 .bp-frame { width:100%; aspect-ratio:3/4; border-radius:12px; overflow:hidden;
-  background:#f0f0f4; box-shadow:0 2px 9px rgba(0,0,0,.13); }
+  background:#F2EEE6; box-shadow:0 2px 9px rgba(0,0,0,.13); }
 .bp-frame img { width:100%; height:100%; object-fit:cover; display:block; }
 .bp-x { position:absolute; top:-7px; right:-7px; width:27px; height:27px; border:none;
   border-radius:50%; background:rgba(0,0,0,.62); color:#fff; font-size:15px; cursor:pointer; }
@@ -469,7 +471,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 /* 인증 */
 .ph-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:8px; }
-.ph-box { aspect-ratio:1; border-radius:12px; background:#f0f0f4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--ink-3); font-size:11px; cursor:pointer; border:1.5px dashed #ddd; }
+.ph-box { aspect-ratio:1; border-radius:12px; background:#F2EEE6; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--ink-3); font-size:11px; cursor:pointer; border:1.5px dashed #ddd; }
 .ph-box img { width:100%; height:100%; object-fit:cover; border-radius:12px; }
 .ph-wrap { position:relative; aspect-ratio:1; }
 .ph-wrap img { width:100%; height:100%; object-fit:cover; border-radius:12px; display:block; }
@@ -480,14 +482,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .f-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
 .f-act { width:32px; height:32px; background:none; border:none; border-radius:50%;
   font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-.f-act:active { background:#f0f0f4; }
+.f-act:active { background:#F2EEE6; }
 .f-av { width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
 .f-name { font-size:13.5px; font-weight:700; }
 .f-time { font-size:11.5px; color:var(--ink-3); }
 .f-photos { display:grid; gap:5px; margin-bottom:10px; border-radius:12px; overflow:hidden; }
 /* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
    비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
-.f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#f0f0f4; }
+.f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#F2EEE6; }
 .f-quote { border-left:3px solid var(--green); background:#f7fbf0; border-radius:0 10px 10px 0; padding:11px 13px; margin-bottom:8px; }
 .f-quote p { font-size:14px; line-height:1.7; }
 .f-quote cite { display:block; font-style:normal; font-size:11.5px; color:var(--green-d); margin-top:6px; }
@@ -513,14 +515,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .store { display:flex; width:100%; align-items:center; gap:10px; text-align:left;
   background:var(--card); border:none; border-radius:14px; margin-bottom:8px;
   padding:16px; cursor:pointer; font-family:inherit; color:inherit; }
-.store:active { background:#f4f4f6; }
+.store:active { background:#F4F0E8; }
 .store > i { font-size:17px; color:var(--ink-3); margin-left:auto; flex-shrink:0; }
 .store-n { font-size:15px; font-weight:700; }
 .store-g { font-size:12px; color:var(--ink-3); flex-shrink:0; }
 .store-more { display:flex; width:100%; align-items:center; gap:8px; margin-top:12px;
   background:none; border:1px solid var(--line); border-radius:14px; padding:15px 16px;
   cursor:pointer; font-family:inherit; color:var(--ink-2); font-size:14px; font-weight:700; }
-.store-more:active { background:#f4f4f6; }
+.store-more:active { background:#F4F0E8; }
 .store-more em { font-style:normal; font-size:12.5px; font-weight:600; color:var(--ink-3); }
 .store-more > i { font-size:17px; color:var(--ink-3); margin-left:auto; }
 .store-ask { background:var(--card); border:1px solid var(--line); border-radius:15px;
@@ -602,8 +604,8 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
          겹쳐보면 원본과 98% 일치한다. -->
     <svg class="sp-spark" viewBox="-1 -1 443 305" aria-hidden="true">
       <path d="M124 59 Q147 152 236 175 Q147 198 124 291 Q101 198 12 175 Q101 152 124 59 Z"
-            fill="#FFD600" stroke="#FFD600" stroke-width="24" stroke-linejoin="round"/>
-      <g stroke="#FFD600" stroke-width="37" stroke-linecap="round">
+            fill="#E8A33D" stroke="#E8A33D" stroke-width="24" stroke-linejoin="round"/>
+      <g stroke="#E8A33D" stroke-width="37" stroke-linecap="round">
         <line x1="261" y1="95"  x2="297" y2="18"/>
         <line x1="318" y1="146" x2="405" y2="83"/>
         <line x1="344" y1="209" x2="423" y2="194"/>
@@ -885,7 +887,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div class="field-label">어느 책방에서 받았나요? <span class="req">* 필수</span></div>
       <select id="buyStore" onchange="checkBuy()"></select>
     </div>
-    <div style="background:#f0f0f4;border-radius:12px;padding:13px 15px;">
+    <div style="background:#F2EEE6;border-radius:12px;padding:13px 15px;">
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
       <div style="font-size:13.5px;line-height:1.6;">받은 책으로 얼굴을 가리고 찍어주세요.<br>얼굴이 나오지 않게 책을 들어올리면 돼요.</div>
     </div>
@@ -1052,7 +1054,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 </div>
 
 <!-- 책이 도착한 순간. 후원자가 누구인지는 알리지 않고, 응원만 전한다 -->
-<div class="ov" id="ovCheer" style="background:linear-gradient(160deg,#2E33BC,#4a4fd6);">
+<div class="ov" id="ovCheer" style="background:linear-gradient(160deg,#1F4E46,#2F6E62);">
   <div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px 30px;text-align:center;color:#fff;">
     <div style="font-size:52px;margin-bottom:22px;">📚</div>
     <div id="cheerMsg" style="font-size:22px;font-weight:800;line-height:1.5;letter-spacing:-0.5px;"></div>
@@ -1374,7 +1376,7 @@ function renderKkutGate() {
 
     <div style="margin-top:18px;">
       <div class="field-label">이름</div>
-      <input type="text" value="${esc(me.name)}" disabled style="background:#f4f4f5;color:var(--ink-3);">
+      <input type="text" value="${esc(me.name)}" disabled style="background:#F4F0E8;color:var(--ink-3);">
       <div class="hint">가입할 때 적은 이름이에요. MY에서 바꿀 수 있어요.</div>
     </div>
     <div style="display:flex;gap:10px;margin-top:16px;">
@@ -1981,7 +1983,7 @@ function todayCard(r) {
           : ''}
       </div>
       <div class="tc-day">${routineLine(r, d)}</div>
-      ${d ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${d ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${shelf}
       ${action}
     </div>
@@ -2025,7 +2027,7 @@ function kkutTodayCard(r) {
           : `<b>운영진이 확인하고 있어요</b><span>열리면 아이들이 신청할 수 있어요.</span>`}
       </div>` : ''}
       <div class="tc-day">${routineLine(r, d)}</div>
-      ${d && !waiting ? `<div class="bal-bar" style="background:#e9e9ef;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${d && !waiting ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${waiting || d?.ended ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
       ${waiting || d?.ended ? '' : shelf}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
@@ -2043,7 +2045,7 @@ function viewHome() {
     : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`);
 
   if (isGuest()) {
-    return `<div class="card" style="background:linear-gradient(160deg,#2640D9,#1C36C8);color:#fff;">
+    return `<div class="card" style="background:linear-gradient(160deg,#265C52,#173A34);color:#fff;">
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
@@ -2064,7 +2066,7 @@ function viewHome() {
           <div style="font-weight:700;">${esc(nameOf(p.user_id))}</div>
           <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${esc(r?.title||'')}</div>
           ${p.book_photo_url ? `<div style="margin-top:10px;"><img src="${esc(p.book_photo_url)}" loading="lazy"
-              style="width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:12px;display:block;background:#f0f0f4;">
+              style="width:100%;height:auto;max-height:340px;object-fit:contain;border-radius:12px;display:block;background:#F2EEE6;">
               <div style="font-size:11.5px;color:var(--ink-3);margin-top:5px;">${p.book_title ? `📖 ${esc(p.book_title)}` : '이 책으로 시작한대요'}</div></div>` : ''}
           ${p.note ? `<div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.6;">“${esc(p.note)}”</div>` : ''}
           <div style="display:flex;gap:8px;margin-top:12px;">
@@ -2290,7 +2292,7 @@ function balanceBlock() {
         ? `<div class="vch">🎫 ${cap}원 이하 책 한 권과 바꿀 수 있어요<span>가까운 동네책방에서 골라보세요</span></div>`
         : ''}
       ${pend
-        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5C00;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
+        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5417;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="go('store')">책방 찾기</button>
             ${p.left > 0 ? (me.verify_status === 'approved'
@@ -2456,7 +2458,7 @@ async function buildShareCard(c) {
     }
   } else {
     const g = x.createLinearGradient(0, 0, W, PH);
-    g.addColorStop(0, '#83CA00'); g.addColorStop(1, '#5d8a2a');
+    g.addColorStop(0, '#83CA00'); g.addColorStop(1, '#4E7A1C');
     x.fillStyle = g; x.fillRect(0, 0, W, PH);
     setFont(x, 'bold', 140); x.fillStyle = '#fff';
     x.textAlign = 'center'; x.fillText('📖', W/2, PH/2 + 50); x.textAlign = 'left';
@@ -2467,7 +2469,7 @@ async function buildShareCard(c) {
   let y = PH + PAD + 40;
 
   if (qLines.length) {
-    setFont(x, 'bold', 46); x.fillStyle = '#16161a';
+    setFont(x, 'bold', 46); x.fillStyle = '#1C1A17';
     qLines
       .map((l, i) => (i === 0 ? '“' + l : l) + (i === qLines.length - 1 ? '”' : ''))
       .forEach((l, i) => x.fillText(l, PAD, y + i*64));
@@ -2481,7 +2483,7 @@ async function buildShareCard(c) {
   x.fillText(foot, PAD, y + 8);
 
   // 워드마크
-  setFont(x, 'bold', 32); x.fillStyle = '#5d8a2a';
+  setFont(x, 'bold', 32); x.fillStyle = '#4E7A1C';
   x.textAlign = 'right'; x.fillText('한끗독서', W - PAD, y + 8); x.textAlign = 'left';
 
   return new Promise(ok => cv.toBlob(ok, 'image/png'));
@@ -2626,7 +2628,7 @@ let rvCtx = null;   // { kind, id, review }
 function rvDueLine(r) {
   const left = reviewLeft(r); if (left === null || left === undefined) return '';
   const due = reviewDue(r).slice(5).replace('-', '월 ') + '일';
-  return `<br><span style="color:${left <= 2 ? '#E0004C' : 'var(--ink-3)'};">
+  return `<br><span style="color:${left <= 2 ? '#A8432F' : 'var(--ink-3)'};">
     ${due}까지 쓸 수 있어요${left === 0 ? ' — 오늘까지예요' : ` (${left}일 남음)`}.</span>`;
 }
 
@@ -3082,7 +3084,7 @@ function openRoutine(id) {
                      「${esc(leftToday(r.id)[0].title)}」도 인증하기</button>`
                 : `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>
                    <button class="btn btn-line" onclick="closeOv('ovRoutine');go('feed')">다른 사람 기록 보기</button>`)
-      : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#A86400;font-weight:700;">확인 중이에요</div>`
+      : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#8A5A16;font-weight:700;">확인 중이에요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : !isYouth() ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
@@ -3315,7 +3317,7 @@ function makeHint() {
 
   const a = $('mStart').value, h = $('mHint');
   if (n && n < MIN_DAYS) {
-    h.style.display = ''; h.style.background = '#fff1f4'; h.style.color = '#b00038';
+    h.style.display = ''; h.style.background = '#FAECE8'; h.style.color = '#b00038';
     h.textContent = `기간은 ${MIN_DAYS}일 이상이어야 해요.`;
     return;
   }
@@ -3395,7 +3397,7 @@ function openCert(rid, pickTitle) {
   $('camHint').style.display = '';
   $('ovCTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('certGuide').innerHTML = r.cert_guide
-    ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
+    ? `<div style="background:#F2EEE6;border-radius:12px;padding:12px 14px;">
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
   $('camHint').textContent = r.camera_only
@@ -3637,20 +3639,20 @@ function pageHint() {
     // 새 책이거나 첫 인증. 0쪽부터 센다
     if (!page) { h.style.display = 'none'; return; }
     h.style.display = '';
-    h.style.background='#f2f9e5'; h.style.color='#4e7a00';
+    h.style.background='#f2f9e5'; h.style.color='#4E7A1C';
     h.textContent = `0~${page}쪽 · 오늘 ${page}쪽 읽었어요 📖`;
     return;
   }
   h.style.display = '';
-  if (!page) { h.style.background='#f0f0f4'; h.style.color='#666'; h.textContent=`지난 인증에서 ${last.page_end}쪽까지 읽었어요.`; return; }
+  if (!page) { h.style.background='#F2EEE6'; h.style.color='#666'; h.textContent=`지난 인증에서 ${last.page_end}쪽까지 읽었어요.`; return; }
   if (page < last.page_end) {
-    h.style.background='#FFFBE6'; h.style.color='#7A5C00';
+    h.style.background='#FBF3E3'; h.style.color='#7A5417';
     h.textContent = `지난번엔 ${last.page_end}쪽까지였는데 숫자가 줄었어요. 다른 책이라면 책 제목을 바꿔주세요. 그대로 올려도 괜찮아요.`;
   } else if (page - last.page_end > 200) {
-    h.style.background='#FFFBE6'; h.style.color='#7A5C00';
+    h.style.background='#FBF3E3'; h.style.color='#7A5417';
     h.textContent = `오늘 ${page-last.page_end}쪽이나 읽었네요! 맞다면 그대로 올려주세요.`;
   } else {
-    h.style.background='#f2f9e5'; h.style.color='#4e7a00';
+    h.style.background='#f2f9e5'; h.style.color='#4E7A1C';
     h.textContent = `${last.page_end}~${page}쪽 · 오늘 ${page-last.page_end}쪽 읽었어요 📖`;
   }
 }
@@ -3665,7 +3667,7 @@ function editCert(id) {
   $('ovCLabel').textContent = '인증 수정';
   $('ovCTitle').textContent = `${r?.emoji||'📚'} ${r?.title||''}`;
   $('certGuide').innerHTML = r?.cert_guide
-    ? `<div style="background:#f0f0f4;border-radius:12px;padding:12px 14px;">
+    ? `<div style="background:#F2EEE6;border-radius:12px;padding:12px 14px;">
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
   drawPhotos();
@@ -3775,7 +3777,7 @@ function storeGoal() {
   const pct = Math.min(100, Math.round((p.points % p.per) / Math.max(p.per, 1) * 100));
   return `<div class="sg">
       <b>${won(p.to_next)}P만 더 모으면 여기서 책을 골라요</b>
-      <div class="bal-bar" style="background:#e9e9ef;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
+      <div class="bal-bar" style="background:#EBE5DA;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
       <span>오늘 인증하면 ${state.settings.points_per_cert ?? 10}P 쌓여요.</span>
     </div>`;
 }
@@ -4233,7 +4235,7 @@ function enterDemo(role) {
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
 
   const b = document.createElement('div');
-  b.style.cssText = 'background:var(--gold);color:#3d3000;font-size:11.5px;font-weight:700;text-align:center;padding:7px 12px;line-height:1.5';
+  b.style.cssText = 'background:var(--gold);color:#3a2a0c;font-size:11.5px;font-weight:700;text-align:center;padding:7px 12px;line-height:1.5';
   b.textContent = '데모 데이터로 보는 중 — 실제 기록이 아니고, 저장되지 않아요';
   $('appScr').insertBefore(b, $('hdr'));
 

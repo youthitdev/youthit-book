@@ -5,8 +5,8 @@
   "start_url": "/youthit-book/app.html",
   "scope": "/youthit-book/",
   "display": "standalone",
-  "background_color": "#2E33BC",
-  "theme_color": "#2E33BC",
+  "background_color": "#1F4E46",
+  "theme_color": "#1F4E46",
   "orientation": "portrait",
   "icons": [
     { "src": "icon-192.png",          "sizes": "192x192", "type": "image/png" },

@@ -11,14 +11,14 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-:root { --ink:#16161a; --ink-2:#5a5a66; --ink-3:#9a9aa6; --bg:#f5f5f7; --card:#fff; --line:#e5e5ea; --pink:#FF006C; --blue:#2E33BC; --green:#83CA00; }
+:root { --ink:#1C1A17; --ink-2:#5D574E; --ink-3:#9A948A; --bg:#FAF7F1; --card:#fff; --line:#E9E3D8; --pink:#C2533F; --blue:#1F4E46; --green:#83CA00; }
 body { font-family:-apple-system, BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--ink); line-height:1.55; font-size:14px; word-break:keep-all; overflow-wrap:break-word; }
 .wrap { max-width:1080px; margin:0 auto; padding:0 20px 70px; }
 header { background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
 .hd { max-width:1080px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
 .logo { font-size:16px; font-weight:800; letter-spacing:-0.4px; }
 .logo b { color:var(--pink); }
-.demo-flag { background:#FFD600; color:#3d3000; font-size:11.5px; font-weight:700; text-align:center; padding:7px; }
+.demo-flag { background:#E8A33D; color:#3a2a0c; font-size:11.5px; font-weight:700; text-align:center; padding:7px; }
 
 /* 요약 */
 /* 칸은 늘 셋이다. 5칸 격자에 셋을 넣어 오른쪽이 비어 있었다 */
@@ -59,14 +59,14 @@ tr:hover td { background:#fcfcfd; }
 .thumb { width:40px; height:40px; border-radius:8px; background:#ececed; display:flex; align-items:center; justify-content:center; font-size:9.5px; color:var(--ink-3); font-weight:600; }
 .chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
 .c-wait { background:#fff4e5; color:#a86400; }
-.c-done { background:#f2f9e5; color:#4e7a00; }
+.c-done { background:#f2f9e5; color:#4E7A1C; }
 .c-act  { background:#eef0ff; color:var(--blue); }
 .c-off  { background:#f0f0f2; color:var(--ink-3); }
 .btn { border:none; border-radius:9px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
 .btn-pink { background:var(--pink); color:#fff; }
 .btn-dark { background:var(--ink); color:#fff; }
 .btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
-.btn-danger { background:#fff; border:1px solid #ffc9d6; color:#b3003c; }
+.btn-danger { background:#fff; border:1px solid #EDC6BC; color:#8E3527; }
 .r-sel { border:1px solid var(--line); border-radius:9px; padding:6px 8px; font-size:12.5px;
          font-family:inherit; font-weight:700; cursor:pointer; }
 .r-sel.s-recruit { background:#fff4e5; color:#a86400; border-color:#f6e2c2; }
@@ -85,13 +85,13 @@ tr:hover td { background:#fcfcfd; }
 /* 명단 한 줄 */
 .vq-sub { font-size:12px; color:var(--ink-3); margin-top:3px; }
 .vq-sub b { color:var(--ink-2); font-weight:600; }
-.vq-warn { color:#b3003c; font-weight:700; }
+.vq-warn { color:#8E3527; font-weight:700; }
 /* 연락처 줄. 눌러서 복사한다 — 받아 적다가 한 자 틀리면 엉뚱한 사람에게 간다 */
 .vq-c { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-.vq-c button { background:#f5f6f8; border:none; border-radius:7px; padding:4px 9px;
+.vq-c button { background:#F3EFE7; border:none; border-radius:7px; padding:4px 9px;
   font-family:inherit; font-size:11.5px; color:var(--ink-2); cursor:pointer; }
-.vq-c button:hover { background:#e9eaee; color:var(--ink); }
-.vq-when { font-size:11px; color:#a8adb8; margin-top:5px; }
+.vq-c button:hover { background:#E9E3D8; color:var(--ink); }
+.vq-when { font-size:11px; color:#A79F92; margin-top:5px; }
 /* 알림 보내기 */
 .nf-f { margin-bottom:14px; }
 .nf-f label { display:block; font-size:12.5px; font-weight:700; margin-bottom:6px; }
@@ -101,13 +101,13 @@ tr:hover td { background:#fcfcfd; }
 .nf-f textarea { resize:vertical; line-height:1.6; }
 .nf-f input:focus, .nf-f select:focus, .nf-f textarea:focus { border-color:var(--blue); }
 /* 몇 명에게 가는지. 누르기 전에 알아야 손이 안 떨린다 */
-.nf-reach { background:#f5f6f8; border-radius:10px; padding:10px 13px;
+.nf-reach { background:#F3EFE7; border-radius:10px; padding:10px 13px;
   font-size:12.5px; color:var(--ink-2); margin-bottom:16px; }
 .nf-reach b { color:var(--ink); }
 .vq-st { font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:7px; white-space:nowrap; }
-.st-pending  { background:#FFF4D6; color:#8a6400; }
-.st-rejected { background:#FFE7EE; color:#b3003c; }
-.st-none     { background:#eff0f3; color:#6b7080; }
+.st-pending  { background:#FFF4D6; color:#7A5417; }
+.st-rejected { background:#FFE7EE; color:#8E3527; }
+.st-none     { background:#F0ECE3; color:#6b7080; }
 .st-approved { background:#E9F7D8; color:#4a7a00; }
 .st-adult    { background:#eef0ff; color:#4a4fd6; }
 /* 서류 없이 확인하는 길. 눈에 덜 띄어야 한다 — 이게 기본 경로가 되면 안 된다 */
@@ -131,7 +131,7 @@ tr:hover td { background:#fcfcfd; }
 .rw-t b { font-size:14px; }
 .rw-t > span { display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
 .rw-d { font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:6px; white-space:pre-wrap; }
-.rw-r { font-size:12.5px; color:#b3003c; margin-top:6px; font-weight:600; }
+.rw-r { font-size:12.5px; color:#8E3527; margin-top:6px; font-weight:600; }
 .rw-b { flex:none; display:flex; gap:6px; }
 .rp-pick { display:flex; align-items:center; gap:8px; }
 .rp-pick b { font-size:14px; min-width:92px; text-align:center; }
@@ -144,7 +144,7 @@ tr:hover td { background:#fcfcfd; }
 .rp-n b { font-size:20px; font-weight:800; letter-spacing:-.6px; }
 .rp-n b small { font-size:12px; font-weight:700; margin-left:1px; }
 .rp-n span { display:block; font-size:11.5px; color:var(--ink-3); margin-top:3px; font-weight:600; }
-.rp-warn { margin:14px 20px 0; background:#FFF7E6; border:1px solid #F5D98B; border-radius:10px;
+.rp-warn { margin:14px 20px 0; background:#F9EEDC; border:1px solid #E5C795; border-radius:10px;
   padding:11px 14px; font-size:12.5px; color:#8A5A00; line-height:1.6; }
 .rp-sec { padding:20px 20px 8px; font-size:13.5px; font-weight:700; }
 .rp-sec i { font-style:normal; color:var(--ink-3); font-weight:700; margin-left:3px; }
@@ -175,11 +175,11 @@ tr:hover td { background:#fcfcfd; }
 .kk-q { margin-top:12px; }
 .kk-q b { display:block; font-size:11.5px; color:var(--ink-3); margin-bottom:4px; }
 .kk-q p { margin:0; font-size:13.5px; line-height:1.7; white-space:pre-wrap; }
-.kk-q.no p { color:#b3003c; }
+.kk-q.no p { color:#8E3527; }
 .kk-a { display:flex; gap:8px; margin-top:16px; }
 .pill { font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:99px; flex-shrink:0; }
 .pill.ok   { background:#e8f6ec; color:#1b7a3c; }
-.pill.no   { background:#fdeaef; color:#b3003c; }
+.pill.no   { background:#fdeaef; color:#8E3527; }
 .pill.wait { background:#fff4e0; color:#a35c00; }
 
 /* 모달 */
@@ -210,7 +210,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .preview-t { font-size:12px; font-weight:700; color:var(--blue); margin-bottom:8px; }
 .preview-row { display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; }
 .preview-row.out { color:var(--green); font-weight:700; }
-.warn { background:#fff1f4; border:1px solid #ffd3de; color:#b00038; border-radius:12px; padding:12px 15px; font-size:12.5px; margin-bottom:16px; }
+.warn { background:#FAECE8; border:1px solid #ffd3de; color:#b00038; border-radius:12px; padding:12px 15px; font-size:12.5px; margin-bottom:16px; }
 @media (max-width:820px){ .sum { grid-template-columns:repeat(2,1fr); } }
 </style>
 </head>
@@ -717,8 +717,8 @@ function viewVerify() {
     <div class="panel-d">책을 받기 전에 한 번 확인합니다. 읽고 포인트 모으는 건 확인 전에도 됩니다.<br>
       <b>승인하면 서류 파일은 바로 지워집니다.</b> 확인했다는 사실과 방법만 남아요.</div></div>
   </div>
-  ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#F5D98B;background:#FFFBF0;">
-    <div class="preview-t" style="color:#8a6400;">확인을 기다리는 사람 ${wait.length}명 — 아래 맨 위에 있어요</div>
+  ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
+    <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 아래 맨 위에 있어요</div>
   </div>` : ''}
   <div style="padding:14px 20px 20px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임 · 지역 · 이메일 · 번호로 찾기"
@@ -786,7 +786,7 @@ async function nfCount() {
   nfReach = Number(n) || 0;
   box.innerHTML = nfReach
     ? `알림을 켜 둔 <b>${nfReach}명</b>에게 갑니다`
-    : `<span style="color:#b3003c;">받을 사람이 없어요.</span> 아직 아무도 알림을 안 켰습니다`;
+    : `<span style="color:#8E3527;">받을 사람이 없어요.</span> 아직 아무도 알림을 안 켰습니다`;
 }
 
 function nfTargetChange() {
@@ -977,7 +977,7 @@ function viewReport() {
     ${num(d.pool?.remaining, '원', '남은 도서기금')}
   </div>
 
-  ${RP.credit && RP.credit.amount ? `<div class="rp-warn" style="background:#FFF4F8;border-color:#FFC6D8;color:#8A0040;">
+  ${RP.credit && RP.credit.amount ? `<div class="rp-warn" style="background:#FFF4F8;border-color:#EDC6BC;color:#8A0040;">
     끗짱 ${RP.credit.kkuts}명이 ${won(RP.credit.days)}일을 함께해
     <b>${won(RP.credit.amount)}원</b>이 책값으로 나갔어요. 유스보이스가 낸 몫입니다.</div>` : ''}
 
@@ -1124,7 +1124,7 @@ function viewRoutines() {
       상태를 바꾸면 청소년 앱에 바로 반영돼요.</div></div>
   </div>
 
-  ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#F5D98B;background:#FFFBF0;">
+  ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#E5C795;background:#FFFBF0;">
     <div class="preview-t">열어달라고 기다리는 루틴 ${wait.length}건</div>
     ${wait.map(r => `<div class="rw">
       <div class="rw-t">
@@ -1154,7 +1154,7 @@ function viewRoutines() {
     <tr><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(r => `<tr>
       <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
-          ${rOverdue(r) ? `<div class="muted" style="color:#b3003c;">종료일이 지났어요</div>` : ''}</td>
+          ${rOverdue(r) ? `<div class="muted" style="color:#8E3527;">종료일이 지났어요</div>` : ''}</td>
       <td class="muted">${esc(rName(r.led_by))}</td>
       <td class="num muted" style="white-space:nowrap;">${md(r.start_date)}~${md(r.end_date)}</td>
       <td class="num right">${rParts(r.id).length}/${r.max_people}</td>
