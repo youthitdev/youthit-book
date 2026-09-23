@@ -45,12 +45,17 @@ MUST_BLOCK = {
     'kkut_credit_month':       {'p_year': 2026, 'p_month': 1},
     'decide_verify':           {'p_user': '00000000-0000-0000-0000-000000000000', 'p_approve': True},
     'verify_queue':            {},
+    'notify_push':             {'p_user': '00000000-0000-0000-0000-000000000000', 'p_title': 'check'},
+    'remind_review_due':       {},
+    'remind_today_cert':       {},
 }
 # 익명도 볼 수 있어야 하는 것 — 랜딩·후원자 화면이 이걸로 돈다
 MUST_WORK  = ['dokseo_reading_stats', 'dokseo_pool_status', 'routine_people_count',
               'dokseo_books_reading', 'dokseo_public_quotes', 'dokseo_public_reviews',
               'dokseo_activity_feed', 'dokseo_sponsor_wall', 'dokseo_book_photos']
 SKIP_TABLES = {'auth.users', 'storage.buckets', 'storage.objects'}
+# 익명에게 한 줄도 나오면 안 되는 표. 칸이 있는지만 보고, 막혀 있으면 그게 정답이다
+PRIVATE_TABLES = {'profiles_private', 'push_subscriptions', 'notifications'}
 
 
 def req(path, body=None):
@@ -91,11 +96,21 @@ def expected_columns():
                     if c: cols.add(c.group(1))
                 depth += s.count('(') - s.count(')')
 
-        for m in re.finditer(r'ALTER\s+TABLE\s+([\w.]+)\s+ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_][a-z0-9_]*)',
-                             sql, re.I):
-            t, c = m.group(1), m.group(2)
-            if t not in SKIP_TABLES:
-                want.setdefault(t, set()).add(c)
+        # ALTER TABLE 은 한 문장에 여러 칸을 쉼표로 이어 쓸 수 있다.
+        #   ALTER TABLE profiles
+        #     ADD COLUMN IF NOT EXISTS nick          text,
+        #     ADD COLUMN IF NOT EXISTS school_status text;
+        # 문장마다 ADD COLUMN 하나만 찾으면 둘째부터 통째로 못 본다 —
+        # 그래서 「없는데 있다고」 하는 일이 생긴다. 문장을 먼저 자르고 그 안을 훑는다
+        for m in re.finditer(r'ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?([\w.]+)(.*?);', sql, re.S | re.I):
+            t, stmt = m.group(1), m.group(2)
+            if t in SKIP_TABLES: continue
+            for c in re.finditer(r'ADD\s+COLUMN\s+(?:IF\s+NOT\s+EXISTS\s+)?([a-z_][a-z0-9_]*)', stmt, re.I):
+                want.setdefault(t, set()).add(c.group(1))
+            # 옮겨 간 칸(profiles.birth_date → profiles_private)은 없어야 맞다.
+            # 파일을 번호순으로 읽으니 나중 파일의 DROP 이 앞의 ADD 를 지운다
+            for c in re.finditer(r'DROP\s+COLUMN\s+(?:IF\s+EXISTS\s+)?([a-z_][a-z0-9_]*)', stmt, re.I):
+                want.get(t, set()).discard(c.group(1))
     return want
 
 
@@ -108,7 +123,17 @@ def main():
         cols = sorted(cols)
         st, body = req(f'/rest/v1/{table}?select={",".join(cols)}&limit=1')
         if st == 200:
+            if table in PRIVATE_TABLES:
+                # 200 이어도 줄이 나오면 사고다 — 남의 번호·생일이 익명에게 열린 것
+                rows = json.loads(body) if body.strip().startswith('[') else []
+                if rows:
+                    bad += 1
+                    print(f'  ❌ {table:<24} 익명에게 열려 있다! ({len(rows)}줄)')
+                    continue
             print(f'  ✅ {table:<24} {len(cols)}개')
+            continue
+        if st in (401, 403) or 'permission denied' in body:
+            print(f'  ✅ {table:<24} 막힘 (본인·운영진만)')
             continue
         if 'does not exist' not in body and 'Could not find' not in body:
             print(f'  ⚠️  {table:<24} 확인 못 함 — {body[:80]}')
