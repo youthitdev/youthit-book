@@ -2078,7 +2078,7 @@ function kkutTodayCard(r) {
       <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${waiting ? `<div class="k-wait${r.reject_reason ? ' bad' : ''}">
         ${r.reject_reason
-          ? `<b>고쳐서 다시 내주세요</b><span>${esc(r.reject_reason)}</span>`
+          ? `<b>고쳐서 다시 등록해주세요</b><span>${esc(r.reject_reason)}</span>`
           : `<b>운영진이 확인하고 있어요</b><span>열리면 아이들이 신청할 수 있어요.</span>`}
       </div>` : ''}
       <div class="tc-day">${routineLine(r, d)}</div>
@@ -3516,7 +3516,7 @@ async function submitMake() {
   await loadAll(); closeOv('ovMake'); render();
   // 토스트는 2.6초면 사라진다. 자세한 설명은 홈 카드에 계속 남아 있으니
   // 여기서는 「됐다」와 「다음에 뭐가 일어나나」만 말한다
-  toast(makeId ? '다시 냈어요. 확인되면 열려요'
+  toast(makeId ? '다시 등록했어요. 확인되면 열려요'
                 : '등록했어요. 운영진이 확인하면 열려요');
 }
 
