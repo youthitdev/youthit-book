@@ -1146,7 +1146,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[] };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[] };
 let tab = 'home';
 // 지역은 자유 입력으로 두면 '속초' / '강원도 속초시' / '강원속초' 가 섞여
 // 책방 매칭이 깨진다. 시·도는 고르게 하고 시·군·구만 적게 한다
@@ -1628,13 +1628,13 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = [];
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, nt] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, nt, nd] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -1642,8 +1642,12 @@ async function loadAll() {
     sb.from('reviews').select('*').order('created_at', { ascending:false }).limit(200),
     sb.from('routine_books').select('*').order('created_at'),
     sb.from('notifications').select('*').order('created_at', { ascending:false }).limit(50),
+    // 오늘 누구를 찔렀는지. 안 들고 오면 새로고침마다 버튼이 되살아나고,
+    // 눌러야 「이미 보냈어요」를 만난다
+    sb.from('nudges').select('to_id,routine_id').eq('day', todayKST()),
   ]);
   state.notifs = nt.data || [];
+  state.nudges = nd.data || [];
   state.parts = p.data || [];
   state.certs = c.data || [];
   state.purchases = bp.data || [];
@@ -2081,9 +2085,11 @@ function kkutTodayCard(r) {
     const done = today.some(c => c.user_id === p.user_id);
     const nm = nameOf(p.user_id);
     // 「아직」이라고 적어 두면 읽고 끝이다. 그 자리에서 말을 걸 수 있게 한다
+    const poked = (state.nudges || []).some(n => n.routine_id === r.id && n.to_id === p.user_id);
     const foot = done ? `<i>오늘 했어요</i>`
-      : live ? `<button class="poke" onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉 콕</button>`
-             : `<i class="off">아직</i>`;
+      : !live ? `<i class="off">아직</i>`
+      : poked ? `<button class="poke" disabled>찔렀어요</button>`
+              : `<button class="poke" onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉 콕</button>`;
     return `<div class="tc-bt" onclick="event.stopPropagation();go('cert')">
       <div class="tc-bt-i kid${done ? ' on' : ''}">${done ? '✓' : esc(nm.slice(0, 1))}</div>
       <span>${esc(nm)}</span>
@@ -3069,6 +3075,8 @@ async function poke(rid, uid, btn) {
   btn.disabled = true; const was = btn.textContent; btn.textContent = '보내는 중…';
   const { error } = await sb.rpc('poke', { p_routine: rid, p_user: uid });
   if (error) { btn.disabled = false; btn.textContent = was; return toast(error.message); }
+  // 다시 그려도 회색으로 남게 기억해 둔다
+  (state.nudges = state.nudges || []).push({ routine_id: rid, to_id: uid });
   btn.textContent = '찔렀어요';
   toast('오늘 한 장, 하고 보냈어요');
 }
