@@ -21,7 +21,8 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .demo-flag { background:#FFD600; color:#3d3000; font-size:11.5px; font-weight:700; text-align:center; padding:7px; }
 
 /* 요약 */
-.sum { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:22px; }
+/* 칸은 늘 셋이다. 5칸 격자에 셋을 넣어 오른쪽이 비어 있었다 */
+.sum { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:22px; }
 .sum-c { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
 .sum-l { font-size:11.5px; color:var(--ink-3); font-weight:600; }
 .sum-v { font-size:20px; font-weight:800; letter-spacing:-0.6px; margin-top:3px; }
@@ -30,7 +31,13 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .sum-c.hl .sum-v { color:var(--pink); }
 
 /* 탭 */
-.tabs { display:flex; gap:6px; margin:26px 0 14px; }
+/* 큰 갈래. 탭보다 한 칸 위에 있다는 게 보여야 해서 밑줄로 쓴다 */
+.grp { display:flex; gap:22px; margin:26px 0 0; border-bottom:1px solid var(--line); }
+.grp-b { background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px;
+  padding:0 2px 11px; font-family:inherit; font-size:15px; font-weight:700;
+  color:var(--ink-3); cursor:pointer; }
+.grp-b.on { color:var(--ink); border-bottom-color:var(--ink); }
+.tabs { display:flex; gap:6px; margin:14px 0; flex-wrap:wrap; }
 .tab { padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:var(--card); font-size:13.5px; font-weight:600; color:var(--ink-2); cursor:pointer; font-family:inherit; }
 .tab.on { background:var(--ink); color:#fff; border-color:var(--ink); }
 .tab i { font-style:normal; opacity:.6; margin-left:4px; }
@@ -242,16 +249,24 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 <div class="wrap">
   <div class="sum" id="summary"></div>
 
-  <div class="tabs">
-    <button class="tab on" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
+  <!-- 탭이 열 개가 되니 한 줄로는 눈이 못 훑는다. 하는 일로 가른다 —
+       운영은 거의 매일, 정산은 돈이 움직일 때만 본다 -->
+  <div class="grp">
+    <button class="grp-b on" data-grp="ops"   onclick="switchGroup('ops')">운영</button>
+    <button class="grp-b"    data-grp="money" onclick="switchGroup('money')">정산</button>
+  </div>
+  <div class="tabs" id="tabsOps">
+    <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
+    <button class="tab" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
+    <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
+    <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
+  </div>
+  <div class="tabs" id="tabsMoney" style="display:none;">
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
-    <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
-    <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
-    <button class="tab" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
-    <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
+    <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
 
@@ -529,7 +544,7 @@ let DB = {
   ],
 };
 
-let tab = 'kkut';
+let tab = 'verify';   // 가장 자주 보는 자리
 let settleTargetId = null;
 
 // ── 집계 ────────────────────────────────────────────────
@@ -565,10 +580,21 @@ const sponsorOf = id => DB.sponsors.find(s => s.id === id)?.nickname || '-';
 // ── 렌더 ────────────────────────────────────────────────
 function renderSummary() {
   const p = pool();
-  document.getElementById('summary').innerHTML = `
-    <div class="sum-c"><div class="sum-l">책이 된 금액</div><div class="sum-v num">${won(p.spent)}<small>원</small></div></div>
-    <div class="sum-c ${p.pending ? 'hl' : ''}"><div class="sum-l">정산 대기</div><div class="sum-v num">${p.pending}<small>건</small></div></div>
-    <div class="sum-c ${p.unpaidCnt ? 'hl' : ''}"><div class="sum-l">서점 입금 대기</div><div class="sum-v num">${won(p.unpaidSum)}<small>원</small></div></div>`;
+  // 보고 있는 갈래의 숫자만 올린다. 운영 화면에서 정산 금액을 봐야 할 일이 없다
+  const card = (label, val, unit, hl) =>
+    `<div class="sum-c ${hl ? 'hl' : ''}"><div class="sum-l">${label}</div>
+       <div class="sum-v num">${val}<small>${unit}</small></div></div>`;
+  const waitV = (DB.verify || []).filter(v => v.status === 'pending').length;
+  const waitK = (DB.kkutApps || []).filter(a => a.status === 'pending').length;
+  const waitR = (DB.routines || []).filter(r => r.status === 'pending').length;
+
+  document.getElementById('summary').innerHTML = grp === 'ops'
+    ? card('확인 기다림', waitV, '명', waitV)
+      + card('끗짱 신청', waitK, '건', waitK)
+      + card('열어줄 루틴', waitR, '건', waitR)
+    : card('책이 된 금액', won(p.spent), '원', false)
+      + card('정산 대기', p.pending, '건', p.pending)
+      + card('서점 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
   document.getElementById('cntKkut').textContent = ` ${(DB.kkutApps || []).filter(a => a.status === 'pending').length}`;
   document.getElementById('cntRoutines').textContent = ` ${(DB.routines || []).length}`;
   document.getElementById('cntPending').textContent = ` ${p.pending}`;
@@ -1798,9 +1824,26 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify'],
+                 money: ['pending', 'settled', 'stores', 'charges', 'report'] };
+const groupOf = t => GROUPS.money.includes(t) ? 'money' : 'ops';
+let grp = 'ops';
+
+function switchGroup(g) {
+  grp = g;
+  document.querySelectorAll('.grp-b').forEach(b => b.classList.toggle('on', b.dataset.grp === g));
+  document.getElementById('tabsOps').style.display   = g === 'ops'   ? '' : 'none';
+  document.getElementById('tabsMoney').style.display = g === 'money' ? '' : 'none';
+  // 갈래를 바꾸면 그 갈래의 첫 탭으로. 안 그러면 빈 탭 줄 아래에 남의 화면이 남는다
+  if (groupOf(tab) !== g) switchTab(GROUPS[g][0]);
+  else renderSummary();
+}
+
 function switchTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  if (groupOf(t) !== grp) switchGroup(groupOf(t));
+  renderSummary();
   renderPanel();
 }
 function closeModal(id) { document.getElementById(id).classList.remove('on'); }
