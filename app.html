@@ -1257,24 +1257,38 @@ async function doLogout() {
 // 프로필은 가입 트리거가 만들지만, 트리거가 실패해도 가입은 되도록 해뒀으므로
 // 없으면 앱이 직접 만든다
 async function loadMe(user) {
+  const meta = user.user_metadata || {};
   let { data } = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if (!data) {
-    const meta = user.user_metadata || {};
     const ins = await sb.from('profiles')
       .insert({ id: user.id, name: meta.name || '이름없음', nick: meta.nick || null,
                 role: meta.role || 'youth', region: meta.region || null,
-                birth_date: meta.birth_date || null,
                 school_status: meta.school_status || null,
                 marketing_ok: !!meta.marketing_ok,
                 policy_agreed_at: meta.policy_agreed_at || new Date().toISOString() })
       .select().single();
     data = ins.data;
-    // 번호는 다른 표에 있다. 트리거가 넣지 못했으면 여기서 채운다
-    if (data && meta.phone) {
-      await sb.from('profiles_private').upsert({ id: user.id, phone: meta.phone });
-    }
   }
-  return data;
+  if (!data) return null;
+
+  // 번호와 생년월일은 같은 루틴 사람에게도 보이면 안 돼서 다른 표에 있다.
+  // 본인만 읽을 수 있고, 여기서 붙여야 me.birth_date 가 앞에서처럼 쓰인다
+  let { data: priv, error: privErr } = await sb.from('profiles_private')
+    .select('phone,birth_date').eq('id', user.id).maybeSingle();
+
+  // 마이그레이션 38·41 을 아직 안 돌렸으면 이 표가 없다. 그때는 생년월일이
+  // profiles 에 남아 있으니 그걸 쓴다 — 없다고 하면 다시 입력하라고 조르게 된다
+  if (privErr) return { ...data, phone: null, birth_date: data.birth_date ?? null };
+
+  if (!priv && (meta.phone || meta.birth_date)) {
+    // 트리거가 못 넣었을 때. 가입은 막지 않도록 만들어 둬서 가끔 비어 있다
+    const up = await sb.from('profiles_private')
+      .upsert({ id: user.id, phone: meta.phone || null, birth_date: meta.birth_date || null })
+      .select('phone,birth_date').maybeSingle();
+    priv = up.data;
+  }
+  return { ...data, phone: priv?.phone || null,
+           birth_date: priv?.birth_date ?? data.birth_date ?? null };
 }
 
 // ── 끗짱 승인 ──────────────────────────────────────────
@@ -2971,7 +2985,7 @@ function viewMy() {
 }
 
 // ── 내 정보 ────────────────────────────────────────────
-async function openProfile() {
+function openProfile() {
   $('pfNick').value = me.nick || me.name || '';
   $('pfName').value = me.name || '';
   const r = splitRegion(me.region);
@@ -2983,13 +2997,8 @@ async function openProfile() {
   // 나이를 바꿔가며 우회하는 길을 닫는다
   $('pfBirthWrap').style.display = me.birth_date ? 'none' : '';
   $('pfBirth').value = me.birth_date || '';
+  $('pfPhone').value = me.phone || '';   // 로그인할 때 이미 붙여 왔다
   checkProfile(); openOv('ovProfile');
-  // 번호는 profiles 가 아니라 본인만 읽는 표에 있다. 열 때 따로 가져온다
-  $('pfPhone').value = '';
-  if (!DEMO) {
-    const { data } = await sb.from('profiles_private').select('phone').eq('id', me.id).maybeSingle();
-    $('pfPhone').value = data?.phone || '';
-  }
 }
 
 function checkProfile() {
@@ -3011,23 +3020,25 @@ async function saveProfile() {
   const row = { nick, name, region,
                 school_status: $('pfSchool').value || null,
                 marketing_ok: $('pfMkt').checked };
+  const priv = { id: me.id, phone: phone || null };
   if (!me.birth_date) {
     const b = $('pfBirth').value;
     if (!b) return toast('생년월일을 골라주세요');
     if (ageOf(b) < 14) return toast('한끗독서는 만 14세부터 함께할 수 있어요');
-    row.birth_date = b;
+    priv.birth_date = b;
   }
 
   const btn = $('pfSubmit'); btn.disabled = true; btn.textContent = '저장 중…';
   // 역할은 바꾸지 않는다. 청소년이 스스로 끗짱이 되면 안 된다
   const { error } = await sb.from('profiles').update(row).eq('id', me.id);
-  if (!error) {
-    await sb.from('profiles_private').upsert({ id: me.id, phone: phone || null });
-  }
+  const pe = error ? null : (await sb.from('profiles_private').upsert(priv)).error;
   btn.disabled = false; btn.textContent = '저장하기';
   if (error) return toast('저장에 실패했어요: ' + error.message);
+  // 번호·생년월일만 실패하면 「바꿨어요」가 거짓말이 된다
+  if (pe) return toast('번호와 생년월일은 저장하지 못했어요: ' + pe.message);
 
-  Object.assign(me, row);
+  Object.assign(me, row, { phone: priv.phone });
+  if (priv.birth_date) me.birth_date = priv.birth_date;
   state.names[me.id] = nick;
   closeOv('ovProfile'); render();
   toast('바꿨어요');
