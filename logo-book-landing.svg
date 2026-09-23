@@ -1,0 +1,22 @@
+<!-- 랜딩페이지 탭 구분용 — 같은 마크의 초록 변형 (index.html --green) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#83CA00"/>
+      <stop offset="1" stop-color="#4E7A00"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="44" fill="url(#g)"/>
+  <g transform="translate(-14.40 -14.40) scale(1.15)">
+    <path d="M96 62 C82 52, 60 50, 44 54 L44 134 C60 130, 82 132, 96 142 Z" fill="#ffffff"/>
+    <path d="M96 62 C110 52, 132 50, 148 54 L148 134 C132 130, 110 132, 96 142 Z" fill="#ffffff" opacity="0.82"/>
+  </g>
+  <g stroke="#FFD600" stroke-width="9" stroke-linecap="round">
+    <line x1="142.0" y1="38.1" x2="142.0" y2="24.0"/>
+    <line x1="142.0" y1="53.9" x2="142.0" y2="68.0"/>
+    <line x1="135.1" y1="42.0" x2="122.9" y2="35.0"/>
+    <line x1="148.9" y1="42.0" x2="161.1" y2="35.0"/>
+    <line x1="135.1" y1="50.0" x2="122.9" y2="57.0"/>
+    <line x1="148.9" y1="50.0" x2="161.1" y2="57.0"/>
+  </g>
+</svg>
