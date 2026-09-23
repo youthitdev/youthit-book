@@ -2086,6 +2086,7 @@ function kkutTodayCard(r) {
       ${waiting || d?.ended ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
       ${waiting || d?.ended ? '' : shelf}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
+      ${certAction(r, 'btn-primary', 'margin-bottom:8px;')}
       <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
     </div>
   </div>`;
@@ -2237,6 +2238,7 @@ function kkutCertBlock(mine) {
           ? `<div class="kroll-yet">아직 안 한 ${yet.length}명 — ${yet.map(p => esc(nameOf(p.user_id))).join(', ')}</div>`
           : ''}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
+      ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
       ${certGrid(cs)}`;
   }).join('');
 }
@@ -2249,20 +2251,12 @@ function youthCertBlock(mine) {
     const talk = state.comments.filter(m => cs.some(c => c.id === m.cert_id)).length;
     // 진행도와 포인트는 홈과 MY 에 있다. 여기서는 한 줄로만 짚고 격자를 앞세운다 —
     // 사진 보러 들어온 탭인데 사진까지 카드 두 개를 지나야 했다
-    const done = didToday(r.id);
     const line = [routineLine(r, d),
                   `인증 ${won(cs.length)}`, `소통 ${won(talk)}`].join(' · ');
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       <div class="cline">${line}</div>
-      ${routineEnded(r) ? ''
-        : !done
-          ? `<button class="btn btn-primary" style="margin-bottom:12px;" onclick="openCert(${r.id})">오늘 인증하기</button>`
-          : leftToday(r.id).length
-            ? `<button class="btn btn-line" style="margin-bottom:12px;"
-                 onclick="openCert(${r.id}, '${esc(leftToday(r.id)[0].title).replace(/'/g, "\\'")}')">
-                 「${esc(leftToday(r.id)[0].title)}」도 인증하기</button>`
-            : `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>`}
+      ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
       ${certGrid(cs)}`;
   }).join('');
 }
@@ -2931,12 +2925,12 @@ function creditBlock() {
   const price = c.book_price || 16500;
   const books = Math.floor((c.total || 0) / price);
 
-  return `<div class="sec-t">함께한 만큼</div>
+  return `<div class="sec-t">읽은 만큼</div>
     <div class="card cr">
       <div class="cr-top">
-        <b>${won(c.mine)}원</b>
-        <span>끗짱님이 함께한 <b>${won(c.my_days)}일</b> 동안
-          ${esc(c.funder)}가 아이들 책값으로 냈어요</span>
+        <b>${won(c.my_days)}일</b>
+        <span>끗짱님이 읽은 날마다 ${won(c.per_day)}원씩,
+          지금까지 <b>${won(c.mine)}원</b>이 아이들 책값으로 갔어요</span>
       </div>
       <div class="cr-line">
         ${books >= 1
@@ -2944,8 +2938,8 @@ function creditBlock() {
           : `끗짱들이 함께 모은 <b>${won(c.total)}원</b>이에요.
              <b>${won(Math.max(0, price - (c.total || 0)))}원</b>이 더 모이면 책 한 권이 돼요.`}
       </div>
-      <div class="cr-note">아이가 읽은 날마다 ${won(c.per_day)}원씩이에요.
-        끗짱님 돈이 아니라, 끗짱님이 곁에 있어서 나가는 돈이에요.</div>
+      <div class="cr-note">끗짱님 돈이 아니라 ${esc(c.funder)}가 냅니다.
+        끗짱님이 읽은 날, 아이들 책값이 한 칸 늘어나요.</div>
       <a class="btn btn-line" style="margin-top:14px;display:block;text-align:center;
          text-decoration:none;" href="index.html#donate" target="_blank" rel="noopener">
         더 보태고 싶다면</a>
@@ -3031,6 +3025,20 @@ function openBooks() {
   const all = myBooks();
   $('ovBooksBody').innerHTML = `<div class="bgrid">${all.map(bookTile).join('')}</div>`;
   openOv('ovBooks');
+}
+
+// 「오늘 인증하기」는 청소년 홈·인증 탭, 끗짱 홈·인증 탭 네 군데에 나온다.
+// 병렬독서까지 얽혀 있어서 따로 쓰면 반드시 어긋난다
+function certAction(r, cls = 'btn-primary', style = '') {
+  if (routineEnded(r) || r.status === 'pending') return '';
+  if (!didToday(r.id))
+    return `<button class="btn ${cls}" style="${style}" onclick="openCert(${r.id})">오늘 인증하기</button>`;
+  const left = leftToday(r.id);
+  if (left.length)
+    return `<button class="btn btn-line" style="${style}"
+      onclick="openCert(${r.id}, '${esc(left[0].title).replace(/'/g, "\\'")}')">
+      「${esc(left[0].title)}」도 인증하기</button>`;
+  return `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;${style}">오늘 인증을 마쳤어요 🌱</div>`;
 }
 
 // 끗짱의 성과. 본인이 읽은 게 아니라 「내가 함께한 아이들이 읽은 것」이다.
