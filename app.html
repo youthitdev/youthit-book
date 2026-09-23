@@ -2067,10 +2067,10 @@ function todayCard(r) {
 
 // 끗짱에게는 '오늘 인증하기' 가 없다. 대신 아이들이 몇 명 했는지가 궁금하다
 function kkutTodayCard(r) {
-  const ps    = partsOf(r.id);
-  // 끗짱도 읽게 되면서 본인 인증이 아이들 셈에 섞였다. 「오늘 1/1명」인데
-  // 정작 그 아이는 아직인 화면이 나왔다. 분모가 아이들이면 분자도 아이들이어야 한다
-  const today = certsOf(r.id).filter(c => c.cert_date === todayKST() && c.user_id !== me.id);
+  // 끗짱도 아이들과 같이 읽는다. 그러니 「우리」에 끗짱도 든다 —
+  // 세는 데서 빼면 함께 읽는다는 게 화면에서 안 보인다
+  const ps    = [{ user_id: me.id, self: true }, ...partsOf(r.id)];
+  const today = certsOf(r.id).filter(c => c.cert_date === todayKST());
   const d     = routineDay(r);
   const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
   const waiting = r.status === 'pending';   // 운영진이 열어줘야 아이들에게 보인다
@@ -2088,13 +2088,15 @@ function kkutTodayCard(r) {
     const nm = nameOf(p.user_id);
     // 「아직」이라고 적어 두면 읽고 끝이다. 그 자리에서 말을 걸 수 있게 한다
     const poked = (state.nudges || []).some(n => n.routine_id === r.id && n.to_id === p.user_id);
+    // 자기 자신은 찌를 수 없다. 그 자리는 「오늘 읽자」로 이어진다
     const foot = done ? `<i>오늘 했어요</i>`
       : !live ? `<i class="off">아직</i>`
+      : p.self ? `<i class="off">아직</i>`
       : poked ? `<button class="poke" disabled>👉 콕</button>`
               : `<button class="poke" onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉 콕</button>`;
-    return `<div class="tc-bt" onclick="event.stopPropagation();go('cert')">
+    return `<div class="tc-bt" onclick="event.stopPropagation();${p.self ? `openCert(${r.id})` : `go('cert')`}">
       <div class="tc-bt-i kid${done ? ' on' : ''}">${done ? '✓' : esc(nm.slice(0, 1))}</div>
-      <span>${esc(nm)}</span>
+      <span>${p.self ? '나' : esc(nm)}</span>
       ${foot}
     </div>`;
   }).join('')}${ps.length > show
@@ -2262,10 +2264,10 @@ function viewCert() {
 // 출석부만 있으면 들어올 이유가 없다 — 사진을 앞세우고 출석부는 위에 한 줄로 줄인다
 function kkutCertBlock(mine) {
   return mine.map(r => {
-    const ps    = partsOf(r.id);
+    // 홈 카드와 같은 셈. 끗짱도 「우리」에 든다
+    const ps    = [{ user_id: me.id, self: true }, ...partsOf(r.id)];
     const cs    = certsOf(r.id);
-    // 분모가 아이들이면 분자도 아이들이어야 한다. 끗짱 본인 인증은 빼고 센다
-    const today = cs.filter(c => c.cert_date === todayKST() && c.user_id !== me.id);
+    const today = cs.filter(c => c.cert_date === todayKST());
     const yet   = ps.filter(p => !today.some(c => c.user_id === p.user_id));
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
@@ -2275,12 +2277,12 @@ function kkutCertBlock(mine) {
           ${ps.map(p => {
             const done = today.some(c => c.user_id === p.user_id);
             const n = cs.filter(c => c.user_id === p.user_id).length;
-            return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${esc(nameOf(p.user_id))}
+            return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}
               <b>${n}</b></span>`;
           }).join('')}
         </div>
         ${yet.length && !routineEnded(r)
-          ? `<div class="kroll-yet">아직 안 한 ${yet.length}명 — ${yet.map(p => esc(nameOf(p.user_id))).join(', ')}</div>`
+          ? `<div class="kroll-yet">아직 안 한 ${yet.length}명 — ${yet.map(p => p.self ? '나' : esc(nameOf(p.user_id))).join(', ')}</div>`
           : ''}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
