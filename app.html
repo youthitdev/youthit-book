@@ -2068,7 +2068,9 @@ function todayCard(r) {
 // 끗짱에게는 '오늘 인증하기' 가 없다. 대신 아이들이 몇 명 했는지가 궁금하다
 function kkutTodayCard(r) {
   const ps    = partsOf(r.id);
-  const today = certsOf(r.id).filter(c => c.cert_date === todayKST());
+  // 끗짱도 읽게 되면서 본인 인증이 아이들 셈에 섞였다. 「오늘 1/1명」인데
+  // 정작 그 아이는 아직인 화면이 나왔다. 분모가 아이들이면 분자도 아이들이어야 한다
+  const today = certsOf(r.id).filter(c => c.cert_date === todayKST() && c.user_id !== me.id);
   const d     = routineDay(r);
   const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
   const waiting = r.status === 'pending';   // 운영진이 열어줘야 아이들에게 보인다
@@ -2088,7 +2090,7 @@ function kkutTodayCard(r) {
     const poked = (state.nudges || []).some(n => n.routine_id === r.id && n.to_id === p.user_id);
     const foot = done ? `<i>오늘 했어요</i>`
       : !live ? `<i class="off">아직</i>`
-      : poked ? `<button class="poke" disabled>찔렀어요</button>`
+      : poked ? `<button class="poke" disabled>👉 콕</button>`
               : `<button class="poke" onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉 콕</button>`;
     return `<div class="tc-bt" onclick="event.stopPropagation();go('cert')">
       <div class="tc-bt-i kid${done ? ' on' : ''}">${done ? '✓' : esc(nm.slice(0, 1))}</div>
@@ -2262,7 +2264,8 @@ function kkutCertBlock(mine) {
   return mine.map(r => {
     const ps    = partsOf(r.id);
     const cs    = certsOf(r.id);
-    const today = cs.filter(c => c.cert_date === todayKST());
+    // 분모가 아이들이면 분자도 아이들이어야 한다. 끗짱 본인 인증은 빼고 센다
+    const today = cs.filter(c => c.cert_date === todayKST() && c.user_id !== me.id);
     const yet   = ps.filter(p => !today.some(c => c.user_id === p.user_id));
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
@@ -3077,7 +3080,7 @@ async function poke(rid, uid, btn) {
   if (error) { btn.disabled = false; btn.textContent = was; return toast(error.message); }
   // 다시 그려도 회색으로 남게 기억해 둔다
   (state.nudges = state.nudges || []).push({ routine_id: rid, to_id: uid });
-  btn.textContent = '찔렀어요';
+  btn.textContent = was;          // 글자는 그대로. 회색이 된 것으로 충분하다
   toast('오늘 한 장, 하고 보냈어요');
 }
 
