@@ -1,5 +1,5 @@
 <!-- 파트너(서점) 페이지 탭 구분용 — 같은 마크의 노랑 변형 (앱 공용 --gold).
-     배경이 이미 골드라 스파크를 골드로 두면 안 보여서 잉크색으로 바꿨다. -->
+     배경이 이미 골드라 스파크를 골드로 두면 안 보여서 앱 기본 파랑으로 바꿨다. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -12,7 +12,7 @@
     <path d="M96 62 C82 52, 60 50, 44 54 L44 134 C60 130, 82 132, 96 142 Z" fill="#ffffff"/>
     <path d="M96 62 C110 52, 132 50, 148 54 L148 134 C132 130, 110 132, 96 142 Z" fill="#ffffff" opacity="0.82"/>
   </g>
-  <g stroke="#14161a" stroke-width="9" stroke-linecap="round">
+  <g stroke="#2E33BC" stroke-width="9" stroke-linecap="round">
     <line x1="142.0" y1="38.1" x2="142.0" y2="24.0"/>
     <line x1="142.0" y1="53.9" x2="142.0" y2="68.0"/>
     <line x1="135.1" y1="42.0" x2="122.9" y2="35.0"/>

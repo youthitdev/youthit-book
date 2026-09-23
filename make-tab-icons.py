@@ -142,11 +142,11 @@ def book(): return [poly(BOOK_L, k=BOOK_K), poly(BOOK_R, alpha=0.82, k=BOOK_K)]
 
 GREEN   = ((0x83, 0xCA, 0x00), (0x4E, 0x7A, 0x00))   # index.html --green → --green-d
 GOLD_BG = ((0xFF, 0xD6, 0x00), (0xE0, 0xB8, 0x00))   # 앱 공용 --gold
-INK     = (0x14, 0x16, 0x1a)                          # 파트너: 노란 배경 위 골드 스파크는 안 보여서 잉크색으로 교체
+BLUE    = (0x2E, 0x33, 0xBC)                          # 파트너: 노란 배경 위 골드 스파크는 안 보여서 앱 기본 파랑으로 교체
 GOLD    = (0xFF, 0xD6, 0x00)
 
 if __name__ == '__main__':
     print('탭 구분 아이콘 굽는 중…')
     write_png('icon-landing.png', 192, render(192, *GREEN, book() + [spark(142, 46, 22, 9, GOLD)]))
-    write_png('icon-partner.png', 192, render(192, *GOLD_BG, book() + [spark(142, 46, 22, 9, INK)]))
+    write_png('icon-partner.png', 192, render(192, *GOLD_BG, book() + [spark(142, 46, 22, 9, BLUE)]))
     print('끝. icon-landing.png, icon-partner.png')
