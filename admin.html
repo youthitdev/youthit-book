@@ -261,13 +261,13 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
+    <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
-    <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
 
   <div class="panel" id="panel"></div>
@@ -1824,8 +1824,8 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify'],
-                 money: ['pending', 'settled', 'stores', 'charges', 'report'] };
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'report'],
+                 money: ['pending', 'settled', 'stores', 'charges'] };
 const groupOf = t => GROUPS.money.includes(t) ? 'money' : 'ops';
 let grp = 'ops';
 
