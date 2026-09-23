@@ -75,6 +75,22 @@ tr:hover td { background:#fcfcfd; }
 .vq-t b { font-size:14px; }
 .vq-t > span { margin-left:7px; font-size:12px; }
 .vq-b { flex:none; display:flex; gap:6px; align-items:center; }
+/* 명단 한 줄 */
+.vq-sub { font-size:12px; color:var(--ink-3); margin-top:3px; }
+.vq-sub b { color:var(--ink-2); font-weight:600; }
+.vq-st { font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:7px; white-space:nowrap; }
+.st-pending  { background:#FFF4D6; color:#8a6400; }
+.st-rejected { background:#FFE7EE; color:#b3003c; }
+.st-none     { background:#eff0f3; color:#6b7080; }
+.st-approved { background:#E9F7D8; color:#4a7a00; }
+.st-adult    { background:#eef0ff; color:#4a4fd6; }
+/* 서류 없이 확인하는 길. 눈에 덜 띄어야 한다 — 이게 기본 경로가 되면 안 된다 */
+.vq-quiet { background:none; border:1px solid var(--line); color:var(--ink-3);
+  font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; }
+.vq-quiet:hover { color:var(--ink-2); border-color:var(--ink-3); }
+.vq-find { width:100%; padding:10px 13px; border:1px solid var(--line); border-radius:10px;
+  font-size:13.5px; margin:0 0 6px; outline:none; }
+.vq-find:focus { border-color:var(--blue); }
 /* 후원 내역 위의 기금 요약 */
 .fund { margin:16px 20px 0; background:#f7f7fa; border-radius:14px; padding:16px 18px;
   display:flex; flex-wrap:wrap; gap:26px; align-items:baseline; }
@@ -467,6 +483,24 @@ let DB = {
     { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
       amount:19000, paid_at:null },
   ],
+  // 청소년 확인 명단 (데모). 실제로는 verify_queue() 가 준다
+  verify: [
+    { user_id:'d1', name:'박서연', nick:'서연', region:'강원 속초시', age:16, role:'youth',
+      can_lead:false, doc_path:'demo/a.jpg', status:'pending', reason:null,
+      verify_kind:null, verified_at:null, joined_at:'2026-09-20' },
+    { user_id:'d2', name:'김하준', nick:'하준', region:'서울 성북구', age:15, role:'youth',
+      can_lead:false, doc_path:null, status:'rejected', reason:'사진이 흐려서 이름이 안 보여요',
+      verify_kind:null, verified_at:null, joined_at:'2026-09-19' },
+    { user_id:'d3', name:'이지우', nick:'지우', region:'부산 해운대구', age:17, role:'youth',
+      can_lead:false, doc_path:null, status:'none', reason:null,
+      verify_kind:null, verified_at:null, joined_at:'2026-09-18' },
+    { user_id:'d4', name:'유스청소년', nick:'유스', region:'강원 속초시', age:18, role:'youth',
+      can_lead:true, doc_path:null, status:'approved', reason:null,
+      verify_kind:'학생증', verified_at:'2026-09-15', joined_at:'2026-09-01' },
+    { user_id:'d5', name:'오민지', nick:'민지', region:'서울 강남구', age:34, role:'adult',
+      can_lead:true, doc_path:null, status:'none', reason:null,
+      verify_kind:null, verified_at:null, joined_at:'2026-08-30' },
+  ],
 };
 
 let tab = 'kkut';
@@ -535,38 +569,74 @@ function renderPanel() {
 // ── 청소년 확인 ────────────────────────────────────────────
 // 도서기금은 청소년에게 쓰는 돈이다. 책이 나가기 전에 한 번 확인한다.
 // ⚠️ 승인하면 서류 파일을 바로 지운다. 가지고 있는 것 자체가 위험이다
+let vqFind = '';
+function vqSearch(v) {
+  vqFind = v;
+  // 칸 하나만 다시 그린다. 입력할 때마다 화면을 갈면 글자를 칠 수가 없다
+  const box = document.getElementById('vqList');
+  if (box) box.innerHTML = vqRows();
+}
+
+// 어른은 청소년 확인을 할 일이 없다. 상태 대신 그렇게 적는다
+function vqState(r) {
+  if (r.role === 'adult') return { key:'adult', label:'어른' };
+  const st = r.status || 'none';
+  return { key: st, label: { pending:'확인 중', rejected:'돌려보냄',
+                             approved:'확인됨', none:'아직 안 냄' }[st] || st };
+}
+
+function vqCard(r) {
+  const st  = vqState(r);
+  const who = [r.age != null ? `만 ${r.age}세` : null,
+               r.region || null,
+               r.can_lead ? '끗짱' : null].filter(Boolean).join(' · ');
+  const done = st.key === 'approved';
+  return `<div class="vq">
+    <div class="vq-t">
+      <b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? ` <span class="muted">${esc(r.nick)}</span>` : ''}
+      <div class="vq-sub">${esc(who || '정보 없음')}${done && r.verify_kind ? ` · <b>${esc(r.verify_kind)}</b>로 확인` : ''}</div>
+      ${r.reason ? `<p class="rw-r">돌려보냄 · ${esc(r.reason)}</p>` : ''}
+    </div>
+    <div class="vq-b">
+      <span class="vq-st st-${st.key}">${st.label}</span>
+      ${r.doc_path ? `<button class="btn btn-line" onclick="viewDoc('${esc(r.doc_path)}')">서류 보기</button>` : ''}
+      ${st.key === 'pending' ? `
+        <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">확인함</button>
+        <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">돌려보내기</button>` : ''}
+      ${(st.key === 'none' || st.key === 'rejected') ? `
+        <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 확인함</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function vqRows() {
+  const q = vqFind.trim().toLowerCase();
+  const rows = (DB.verify || []).filter(r => !q
+    || (r.name || '').toLowerCase().includes(q)
+    || (r.nick || '').toLowerCase().includes(q)
+    || (r.region || '').toLowerCase().includes(q));
+  if (!rows.length) return `<div class="empty">찾는 사람이 없습니다.</div>`;
+  return rows.map(vqCard).join('');
+}
+
 function viewVerify() {
   const rows = DB.verify || [];
   const wait = rows.filter(r => r.status === 'pending');
-  const back = rows.filter(r => r.status === 'rejected');
-
-  const card = r => `<div class="vq">
-    <div class="vq-t"><b>${esc(r.name)}</b>
-      <span class="muted">${esc(r.region || '지역 미상')}</span>
-      ${r.reason ? `<p class="rw-r">돌려보냄 · ${esc(r.reason)}</p>` : ''}</div>
-    <div class="vq-b">
-      ${r.doc_path
-        ? `<button class="btn btn-line" onclick="viewDoc('${esc(r.doc_path)}')">서류 보기</button>`
-        : `<span class="muted">서류 없음</span>`}
-      ${r.status === 'pending' ? `
-        <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">확인함</button>
-        <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">돌려보내기</button>` : ''}
-    </div>
-  </div>`;
 
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">청소년 확인</div>
+    <div><div class="panel-t">청소년 확인 <b style="color:var(--pink);">${rows.length}</b>명</div>
     <div class="panel-d">책을 받기 전에 한 번 확인합니다. 읽고 포인트 모으는 건 확인 전에도 됩니다.<br>
-      <b>승인하면 서류 파일은 바로 지워집니다.</b> 확인했다는 사실만 남아요.</div></div>
+      <b>승인하면 서류 파일은 바로 지워집니다.</b> 확인했다는 사실과 방법만 남아요.</div></div>
   </div>
-  ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#F5D98B;background:#FFFBF0;">
-    <div class="preview-t">확인을 기다리는 사람 ${wait.length}명</div>
-    ${wait.map(card).join('')}</div>` : ''}
-  ${back.length ? `<div class="preview">
-    <div class="preview-t">돌려보낸 사람 ${back.length}명</div>
-    ${back.map(card).join('')}</div>` : ''}
-  ${!rows.length ? `<div class="empty">확인을 기다리는 사람이 없습니다.</div>` : ''}`;
+  ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#F5D98B;background:#FFFBF0;">
+    <div class="preview-t" style="color:#8a6400;">확인을 기다리는 사람 ${wait.length}명 — 아래 맨 위에 있어요</div>
+  </div>` : ''}
+  <div style="padding:14px 20px 20px;">
+    <input class="vq-find" type="search" placeholder="이름 · 닉네임 · 지역으로 찾기"
+           value="${esc(vqFind)}" oninput="vqSearch(this.value)">
+    <div id="vqList">${vqRows()}</div>
+  </div>`;
 }
 
 async function viewDoc(path) { openSigned('dokseo-verify', path, '서류'); }
@@ -576,9 +646,18 @@ async function decideVerify(userId, approve) {
   let kind = null, reason = null;
 
   if (approve) {
-    kind = prompt(`${r.name} 님을 무엇으로 확인했나요?\n(학생증 · 청소년증 · 재학증명서 등)`, '학생증');
+    // 서류가 없는데 확인 처리하는 길. 도서기금은 기부금 사용명세에 들어가는 돈이라
+    // 「무엇으로 확인했나」가 반드시 남아야 한다
+    const noDoc = !r.doc_path;
+    kind = prompt(noDoc
+      ? `${r.name} 님을 무엇으로 확인하셨나요?\n서류가 없으니 여기 적은 것이 유일한 근거로 남습니다.\n(대면 확인 · 학교 담당자 확인 · 기관 추천 등)`
+      : `${r.name} 님을 무엇으로 확인했나요?\n(학생증 · 청소년증 · 재학증명서 등)`,
+      noDoc ? '대면 확인' : '학생증');
     if (kind === null) return;
-    if (!confirm(`${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워집니다. 되돌릴 수 없어요.`)) return;
+    if (!kind.trim()) return alert('확인한 방법을 적어주세요.');
+    if (!confirm(noDoc
+      ? `${r.name} 님을 서류 없이 청소년으로 확인할까요?\n\n근거: ${kind.trim()}\n\n되돌릴 수 없어요.`
+      : `${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워집니다. 되돌릴 수 없어요.`)) return;
   } else {
     reason = prompt(`${r.name} 님에게 전할 사유를 적어주세요.\n앱 화면에 그대로 보입니다.`);
     if (reason === null) return;
