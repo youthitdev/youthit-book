@@ -54,6 +54,8 @@ INSERT INTO dokseo_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS profiles (
   id         uuid PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
   name       text NOT NULL,
+  -- ⚠️ 옛 값이다. migration-33 에서 ('youth','adult') 로 바뀌었고
+  --    끗짱 여부는 can_lead 컬럼으로 옮겼다. 여기 값을 믿지 말 것
   role       text NOT NULL DEFAULT 'youth' CHECK (role IN ('youth','kkutjjang')),
   region     text,                        -- 가까운 책방을 먼저 보여주는 데 씀
   created_at timestamptz DEFAULT now()
