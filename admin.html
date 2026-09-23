@@ -635,7 +635,7 @@ function vqSearch(v) {
 function vqState(r) {
   if (r.role === 'adult') return { key:'adult', label:'어른' };
   const st = r.status || 'none';
-  return { key: st, label: { pending:'확인 중', rejected:'돌려보냄',
+  return { key: st, label: { pending:'확인 중', rejected:'반려됨',
                              approved:'확인됨', none:'아직 안 냄' }[st] || st };
 }
 
@@ -676,7 +676,7 @@ function vqCard(r) {
     <div class="vq-t">
       <b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? ` <span class="muted">${esc(r.nick)}</span>` : ''}
       <div class="vq-sub">${who || '정보 없음'}${done && r.verify_kind ? ` · <b>${esc(r.verify_kind)}</b>로 확인` : ''}</div>
-      ${r.reason ? `<p class="rw-r">돌려보냄 · ${esc(r.reason)}</p>` : ''}
+      ${r.reason ? `<p class="rw-r">반려됨 · ${esc(r.reason)}</p>` : ''}
       <div class="vq-c">
         ${r.email ? chip('✉', r.email) : ''}
         ${r.phone ? chip('📱', phoneKo(r.phone)) : `<span class="muted" style="font-size:11.5px;padding:4px 0;">번호 없음</span>`}
@@ -687,10 +687,10 @@ function vqCard(r) {
       <span class="vq-st st-${st.key}">${st.label}</span>
       ${r.doc_path ? `<button class="btn btn-line" onclick="viewDoc('${esc(r.doc_path)}')">서류 보기</button>` : ''}
       ${st.key === 'pending' ? `
-        <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">확인함</button>
-        <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">돌려보내기</button>` : ''}
+        <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">승인</button>
+        <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">반려</button>` : ''}
       ${(st.key === 'none' || st.key === 'rejected') ? `
-        <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 확인함</button>` : ''}
+        <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 승인</button>` : ''}
       ${st.key === 'approved' ? `
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
     </div>
@@ -749,7 +749,7 @@ async function decideVerify(userId, approve) {
       ? `${r.name} 님을 서류 없이 청소년으로 확인할까요?\n\n근거: ${kind.trim()}\n\n되돌릴 수 없어요.`
       : `${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워집니다. 되돌릴 수 없어요.`)) return;
   } else {
-    // 이미 확인된 사람을 되돌리는 건 「돌려보내기」와 무게가 다르다.
+    // 이미 확인된 사람을 되돌리는 건 그냥 반려와 무게가 다르다.
     // 루틴 참여와 책 받기가 다시 막히므로 그렇게 말해 준다
     const undo = r.status === 'approved';
     reason = prompt(undo
@@ -1145,11 +1145,11 @@ function viewRoutines() {
           · ${r.max_people}명 · 인증 ${r.points_per_cert || 10}P</span>
         ${r.description ? `<p class="rw-d">${esc(r.description)}</p>` : ''}
         ${r.cert_guide ? `<p class="rw-d">🎯 ${esc(r.cert_guide)}</p>` : ''}
-        ${r.reject_reason ? `<p class="rw-r">돌려보냄 · ${esc(r.reject_reason)}</p>` : ''}
+        ${r.reject_reason ? `<p class="rw-r">반려됨 · ${esc(r.reject_reason)}</p>` : ''}
       </div>
       <div class="rw-b">
-        <button class="btn btn-dark" onclick="decideRoutine(${r.id}, true)">열기</button>
-        <button class="btn btn-line" onclick="decideRoutine(${r.id}, false)">돌려보내기</button>
+        <button class="btn btn-dark" onclick="decideRoutine(${r.id}, true)">승인</button>
+        <button class="btn btn-line" onclick="decideRoutine(${r.id}, false)">반려</button>
       </div>
     </div>`).join('')}
   </div>` : ''}
@@ -1206,7 +1206,7 @@ async function decideRoutine(id, open) {
   if (open) {
     if (!confirm(`「${r.title}」을(를) 열까요?\n모집 중으로 바뀌고 아이들이 신청할 수 있게 됩니다.`)) return;
   } else {
-    reason = prompt('돌려보내는 이유를 적어주세요.\n끗짱 화면에 그대로 보입니다.');
+    reason = prompt('반려 사유를 적어주세요.\n끗짱 화면에 그대로 보입니다.');
     if (reason === null) return;
     if (!reason.trim()) return alert('사유를 적어주세요.');
   }
@@ -1271,9 +1271,9 @@ function viewKkut() {
         ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
       <div class="kk-a">
         ${a.status !== 'approved'
-          ? `<button class="btn btn-dark" onclick="decideKkut('${a.user_id}', true)">승인하기</button>` : ''}
+          ? `<button class="btn btn-dark" onclick="decideKkut('${a.user_id}', true)">승인</button>` : ''}
         ${a.status !== 'rejected'
-          ? `<button class="btn btn-line" onclick="decideKkut('${a.user_id}', false)">반려하기</button>` : ''}
+          ? `<button class="btn btn-line" onclick="decideKkut('${a.user_id}', false)">반려</button>` : ''}
       </div>
     </div>`;
   };
