@@ -413,11 +413,18 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-cover-no { width:100%; height:100%; display:flex; align-items:center; justify-content:center;
   font-size:34px; opacity:.5; }
 .r-badge { position:absolute; top:9px; right:9px; }
-/* 사진 아래쪽에 얹는다. 밝은 사진에서도 읽히게 그늘을 깐다 */
-.r-over { position:absolute; left:0; right:0; bottom:0; padding:22px 9px 8px;
+/* 사진 아래쪽에 얹는다. 그늘만으로는 밝은 사진에서 흰 글씨가 묻힌다 —
+   한끗루틴처럼 각자 알약을 입힌다 */
+.r-over { position:absolute; left:0; right:0; bottom:0; padding:20px 8px 8px;
   display:flex; align-items:center; gap:5px;
-  background:linear-gradient(to top, rgba(20,18,15,.55), rgba(20,18,15,0)); }
-.r-ppl { font-size:11px; font-weight:700; color:#fff; display:inline-flex; align-items:center; gap:3px; }
+  background:linear-gradient(to top, rgba(20,18,15,.45), rgba(20,18,15,0)); }
+.r-ppl { font-size:11px; font-weight:700; color:#fff; display:inline-flex; align-items:center; gap:3px;
+  background:rgba(20,18,15,.6); padding:3px 8px; border-radius:99px;
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+/* 후원 기업. 흰 바탕에 검은 글씨 — 사진이 어떻든 읽힌다 */
+.r-spon { margin-left:auto; font-size:10.5px; font-weight:700; color:#1C1A17;
+  background:rgba(255,255,255,.94); padding:3px 9px; border-radius:99px;
+  max-width:56%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .r-who { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
 .r-body { padding:12px 0 0; }
 .r-lead { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
@@ -2007,6 +2014,7 @@ function routineCard(r) {
       <div class="r-over">
         <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}/${r.max_people}명</span>
         ${waiting ? `<span class="r-who c-wait">확인 중</span>` : ''}
+        ${r.sponsor_name ? `<span class="r-spon">${esc(r.sponsor_name)}</span>` : ''}
       </div>
     </div>
     <div class="r-body">

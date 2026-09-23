@@ -1217,7 +1217,7 @@ function viewRoutines() {
   </div>` : ''}
 
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>상태</th><th class="right"></th></tr>
+    <tr><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>상태</th><th>후원 기업</th><th class="right"></th></tr>
     ${rows.map(r => `<tr>
       <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
           ${rOverdue(r) ? `<div class="muted" style="color:#8E3527;">종료일이 지났어요</div>` : ''}</td>
@@ -1231,9 +1231,29 @@ function viewRoutines() {
             ${['recruit','active','done'].map(v =>
               `<option value="${v}"${v === r.status ? ' selected' : ''}>${R_STATUS[v][0]}</option>`).join('')}
           </select>`}</td>
+      <td>${r.sponsor_name
+        ? `<button class="vq-quiet" onclick="setSponsor(${r.id})">${esc(r.sponsor_name)}</button>`
+        : `<button class="vq-quiet" onclick="setSponsor(${r.id})">+ 기업</button>`}</td>
       <td class="right"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 만들어진 루틴이 없습니다.</div>`}`;
+}
+
+// 기업 이름은 약속이 오간 뒤에야 붙는 것이라 끗짱이 못 적는다.
+// 서버 트리거가 막고, 넣는 길은 여기 하나뿐이다
+async function setSponsor(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  const v = prompt(`「${r.title}」 썸네일 오른쪽 아래에 띄울 기업·기관 이름.\n비우면 안 보입니다.`,
+                   r.sponsor_name || '');
+  if (v === null) return;
+  const name = v.trim() || null;
+  if (name === (r.sponsor_name || null)) return;
+  if (!LIVE) { r.sponsor_name = name; render(); return; }
+
+  const { error } = await sb.from('routines').update({ sponsor_name: name }).eq('id', id);
+  if (error) return alert('바꾸지 못했어요: ' + error.message);
+  r.sponsor_name = name;
+  render();
 }
 
 async function setRoutineStatus(id, status) {
