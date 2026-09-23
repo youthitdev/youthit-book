@@ -17,7 +17,9 @@
 :root{
   --ink:#1C1A17; --ink-2:#5D574E; --ink-3:#9A948A;
   --paper:#FAF7F1; --card:#fff; --line:#E9E3D8;
-  --green:#83CA00; --green-d:#4E7A1C; --green-l:#F2F7E6;
+  /* 파비콘(책 위 별)과 같은 호박색. 서점에 보내는 한 장짜리라
+     앱의 잉크 그린보다 이쪽이 「초대장」에 가깝다 */
+  --green:#E8A33D; --green-d:#B8770F; --green-l:#FBF3E3;
   --blue:#1F4E46; --pink:#C2533F;
 }
 html{scroll-behavior:smooth}
@@ -39,7 +41,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdro
 .logo i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--green-d);
   background:#eef7dd;border-radius:8px;padding:4px 9px;letter-spacing:0}
 .hd a{font-size:13px;font-weight:700;text-decoration:none;padding:9px 15px;border-radius:11px;
-  background:var(--green);color:#fff;white-space:nowrap}
+  background:var(--green);color:#3A2A0C;white-space:nowrap}
 
 .hero{padding:64px 0 48px}
 .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;color:var(--green-d);background:var(--green-l);
@@ -61,7 +63,7 @@ h2+.sec-lead{margin-top:14px}
 .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 22px;display:flex;gap:18px}
 @media(max-width:560px){.step{gap:14px;padding:20px 18px}}
 .step-n{flex-shrink:0;width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:800;color:#fff;background:var(--green)}
+  font-size:18px;font-weight:800;color:#3A2A0C;background:var(--green)}
 .step h3{font-size:16.5px;font-weight:800;letter-spacing:-.4px}
 .step p{font-size:14px;color:var(--ink-2);line-height:1.8;margin-top:8px}
 .step .key{display:inline-block;margin-top:11px;font-size:12.5px;font-weight:700;color:var(--green-d);
@@ -115,7 +117,7 @@ h2+.sec-lead{margin-top:14px}
 .apply{text-align:center}
 .apply .card{padding:34px 24px}
 .btn{display:inline-block;text-decoration:none;font-weight:700;border-radius:14px;padding:16px 32px;
-  font-size:16px;border:none;cursor:pointer;background:var(--green);color:#fff;
+  font-size:16px;border:none;cursor:pointer;background:var(--green);color:#3A2A0C;
   box-shadow:0 7px 22px rgba(131,202,0,.26)}
 .contact{margin-top:22px;font-size:13.5px;color:var(--ink-2);line-height:1.9}
 .contact b{color:var(--ink)}
