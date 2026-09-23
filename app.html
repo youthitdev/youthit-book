@@ -501,6 +501,26 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
    비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
 .f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#F2EEE6; }
+/* 프로필 한 줄. 세로로 쌓으면 MY 첫 화면을 통째로 먹는데,
+   담긴 건 이름과 「수정」뿐이다 */
+.pf { display:flex; align-items:center; gap:13px; }
+.pf .f-av { width:44px; height:44px; font-size:17px; flex:none; margin:0; }
+.pf-in { flex:1; min-width:0; }
+.pf-n { font-size:15.5px; font-weight:800; letter-spacing:-.3px; }
+.pf-m { font-size:12px; color:var(--ink-3); margin-top:2px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pf-ed { flex:none; background:var(--bg); border:1px solid var(--line); color:var(--ink-2);
+  font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px;
+  border-radius:10px; cursor:pointer; }
+
+/* 끗짱 성과 — 네 칸이라 한 줄에 넣으면 숫자가 찌그러진다 */
+.kstat { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line);
+  border-radius:14px; overflow:hidden; }
+.kstat > div { background:var(--card); padding:15px 16px; }
+.kstat b { display:block; font-size:21px; font-weight:800; letter-spacing:-.6px; }
+.kstat span { font-size:11.5px; color:var(--ink-3); }
+.kstat-l { font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:10px; }
+
 /* 끗짱 출석부. 이름을 세로로 쌓으면 화면을 다 먹어서 칩으로 흘린다 */
 .kroll { display:flex; flex-wrap:wrap; gap:6px; }
 .kroll-p { font-size:12.5px; color:var(--ink-3); background:var(--bg);
@@ -677,6 +697,8 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <option value="">재학 상태</option>
       <option>재학</option><option>학교밖</option><option>졸업</option><option>기타</option>
     </select>
+    <!-- 끗짱에게 재학 상태를 묻는 건 뜻이 없다. 어디서 오셨는지가 궁금한 것이다 -->
+    <input type="text" id="auAffil" placeholder="소속 (기관·단체·학교 등)" maxlength="30" style="display:none;">
   </div>
 
   <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
@@ -1061,11 +1083,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div class="hint">가까운 책방을 먼저 보여드리는 데 써요. 다른 사람에게는 보이지 않아요.</div>
     </div>
     <div>
-      <div class="field-label">재학 상태</div>
+      <div class="field-label" id="pfSchoolLabel">재학 상태</div>
       <select id="pfSchool">
         <option value="">고르지 않음</option>
         <option>재학</option><option>학교밖</option><option>졸업</option><option>기타</option>
       </select>
+      <input type="text" id="pfAffil" maxlength="30" placeholder="기관·단체·학교 등" style="display:none;">
     </div>
     <div id="pfBirthWrap" style="display:none;">
       <div class="field-label">생년월일 <span class="req">* 필수</span></div>
@@ -1213,9 +1236,10 @@ function setJoinRole(r) {
   $('roleHint').textContent = k
     ? '끗짱은 운영진 확인 뒤에 루틴을 만들 수 있어요'
     : '읽고 인증하고 포인트를 모아요';
-  // 끗짱은 재학 상태를 물을 일이 없다
+  // 끗짱에게는 재학 상태 대신 소속을 묻는다
   $('auSchool').style.display = k ? 'none' : '';
-  if (k) $('auSchool').value = '';
+  $('auAffil').style.display  = k ? '' : 'none';
+  if (k) $('auSchool').value = ''; else $('auAffil').value = '';
 }
 
 function openPolicy()  { $('policySheet').classList.add('on'); }
@@ -1243,7 +1267,8 @@ async function submitAuth() {
     const name = $('auName').value.trim();
     const sido = $('auSido').value, gu = $('auGu').value;
     const phone = $('auPhone').value.replace(/[^0-9]/g, '');
-    const school = $('auSchool').value;
+    // 한 칸에 담는다 — 청소년은 「재학」, 끗짱은 「○○청소년센터」가 들어간다
+    const school = joinRole === 'kkut' ? $('auAffil').value.trim() : $('auSchool').value;
     if (!nick) return stop('닉네임을 입력해주세요.');
     if (!name) return stop('이름을 입력해주세요.');
     const birth = $('auBirth').value;
@@ -1254,7 +1279,7 @@ async function submitAuth() {
     if (phone.length < 10 || phone.length > 11) return stop('휴대폰번호를 다시 확인해주세요.');
     if (!sido) return stop('사는 곳의 시·도를 골라주세요.');
     if (!gu)   return stop('사는 곳의 시·군·구를 골라주세요.');
-    if (joinRole !== 'kkut' && !school) return stop('재학 상태를 골라주세요.');
+    if (!school) return stop(joinRole === 'kkut' ? '소속을 적어주세요.' : '재학 상태를 골라주세요.');
     if (!$('agAge').checked)    return stop('만 14세 이상인지 확인해주세요.');
     if (!$('agPolicy').checked) return stop('개인정보 수집 및 이용에 동의해주세요.');
     const region = joinRegion(sido, gu);
@@ -3008,6 +3033,30 @@ function openBooks() {
   openOv('ovBooks');
 }
 
+// 끗짱의 성과. 본인이 읽은 게 아니라 「내가 함께한 아이들이 읽은 것」이다.
+// 이게 없으면 어른 끗짱의 MY 는 0 만 늘어놓은 화면이 된다
+function kkutStatBlock() {
+  if (!canLead() || !me) return '';
+  const led    = state.routines.filter(r => r.led_by === me.id);
+  const ids    = led.map(r => r.id);
+  const parts  = (state.parts || []).filter(p => ids.includes(p.routine_id)
+                    && p.status === 'approved' && p.user_id !== me.id);
+  const kids   = new Set(parts.map(p => p.user_id));
+  const certs  = (state.certs || []).filter(c => ids.includes(c.routine_id) && c.user_id !== me.id);
+  const kbooks = new Set(certs.filter(c => c.book_title).map(c => c.book_title));
+  if (!led.length) return '';
+
+  const cell = (n, label) => `<div><b>${won(n)}</b><span>${label}</span></div>`;
+  return `<div class="sec-t">함께 쌓은 기록</div>
+    <div class="kstat">
+      ${cell(led.length, '맡은 루틴')}
+      ${cell(kids.size, '함께한 청소년')}
+      ${cell(certs.length, '아이들의 인증')}
+      ${cell(kbooks.size, '아이들이 읽은 책')}
+    </div>
+    ${parts.length ? `<div class="kstat-l">${led.length}개 루틴에서 <b>${parts.length}번</b> 함께했어요.</div>` : ''}`;
+}
+
 // 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
 // 지워지는 게 아니라 옮겨 간다는 걸 보여야 한다
 function ledPastBlock() {
@@ -3034,21 +3083,27 @@ function ledPastBlock() {
 function viewMy() {
   const total = state.certs.filter(c => c.user_id === me.id).length;
   const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
-  return `<div class="card" style="text-align:center;padding:26px 18px;">
-      <div class="f-av" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px;">${esc(myName()[0])}</div>
-      <div style="font-size:17px;font-weight:800;">${esc(myName())}</div>
-      <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${[canLead()?'끗짱':'', isYouth()?'청소년':'어른'].filter(Boolean).join(' · ')}${me.region?` · ${esc(me.region)}`:''}</div>
-      <button class="btn btn-line" style="margin-top:16px;max-width:200px;margin-left:auto;margin-right:auto;"
-        onclick="openProfile()">내 정보 수정</button>
+  // 어른 끗짱은 본인 인증이 0 이다. 0 만 셋 늘어놓으면 아무것도 안 한 사람처럼 보인다
+  const joined = myRoutines().filter(r => r.led_by !== me.id).length;
+  const who = [canLead() ? '끗짱' : '', isYouth() ? '청소년' : '어른',
+               me.school_status || '', me.region || ''].filter(Boolean).join(' · ');
+  return `<div class="card pf">
+      <div class="f-av">${esc(myName()[0])}</div>
+      <div class="pf-in">
+        <div class="pf-n">${esc(myName())}</div>
+        <div class="pf-m">${esc(who)}</div>
+      </div>
+      <button class="pf-ed" onclick="openProfile()">수정</button>
     </div>
     ${isYouth() ? balanceBlock() : ''}
     ${verifyBlock()}
     ${creditBlock()}
-    <div class="card" style="display:flex;text-align:center;">
-      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">누적 인증</div></div>
-      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${myRoutines().length}</div><div style="font-size:11.5px;color:var(--ink-3);">${canLead()?'맡은 루틴':'참여 루틴'}</div></div>
+    ${kkutStatBlock()}
+    ${(!canLead() || total || joined) ? `<div class="card" style="display:flex;text-align:center;">
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${total}</div><div style="font-size:11.5px;color:var(--ink-3);">내 인증</div></div>
+      <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${joined}</div><div style="font-size:11.5px;color:var(--ink-3);">참여 루틴</div></div>
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
-    </div>
+    </div>` : ''}
     ${myBooksBlock()}
     ${ledPastBlock()}
     ${pushBlock()}
@@ -3066,7 +3121,13 @@ function openProfile() {
   const r = splitRegion(me.region);
   fillSido('pfSido', r.sido);
   fillGu('pfGu', r.sido, r.gu);
-  $('pfSchool').value = me.school_status || '';
+  // 끗짱에게 「재학 상태」를 묻는 건 뜻이 없다. 한 칸을 라벨만 바꿔 쓴다
+  const lead = canLead();
+  $('pfSchoolLabel').textContent = lead ? '소속' : '재학 상태';
+  $('pfSchool').style.display = lead ? 'none' : '';
+  $('pfAffil').style.display  = lead ? '' : 'none';
+  if (lead) $('pfAffil').value  = me.school_status || '';
+  else      $('pfSchool').value = me.school_status || '';
   $('pfMkt').checked  = !!me.marketing_ok;
   // 생년월일은 비어 있을 때만 받는다. 한 번 적으면 서버가 못 바꾸게 막는다 —
   // 나이를 바꿔가며 우회하는 길을 닫는다
@@ -3093,7 +3154,7 @@ async function saveProfile() {
   if (phone && (phone.length < 10 || phone.length > 11)) return toast('휴대폰번호를 다시 확인해주세요');
 
   const row = { nick, name, region,
-                school_status: $('pfSchool').value || null,
+                school_status: (canLead() ? $('pfAffil').value.trim() : $('pfSchool').value) || null,
                 marketing_ok: $('pfMkt').checked };
   const priv = { id: me.id, phone: phone || null };
   if (!me.birth_date) {
