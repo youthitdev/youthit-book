@@ -557,6 +557,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kroll-p.on { color:var(--green-d); background:#F2F7E6; }
 .kroll-p b { color:var(--ink-3); font-weight:600; margin-left:3px; font-size:11px; }
 .kroll-p.on b { color:var(--green-d); }
+.kroll-p .kroll-poke { background:none; border:none; padding:0 0 0 5px; margin:0;
+  font-family:inherit; font-size:12px; line-height:1; cursor:pointer; }
+.kroll-p .kroll-poke:disabled { opacity:.3; cursor:default; }
 .kroll-yet { font-size:12px; color:var(--ink-3); margin-top:9px;
   padding-top:9px; border-top:1px solid var(--line); line-height:1.6; }
 
@@ -2141,7 +2144,11 @@ function kkutTodayCard(r) {
     </div>`;
   }).join('')}${ps.length > show
       ? `<div class="tc-bt more" onclick="event.stopPropagation();go('cert')">
-           <div class="tc-bt-i kid">+${ps.length - show}</div><span>더 보기</span></div>` : ''}
+           <div class="tc-bt-i kid">+${ps.length - show}</div>
+           <span>더 보기</span>
+           ${(() => { const left = ps.slice(show).filter(p => !today.some(c => c.user_id === p.user_id)).length;
+                      return left ? `<i class="off">${left}명 아직</i>` : ''; })()}
+         </div>` : ''}
     </div>` : '';
 
   // 기록 보기로 넘어가지 않고도 아이들이 뭘 올렸는지 보인다.
@@ -2317,12 +2324,17 @@ function kkutCertBlock(mine) {
           ${ps.map(p => {
             const done = today.some(c => c.user_id === p.user_id);
             const n = cs.filter(c => c.user_id === p.user_id).length;
+            const poked = (state.nudges || []).some(x => x.routine_id === r.id && x.to_id === p.user_id);
+            // 홈 카드는 셋만 보여주니 10명이 넘으면 대부분에게 콕이 안 닿는다.
+            // 한 명씩 챙기는 자리는 여기다
+            const ok = !done && !p.self && !routineEnded(r) && r.status !== 'pending';
             return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}
-              <b>${n}</b></span>`;
+              <b>${n}</b>${ok ? `<button class="kroll-poke" ${poked ? 'disabled' : ''}
+                onclick="poke(${r.id},'${p.user_id}',this)">👉</button>` : ''}</span>`;
           }).join('')}
         </div>
         ${yet.length && !routineEnded(r)
-          ? `<div class="kroll-yet">아직 안 한 ${yet.length}명 — ${yet.map(p => p.self ? '나' : esc(nameOf(p.user_id))).join(', ')}</div>`
+          ? `<div class="kroll-yet">아직 안 한 <b>${yet.length}명</b> — 위에서 👉 를 눌러 말을 걸 수 있어요</div>`
           : ''}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
