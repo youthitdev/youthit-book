@@ -92,6 +92,7 @@ tr:hover td { background:#fcfcfd; }
   font-family:inherit; font-size:11.5px; color:var(--ink-2); cursor:pointer; }
 .vq-c button:hover { background:#E9E3D8; color:var(--ink); }
 .vq-when { font-size:11px; color:#A79F92; margin-top:5px; }
+.vq-cold { color:#A8432F; font-weight:700; }
 /* 알림 보내기 */
 .nf-f { margin-bottom:14px; }
 .nf-f label { display:block; font-size:12.5px; font-weight:700; margin-bottom:6px; }
@@ -111,8 +112,10 @@ tr:hover td { background:#fcfcfd; }
 .st-approved { background:#E9F7D8; color:#4a7a00; }
 .st-adult    { background:#eef0ff; color:#4a4fd6; }
 /* 서류 없이 확인하는 길. 눈에 덜 띄어야 한다 — 이게 기본 경로가 되면 안 된다 */
+/* 상태 뱃지와 나란히 서는 자리라 키를 맞춘다. 혼자 크면 그게 주인공처럼 보인다 */
 .vq-quiet { background:none; border:1px solid var(--line); color:var(--ink-3);
-  font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; }
+  font-family:inherit; font-size:11.5px; font-weight:700; line-height:1.35;
+  padding:3px 8px; border-radius:7px; white-space:nowrap; cursor:pointer; }
 .vq-quiet:hover { color:var(--ink-2); border-color:var(--ink-3); }
 .vq-find { width:100%; padding:10px 13px; border:1px solid var(--line); border-radius:10px;
   font-size:13.5px; margin:0 0 6px; outline:none; }
@@ -523,24 +526,29 @@ let DB = {
     { user_id:'d1', name:'박서연', nick:'서연', region:'강원 속초시',
       birth_date:'2010-03-11', age:16, email:'seoyeon@example.com', phone:'01011112222',
       role:'youth', can_lead:false, doc_path:'demo/a.jpg', status:'pending', reason:null,
-      verify_kind:null, verified_at:null, joined_at:'2026-09-20' },
+      verify_kind:null, verified_at:null, joined_at:'2026-09-20',
+      last_seen_at:'2026-09-23T08:00:00Z', last_cert_on:'2026-09-22', cert_count:5 },
     { user_id:'d2', name:'김하준', nick:'하준', region:'서울 성북구',
       birth_date:'2011-07-02', age:15, email:'hajun@example.com', phone:'01033334444',
       role:'youth', can_lead:false, doc_path:null, status:'rejected',
       reason:'사진이 흐려서 이름이 안 보여요',
-      verify_kind:null, verified_at:null, joined_at:'2026-09-19' },
+      verify_kind:null, verified_at:null, joined_at:'2026-09-19',
+      last_seen_at:'2026-09-21T08:00:00Z', last_cert_on:'2026-09-21', cert_count:1 },
     { user_id:'d3', name:'이지우', nick:'지우', region:'부산 해운대구',
       birth_date:null, age:null, email:'jiwoo@example.com', phone:null,
       role:'youth', can_lead:false, doc_path:null, status:'none', reason:null,
-      verify_kind:null, verified_at:null, joined_at:'2026-09-18' },
+      verify_kind:null, verified_at:null, joined_at:'2026-09-18',
+      last_seen_at:null, last_cert_on:null, cert_count:0 },
     { user_id:'d4', name:'유스청소년', nick:'유스', region:'강원 속초시',
       birth_date:'2008-05-05', age:18, email:'teen@example.com', phone:'01055556666',
       role:'youth', can_lead:true, doc_path:null, status:'approved', reason:null,
-      verify_kind:'학생증', verified_at:'2026-09-15', joined_at:'2026-09-01' },
+      verify_kind:'학생증', verified_at:'2026-09-15', joined_at:'2026-09-01',
+      last_seen_at:'2026-09-23T01:00:00Z', last_cert_on:'2026-09-23', cert_count:22 },
     { user_id:'d5', name:'오민지', nick:'민지', region:'서울 강남구',
       birth_date:'1992-01-20', age:34, email:'minji@example.com', phone:'01077778888',
       role:'adult', can_lead:true, doc_path:null, status:'none', reason:null,
-      verify_kind:null, verified_at:null, joined_at:'2026-08-30' },
+      verify_kind:null, verified_at:null, joined_at:'2026-08-30',
+      last_seen_at:'2026-09-10T02:00:00Z', last_cert_on:null, cert_count:0 },
   ],
 };
 
@@ -650,6 +658,26 @@ async function vqCopy(el, text) {
 
 const dateKo = d => d ? `${+d.slice(5,7)}월 ${+d.slice(8,10)}일` : '';
 
+// 「9월 15일」보다 「3일 전」이 빠르게 읽힌다. 오래된 것만 날짜로 적는다
+function agoKo(v) {
+  if (!v) return null;
+  const d = Math.floor(((Date.now() - new Date(v)) / 86400e3));
+  if (d <= 0) return '오늘';
+  if (d === 1) return '어제';
+  if (d < 14)  return d + '일 전';
+  return dateKo(String(v).slice(0, 10));
+}
+
+// 가입만 하고 한 번도 안 들어온 사람과 매일 읽는 사람이 똑같이 보이면 안 된다
+function when(r) {
+  const bits = [];
+  if (r.joined_at) bits.push(`${dateKo(String(r.joined_at).slice(0,10))} 가입`);
+  bits.push(r.last_seen_at ? `${agoKo(r.last_seen_at)} 접속`
+                           : `<span class="vq-cold">들어온 적 없음</span>`);
+  if (r.last_cert_on) bits.push(`인증 ${agoKo(r.last_cert_on)}${r.cert_count ? ` · ${r.cert_count}회` : ''}`);
+  return bits.join(' · ');
+}
+
 // 01011112222 는 눈으로 못 읽는다. 복사도 붙임표까지 같이 — 문자 앱이 다 받는다
 const phoneKo = v => {
   const n = String(v || '').replace(/[^0-9]/g, '');
@@ -681,7 +709,7 @@ function vqCard(r) {
         ${r.email ? chip('✉', r.email) : ''}
         ${r.phone ? chip('📱', phoneKo(r.phone)) : `<span class="muted" style="font-size:11.5px;padding:4px 0;">번호 없음</span>`}
       </div>
-      ${r.joined_at ? `<div class="vq-when">${dateKo(String(r.joined_at).slice(0,10))} 가입</div>` : ''}
+      <div class="vq-when">${when(r)}</div>
     </div>
     <div class="vq-b">
       <span class="vq-st st-${st.key}">${st.label}</span>
@@ -693,6 +721,8 @@ function vqCard(r) {
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 승인</button>` : ''}
       ${st.key === 'approved' ? `
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
+      ${r.can_lead ? `
+        <button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>` : ''}
     </div>
   </div>`;
 }
@@ -727,6 +757,30 @@ function viewVerify() {
            value="${esc(vqFind)}" oninput="vqSearch(this.value)">
     <div id="vqList">${vqRows()}</div>
   </div>`;
+}
+
+// 끗짱 자격을 거둔다. 어른은 청소년 확인을 할 대상이 아니라서,
+// 이 명단에서 어른에게 할 수 있는 일은 이것뿐이다
+async function revokeLead(userId) {
+  const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
+  const reason = prompt(`${r.name} 님의 끗짱 자격을 거둡니다.\n사유를 적어주세요 — 본인 화면에 그대로 보입니다.`);
+  if (reason === null) return;
+  if (!reason.trim()) return alert('사유를 적어주세요.');
+  if (!confirm(`${r.name} 님의 끗짱 자격을 거둘까요?\n\n`
+      + `· 새 루틴을 만들 수 없게 됩니다\n`
+      + `· 아직 모집 중이던 루틴은 닫힙니다\n`
+      + `· 진행 중인 루틴과 아이들 기록은 그대로입니다\n\n`
+      + `사유: ${reason.trim()}`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+
+  const { error } = await sb.rpc('decide_kkut_application',
+    { p_user: userId, p_approve: false, p_reason: reason.trim() });
+  if (error) {
+    return alert(error.message.includes('신청서')
+      ? '이 분은 끗짱 신청서가 없어서 여기서 거둘 수 없어요.\n「끗짱 승인」 탭에서 처리해주세요.'
+      : '처리하지 못했어요: ' + error.message);
+  }
+  await loadLive(); render();
 }
 
 async function viewDoc(path) { openSigned('dokseo-verify', path, '서류'); }
