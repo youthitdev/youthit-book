@@ -155,7 +155,7 @@ select.ph { color:var(--ink-3); }
 .policy-in p b { display:block; margin-bottom:2px; color:var(--ink); }
 
 /* 헤더/탭 */
-header { position:sticky; top:0; z-index:20; background:var(--green); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+header { position:sticky; top:0; z-index:20; background:var(--blue); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
 header.k { background:var(--pink); }
 
 /* 끗짱 승인 대기 화면 */
@@ -559,7 +559,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 오버레이 */
 .ov { position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; max-width:480px; margin:0 auto; }
 .ov.on { display:flex; }
-.ov-h { background:var(--green); color:#fff; padding:13px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.ov-h { background:var(--blue); color:#fff; padding:13px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
 .ov-h.b { background:var(--blue); }
 .ov-h button { background:none; border:none; color:#fff; font-size:21px; cursor:pointer; padding:0; line-height:1; }
 .ov-h .t { font-size:16px; font-weight:700; }
@@ -1465,7 +1465,7 @@ async function browseAsGuest() {
   $('hdrRole').textContent = '둘러보는 중';
   $('hdrBtn').textContent = '로그인';
   $('hdrBtn').onclick = showAuth;
-  document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--green)');
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--blue)');
   await loadAll();
   go('home');
 }
@@ -1514,7 +1514,7 @@ async function enter() {
   $('hdrRole').textContent = isK ? '끗짱' : '청소년';
   $('hdrBtn').textContent = '로그아웃';
   $('hdrBtn').onclick = doLogout;
-  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
   await loadAll();
   go('home');
 
@@ -4232,7 +4232,7 @@ function enterDemo(role) {
   $('hdrRole').textContent = (isK ? '끗짱' : '청소년') + ' · 데모';
   $('hdrBtn').textContent = '나가기';
   $('hdrBtn').onclick = () => { location.href = location.pathname; };
-  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
 
   const b = document.createElement('div');
   b.style.cssText = 'background:var(--gold);color:#3a2a0c;font-size:11.5px;font-weight:700;text-align:center;padding:7px 12px;line-height:1.5';
