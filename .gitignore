@@ -6,3 +6,6 @@ supabase/.temp/
 
 # 로컬 압축 백업
 files.zip
+
+# Supabase 브랜치 메타데이터
+supabase/.branches/

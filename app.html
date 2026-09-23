@@ -11,6 +11,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png?v=2">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
 <link rel="apple-touch-icon" href="icon-apple.png?v=2">
+<link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="한끗독서">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
@@ -73,7 +74,7 @@ body {
 .app { width:100%; max-width:480px; background:var(--bg); min-height:100vh; position:relative;
   padding-bottom:calc(92px + env(safe-area-inset-bottom)); }
 input, select, textarea, button { font-family:inherit; }
-input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], select, textarea {
+input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], input[type=tel], select, textarea {
   width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px;
   font-size:15px; color:var(--ink); background:#fff; outline:none;
 }
@@ -119,6 +120,8 @@ select.ph { color:var(--ink-3); }
 .auth input:focus, .auth select:focus { border-color:rgba(255,255,255,.6); }
 /* 사파리는 select 안의 option 을 시스템 색으로 그린다. 흰 바탕에 흰 글자가 되지 않게 */
 .auth select option { color:var(--ink); background:#fff; }
+/* 아직 안 고른 칸. 흰 글씨 그대로 두면 이미 채운 것처럼 보인다 */
+.auth select.ph, .auth input[type=date]:invalid { color:rgba(255,255,255,.5); }
 .au-row { display:flex; gap:8px; }
 .au-row select, .au-row input { flex:1; min-width:0; }
 .au-hint { font-size:11.5px; color:rgba(255,255,255,.6); margin:-4px 0 12px; }
@@ -129,6 +132,25 @@ select.ph { color:var(--ink-3); }
 .role-btn { flex:1; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.22); background:transparent; color:rgba(255,255,255,.6); font-size:14px; cursor:pointer; }
 .role-btn.on { background:#fff; color:var(--blue); font-weight:700; border-color:#fff; }
 .auth-err { background:rgba(255,0,108,.18); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; }
+/* 가입 칸이 늘어나면 가운데 정렬이 화면 위쪽을 잘라 먹고 스크롤도 안 된다.
+   위아래 빈 칸에게 가운데 만드는 일을 맡기면 길어져도 안 잘린다 */
+.auth { justify-content:flex-start; }
+.auth::before, .auth::after { content:''; flex:1 1 auto; min-height:30px; width:0; max-width:0; }
+/* 동의 줄. .auth input 규칙이 체크박스까지 덮어써서 되돌린다 */
+.au-chk { display:flex; align-items:flex-start; gap:10px; font-size:12.5px; line-height:1.55;
+  color:rgba(255,255,255,.88); margin-bottom:10px; cursor:pointer; }
+.au-chk input[type=checkbox] { -webkit-appearance:auto; appearance:auto; width:18px; height:18px;
+  flex:none; margin:1px 0 0; padding:0; background:none; border:none; accent-color:var(--green); }
+.au-chk a { color:#fff; text-decoration:underline; }
+/* 개인정보 방침 */
+.policy { position:fixed; inset:0; z-index:950; background:rgba(0,0,0,.5); display:none; }
+.policy.on { display:block; }
+.policy-in { position:absolute; left:0; right:0; bottom:0; max-height:86vh; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; background:#fff; color:var(--ink); border-radius:18px 18px 0 0;
+  padding:22px 20px calc(20px + env(safe-area-inset-bottom)); max-width:480px; margin:0 auto; }
+.policy-in h3 { font-size:16.5px; margin-bottom:14px; }
+.policy-in p { font-size:12.5px; line-height:1.75; color:#333; margin-bottom:13px; }
+.policy-in p b { display:block; margin-bottom:2px; color:var(--ink); }
 
 /* 헤더/탭 */
 header { position:sticky; top:0; z-index:20; background:var(--green); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
@@ -597,29 +619,113 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 <div class="auth" id="authScr">
   <h1>매일 한 장,<br>책과 가까워지는 습관</h1>
   <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 포인트가 쌓여요</div>
+  <div class="role-row">
+    <button type="button" class="role-btn on" id="segLogin"  onclick="setMode('login')">로그인</button>
+    <button type="button" class="role-btn"    id="segSignup" onclick="setMode('signup')">회원가입</button>
+  </div>
   <div id="authErr" class="auth-err" style="display:none;"></div>
+
   <div id="signupOnly" style="display:none;">
-    <input type="text" id="auName" placeholder="이름">
+    <div class="role-row">
+      <button type="button" class="role-btn on" id="segYouth" onclick="setJoinRole('youth')">🌱 청소년</button>
+      <button type="button" class="role-btn"    id="segKkut"  onclick="setJoinRole('kkut')">💪 끗짱</button>
+    </div>
+    <div class="au-hint" id="roleHint">읽고 인증하고 포인트를 모아요</div>
+
+    <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="12" autocomplete="nickname">
+    <input type="text" id="auName" placeholder="이름 (실명)" maxlength="20" autocomplete="name">
+    <div class="au-hint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
+    <input type="date" id="auBirth" max="2099-12-31" required>
+    <div class="au-hint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
+    <input type="tel" id="auPhone" placeholder="휴대폰번호 ('-' 없이)" maxlength="13" inputmode="numeric" autocomplete="tel">
     <div class="au-row">
-      <select id="auSido"></select>
-      <input type="text" id="auGu" placeholder="시·군·구" maxlength="20">
+      <select id="auSido" onchange="this.classList.toggle('ph', !this.value); fillGu('auGu', this.value);"></select>
+      <select id="auGu" onchange="this.classList.toggle('ph', !this.value)"></select>
     </div>
     <div class="au-hint">가까운 동네책방을 먼저 보여드리는 데 써요</div>
-    <input type="date" id="auBirth" max="2099-12-31">
-    <div class="au-hint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
+    <select id="auSchool" class="ph" onchange="this.classList.toggle('ph', !this.value)">
+      <option value="">재학 상태</option>
+      <option>재학</option><option>학교밖</option><option>졸업</option><option>기타</option>
+    </select>
   </div>
+
   <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
   <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+
+  <div id="signupAgree" style="display:none;margin-top:6px;">
+    <label class="au-chk"><input type="checkbox" id="agAge">
+      <span>[필수] 만 14세 이상입니다</span></label>
+    <label class="au-chk"><input type="checkbox" id="agPolicy">
+      <span>[필수] 개인정보 수집 및 이용 동의 <a href="javascript:void(0)"
+        onclick="event.preventDefault();event.stopPropagation();openPolicy()">자세히</a></span></label>
+    <label class="au-chk"><input type="checkbox" id="agMkt">
+      <span>[선택] 소식·행사 안내 받기</span></label>
+  </div>
+
   <button class="btn btn-primary" id="auBtn" onclick="submitAuth()">로그인</button>
-  <div class="swap" id="auSwap">처음이신가요? <b onclick="toggleMode()">회원가입</b></div>
   <div class="swap" style="margin-top:22px;"><b onclick="browseAsGuest()">로그인 없이 둘러보기</b></div>
+</div>
+
+<!-- 개인정보 처리방침 -->
+<div class="policy" id="policySheet" onclick="closePolicy()">
+  <div class="policy-in" onclick="event.stopPropagation()">
+    <h3>개인정보처리방침</h3>
+    <p><b>1. 수집 및 이용 목적</b>
+      '한끗독서'(이하 '서비스')는 아래 목적으로만 개인정보를 이용합니다. 목적이 바뀌면 미리 동의를 구합니다.<br>
+      · 회원 가입 및 관리: 회원 식별, 만 14세 이상 확인, 부정 이용 방지<br>
+      · 독서루틴 제공: 참여 신청·승인, 끗짱 배정, 청소년 여부 확인을 위한 서류 심사,
+        독서 인증(사진·문장·쪽수) 저장, 같은 루틴 안에서의 인증 열람·응원<br>
+      · 포인트와 교환권: 인증으로 쌓인 포인트를 도서 교환권으로 바꾸고,
+        파트너 동네책방에서 책으로 바꾼 뒤 책방에 정산하는 일<br>
+      · 알림 발송: 루틴 리마인더, 승인·반려 안내, 후기 기한 안내(푸시 알림)<br>
+      · 고객 지원: 문의 처리, 공지 전달<br>
+      · 마케팅 및 광고에의 활용(선택): 새 루틴·행사 안내</p>
+    <p><b>2. 만 14세 미만 가입 제한</b>
+      서비스는 만 14세 이상만 가입·이용할 수 있습니다. 가입할 때 적은 생년월일로 만 14세 미만이 확인되면 가입이 제한됩니다.</p>
+    <p><b>3. 수집하는 항목</b>
+      · 필수: 닉네임, 실명, 생년월일, 이메일 주소, 비밀번호, 휴대폰번호,
+        거주지역(시·도, 시·군·구), 회원 유형(청소년/끗짱), 재학 상태<br>
+      · 청소년 확인 서류: 학생증·청소년증·재학증명서 등 파일.
+        <b style="display:inline;">확인이 끝나면 파일은 지웁니다.</b> 확인했다는 사실과 날짜만 남습니다.<br>
+      · 이용 과정에서 생기는 것: 루틴 참여 신청 각오, 독서 인증 사진·문장·읽은 쪽수, 후기,
+        푸시 알림을 보내기 위한 브라우저 구독 정보(endpoint 및 암호화 키)<br>
+      · 선택: 마케팅 수신에 동의한 회원의 이메일 주소 및 푸시 구독 정보<br>
+      · 자동으로 쌓이는 것: 서비스 이용 기록, 접속 로그</p>
+    <p><b>4. 후원자에게 알리는 범위</b>
+      서비스는 후원금으로 책을 삽니다. 후원자에게 매달 보내는 보고서와 소개 페이지에는
+      <b style="display:inline;">운영진이 고른 후기와 문장이 이름 없이</b> 실릴 수 있습니다.
+      이름·닉네임·사진·지역은 싣지 않습니다.
+      싣지 않기를 원하면 아래 문의처로 알려주시면 바로 뺍니다.</p>
+    <p><b>5. 보유 및 이용 기간</b>
+      원칙적으로 회원 탈퇴 시 또는 목적이 이루어진 뒤 지체 없이 파기합니다.
+      다만 법령에 따라 보존해야 하는 것은 그 기간 동안 보관합니다.<br>
+      · 소비자 불만 또는 분쟁 처리에 관한 기록: 3년 (전자상거래법)<br>
+      · 기부금 사용 명세에 들어가는 교환권·정산 기록: 5년 (기부금품법·법인세법)<br>
+      · 방문 기록(로그): 3개월 (통신비밀보호법)</p>
+    <p><b>6. 파기 절차와 방법</b>
+      필요 없게 된 개인정보는 지체 없이 파기합니다. 전자 파일은 되살릴 수 없는 방법으로 삭제하고,
+      종이에 출력된 것은 분쇄하거나 소각합니다.</p>
+    <p><b>7. 이용자의 권리</b>
+      언제든지 자신의 개인정보를 보거나 고칠 수 있고, 회원 탈퇴로 동의를 거둘 수 있습니다.
+      마케팅 수신과 푸시 알림은 MY 탭에서 언제든 끌 수 있습니다.</p>
+    <p><b>8. 보호책임자 및 문의처</b>
+      · 책임자: 김재순<br>
+      · 이메일: yv@youthvoice.or.kr</p>
+    <p style="color:#999;font-size:12px;">시행일자: 2026년 9월 23일</p>
+    <button class="btn btn-primary" onclick="closePolicy()">닫기</button>
+  </div>
 </div>
 
 <!-- 앱 -->
 <div class="app" id="appScr" style="display:none;">
   <header id="hdr">
     <div><span class="h-title">한끗독서</span><span class="h-badge" id="hdrRole"></span></div>
-    <button id="hdrBtn" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button id="hdrBell" onclick="openNotif()" style="display:none;position:relative;background:rgba(255,255,255,.22);border:none;color:#fff;font-size:15px;width:32px;height:30px;border-radius:9px;cursor:pointer;line-height:1;">
+        <i class="ti ti-bell"></i><i id="bellDot" style="display:none;position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--gold);"></i>
+      </button>
+      <button id="hdrBtn" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+    </div>
   </header>
   <div class="body" id="tabBody"><div class="spin">불러오는 중…</div></div>
   <nav><div class="nav-in">
@@ -886,28 +992,58 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   <div class="ov-b" id="ovBooksBody"></div>
 </div>
 
+<!-- 알림함. 푸시를 못 받거나 놓쳐도 여기엔 남는다 -->
+<div class="ov" id="ovNotif">
+  <div class="ov-h"><button onclick="closeOv('ovNotif')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">알림</div><div class="t">받은 소식</div></div></div>
+  <div class="ov-b" id="ovNotifBody"></div>
+</div>
+
 <!-- 내 정보 -->
 <div class="ov" id="ovProfile">
   <div class="ov-h"><button onclick="closeOv('ovProfile')"><i class="ti ti-arrow-left"></i></button>
     <div><div class="s">MY</div><div class="t">내 정보</div></div></div>
   <div class="ov-b">
     <div>
-      <div class="field-label">이름 <span class="req">* 필수</span></div>
+      <div class="field-label">닉네임 <span class="req">* 필수</span></div>
+      <input type="text" id="pfNick" maxlength="12" oninput="checkProfile()">
+      <div class="hint">다른 사람에게는 이 이름으로 보여요.</div>
+    </div>
+    <div>
+      <div class="field-label">이름 (실명) <span class="req">* 필수</span></div>
       <input type="text" id="pfName" maxlength="20" oninput="checkProfile()">
+      <div class="hint">운영진만 봐요. 서류 확인과 교환권 정산에 써요.</div>
+    </div>
+    <div>
+      <div class="field-label">휴대폰번호</div>
+      <input type="tel" id="pfPhone" maxlength="13" inputmode="numeric" placeholder="'-' 없이">
+      <div class="hint">운영진만 봐요. 같은 루틴 사람에게도 보이지 않아요.</div>
     </div>
     <div>
       <div class="field-label">사는 곳 <span class="req">* 필수</span></div>
       <div style="display:flex;gap:8px;">
-        <select id="pfSido" style="flex:1;min-width:0;" onchange="checkProfile()"></select>
-        <input type="text" id="pfGu" style="flex:1;min-width:0;" maxlength="20" placeholder="시·군·구" oninput="checkProfile()">
+        <select id="pfSido" style="flex:1;min-width:0;"
+                onchange="fillGu('pfGu', this.value); checkProfile();"></select>
+        <select id="pfGu" style="flex:1;min-width:0;" onchange="checkProfile()"></select>
       </div>
       <div class="hint">가까운 책방을 먼저 보여드리는 데 써요. 다른 사람에게는 보이지 않아요.</div>
     </div>
+    <div>
+      <div class="field-label">재학 상태</div>
+      <select id="pfSchool">
+        <option value="">고르지 않음</option>
+        <option>재학</option><option>학교밖</option><option>졸업</option><option>기타</option>
+      </select>
+    </div>
     <div id="pfBirthWrap" style="display:none;">
       <div class="field-label">생년월일 <span class="req">* 필수</span></div>
-      <input type="date" id="pfBirth" onchange="checkProfile()">
+      <input type="date" id="pfBirth" onchange="checkProfile()" required>
       <div class="hint">만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b></div>
     </div>
+    <label class="card" style="display:flex;align-items:center;gap:11px;cursor:pointer;">
+      <input type="checkbox" id="pfMkt" style="width:19px;height:19px;flex:none;accent-color:var(--green);">
+      <span style="font-size:13.5px;">새 루틴·행사 소식 받기 <span class="opt">선택</span></span>
+    </label>
     <div class="card" style="font-size:12.5px;color:var(--ink-3);line-height:1.7;">
       이메일과 역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
     </div>
@@ -939,7 +1075,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{} };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[] };
 let tab = 'home';
 // 지역은 자유 입력으로 두면 '속초' / '강원도 속초시' / '강원속초' 가 섞여
 // 책방 매칭이 깨진다. 시·도는 고르게 하고 시·군·구만 적게 한다
@@ -950,6 +1086,39 @@ function fillSido(id, picked) {
   const el = $(id); if (!el) return;
   el.innerHTML = `<option value="">시·도</option>`
     + SIDO.map(v => `<option value="${v}"${v === picked ? ' selected' : ''}>${v}</option>`).join('');
+  el.classList.toggle('ph', !el.value);
+}
+
+// 시·군·구. 시·도 이름은 짧은 쪽으로 — 책방 region 이 「서울 성북구」 모양이다
+const GU = {
+  '서울': ['종로구','중구','용산구','성동구','광진구','동대문구','중랑구','성북구','강북구','도봉구','노원구','은평구','서대문구','마포구','양천구','강서구','구로구','금천구','영등포구','동작구','관악구','서초구','강남구','송파구','강동구'],
+  '부산': ['중구','서구','동구','영도구','부산진구','동래구','남구','북구','해운대구','사하구','금정구','강서구','연제구','수영구','사상구','기장군'],
+  '대구': ['중구','동구','서구','남구','북구','수성구','달서구','달성군','군위군'],
+  '인천': ['중구','동구','미추홀구','연수구','남동구','부평구','계양구','서구','강화군','옹진군'],
+  '광주': ['동구','서구','남구','북구','광산구'],
+  '대전': ['동구','중구','서구','유성구','대덕구'],
+  '울산': ['중구','남구','동구','북구','울주군'],
+  '세종': ['세종특별자치시'],
+  '경기': ['수원시','성남시','의정부시','안양시','부천시','광명시','평택시','동두천시','안산시','고양시','과천시','구리시','남양주시','오산시','시흥시','군포시','의왕시','하남시','용인시','파주시','이천시','안성시','김포시','화성시','광주시','양주시','포천시','여주시','연천군','가평군','양평군'],
+  '강원': ['춘천시','원주시','강릉시','동해시','태백시','속초시','삼척시','홍천군','횡성군','영월군','평창군','정선군','철원군','화천군','양구군','인제군','고성군','양양군'],
+  '충북': ['청주시','충주시','제천시','보은군','옥천군','영동군','증평군','진천군','괴산군','음성군','단양군'],
+  '충남': ['천안시','공주시','보령시','아산시','서산시','논산시','계룡시','당진시','금산군','부여군','서천군','청양군','홍성군','예산군','태안군'],
+  '전북': ['전주시','군산시','익산시','정읍시','남원시','김제시','완주군','진안군','무주군','장수군','임실군','순창군','고창군','부안군'],
+  '전남': ['목포시','여수시','순천시','나주시','광양시','담양군','곡성군','구례군','고흥군','보성군','화순군','장흥군','강진군','해남군','영암군','무안군','함평군','영광군','장성군','완도군','진도군','신안군'],
+  '경북': ['포항시','경주시','김천시','안동시','구미시','영주시','영천시','상주시','문경시','경산시','의성군','청송군','영양군','영덕군','청도군','고령군','성주군','칠곡군','예천군','봉화군','울진군','울릉군'],
+  '경남': ['창원시','진주시','통영시','사천시','김해시','밀양시','거제시','양산시','의령군','함안군','창녕군','고성군','남해군','하동군','산청군','함양군','거창군','합천군'],
+  '제주': ['제주시','서귀포시'],
+};
+
+// 고른 시·도의 시·군·구를 채운다. 이미 쓰던 값이 목록에 없으면 (예전에 손으로 적은 것)
+// 그대로 하나 끼워 넣는다 — 안 그러면 프로필을 고칠 때 살던 곳이 조용히 지워진다
+function fillGu(id, sido, picked) {
+  const el = $(id); if (!el) return;
+  const list = (GU[sido] || []).slice();
+  if (picked && !list.includes(picked)) list.unshift(picked);
+  el.innerHTML = `<option value="">시·군·구</option>`
+    + list.map(v => `<option value="${v}"${v === picked ? ' selected' : ''}>${v}</option>`).join('');
+  el.classList.toggle('ph', !el.value);
 }
 
 // 저장은 '서울 성북구' 한 줄로. 책방의 region 과 같은 모양이어야 한다
@@ -985,17 +1154,40 @@ function fmtPeriod(s, e) {
 }
 
 // ── 로그인 ─────────────────────────────────────────────
-function toggleMode() {
-  authMode = authMode === 'login' ? 'signup' : 'login';
-  const up = authMode === 'signup';
-  $('signupOnly').style.display = up ? '' : 'none';
-  if (up) fillSido('auSido', $('auSido').value);
+function setMode(m) {
+  authMode = m;
+  const up = m === 'signup';
+  $('segLogin').classList.toggle('on', !up);
+  $('segSignup').classList.toggle('on', up);
+  $('signupOnly').style.display  = up ? '' : 'none';
+  $('signupAgree').style.display = up ? '' : 'none';
+  if (up && !$('auSido').options.length) { fillSido('auSido'); fillGu('auGu', ''); }
   $('auBtn').textContent = up ? '가입하기' : '로그인';
-  $('auSwap').innerHTML = up
-    ? `이미 계정이 있나요? <b onclick="toggleMode()">로그인</b>`
-    : `처음이신가요? <b onclick="toggleMode()">회원가입</b>`;
+  // 아이폰은 비밀번호 칸의 autocomplete 를 보고 저장된 암호를 들이민다.
+  // 가입인데 current-password 면 남의 계정 암호를 채워 넣는다
+  $('auPw').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
   $('authErr').style.display = 'none';
 }
+function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
+
+// 끗짱은 운영진이 열어 준다. 여기서 고르는 건 「끗짱으로 신청하겠다」는 뜻이고,
+// 가입이 끝나면 곧바로 신청서로 보낸다. 승인 경로는 하나다
+let joinRole = 'youth';
+function setJoinRole(r) {
+  joinRole = r;
+  const k = r === 'kkut';
+  $('segYouth').classList.toggle('on', !k);
+  $('segKkut').classList.toggle('on', k);
+  $('roleHint').textContent = k
+    ? '끗짱은 운영진 확인 뒤에 루틴을 만들 수 있어요'
+    : '읽고 인증하고 포인트를 모아요';
+  // 끗짱은 재학 상태를 물을 일이 없다
+  $('auSchool').style.display = k ? 'none' : '';
+  if (k) $('auSchool').value = '';
+}
+
+function openPolicy()  { $('policySheet').classList.add('on'); }
+function closePolicy() { $('policySheet').classList.remove('on'); }
 function authError(msg) { const e = $('authErr'); e.textContent = msg; e.style.display = ''; }
 
 // Supabase 오류는 영어로 온다. 청소년이 보는 화면이라 그대로 두지 않는다
@@ -1014,20 +1206,31 @@ async function submitAuth() {
   const btn = $('auBtn'); btn.disabled = true; btn.textContent = '잠시만요…';
 
   if (authMode === 'signup') {
-    const name = $('auName').value.trim();
-    const sido = $('auSido').value, gu = $('auGu').value.trim();
     const stop = m => { btn.disabled=false; btn.textContent='가입하기'; return authError(m); };
+    const nick = $('auNick').value.trim();
+    const name = $('auName').value.trim();
+    const sido = $('auSido').value, gu = $('auGu').value;
+    const phone = $('auPhone').value.replace(/[^0-9]/g, '');
+    const school = $('auSchool').value;
+    if (!nick) return stop('닉네임을 입력해주세요.');
     if (!name) return stop('이름을 입력해주세요.');
-    if (!sido) return stop('사는 곳의 시·도를 골라주세요.');
-    if (!gu)   return stop('사는 곳의 시·군·구를 적어주세요.');
     const birth = $('auBirth').value;
     if (!birth) return stop('생년월일을 골라주세요.');
     // 만 14세 미만은 법정대리인 동의가 있어야 개인정보를 받을 수 있다.
     // 동의서를 받아 관리하는 것 자체가 부담이라 14세부터 쓰게 한다
     if (ageOf(birth) < 14) return stop('한끗독서는 만 14세부터 함께할 수 있어요.');
+    if (phone.length < 10 || phone.length > 11) return stop('휴대폰번호를 다시 확인해주세요.');
+    if (!sido) return stop('사는 곳의 시·도를 골라주세요.');
+    if (!gu)   return stop('사는 곳의 시·군·구를 골라주세요.');
+    if (joinRole !== 'kkut' && !school) return stop('재학 상태를 골라주세요.');
+    if (!$('agAge').checked)    return stop('만 14세 이상인지 확인해주세요.');
+    if (!$('agPolicy').checked) return stop('개인정보 수집 및 이용에 동의해주세요.');
     const region = joinRegion(sido, gu);
     const { data, error } = await sb.auth.signUp({ email, password: pw,
-      options: { data: { name, role: 'youth', region, birth_date: birth } } });
+      options: { data: { name, nick, role: 'youth', region, birth_date: birth,
+                         phone, school_status: school || null,
+                         marketing_ok: $('agMkt').checked,
+                         policy_agreed_at: new Date().toISOString() } } });
     if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(authMsg(error.message)); }
     // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
     // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
@@ -1036,6 +1239,8 @@ async function submitAuth() {
       btn.disabled=false; btn.textContent='가입하기';
       return authError('이미 가입된 이메일이에요. 로그인으로 들어와 주세요.');
     }
+    // 끗짱으로 고른 사람은 가입만으로 끝나지 않는다. 신청서를 받아야 운영진이 판단한다
+    if (joinRole === 'kkut') sessionStorage.setItem('goKkutApply', '1');
   } else {
     const { error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) { btn.disabled=false; btn.textContent='로그인'; return authError('이메일 또는 비밀번호를 다시 확인해주세요.'); }
@@ -1056,10 +1261,18 @@ async function loadMe(user) {
   if (!data) {
     const meta = user.user_metadata || {};
     const ins = await sb.from('profiles')
-      .insert({ id: user.id, name: meta.name || '이름없음', role: meta.role || 'youth',
-                region: meta.region || null })
+      .insert({ id: user.id, name: meta.name || '이름없음', nick: meta.nick || null,
+                role: meta.role || 'youth', region: meta.region || null,
+                birth_date: meta.birth_date || null,
+                school_status: meta.school_status || null,
+                marketing_ok: !!meta.marketing_ok,
+                policy_agreed_at: meta.policy_agreed_at || new Date().toISOString() })
       .select().single();
     data = ins.data;
+    // 번호는 다른 표에 있다. 트리거가 넣지 못했으면 여기서 채운다
+    if (data && meta.phone) {
+      await sb.from('profiles_private').upsert({ id: user.id, phone: meta.phone });
+    }
   }
   return data;
 }
@@ -1245,6 +1458,8 @@ function showAuth() {
   $('authScr').style.display = '';
   $('appScr').style.display = 'none';
   $('authErr').style.display = 'none';
+  setMode(authMode);        // 세그먼트·버튼 글씨를 지금 모드에 맞춘다
+  window.scrollTo(0, 0);
 }
 
 // 로그인해야 할 수 있는 동작을 눌렀을 때
@@ -1286,6 +1501,13 @@ async function enter() {
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--green)');
   await loadAll();
   go('home');
+
+  // 가입할 때 끗짱을 골랐으면 바로 신청서로. 한 번만 보낸다
+  if (sessionStorage.getItem('goKkutApply')) {
+    sessionStorage.removeItem('goKkutApply');
+    await loadKkutApp();
+    openKkutApply();
+  }
 }
 
 // 첫 화면은 책장이 두 장 넘어가고 광선이 켜지기까지 2.1초가 걸린다.
@@ -1319,20 +1541,22 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {};
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, nt] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
     sb.from('cert_comments').select('*').order('created_at'),
     sb.from('reviews').select('*').order('created_at', { ascending:false }).limit(200),
     sb.from('routine_books').select('*').order('created_at'),
+    sb.from('notifications').select('*').order('created_at', { ascending:false }).limit(50),
   ]);
+  state.notifs = nt.data || [];
   state.parts = p.data || [];
   state.certs = c.data || [];
   state.purchases = bp.data || [];
@@ -1343,9 +1567,11 @@ async function loadAll() {
   const ids = [...new Set([...state.certs.map(x=>x.user_id), ...state.parts.map(x=>x.user_id),
                            ...state.comments.map(x=>x.user_id), ...state.reviews.map(x=>x.user_id)])];
   if (ids.length) {
-    const { data } = await sb.from('profiles').select('id,name').in('id', ids);
+    // 아이들끼리는 닉네임으로 부른다. 실명은 운영진 화면에만 나온다.
+    // 예전에 가입한 사람은 닉네임이 없어서 실명으로 떨어진다
+    const { data } = await sb.from('profiles').select('id,name,nick').in('id', ids);
     state.names = {};
-    (data||[]).forEach(p => state.names[p.id] = p.name);
+    (data||[]).forEach(p => state.names[p.id] = p.nick || p.name);
   }
 }
 
@@ -1390,6 +1616,138 @@ let certOnlyMine = false;
 function setCertMine(v) { certOnlyMine = v; render(); }
 const myCerts   = rid => me ? certsOf(rid).filter(c => c.user_id === me.id) : [];
 const nameOf    = uid => state.names[uid] || '익명';
+
+// ── 푸시 알림 ──────────────────────────────────────────
+// 공개 키다. 숨길 필요가 없다 — 이걸로는 보낼 수 없고, 받을 준비만 할 수 있다
+const VAPID_PUBLIC = 'BP3CgWxwraHSVllsGJz6vghp4p2A5Zh7ff8jPxi97JAtr6OFmLz_43ltK4ZPF7fmeziq-4QpqE_CJFBLicXOh_M';
+const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+// 아이폰은 홈 화면에 추가한 뒤에야 푸시를 준다. 사파리로 연 상태면 물어봐도 소용없다
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches
+  || navigator.standalone === true;
+
+function b64ToU8(s) {
+  const pad = '='.repeat((4 - s.length % 4) % 4);
+  const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// serviceWorker.ready 는 설치가 어긋나면 영영 안 풀린다. 화면이 멎지 않게 시간을 끊는다
+async function swReady(ms = 2000) {
+  if (!('serviceWorker' in navigator)) return null;
+  return Promise.race([navigator.serviceWorker.ready,
+                       new Promise(r => setTimeout(() => r(null), ms))]);
+}
+
+async function pushState() {
+  if (!pushOK()) return 'unsupported';
+  if (isIOS() && !isStandalone()) return 'needs-install';
+  if (Notification.permission === 'denied') return 'blocked';
+  const reg = await swReady();
+  if (!reg) return 'off';
+  return (await reg.pushManager.getSubscription()) ? 'on' : 'off';
+}
+
+async function enablePush() {
+  if (DEMO) return toast('데모 모드에서는 켜지지 않아요');
+  if (!pushOK()) return toast('이 브라우저는 알림을 지원하지 않아요');
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { render(); return toast('알림이 꺼져 있어요'); }
+  const reg = await swReady(5000);
+  if (!reg) return toast('잠시 뒤 다시 눌러주세요');
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    try {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+    } catch (e) { return toast('알림을 켜지 못했어요'); }
+  }
+  const k = sub.toJSON().keys || {};
+  const { error } = await sb.from('push_subscriptions')
+    .upsert({ user_id: me.id, endpoint: sub.endpoint, p256dh: k.p256dh, auth: k.auth },
+            { onConflict: 'endpoint' });
+  if (error) return toast('알림 설정을 저장하지 못했어요');
+  render(); toast('알림을 켰어요');
+}
+
+async function disablePush() {
+  const reg = await swReady();
+  const sub = reg && await reg.pushManager.getSubscription();
+  if (sub) {
+    await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    await sub.unsubscribe();
+  }
+  render(); toast('알림을 껐어요');
+}
+
+// 상태를 비동기로 읽어야 해서, 카드는 먼저 그리고 값이 오면 안쪽만 바꾼다
+function pushBlock() {
+  setTimeout(async () => {
+    const el = $('pushCard'); if (!el) return;
+    const st = await pushState();
+    const body = {
+      'unsupported' : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
+      'needs-install': `<div class="hint" style="margin:0;line-height:1.75;">
+          아이폰은 <b>홈 화면에 추가</b>해야 알림을 받을 수 있어요.<br>
+          사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> → <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>`,
+      'blocked'     : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>`,
+      'off'         : `<button class="btn btn-green" onclick="enablePush()">알림 켜기</button>`,
+      'on'          : `<div style="display:flex;align-items:center;gap:10px;">
+          <div style="flex:1;font-size:13px;color:var(--green-d);font-weight:700;">켜져 있어요</div>
+          <button class="btn btn-line" style="width:auto;padding:9px 14px;font-size:13px;"
+                  onclick="disablePush()">끄기</button></div>`,
+    }[st];
+    el.querySelector('.push-body').innerHTML = body;
+  }, 0);
+  return `<div class="card" id="pushCard">
+      <div class="field-label" style="margin-bottom:9px;">
+        <i class="ti ti-bell"></i> 알림</div>
+      <div class="hint" style="margin:0 0 11px;">
+        루틴 승인, 후기 기한, 오늘 인증을 알려드려요.</div>
+      <div class="push-body"><div class="hint" style="margin:0;">확인 중…</div></div>
+    </div>`;
+}
+// 내 이름도 남들이 보는 이름으로 부른다. 실명은 내 정보 화면에만 나온다
+const myName    = () => (me && (me.nick || me.name)) || '나';
+
+// ── 알림함 ─────────────────────────────────────────────
+const unreadCount = () => (state.notifs || []).filter(n => !n.read).length;
+
+function paintBell() {
+  const b = $('hdrBell'); if (!b) return;
+  b.style.display = (me && !isGuest()) ? '' : 'none';
+  $('bellDot').style.display = unreadCount() ? '' : 'none';
+}
+
+function whenText(iso) {
+  const m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (m < 1)    return '방금';
+  if (m < 60)   return m + '분 전';
+  if (m < 1440) return Math.floor(m / 60) + '시간 전';
+  const d = Math.floor(m / 1440);
+  return d < 7 ? d + '일 전' : new Date(iso).toISOString().slice(5, 10).replace('-', '월 ') + '일';
+}
+
+async function openNotif() {
+  const list = state.notifs || [];
+  $('ovNotifBody').innerHTML = list.length
+    ? list.map(n => `<div class="card" style="${n.read ? '' : 'border-color:var(--green);'}">
+        <div style="font-size:14.5px;font-weight:700;">${esc(n.title)}</div>
+        ${n.body ? `<div style="font-size:13px;color:var(--ink-2);margin-top:4px;line-height:1.6;">${esc(n.body)}</div>` : ''}
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:7px;">${whenText(n.created_at)}</div>
+      </div>`).join('')
+    : `<div class="card" style="text-align:center;padding:34px 18px;color:var(--ink-3);font-size:13.5px;">
+         아직 받은 소식이 없어요</div>`;
+  openOv('ovNotif');
+
+  // 열었으면 읽은 것이다. 실패해도 화면은 이미 보여 줬으니 조용히 넘어간다
+  if (unreadCount() && !DEMO) {
+    await sb.from('notifications').update({ read: true }).eq('user_id', me.id).eq('read', false);
+    state.notifs.forEach(n => n.read = true);
+    paintBell();
+  }
+}
 const myRoutines = () => me ? state.routines.filter(r => {
   const p = myPart(r.id);
   // 청소년 끗짱은 자기가 만든 루틴과 참여한 루틴을 둘 다 본다.
@@ -1466,6 +1824,7 @@ function go(t) {
 }
 function render() {
   const b = $('tabBody');
+  paintBell();
   // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
   if (isGuest() && tab !== 'home' && tab !== 'store') { b.innerHTML = guestWall(); return; }
   if (tab === 'home') b.innerHTML = viewHome();
@@ -2591,8 +2950,8 @@ function viewMy() {
   const total = state.certs.filter(c => c.user_id === me.id).length;
   const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
   return `<div class="card" style="text-align:center;padding:26px 18px;">
-      <div class="f-av" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px;">${esc(me.name[0]||'?')}</div>
-      <div style="font-size:17px;font-weight:800;">${esc(me.name)}</div>
+      <div class="f-av" style="width:56px;height:56px;font-size:22px;margin:0 auto 10px;">${esc(myName()[0])}</div>
+      <div style="font-size:17px;font-weight:800;">${esc(myName())}</div>
       <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px;">${[canLead()?'끗짱':'', isYouth()?'청소년':'어른'].filter(Boolean).join(' · ')}${me.region?` · ${esc(me.region)}`:''}</div>
       <button class="btn btn-line" style="margin-top:16px;max-width:200px;margin-left:auto;margin-right:auto;"
         onclick="openProfile()">내 정보 수정</button>
@@ -2606,36 +2965,52 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${myBooksBlock()}
+    ${pushBlock()}
     ${kkutCard()}
     ${statsStrip()}`;
 }
 
 // ── 내 정보 ────────────────────────────────────────────
-function openProfile() {
+async function openProfile() {
+  $('pfNick').value = me.nick || me.name || '';
   $('pfName').value = me.name || '';
   const r = splitRegion(me.region);
   fillSido('pfSido', r.sido);
-  $('pfGu').value = r.gu;
+  fillGu('pfGu', r.sido, r.gu);
+  $('pfSchool').value = me.school_status || '';
+  $('pfMkt').checked  = !!me.marketing_ok;
   // 생년월일은 비어 있을 때만 받는다. 한 번 적으면 서버가 못 바꾸게 막는다 —
   // 나이를 바꿔가며 우회하는 길을 닫는다
   $('pfBirthWrap').style.display = me.birth_date ? 'none' : '';
   $('pfBirth').value = me.birth_date || '';
   checkProfile(); openOv('ovProfile');
+  // 번호는 profiles 가 아니라 본인만 읽는 표에 있다. 열 때 따로 가져온다
+  $('pfPhone').value = '';
+  if (!DEMO) {
+    const { data } = await sb.from('profiles_private').select('phone').eq('id', me.id).maybeSingle();
+    $('pfPhone').value = data?.phone || '';
+  }
 }
 
 function checkProfile() {
   const needBirth = !me.birth_date && !$('pfBirth').value;
-  $('pfSubmit').disabled = !$('pfName').value.trim() || !$('pfSido').value
-    || !$('pfGu').value.trim() || needBirth;
+  $('pfSubmit').disabled = !$('pfNick').value.trim() || !$('pfName').value.trim()
+    || !$('pfSido').value || !$('pfGu').value || needBirth;
 }
 
 async function saveProfile() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const nick = $('pfNick').value.trim();
   const name = $('pfName').value.trim();
+  if (!nick) return toast('닉네임을 적어주세요');
   if (!name) return toast('이름을 적어주세요');
   const region = joinRegion($('pfSido').value, $('pfGu').value) || null;
+  const phone = $('pfPhone').value.replace(/[^0-9]/g, '');
+  if (phone && (phone.length < 10 || phone.length > 11)) return toast('휴대폰번호를 다시 확인해주세요');
 
-  const row = { name, region };
+  const row = { nick, name, region,
+                school_status: $('pfSchool').value || null,
+                marketing_ok: $('pfMkt').checked };
   if (!me.birth_date) {
     const b = $('pfBirth').value;
     if (!b) return toast('생년월일을 골라주세요');
@@ -2646,12 +3021,14 @@ async function saveProfile() {
   const btn = $('pfSubmit'); btn.disabled = true; btn.textContent = '저장 중…';
   // 역할은 바꾸지 않는다. 청소년이 스스로 끗짱이 되면 안 된다
   const { error } = await sb.from('profiles').update(row).eq('id', me.id);
+  if (!error) {
+    await sb.from('profiles_private').upsert({ id: me.id, phone: phone || null });
+  }
   btn.disabled = false; btn.textContent = '저장하기';
   if (error) return toast('저장에 실패했어요: ' + error.message);
 
-  me.name = name; me.region = region;
-  if (row.birth_date) me.birth_date = row.birth_date;
-  state.names[me.id] = name;
+  Object.assign(me, row);
+  state.names[me.id] = nick;
   closeOv('ovProfile'); render();
   toast('바꿨어요');
 }
@@ -3850,6 +4227,22 @@ function enterDemo(role) {
   $('appScr').insertBefore(b, $('hdr'));
 
   go('home');
+}
+
+// ── 서비스 워커 ────────────────────────────────────────
+// 아이폰은 홈 화면에 추가된 PWA 에만 푸시를 준다. 워커가 없으면 푸시 자체가 불가능하다
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .catch(e => console.warn('서비스 워커 등록 실패', e));
+  });
+  // 알림을 눌렀는데 앱이 이미 열려 있던 경우. 워커가 어디로 갈지 알려준다
+  navigator.serviceWorker.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type !== 'notif-navigate') return;
+    if (d.routine) { openRoutine(Number(d.routine)); return; }
+    if (d.tab) go(d.tab);
+  });
 }
 
 (async function init() {
