@@ -501,6 +501,13 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
    비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
 .f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#F2EEE6; }
+/* 지난 루틴 한 줄 */
+.pr { display:flex; align-items:center; gap:12px; padding:13px 0; cursor:pointer; }
+.pr + .pr { border-top:1px solid var(--line); }
+.pr-t { flex:1; min-width:0; font-size:14px; font-weight:700;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.pr-s { flex:none; font-size:12px; color:var(--ink-3); }
+
 .f-quote { border-left:3px solid var(--green); background:#f7fbf0; border-radius:0 10px 10px 0; padding:11px 13px; margin-bottom:8px; }
 .f-quote p { font-size:14px; line-height:1.7; }
 .f-quote cite { display:block; font-style:normal; font-size:11.5px; color:var(--green-d); margin-top:6px; }
@@ -2092,7 +2099,10 @@ function viewHome() {
     // 맡은 루틴과 참여 중인 루틴은 다른 카드로 그린다.
     // 맡은 건 「누가 인증했나」, 참여한 건 「오늘 인증하기」다.
     // 인증 탭은 이미 갈라놨는데 홈이 안 따라가고 있었다
-    const led  = mine.filter(r => r.led_by === me.id);
+    // 끝난 루틴은 홈에 두지 않는다. 오늘 할 일이 아니라 지나간 기록이고,
+    // 「오늘 0명 인증」이 끝난 루틴에 붙으면 아무도 안 한 것처럼 보인다.
+    // 지난 것은 MY 의 「지난 루틴」에 모아 둔다
+    const led  = mine.filter(r => r.led_by === me.id && !isOver(r));
     const join = mine.filter(r => r.led_by !== me.id);
 
     // 제목이 없으면 카드만 쌓여 보여서 「남의 루틴인가」 싶어진다
@@ -2240,6 +2250,9 @@ function certGrid(all) {
 // 루틴이 며칠짜리고 오늘이 며칠째인지
 // 기간 줄. 「8일째 · 15일 중」인데 상태가 done 이면 열려 있는 것처럼 보인다 —
 // 종료일이 아직 안 지났는데 사람이 닫은 경우다. 그럴 땐 닫혔다고 말한다
+// 끝난 루틴 — 기간을 다 채웠거나 사람이 먼저 닫았거나
+const isOver = r => { const d = routineDay(r); return r.status === 'done' || !!(d && d.ended); };
+
 function routineLine(r, d) {
   if (!d) return '기간 미정';
   if (d.ended) return `완주 · ${d.total}일`;
@@ -2975,6 +2988,29 @@ function openBooks() {
   openOv('ovBooks');
 }
 
+// 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
+// 지워지는 게 아니라 옮겨 간다는 걸 보여야 한다
+function ledPastBlock() {
+  if (!canLead() || !me) return '';
+  const past = state.routines
+    .filter(r => r.led_by === me.id && isOver(r))
+    .sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
+  if (!past.length) return '';
+
+  const row = r => {
+    const d = routineDay(r);
+    const n = (state.parts || []).filter(p => p.routine_id === r.id && p.status === 'approved').length;
+    const days = !d ? '기간 미정' : (d.ended ? `${d.total}일 완주` : `${d.n}일까지`);
+    return `<div class="pr" onclick="openRoutine(${r.id})">
+      <div class="pr-t">${esc(r.emoji || '📚')} ${esc(r.title)}</div>
+      <div class="pr-s">${days} · ${n}명</div>
+    </div>`;
+  };
+
+  return `<div class="sec-t">지난 루틴 <b style="color:var(--ink-3);">${past.length}</b></div>
+    <div class="card" style="padding:4px 16px;">${past.map(row).join('')}</div>`;
+}
+
 function viewMy() {
   const total = state.certs.filter(c => c.user_id === me.id).length;
   const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
@@ -2994,6 +3030,7 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>
     ${myBooksBlock()}
+    ${ledPastBlock()}
     ${pushBlock()}
     ${kkutCard()}
     ${statsStrip()}
