@@ -155,8 +155,19 @@ select.ph { color:var(--ink-3); }
 .policy-in p b { display:block; margin-bottom:2px; color:var(--ink); }
 
 /* 헤더/탭 */
-header { position:sticky; top:0; z-index:20; background:var(--blue); color:#fff; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
-header.k { background:var(--pink); }
+/* 색 띠를 걷었다. 아래 탭이 떠 있는 알약인데 위만 꽉 찬 사각이면 균형이 안 맞고,
+   그 띠에 담긴 건 「여기가 무슨 앱인지」뿐이었다 — 쓰는 사람이 이미 아는 것 */
+header { position:sticky; top:0; z-index:20; background:var(--bg); color:var(--ink);
+  padding:17px 18px 13px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid transparent; transition:border-color .18s, background .18s; }
+/* 내려가면 카드가 글자에 비쳐 든다. 그때만 선과 흐림을 준다 */
+header.down { border-bottom-color:var(--line); background:rgba(250,247,241,.9);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+/* 역할은 색으로 남긴다 — 청소년은 잉크 그린, 끗짱은 벽돌 */
+.h-title { color:var(--blue); }
+header.k .h-title { color:var(--pink); }
+.h-btn { background:var(--card); border:1px solid var(--line); color:var(--ink-2);
+  border-radius:10px; cursor:pointer; font-family:inherit; }
 
 /* 끗짱 승인 대기 화면 */
 .gate-card { background:#fff; border:1px solid var(--line); border-radius:15px; padding:22px 18px; text-align:center; }
@@ -171,7 +182,7 @@ header.k { background:var(--pink); }
 .gate-num b { color:var(--pink); font-size:14px; }
 #kkutBody .auth-err { background:#FAECE8; border:1px solid #EDC6BC; color:#8E3527; }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
-.h-badge { font-size:11px; font-weight:700; background:rgba(255,255,255,.25); padding:3px 9px; border-radius:9px; margin-left:7px; }
+.h-badge { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:7px; }
 .body { padding:18px; }
 .shelf { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
 .shelf span { background:#fff; border:1px solid var(--line); border-radius:99px;
@@ -723,10 +734,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   <header id="hdr">
     <div><span class="h-title">한끗독서</span><span class="h-badge" id="hdrRole"></span></div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <button id="hdrBell" onclick="openNotif()" style="display:none;position:relative;background:rgba(255,255,255,.22);border:none;color:#fff;font-size:15px;width:32px;height:30px;border-radius:9px;cursor:pointer;line-height:1;">
-        <i class="ti ti-bell"></i><i id="bellDot" style="display:none;position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--gold);"></i>
+      <button id="hdrBell" class="h-btn" onclick="openNotif()" style="display:none;position:relative;font-size:16px;width:34px;height:32px;line-height:1;">
+        <i class="ti ti-bell"></i><i id="bellDot" style="display:none;position:absolute;top:5px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--pink);"></i>
       </button>
-      <button id="hdrBtn" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
+      <!-- 로그아웃은 MY 로 내렸다. 하루에 한 번도 안 누르는 버튼이 제일 좋은 자리에 있었다.
+           둘러보는 사람에게는 「로그인」이 필요해서 그때만 남긴다 -->
+      <button id="hdrBtn" class="h-btn" onclick="doLogout()" style="display:none;font-size:12.5px;font-weight:700;padding:7px 13px;">로그인</button>
     </div>
   </header>
   <div class="body" id="tabBody"><div class="spin">불러오는 중…</div></div>
@@ -1463,6 +1476,7 @@ async function browseAsGuest() {
   $('appScr').style.display = '';
   $('hdr').classList.remove('k');
   $('hdrRole').textContent = '둘러보는 중';
+  $('hdrBtn').style.display = '';          // 둘러보는 사람에게는 들어올 문이 필요하다
   $('hdrBtn').textContent = '로그인';
   $('hdrBtn').onclick = showAuth;
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--blue)');
@@ -1512,8 +1526,7 @@ async function enter() {
   const isK = canLead();
   $('hdr').classList.toggle('k', isK);
   $('hdrRole').textContent = isK ? '끗짱' : '청소년';
-  $('hdrBtn').textContent = '로그아웃';
-  $('hdrBtn').onclick = doLogout;
+  $('hdrBtn').style.display = 'none';      // 로그아웃은 MY 맨 아래에 있다
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
   await loadAll();
   go('home');
@@ -2983,7 +2996,10 @@ function viewMy() {
     ${myBooksBlock()}
     ${pushBlock()}
     ${kkutCard()}
-    ${statsStrip()}`;
+    ${statsStrip()}
+    ${DEMO ? '' : `<div style="text-align:center;margin:26px 0 8px;">
+      <b style="font-size:13px;color:var(--ink-3);cursor:pointer;text-decoration:underline;"
+         onclick="doLogout()">로그아웃</b></div>`}`;
 }
 
 // ── 내 정보 ────────────────────────────────────────────
@@ -4230,6 +4246,7 @@ function enterDemo(role) {
   $('appScr').style.display = '';
   $('hdr').classList.toggle('k', isK);
   $('hdrRole').textContent = (isK ? '끗짱' : '청소년') + ' · 데모';
+  $('hdrBtn').style.display = '';          // 데모는 빠져나갈 문이 필요하다
   $('hdrBtn').textContent = '나가기';
   $('hdrBtn').onclick = () => { location.href = location.pathname; };
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
@@ -4241,6 +4258,11 @@ function enterDemo(role) {
 
   go('home');
 }
+
+// 맨 위에 있을 땐 종이 그대로, 내려가면 선과 흐림. 안 그러면 카드가 글자에 비쳐 든다
+addEventListener('scroll', () => {
+  const h = $('hdr'); if (h) h.classList.toggle('down', scrollY > 4);
+}, { passive: true });
 
 // ── 서비스 워커 ────────────────────────────────────────
 // 아이폰은 홈 화면에 추가된 PWA 에만 푸시를 준다. 워커가 없으면 푸시 자체가 불가능하다
