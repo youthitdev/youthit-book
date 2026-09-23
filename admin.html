@@ -85,6 +85,18 @@ tr:hover td { background:#fcfcfd; }
   font-family:inherit; font-size:11.5px; color:var(--ink-2); cursor:pointer; }
 .vq-c button:hover { background:#e9eaee; color:var(--ink); }
 .vq-when { font-size:11px; color:#a8adb8; margin-top:5px; }
+/* 알림 보내기 */
+.nf-f { margin-bottom:14px; }
+.nf-f label { display:block; font-size:12.5px; font-weight:700; margin-bottom:6px; }
+.nf-f input, .nf-f select, .nf-f textarea {
+  width:100%; padding:10px 13px; border:1px solid var(--line); border-radius:10px;
+  font-family:inherit; font-size:13.5px; color:var(--ink); background:#fff; outline:none; }
+.nf-f textarea { resize:vertical; line-height:1.6; }
+.nf-f input:focus, .nf-f select:focus, .nf-f textarea:focus { border-color:var(--blue); }
+/* 몇 명에게 가는지. 누르기 전에 알아야 손이 안 떨린다 */
+.nf-reach { background:#f5f6f8; border-radius:10px; padding:10px 13px;
+  font-size:12.5px; color:var(--ink-2); margin-bottom:16px; }
+.nf-reach b { color:var(--ink); }
 .vq-st { font-size:11.5px; font-weight:700; padding:3px 8px; border-radius:7px; white-space:nowrap; }
 .st-pending  { background:#FFF4D6; color:#8a6400; }
 .st-rejected { background:#FFE7EE; color:#b3003c; }
@@ -239,6 +251,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
+    <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
 
@@ -564,6 +577,7 @@ function renderSummary() {
   document.getElementById('cntStores').textContent = ` ${(DB.bookstores || []).length}`;
   document.getElementById('cntQuotes').textContent = ` ${(DB.quotes || []).filter(q => q.quote_public).length}`;
   document.getElementById('cntVerify').textContent = ` ${(DB.verify || []).filter(v => v.status === 'pending').length}`;
+  document.getElementById('cntNotify').textContent = ` ${(DB.scheduled || []).filter(n => !n.sent_at).length}`;
 }
 
 function renderPanel() {
@@ -575,6 +589,7 @@ function renderPanel() {
   if (tab === 'stores')   return el.innerHTML = viewStores();
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   if (tab === 'verify')   return el.innerHTML = viewVerify();
+  if (tab === 'notify')   return el.innerHTML = viewNotify();
   if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
 }
@@ -721,6 +736,176 @@ async function decideVerify(userId, approve) {
     { p_user: userId, p_approve: approve, p_kind: kind, p_reason: reason });
   if (error) return alert('처리하지 못했어요: ' + error.message);
   await loadLive(); render();
+}
+
+// ── 알림 보내기 ────────────────────────────────────────────
+// 여기서 보내는 건 「무슨 일이 일어나서」가 아니라 사람이 눌러서 나가는 알림이다.
+// 한 번 나가면 못 되돌린다. 그래서 몇 명에게 가는지 먼저 세어서 보여준다
+let nfReach = null;
+
+async function nfCount() {
+  const box = document.getElementById('nfReach');
+  if (!box) return;
+  const t = document.getElementById('nfTarget').value;
+  const rid = document.getElementById('nfRoutine')?.value;
+  if (t === 'routine' && !rid) { box.textContent = '루틴을 골라주세요'; nfReach = null; return; }
+  if (!LIVE) { box.textContent = '데모 모드 — 실제로는 구독자 수가 나와요'; nfReach = 0; return; }
+  box.textContent = '세는 중…';
+  // 인자를 빼면 PostgREST 가 「0-인자 push_reach」를 찾다가 못 찾는다.
+  // 기본값이 있어도 이름을 붙여 넘겨야 서명을 고른다
+  const { data, error } = await sb.rpc('push_reach',
+    { p_routine: t === 'routine' ? Number(rid) : null });
+  if (error) { box.textContent = '세지 못했어요: ' + error.message; nfReach = null; return; }
+  const n = Array.isArray(data) ? (data[0]?.people ?? 0) : (data?.people ?? data ?? 0);
+  nfReach = Number(n) || 0;
+  box.innerHTML = nfReach
+    ? `알림을 켜 둔 <b>${nfReach}명</b>에게 갑니다`
+    : `<span style="color:#b3003c;">받을 사람이 없어요.</span> 아직 아무도 알림을 안 켰습니다`;
+}
+
+function nfTargetChange() {
+  const t = document.getElementById('nfTarget').value;
+  document.getElementById('nfRoutineWrap').style.display = t === 'routine' ? '' : 'none';
+  nfCount();
+}
+function nfWhenChange() {
+  const later = document.getElementById('nfWhen').value === 'later';
+  document.getElementById('nfAtWrap').style.display = later ? '' : 'none';
+  document.getElementById('nfSend').textContent = later ? '예약하기' : '지금 보내기';
+}
+
+async function nfSubmit() {
+  const title = document.getElementById('nfTitle').value.trim();
+  const body  = document.getElementById('nfBody').value.trim();
+  const t     = document.getElementById('nfTarget').value;
+  const rid   = t === 'routine' ? Number(document.getElementById('nfRoutine').value) : null;
+  const later = document.getElementById('nfWhen').value === 'later';
+  const at    = document.getElementById('nfAt').value;
+
+  if (!title) return alert('제목을 적어주세요.');
+  if (t === 'routine' && !rid) return alert('루틴을 골라주세요.');
+  if (later && !at) return alert('언제 보낼지 골라주세요.');
+  if (later && new Date(at) <= new Date()) return alert('지난 시각으로는 예약할 수 없어요.');
+  if (!LIVE) return alert('데모 모드에서는 보내지지 않아요.');
+
+  const who = t === 'all' ? '전체' : (DB.routines || []).find(r => r.id === rid)?.title || '그 루틴';
+  const when = later ? `\n\n보낼 때: ${at.replace('T', ' ')}` : '\n\n지금 바로 나갑니다. 되돌릴 수 없어요.';
+  if (!confirm(`${who} · ${nfReach != null ? nfReach + '명' : '구독자'}에게 보냅니다.\n\n${title}\n${body}${when}`)) return;
+
+  const btn = document.getElementById('nfSend');
+  btn.disabled = true; const was = btn.textContent; btn.textContent = '보내는 중…';
+
+  if (later) {
+    const { error } = await sb.from('scheduled_notifications').insert({
+      title, body: body || null, target: t, routine_id: rid, send_at: new Date(at).toISOString() });
+    btn.disabled = false; btn.textContent = was;
+    if (error) return alert('예약하지 못했어요: ' + error.message);
+    alert('예약했어요. 5분 단위로 확인하니 조금 늦게 나갈 수 있어요.');
+  } else {
+    const payload = t === 'all'
+      ? { target: 'all', title, body, url: '/youthit-book/app.html' }
+      : { target: 'routine', routine_id: rid, title, body, url: '/youthit-book/app.html?routine=' + rid };
+    const { data, error } = await sb.functions.invoke('send-push', { body: payload });
+    btn.disabled = false; btn.textContent = was;
+    if (error) return alert('보내지 못했어요: ' + error.message);
+    alert(`보냈어요.\n\n받은 기기 ${data?.sent ?? 0}대` +
+          (data?.removed ? `\n끊긴 구독 ${data.removed}건은 정리했어요` : '') +
+          (data?.failed  ? `\n실패 ${data.failed}건` : ''));
+  }
+  document.getElementById('nfTitle').value = '';
+  document.getElementById('nfBody').value = '';
+  await loadLive(); render();
+}
+
+async function nfCancel(id) {
+  if (!confirm('이 예약을 지울까요?')) return;
+  if (!LIVE) return alert('데모 모드에서는 지워지지 않아요.');
+  const { error } = await sb.from('scheduled_notifications').delete().eq('id', id);
+  if (error) return alert('지우지 못했어요: ' + error.message);
+  await loadLive(); render();
+}
+
+function viewNotify() {
+  const rs = (DB.routines || []).filter(r => r.status !== 'pending');
+  const sched  = (DB.scheduled || []).filter(n => !n.sent_at);
+  const sent   = (DB.scheduled || []).filter(n => n.sent_at).slice(0, 10);
+  const whoOf  = n => n.target === 'all' ? '전체'
+    : ((DB.routines || []).find(r => r.id === n.routine_id)?.title || '루틴 ' + n.routine_id);
+  const when   = v => String(v).slice(0, 16).replace('T', ' ');
+
+  const row = (n, done) => `<div class="vq">
+    <div class="vq-t">
+      <b>${esc(n.title)}</b>
+      ${n.body ? `<div class="vq-sub">${esc(n.body)}</div>` : ''}
+      <div class="vq-when">${esc(whoOf(n))} · ${done ? `${when(n.sent_at)} 보냄` : `${when(n.send_at)} 예정`}</div>
+    </div>
+    <div class="vq-b">
+      ${done ? '' : `<button class="btn btn-line" onclick="nfCancel(${n.id})">지우기</button>`}
+    </div>
+  </div>`;
+
+  // 예약 기본값 = 오늘 저녁 8시. 아이들이 책을 펴는 시간이다
+  const d = new Date(); d.setHours(20, 0, 0, 0);
+  if (d <= new Date()) d.setDate(d.getDate() + 1);
+  const def = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+
+  setTimeout(nfCount, 0);
+
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">알림 보내기</div>
+    <div class="panel-d"><b>알림을 켜 둔 사람에게만 갑니다.</b> 앱을 안 열어봤거나 알림을 끈 사람에게는 가지 않아요.<br>
+      한 번 나가면 되돌릴 수 없어요.</div></div>
+  </div>
+
+  <div style="padding:18px 20px;max-width:620px;">
+    <div class="nf-f">
+      <label>보낼 사람</label>
+      <select id="nfTarget" onchange="nfTargetChange()">
+        <option value="all">전체</option>
+        <option value="routine">특정 루틴에 참여 중인 사람</option>
+      </select>
+    </div>
+    <div class="nf-f" id="nfRoutineWrap" style="display:none;">
+      <label>루틴</label>
+      <select id="nfRoutine" onchange="nfCount()">
+        <option value="">고르기</option>
+        ${rs.map(r => `<option value="${r.id}">${esc(r.title)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="nf-reach" id="nfReach">세는 중…</div>
+
+    <div class="nf-f">
+      <label>제목 <span style="color:var(--pink);font-size:11px;">* 필수</span></label>
+      <input type="text" id="nfTitle" maxlength="60" placeholder="예: 내일 저녁 7시에 같이 읽어요">
+    </div>
+    <div class="nf-f">
+      <label>내용 <span class="muted" style="font-size:11px;">선택</span></label>
+      <textarea id="nfBody" rows="3" maxlength="180" placeholder="알림을 눌렀을 때 아래 줄에 보여요"></textarea>
+    </div>
+
+    <div class="nf-f">
+      <label>언제</label>
+      <select id="nfWhen" onchange="nfWhenChange()">
+        <option value="now">지금</option>
+        <option value="later">예약</option>
+      </select>
+    </div>
+    <div class="nf-f" id="nfAtWrap" style="display:none;">
+      <label>보낼 때</label>
+      <input type="datetime-local" id="nfAt" value="${def}">
+      <div class="muted" style="font-size:11.5px;margin-top:5px;">5분마다 확인해서 보냅니다. 최대 5분 늦을 수 있어요.</div>
+    </div>
+
+    <button class="btn btn-dark" id="nfSend" style="width:100%;padding:13px;" onclick="nfSubmit()">지금 보내기</button>
+  </div>
+
+  ${sched.length ? `<div style="padding:0 20px 18px;">
+    <div class="panel-t" style="margin-bottom:6px;">예약해 둔 알림 ${sched.length}건</div>
+    ${sched.map(n => row(n, false)).join('')}</div>` : ''}
+  ${sent.length ? `<div style="padding:0 20px 22px;">
+    <div class="panel-t" style="margin-bottom:6px;">보낸 알림</div>
+    ${sent.map(n => row(n, true)).join('')}</div>` : ''}`;
 }
 
 // ── 월간 보고 ──────────────────────────────────────────────
@@ -1597,6 +1782,9 @@ async function loadLive() {
     if (p.bookstore_id) DB.purchaseCounts[p.bookstore_id] = (DB.purchaseCounts[p.bookstore_id] || 0) + 1;
   });
 
+  const sn = await sb.from('scheduled_notifications').select('*')
+                     .order('send_at', { ascending: false }).limit(50);
+  DB.scheduled = sn.data || [];
 }
 
 // 둘 다 비공개 버킷이라 볼 때마다 짧은 서명 URL 을 새로 발급받는다
