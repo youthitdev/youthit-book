@@ -501,6 +501,22 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
    비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
 .f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#F2EEE6; }
+/* 콕 찌르기. 「아직」이 앉아 있던 자리라 그만한 크기여야 한다 */
+.poke { display:block; margin:3px auto 0; background:#FAEBE7; border:none;
+  color:var(--pink); font-family:inherit; font-size:10.5px; font-weight:700;
+  padding:3px 8px; border-radius:7px; cursor:pointer; line-height:1.3; }
+.poke:disabled { background:var(--bg); color:var(--ink-3); cursor:default; }
+
+/* 최근 인증 석 장. 기록 보기로 넘어가지 않고도 뭘 올렸는지 보인다 */
+.tc-rc { display:flex; gap:8px; margin-top:12px; }
+.tc-rc-i { width:calc((100% - 16px) / 3); flex:none; min-width:0; cursor:pointer; }
+.tc-rc-i img, .tc-rc-no { width:100%; aspect-ratio:1/1; border-radius:10px;
+  object-fit:cover; display:block; background:#F2EEE6; }
+.tc-rc-no { display:flex; align-items:center; justify-content:center; font-size:20px; }
+.tc-rc-i span { display:block; font-size:10.5px; color:var(--ink-3);
+  text-align:center; margin-top:4px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
 /* 프로필 한 줄. 세로로 쌓으면 MY 첫 화면을 통째로 먹는데,
    담긴 건 이름과 「수정」뿐이다 */
 .pf { display:flex; align-items:center; gap:13px; }
@@ -2060,18 +2076,37 @@ function kkutTodayCard(r) {
   // 한 줄에 세 칸이다. 넷 이상이면 두 명만 놓고 셋째 칸을 「더 보기」로 —
   // 세 명을 다 놓으면 더 보기가 카드 밖으로 잘린다
   const show = ps.length > 3 ? 2 : 3;
+  const live = !waiting && !d?.ended;
   const shelf = ps.length ? `<div class="tc-shelf">${ps.slice(0, show).map(p => {
     const done = today.some(c => c.user_id === p.user_id);
     const nm = nameOf(p.user_id);
+    // 「아직」이라고 적어 두면 읽고 끝이다. 그 자리에서 말을 걸 수 있게 한다
+    const foot = done ? `<i>오늘 했어요</i>`
+      : live ? `<button class="poke" onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉 콕</button>`
+             : `<i class="off">아직</i>`;
     return `<div class="tc-bt" onclick="event.stopPropagation();go('cert')">
       <div class="tc-bt-i kid${done ? ' on' : ''}">${done ? '✓' : esc(nm.slice(0, 1))}</div>
       <span>${esc(nm)}</span>
-      <i class="${done ? '' : 'off'}">${done ? '오늘 했어요' : '아직'}</i>
+      ${foot}
     </div>`;
   }).join('')}${ps.length > show
       ? `<div class="tc-bt more" onclick="event.stopPropagation();go('cert')">
            <div class="tc-bt-i kid">+${ps.length - show}</div><span>더 보기</span></div>` : ''}
     </div>` : '';
+
+  // 기록 보기로 넘어가지 않고도 아이들이 뭘 올렸는지 보인다.
+  // 끗짱이 이 화면에 오는 이유가 그것이다
+  const seen = new Set();
+  const recent = certsOf(r.id).filter(c => {
+    if (c.user_id === me.id || seen.has(c.user_id)) return false;
+    seen.add(c.user_id); return true;
+  }).slice(0, 3);
+  const strip = recent.length ? `<div class="tc-rc">${recent.map(c => `
+    <div class="tc-rc-i" onclick="event.stopPropagation();openOneCert(${c.id})">
+      ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
+                              : `<div class="tc-rc-no">📖</div>`}
+      <span>${esc(nameOf(c.user_id))}</span>
+    </div>`).join('')}</div>` : '';
 
   return `<div class="tcard">
     <div class="tc-b">
@@ -2085,6 +2120,7 @@ function kkutTodayCard(r) {
       ${d && !waiting ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${waiting || d?.ended ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
       ${waiting || d?.ended ? '' : shelf}
+      ${waiting ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
       ${certAction(r, 'btn-primary', 'margin-bottom:8px;')}
       <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
@@ -3025,6 +3061,16 @@ function openBooks() {
   const all = myBooks();
   $('ovBooksBody').innerHTML = `<div class="bgrid">${all.map(bookTile).join('')}</div>`;
   openOv('ovBooks');
+}
+
+// 콕 찌르기. 하루 한 번은 서버가 지킨다 — 화면은 눌린 티만 낸다
+async function poke(rid, uid, btn) {
+  if (DEMO) return toast('데모 모드에서는 보내지지 않아요');
+  btn.disabled = true; const was = btn.textContent; btn.textContent = '보내는 중…';
+  const { error } = await sb.rpc('poke', { p_routine: rid, p_user: uid });
+  if (error) { btn.disabled = false; btn.textContent = was; return toast(error.message); }
+  btn.textContent = '찔렀어요';
+  toast('오늘 한 장, 하고 보냈어요');
 }
 
 // 「오늘 인증하기」는 청소년 홈·인증 탭, 끗짱 홈·인증 탭 네 군데에 나온다.
