@@ -203,6 +203,32 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
 .sec-t { font-size:15px; font-weight:800; margin:22px 0 10px; letter-spacing:-.3px; }
+/* 포인트 — 큰 숫자 옆에 교환권을 나란히. 그러면 「이 숫자가 뭔지」를
+   따로 설명할 일이 없다 */
+.bal-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.vch-n { flex:none; font-size:12px; font-weight:700; color:var(--ink-3);
+  background:rgba(255,255,255,.65); border:1px solid var(--line);
+  border-radius:99px; padding:5px 11px; margin-top:5px; white-space:nowrap; }
+.vch-n.on { color:var(--green-d); background:#fff; border-color:#CFE3A8; }
+.vch-n b { font-size:14px; }
+/* 아래 갈래는 누적이고 큰 숫자는 잔액이다. 교환권을 쓴 사람에게는
+   둘이 안 맞아 보이므로 사이에 한 줄을 끼운다 */
+.bal-sum { font-size:12px; color:var(--ink-3); margin:14px 0 -4px; }
+.bal-sum b { color:var(--ink-2); }
+.bal-pend { margin-top:12px; background:#fff; border-radius:10px; padding:10px 12px;
+  font-size:12.5px; color:#7A5417; line-height:1.6; }
+
+/* 청소년 확인 한 줄. 카드 한 장을 쓰던 자리다 */
+.vline { display:flex; align-items:center; gap:10px; cursor:pointer;
+  border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
+.vline > span { font-size:17px; flex:none; }
+.vline > div { flex:1; min-width:0; }
+.vline b { display:block; font-size:13px; font-weight:700; }
+.vline i { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3);
+  margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.vline em { flex:none; font-style:normal; color:var(--ink-3); font-size:17px; }
+.vline.rejected b, .vline.rejected i { color:#8E3527; }
+
 /* 모집 중 — 페이지에서 유일하게 「지금 고를 수 있는」 자리다 */
 .recruit { margin:24px 0 0; padding:17px 15px 16px; border-radius:18px;
   background:#F2F7E6; border:1px solid #E1EDC6; }
@@ -1994,10 +2020,13 @@ function myPoints() {
 
   const points = from_cert + from_comment + from_bonus + from_review;
   const used = state.purchases.filter(p => p.user_id === me.id && p.status !== 'void').length;
-  const earned = Math.floor(points / per);
-  return { points, cert_count, from_cert, from_comment, from_bonus, from_review,
-           next_milestone, per, earned, used,
-           left: Math.max(0, earned - used), to_next: per - (points % per) };
+  // 크게 뜨는 숫자는 「지금 쓸 수 있는 것」이어야 한다.
+  // 누적을 크게 띄우면 이미 쓴 250P 까지 남아 있는 줄 안다
+  const balance = Math.max(0, points - used * per);
+  const into = balance % per;
+  return { points, balance, into, cert_count, from_cert, from_comment, from_bonus, from_review,
+           next_milestone, per, earned: Math.floor(points / per), used,
+           left: Math.floor(balance / per), to_next: per - into };
 }
 
 const pendingBuy = rid => me && state.purchases.find(p =>
@@ -2525,9 +2554,7 @@ function balanceBlock() {
   const p = myPoints();
   const pend = state.purchases.some(x => x.user_id === me.id && x.status === 'pending');
   const cap = won(state.settings.voucher_max_amount || 20000);
-  // 이번 교환권까지 얼마나 왔나. 250P 를 넘겨도 다음 한 장을 향해 다시 찬다
-  const into = p.points % p.per;
-  const pct  = Math.min(100, Math.round(into / Math.max(p.per, 1) * 100));
+  const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
   const mile = p.next_milestone
     ? `${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}P`
     : null;
@@ -2536,15 +2563,23 @@ function balanceBlock() {
     ? `<span class="bs"><i style="background:${tint}">${emoji}</i>${label} <b>${won(val)}P</b></span>` : '';
 
   return `<div class="bal">
-      <div class="bal-l">📚 내 독서 포인트</div>
-      <div class="bal-n">${won(p.points)}<small>P</small></div>
+      <div class="bal-top">
+        <div>
+          <div class="bal-l">📚 내 독서 포인트</div>
+          <div class="bal-n">${won(p.balance)}<small>P</small></div>
+        </div>
+        <div class="vch-n ${p.left ? 'on' : ''}">🎫 교환권 <b>${p.left}</b>장</div>
+      </div>
 
       <div class="bal-bar"><i style="width:${pct}%"></i></div>
       <div class="bal-goal">
-        <span>${p.left > 0 ? `🎫 쓸 수 있는 교환권 <b>${p.left}장</b>` : `다음 교환권까지 <b>${won(p.to_next)}P</b>`}</span>
-        <span class="bal-goal-r">${won(into)} / ${won(p.per)}P</span>
+        <span>${p.left > 0 ? `${cap}원 이하 책 한 권과 바꿔요`
+                           : `다음 교환권까지 <b>${won(p.to_next)}P</b>`}</span>
+        <span class="bal-goal-r">${won(p.into)} / ${won(p.per)}P</span>
       </div>
 
+      ${p.used > 0 ? `<div class="bal-sum">지금까지 모은 <b>${won(p.points)}P</b>
+        · 교환권 <b>${p.used}장</b>으로 썼어요</div>` : ''}
       <div class="bal-srcs">
         ${src('📸', '#FFF4DE', '인증',  p.from_cert)}
         ${src('💬', '#ECEDFB', '소통',  p.from_comment)}
@@ -2552,14 +2587,9 @@ function balanceBlock() {
         ${src('🎖️', '#FFECF3', '보너스', p.from_bonus)}
       </div>
       <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
-      ${p.used > 0 ? `<div class="bal-s" style="color:var(--ink-3);">
-        큰 숫자는 <b>지금까지 모은 전부</b>예요 · 교환권 <b>${p.used}장</b>은 이미 썼어요</div>` : ''}
 
-      ${p.left > 0
-        ? `<div class="vch">🎫 ${cap}원 이하 책 한 권과 바꿀 수 있어요<span>가까운 동네책방에서 골라보세요</span></div>`
-        : ''}
       ${pend
-        ? `<div style="margin-top:12px;background:#fff;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#7A5417;line-height:1.6;">📗 받은 책을 확인하고 있어요.</div>`
+        ? `<div class="bal-pend">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="go('store')">책방 찾기</button>
             ${p.left > 0 ? (me.verify_status === 'approved'
@@ -3000,23 +3030,20 @@ const VERIFY = {
   approved: ['✅', '청소년 확인이 끝났어요',  '이제 루틴에 참여할 수 있어요.'],
 };
 
-function verifyBlock() {
-  if (!isYouth()) return '';
+// 카드 한 장을 쓰던 자리다. 담긴 건 상태 한 줄뿐이라 프로필 밑으로 옮긴다.
+// 끝난 사람에게는 아예 안 보인다 — 할 일이 없는 줄이 자리를 차지할 이유가 없다
+function verifyLine() {
+  if (!isYouth() || !me) return '';
   const st = me.verify_status || 'none';
-  const [ico, title, desc] = VERIFY[st] || VERIFY.none;
-  // 참여 앞에서 이미 막히므로 포인트가 쌓인 뒤 따로 재촉할 일이 없다
-  const soon = st === 'none' && !myRoutines().length;
-
-  return `<div class="sec-t">청소년 확인</div>
-    <div class="card vf ${st}${soon ? ' soon' : ''}"
-         ${st === 'approved' ? '' : 'onclick="openVerify()" style="cursor:pointer;"'}>
-      <div class="vf-i">${ico}</div>
-      <div class="vf-t">
-        <b>${title}</b>
-        <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.') : desc}</span>
-        ${soon ? `<i>확인이 끝나야 루틴에 참여할 수 있어요.</i>` : ''}
-      </div>
-      ${st === 'approved' ? '' : '<div class="vf-x">›</div>'}
+  if (st === 'approved') return '';
+  const [ico, title] = VERIFY[st] || VERIFY.none;
+  const sub = st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
+            : st === 'pending'  ? '하루 이틀이면 끝나요'
+            : '루틴에 참여하려면 한 번 확인해야 해요';
+  return `<div class="vline ${st}" onclick="openVerify()">
+      <span>${ico}</span>
+      <div><b>${title}</b><i>${sub}</i></div>
+      <em>›</em>
     </div>`;
 }
 
@@ -3338,17 +3365,19 @@ function viewMy() {
   const joined = myRoutines().filter(r => r.led_by !== me.id).length;
   const who = [canLead() ? '끗짱' : '', isYouth() ? '청소년' : '어른',
                me.school_status || '', me.region || ''].filter(Boolean).join(' · ');
-  return `<div class="card pf">
-      <div class="f-av">${esc(myName()[0])}</div>
-      <div class="pf-in">
-        <div class="pf-n">${esc(myName())}</div>
-        <div class="pf-m">${esc(who)}</div>
+  return `<div class="card">
+      <div class="pf">
+        <div class="f-av">${esc(myName()[0])}</div>
+        <div class="pf-in">
+          <div class="pf-n">${esc(myName())}</div>
+          <div class="pf-m">${esc(who)}</div>
+        </div>
+        <button class="pf-ed" onclick="openProfile()">수정</button>
       </div>
-      <button class="pf-ed" onclick="openProfile()">수정</button>
+      ${verifyLine()}
     </div>
     ${isYouth() ? balanceBlock() : ''}
     ${noRoutineBlock()}
-    ${verifyBlock()}
     ${creditBlock()}
     ${kkutStatBlock()}
     ${(!canLead() || total || joined) ? `<div class="card" style="display:flex;text-align:center;">
