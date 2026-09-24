@@ -211,10 +211,6 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   border-radius:99px; padding:5px 11px; margin-top:5px; white-space:nowrap; }
 .vch-n.on { color:var(--green-d); background:#fff; border-color:#CFE3A8; }
 .vch-n b { font-size:14px; }
-/* 아래 갈래는 누적이고 큰 숫자는 잔액이다. 교환권을 쓴 사람에게는
-   둘이 안 맞아 보이므로 사이에 한 줄을 끼운다 */
-.bal-sum { font-size:12px; color:var(--ink-3); margin:14px 0 -4px; }
-.bal-sum b { color:var(--ink-2); }
 .bal-pend { margin-top:12px; background:#fff; border-radius:10px; padding:10px 12px;
   font-size:12.5px; color:#7A5417; line-height:1.6; }
 
@@ -517,19 +513,15 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .bal-l { font-size:12px; color:var(--green-d); font-weight:700; }
 .bal-n { font-size:30px; font-weight:800; letter-spacing:-1.2px; margin-top:3px; }
 .bal-n small { font-size:15px; font-weight:700; margin-left:2px; }
-.bal-s { font-size:12.5px; color:var(--ink-2); margin-top:3px; }
+/* 갈래 줄이 긋던 구분선을 물려받는다 */
+.bal-s { font-size:12.5px; color:var(--ink-2); margin-top:13px; padding-top:12px;
+  border-top:1px solid #DFEEC4; }
 .bal-bar { height:9px; border-radius:99px; background:#e4efd0; overflow:hidden; margin:13px 0 9px; }
 .bal-bar i { display:block; height:100%; border-radius:99px; background:var(--green-d); transition:width .35s ease; }
 .bal-goal { display:flex; align-items:baseline; justify-content:space-between; gap:10px;
             font-size:13px; font-weight:700; color:var(--green-d); }
 .bal-goal b { font-size:15px; }
 .bal-goal-r { font-size:12px; font-weight:600; color:var(--ink-3); flex-shrink:0; }
-.bal-srcs { display:flex; flex-wrap:wrap; gap:7px 14px; margin-top:14px; padding-top:13px;
-            border-top:1px solid #dfeec4; }
-.bs { display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-3); font-weight:600; }
-.bs i { width:24px; height:24px; border-radius:8px; display:grid; place-items:center;
-        font-size:12px; font-style:normal; line-height:1; flex-shrink:0; }
-.bs b { color:var(--ink); font-size:13.5px; font-weight:800; }
 .vch { margin-top:13px; background:#fff; border-radius:12px; padding:12px 14px; font-size:13.5px; font-weight:700; color:var(--green-d); }
 .vch b { font-size:15px; }
 .vch span { display:block; font-size:12px; font-weight:400; color:var(--ink-3); margin-top:3px; }
@@ -2559,9 +2551,6 @@ function balanceBlock() {
     ? `${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}P`
     : null;
 
-  const src = (emoji, tint, label, val) => val > 0
-    ? `<span class="bs"><i style="background:${tint}">${emoji}</i>${label} <b>${won(val)}P</b></span>` : '';
-
   return `<div class="bal">
       <div class="bal-top">
         <div>
@@ -2578,14 +2567,6 @@ function balanceBlock() {
         <span class="bal-goal-r">${won(p.into)} / ${won(p.per)}P</span>
       </div>
 
-      ${p.used > 0 ? `<div class="bal-sum">지금까지 모은 <b>${won(p.points)}P</b>
-        · 교환권 <b>${p.used}장</b>으로 썼어요</div>` : ''}
-      <div class="bal-srcs">
-        ${src('📸', '#FFF4DE', '인증',  p.from_cert)}
-        ${src('💬', '#ECEDFB', '소통',  p.from_comment)}
-        ${src('📝', '#EFF6E2', '후기',  p.from_review)}
-        ${src('🎖️', '#FFECF3', '보너스', p.from_bonus)}
-      </div>
       <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
 
       ${pend
