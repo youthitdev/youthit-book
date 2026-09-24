@@ -225,15 +225,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .vline em { flex:none; font-style:normal; color:var(--ink-3); font-size:17px; }
 .vline.rejected b, .vline.rejected i { color:#8E3527; }
 
-/* 모집 중 — 페이지에서 유일하게 「지금 고를 수 있는」 자리다 */
-.recruit { margin:24px 0 0; padding:17px 15px 16px; border-radius:18px;
-  background:#F2F7E6; border:1px solid #E1EDC6; }
-.recruit-h { display:flex; align-items:center; gap:7px; }
-.recruit-h b { font-size:16px; font-weight:800; letter-spacing:-.4px; }
+/* 모집 중 — 상자를 두르지 않는다. 제목만 한 단계 세운다 */
+.recruit-h { display:flex; align-items:center; gap:7px; margin:24px 0 11px; }
+.recruit-h b { font-size:16.5px; font-weight:800; letter-spacing:-.4px; }
 .recruit-h i { font-style:normal; font-size:12px; font-weight:800; color:#fff;
   background:var(--green-d); border-radius:99px; padding:1px 8px; }
-.recruit-s { font-size:12.5px; color:var(--ink-2); margin:4px 0 13px; }
-.recruit .r-grid { gap:9px; }
 .sec-n { font-size:12.5px; font-weight:700; color:var(--ink-3); margin-left:4px; }
 /* 내가 읽은 책 — 참여할 때 올린 표지 */
 .bgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
@@ -2072,14 +2068,9 @@ function routineTags(r) {
 // 흰 카드가 연한 초록 위에 얹히면 저절로 앞으로 나온다
 function recruitSection(list) {
   const n = list.length;
-  return `<div class="recruit">
-    <div class="recruit-h"><b>지금 모집 중인 루틴</b>${n ? `<i>${n}</i>` : ''}</div>
-    <div class="recruit-s">${n
-      ? '마음에 드는 걸 골라 오늘부터 한 장씩 읽어요.'
-      : '곧 새 루틴이 올라올 거예요.'}</div>
+  return `<div class="recruit-h"><b>지금 모집 중인 루틴</b>${n ? `<i>${n}</i>` : ''}</div>
     ${n ? routineGrid(list)
-        : `<div class="empty" style="padding:26px 16px;">아직 열린 루틴이 없어요.</div>`}
-  </div>`;
+        : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}`;
 }
 
 function routineCard(r) {
