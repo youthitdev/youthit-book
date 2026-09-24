@@ -521,6 +521,21 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
    비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
 .f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#F2EEE6; }
+/* 리마인더 설정 */
+.rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
+.rm-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:6px 0; font-size:13.5px; font-weight:700; }
+.rm-row .rm-sub { font-weight:600; color:var(--ink-2); }
+.rm-row input[type=checkbox] { width:44px; height:26px; flex:none; margin:0;
+  -webkit-appearance:none; appearance:none; background:var(--line); border:none;
+  border-radius:99px; position:relative; cursor:pointer; transition:background .18s; }
+.rm-row input[type=checkbox]::after { content:''; position:absolute; top:3px; left:3px;
+  width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .18s;
+  box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.rm-row input[type=checkbox]:checked { background:var(--blue); }
+.rm-row input[type=checkbox]:checked::after { transform:translateX(18px); }
+.rm-row input[type=time] { width:auto; padding:7px 11px; font-size:13.5px; font-weight:700; }
+
 /* 콕 찌르기. 「아직」이 앉아 있던 자리라 그만한 크기여야 한다 */
 .poke { display:block; margin:3px auto 0; background:#FAEBE7; border:none;
   color:var(--pink); font-family:inherit; font-size:10.5px; font-weight:700;
@@ -1789,6 +1804,22 @@ async function enablePush() {
   render(); toast('알림을 켰어요');
 }
 
+// 시계는 30분마다 돈다. 8시 15분으로 정하면 8시 30분에 간다 —
+// 분 단위로 맞추려고 1분마다 돌릴 값은 아니다
+async function saveRemind() {
+  const on = $('rmOn').checked;
+  const at = $('rmAt').value || '20:00';
+  $('rmTimeRow').style.display = on ? '' : 'none';
+  if (DEMO) return;
+  const { error } = await sb.from('profiles')
+    .update({ remind_on: on, remind_at: at }).eq('id', me.id);
+  if (error) return toast('저장하지 못했어요: ' + error.message);
+  me.remind_on = on; me.remind_at = at;
+  $('rmHint').textContent = on
+    ? `${at} 까지 오늘 인증이 없으면 한 번 알려드려요.`
+    : '리마인더를 껐어요. 승인·기한 알림은 그대로 갑니다.';
+}
+
 async function disablePush() {
   const reg = await swReady();
   const sub = reg && await reg.pushManager.getSubscription();
@@ -1818,12 +1849,26 @@ function pushBlock() {
     }[st];
     el.querySelector('.push-body').innerHTML = body;
   }, 0);
+  const hhmm = String(me.remind_at || '20:00').slice(0, 5);
   return `<div class="card" id="pushCard">
       <div class="field-label" style="margin-bottom:9px;">
         <i class="ti ti-bell"></i> 알림</div>
       <div class="hint" style="margin:0 0 11px;">
         루틴 승인, 후기 기한, 오늘 인증을 알려드려요.</div>
       <div class="push-body"><div class="hint" style="margin:0;">확인 중…</div></div>
+      <div class="rm">
+        <label class="rm-row">
+          <span>매일 독서 리마인더</span>
+          <input type="checkbox" id="rmOn" ${me.remind_on === false ? '' : 'checked'}
+                 onchange="saveRemind()">
+        </label>
+        <div class="rm-row" id="rmTimeRow" style="${me.remind_on === false ? 'display:none;' : ''}">
+          <span class="rm-sub">알림 시각</span>
+          <input type="time" id="rmAt" value="${hhmm}" onchange="saveRemind()">
+        </div>
+        <div class="hint" id="rmHint" style="margin:6px 0 0;">
+          그 시각까지 오늘 인증이 없으면 한 번 알려드려요.</div>
+      </div>
     </div>`;
 }
 // 내 이름도 남들이 보는 이름으로 부른다. 실명은 내 정보 화면에만 나온다
