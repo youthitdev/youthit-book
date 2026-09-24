@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>한끗독서</title>
 <meta name="theme-color" content="#1F4E46">
+<!-- 이게 없으면 폰이 다크모드일 때 iOS 가 시간 선택기를 검은 바퀴로 그린다.
+     앱은 늘 종이빛이므로 밝은 쪽으로 못 박는다 -->
+<meta name="color-scheme" content="light">
 <!-- 한 파일짜리 앱이라 브라우저가 옛 버전을 붙들면 고친 게 안 보인다 -->
 <meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -19,6 +22,7 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
+  color-scheme: light;
   --ink:#1C1A17; --ink-2:#5D574E; --ink-3:#9A948A;
   --bg:#FAF7F1; --card:#fff; --line:#E9E3D8;
   /* --blue 는 이제 짙은 잉크 그린이다. 이름만 옛것이 남았다 —
@@ -564,11 +568,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   box-shadow:0 1px 3px rgba(0,0,0,.2); }
 .rm-row input[type=checkbox]:checked { background:var(--blue); }
 .rm-row input[type=checkbox]:checked::after { transform:translateX(18px); }
-.rm-times { display:flex; flex-wrap:wrap; gap:6px; }
-.rm-t { font-family:inherit; font-size:12.5px; font-weight:700; color:var(--ink-2);
-  background:var(--bg); border:1px solid var(--line); border-radius:9px;
-  padding:7px 11px; cursor:pointer; white-space:nowrap; }
-.rm-t.on { background:var(--blue); border-color:var(--blue); color:#fff; }
+/* 참고 앱처럼 알약 한 개. 누르면 iOS 기본 선택기가 뜬다 */
+.rm-row input[type=time] { width:auto; background:var(--bg); border:none;
+  border-radius:10px; padding:8px 13px; font-size:14px; font-weight:700;
+  color:var(--ink); }
 
 /* 콕 찌르기. 「아직」이 앉아 있던 자리라 그만한 크기여야 한다 */
 .poke { display:block; margin:3px auto 0; background:#FAEBE7; border:none;
@@ -1854,21 +1857,15 @@ const hhmmKo = v => {
   return `${when} ${h12}시${m ? ` ${m}분` : ''}`;
 };
 
-// 시스템 시간 선택기는 검은 바퀴가 화면을 덮는다. 게다가 시계가 30분마다
-// 도니 8시 15분을 고를 이유가 없다 — 고를 만한 시각만 칩으로 내놓는다
-function RM_TIMES(cur) {
-  const base = ['07:00','08:00','12:00','16:00','18:00','20:00','21:00','22:00','23:00'];
-  if (cur && !base.includes(cur)) base.push(cur);        // 예전에 정해 둔 시각은 지우지 않는다
-  return base.sort().map(v => [v, hhmmKo(v)]);
-}
-
+// 시계가 30분마다 도니 step 도 30분으로 맞춘다. 8시 15분을 고를 수 있게
+// 해 놓고 8시 30분에 보내면 그건 거짓말이다
 async function pickRemind(at) {
+  if (!at) return;
   me.remind_at = at;
-  render();                                  // 고른 칩이 바로 켜지게
+  $('rmHint').textContent = `${hhmmKo(at)}까지 오늘 인증이 없으면 한 번 알려드려요.`;
   if (DEMO) return;
   const { error } = await sb.from('profiles').update({ remind_at: at }).eq('id', me.id);
   if (error) return toast('저장하지 못했어요: ' + error.message);
-  toast(`${hhmmKo(at)}에 알려드릴게요`);
 }
 
 async function saveRemind() {
@@ -1925,11 +1922,9 @@ function pushBlock() {
           <input type="checkbox" id="rmOn" ${me.remind_on === false ? '' : 'checked'}
                  onchange="saveRemind()">
         </label>
-        <div id="rmTimeRow" style="${me.remind_on === false ? 'display:none;' : ''}">
-          <div class="rm-sub" style="margin:4px 0 8px;">알림 시각</div>
-          <div class="rm-times">${RM_TIMES(hhmm).map(([v, label]) => `
-            <button class="rm-t ${v === hhmm ? 'on' : ''}" onclick="pickRemind('${v}')">${label}</button>`).join('')}
-          </div>
+        <div class="rm-row" id="rmTimeRow" style="${me.remind_on === false ? 'display:none;' : ''}">
+          <span class="rm-sub">알림 시각</span>
+          <input type="time" id="rmAt" value="${hhmm}" step="1800" onchange="pickRemind(this.value)">
         </div>
         <div class="hint" id="rmHint" style="margin:9px 0 0;">
           ${hhmmKo(hhmm)}까지 오늘 인증이 없으면 한 번 알려드려요.</div>
