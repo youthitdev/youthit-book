@@ -602,6 +602,8 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .pr-t { flex:1; min-width:0; font-size:14px; font-weight:700;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pr-s { flex:none; font-size:12px; color:var(--ink-3); }
+.pr-led { font-style:normal; font-size:10px; font-weight:700; color:var(--pink);
+  background:#FAEBE7; padding:2px 6px; border-radius:6px; margin-left:5px; vertical-align:2px; }
 
 .f-quote { border-left:3px solid var(--green); background:#f7fbf0; border-radius:0 10px 10px 0; padding:11px 13px; margin-bottom:8px; }
 .f-quote p { font-size:14px; line-height:1.7; }
@@ -670,14 +672,19 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .sg.ok b { color:var(--green-d); }
 
 /* 오버레이 */
-.ov { position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; max-width:480px; margin:0 auto; }
+/* 아이폰은 키보드가 올라오면 보이는 높이가 줄어드는데 inset:0 은 그걸 모른다 —
+   마지막 칸이 키보드 밑에 깔려 손이 안 닿는다. dvh 는 줄어든 높이를 따라간다 */
+.ov { position:fixed; left:0; right:0; top:0; height:100vh; height:100dvh;
+  background:var(--bg); z-index:50; display:none; flex-direction:column;
+  max-width:480px; margin:0 auto; }
 .ov.on { display:flex; }
 .ov-h { background:var(--blue); color:#fff; padding:13px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
 .ov-h.b { background:var(--blue); }
 .ov-h button { background:none; border:none; color:#fff; font-size:21px; cursor:pointer; padding:0; line-height:1; }
 .ov-h .t { font-size:16px; font-weight:700; }
 .ov-h .s { font-size:11px; opacity:.78; }
-.ov-b { flex:1; overflow-y:auto; padding:18px; }
+.ov-b { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:18px 18px calc(28px + env(safe-area-inset-bottom)); overscroll-behavior:contain; }
 .ov-b > div:not(:last-child) { margin-bottom:16px; }
 
 /* 아래에서 올라오는 시트 */
@@ -2522,6 +2529,8 @@ function balanceBlock() {
         ${src('🎖️', '#FFECF3', '보너스', p.from_bonus)}
       </div>
       <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
+      ${p.used > 0 ? `<div class="bal-s" style="color:var(--ink-3);">
+        큰 숫자는 <b>지금까지 모은 전부</b>예요 · 교환권 <b>${p.used}장</b>은 이미 썼어요</div>` : ''}
 
       ${p.left > 0
         ? `<div class="vch">🎫 ${cap}원 이하 책 한 권과 바꿀 수 있어요<span>가까운 동네책방에서 골라보세요</span></div>`
@@ -3252,20 +3261,46 @@ function kkutStatBlock() {
 
 // 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
 // 지워지는 게 아니라 옮겨 간다는 걸 보여야 한다
-function ledPastBlock() {
-  if (!canLead() || !me) return '';
-  const past = state.routines
-    .filter(r => r.led_by === me.id && isOver(r))
-    .sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
+// 루틴을 한 번도 안 해본 사람의 MY 는 0 만 늘어놓은 화면이 된다.
+// 무엇을 하면 되는지 한 줄이 있어야 한다
+function noRoutineBlock() {
+  if (!me || myRoutines().length || state.routines.some(r => r.led_by === me.id)) return '';
+  const open = state.routines.filter(r => r.status === 'recruit').length;
+  return `<div class="card" style="text-align:center;padding:24px 20px;">
+      <div style="font-size:30px;">📚</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">아직 루틴이 없어요</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.7;">
+        ${open ? `지금 <b>${open}개</b>가 열려 있어요. 하나 골라 오늘부터 한 장씩.`
+               : '새 루틴이 열리면 홈에 보여드릴게요.'}</div>
+      ${open ? `<button class="btn btn-primary" style="margin-top:16px;max-width:220px;margin-left:auto;margin-right:auto;"
+        onclick="go('home')">루틴 보러 가기</button>` : ''}
+    </div>`;
+}
+
+// 끝난 루틴. 맡았던 것도 참여했던 것도 여기 쌓인다 —
+// 홈에서 빠진 것들이 지워진 게 아니라 옮겨 갔다는 걸 보여야 한다
+function pastBlock() {
+  if (!me) return '';
+  const past = state.routines.filter(r => {
+    if (!isOver(r)) return false;
+    const led = r.led_by === me.id;
+    const joined = (state.parts || []).some(x =>
+      x.routine_id === r.id && x.user_id === me.id && x.status === 'approved');
+    return led || joined;
+  }).sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
   if (!past.length) return '';
 
   const row = r => {
     const d = routineDay(r);
-    const n = (state.parts || []).filter(p => p.routine_id === r.id && p.status === 'approved').length;
+    const led = r.led_by === me.id;
     const days = !d ? '기간 미정' : (d.ended ? `${d.total}일 완주` : `${d.n}일까지`);
+    // 맡은 루틴은 몇 명과 했는지, 참여한 루틴은 내가 몇 번 읽었는지가 궁금하다
+    const tail = led
+      ? `${(state.parts || []).filter(x => x.routine_id === r.id && x.status === 'approved').length}명`
+      : `인증 ${myCerts(r.id).length}회`;
     return `<div class="pr" onclick="openRoutine(${r.id})">
-      <div class="pr-t">${esc(r.emoji || '📚')} ${esc(r.title)}</div>
-      <div class="pr-s">${days} · ${n}명</div>
+      <div class="pr-t">${esc(r.emoji || '📚')} ${esc(r.title)}${led ? ' <i class="pr-led">맡음</i>' : ''}</div>
+      <div class="pr-s">${days} · ${tail}</div>
     </div>`;
   };
 
@@ -3289,6 +3324,7 @@ function viewMy() {
       <button class="pf-ed" onclick="openProfile()">수정</button>
     </div>
     ${isYouth() ? balanceBlock() : ''}
+    ${noRoutineBlock()}
     ${verifyBlock()}
     ${creditBlock()}
     ${kkutStatBlock()}
@@ -3298,7 +3334,7 @@ function viewMy() {
       <div style="flex:1;"><div style="font-size:22px;font-weight:800;">${books.length}</div><div style="font-size:11.5px;color:var(--ink-3);">읽은 책</div></div>
     </div>` : ''}
     ${myBooksBlock()}
-    ${ledPastBlock()}
+    ${pastBlock()}
     ${pushBlock()}
     ${kkutCard()}
     ${statsStrip()}
