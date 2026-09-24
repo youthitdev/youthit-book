@@ -203,6 +203,15 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
 .sec-t { font-size:15px; font-weight:800; margin:22px 0 10px; letter-spacing:-.3px; }
+/* 모집 중 — 페이지에서 유일하게 「지금 고를 수 있는」 자리다 */
+.recruit { margin:24px 0 0; padding:17px 15px 16px; border-radius:18px;
+  background:#F2F7E6; border:1px solid #E1EDC6; }
+.recruit-h { display:flex; align-items:center; gap:7px; }
+.recruit-h b { font-size:16px; font-weight:800; letter-spacing:-.4px; }
+.recruit-h i { font-style:normal; font-size:12px; font-weight:800; color:#fff;
+  background:var(--green-d); border-radius:99px; padding:1px 8px; }
+.recruit-s { font-size:12.5px; color:var(--ink-2); margin:4px 0 13px; }
+.recruit .r-grid { gap:9px; }
 .sec-n { font-size:12.5px; font-weight:700; color:var(--ink-3); margin-left:4px; }
 /* 내가 읽은 책 — 참여할 때 올린 표지 */
 .bgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; }
@@ -2038,6 +2047,20 @@ function routineTags(r) {
   return t;
 }
 
+// 「지금 고를 수 있는 것」이라 다른 자리와 바탕을 달리해 띠로 세운다.
+// 흰 카드가 연한 초록 위에 얹히면 저절로 앞으로 나온다
+function recruitSection(list) {
+  const n = list.length;
+  return `<div class="recruit">
+    <div class="recruit-h"><b>지금 모집 중인 루틴</b>${n ? `<i>${n}</i>` : ''}</div>
+    <div class="recruit-s">${n
+      ? '마음에 드는 걸 골라 오늘부터 한 장씩 읽어요.'
+      : '곧 새 루틴이 올라올 거예요.'}</div>
+    ${n ? routineGrid(list)
+        : `<div class="empty" style="padding:26px 16px;">아직 열린 루틴이 없어요.</div>`}
+  </div>`;
+}
+
 function routineCard(r) {
   // 상태 뱃지는 뗐다. 위 제목이 「지금 모집 중인 루틴」이라 겹치고,
   // 진행 중인지는 아래 「시작 D-3 / 종료 D-15」가 말해 준다.
@@ -2255,9 +2278,7 @@ function kkutTodayCard(r) {
 function viewHome() {
   const mine   = myRoutines();
   const others = state.routines.filter(r => !mine.includes(r) && r.status !== 'done');
-  const recruit = `<div class="sec-t">지금 모집 중인 루틴</div>` + (others.length
-    ? routineGrid(others)
-    : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`);
+  const recruit = recruitSection(others);
 
   if (isGuest()) {
     return `<div class="card" style="background:linear-gradient(160deg,#265C52,#173A34);color:#fff;">
@@ -2317,7 +2338,7 @@ function viewHome() {
     // 어른 끗짱은 참여를 못 한다. 고를 수도 없는 목록을 띄울 이유가 없다.
     // 청소년 끗짱에게는 자기가 고를 자리라 남긴다
     return h + (isYouth() && others.length
-      ? `<div class="sec-t">지금 모집 중인 루틴</div>` + routineGrid(others) : '');
+      ? recruitSection(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
