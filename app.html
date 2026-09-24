@@ -564,7 +564,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   box-shadow:0 1px 3px rgba(0,0,0,.2); }
 .rm-row input[type=checkbox]:checked { background:var(--blue); }
 .rm-row input[type=checkbox]:checked::after { transform:translateX(18px); }
-.rm-row input[type=time] { width:auto; padding:7px 11px; font-size:13.5px; font-weight:700; }
+.rm-times { display:flex; flex-wrap:wrap; gap:6px; }
+.rm-t { font-family:inherit; font-size:12.5px; font-weight:700; color:var(--ink-2);
+  background:var(--bg); border:1px solid var(--line); border-radius:9px;
+  padding:7px 11px; cursor:pointer; white-space:nowrap; }
+.rm-t.on { background:var(--blue); border-color:var(--blue); color:#fff; }
 
 /* 콕 찌르기. 「아직」이 앉아 있던 자리라 그만한 크기여야 한다 */
 .poke { display:block; margin:3px auto 0; background:#FAEBE7; border:none;
@@ -1841,20 +1845,42 @@ async function enablePush() {
   render(); toast('알림을 켰어요');
 }
 
-// 시계는 30분마다 돈다. 8시 15분으로 정하면 8시 30분에 간다 —
-// 분 단위로 맞추려고 1분마다 돌릴 값은 아니다
+// 「오후 8시」보다 「저녁 8시」가 먼저 읽힌다. 12시는 「오후 12시」가 아니라 「낮 12시」다
+const hhmmKo = v => {
+  const [h, m] = String(v || '20:00').split(':').map(Number);
+  const when = h < 6 ? '새벽' : h < 12 ? '아침' : h === 12 ? '낮'
+             : h < 18 ? '오후' : h < 21 ? '저녁' : '밤';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${when} ${h12}시${m ? ` ${m}분` : ''}`;
+};
+
+// 시스템 시간 선택기는 검은 바퀴가 화면을 덮는다. 게다가 시계가 30분마다
+// 도니 8시 15분을 고를 이유가 없다 — 고를 만한 시각만 칩으로 내놓는다
+function RM_TIMES(cur) {
+  const base = ['07:00','08:00','12:00','16:00','18:00','20:00','21:00','22:00','23:00'];
+  if (cur && !base.includes(cur)) base.push(cur);        // 예전에 정해 둔 시각은 지우지 않는다
+  return base.sort().map(v => [v, hhmmKo(v)]);
+}
+
+async function pickRemind(at) {
+  me.remind_at = at;
+  render();                                  // 고른 칩이 바로 켜지게
+  if (DEMO) return;
+  const { error } = await sb.from('profiles').update({ remind_at: at }).eq('id', me.id);
+  if (error) return toast('저장하지 못했어요: ' + error.message);
+  toast(`${hhmmKo(at)}에 알려드릴게요`);
+}
+
 async function saveRemind() {
   const on = $('rmOn').checked;
-  const at = $('rmAt').value || '20:00';
   $('rmTimeRow').style.display = on ? '' : 'none';
-  if (DEMO) return;
-  const { error } = await sb.from('profiles')
-    .update({ remind_on: on, remind_at: at }).eq('id', me.id);
-  if (error) return toast('저장하지 못했어요: ' + error.message);
-  me.remind_on = on; me.remind_at = at;
   $('rmHint').textContent = on
-    ? `${at} 까지 오늘 인증이 없으면 한 번 알려드려요.`
+    ? `${hhmmKo(me.remind_at)}까지 오늘 인증이 없으면 한 번 알려드려요.`
     : '리마인더를 껐어요. 승인·기한 알림은 그대로 갑니다.';
+  if (DEMO) return;
+  const { error } = await sb.from('profiles').update({ remind_on: on }).eq('id', me.id);
+  if (error) return toast('저장하지 못했어요: ' + error.message);
+  me.remind_on = on;
 }
 
 async function disablePush() {
@@ -1899,12 +1925,14 @@ function pushBlock() {
           <input type="checkbox" id="rmOn" ${me.remind_on === false ? '' : 'checked'}
                  onchange="saveRemind()">
         </label>
-        <div class="rm-row" id="rmTimeRow" style="${me.remind_on === false ? 'display:none;' : ''}">
-          <span class="rm-sub">알림 시각</span>
-          <input type="time" id="rmAt" value="${hhmm}" onchange="saveRemind()">
+        <div id="rmTimeRow" style="${me.remind_on === false ? 'display:none;' : ''}">
+          <div class="rm-sub" style="margin:4px 0 8px;">알림 시각</div>
+          <div class="rm-times">${RM_TIMES(hhmm).map(([v, label]) => `
+            <button class="rm-t ${v === hhmm ? 'on' : ''}" onclick="pickRemind('${v}')">${label}</button>`).join('')}
+          </div>
         </div>
-        <div class="hint" id="rmHint" style="margin:6px 0 0;">
-          그 시각까지 오늘 인증이 없으면 한 번 알려드려요.</div>
+        <div class="hint" id="rmHint" style="margin:9px 0 0;">
+          ${hhmmKo(hhmm)}까지 오늘 인증이 없으면 한 번 알려드려요.</div>
       </div>
     </div>`;
 }
