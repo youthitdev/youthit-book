@@ -412,7 +412,6 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-cover img { width:100%; height:100%; object-fit:cover; display:block; }
 .r-cover-no { width:100%; height:100%; display:flex; align-items:center; justify-content:center;
   font-size:34px; opacity:.5; }
-.r-badge { position:absolute; top:9px; right:9px; }
 /* 사진 아래쪽에 얹는다. 그늘만으로는 밝은 사진에서 흰 글씨가 묻힌다 —
    한끗루틴처럼 각자 알약을 입힌다 */
 .r-over { position:absolute; left:0; right:0; bottom:0; padding:20px 8px 8px;
@@ -421,10 +420,13 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-ppl { font-size:11px; font-weight:700; color:#fff; display:inline-flex; align-items:center; gap:3px;
   background:rgba(20,18,15,.6); padding:3px 8px; border-radius:99px;
   -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
-/* 후원 기업. 흰 바탕에 검은 글씨 — 사진이 어떻든 읽힌다 */
-.r-spon { margin-left:auto; font-size:10.5px; font-weight:700; color:#1C1A17;
+/* 후원 기업. 상태 뱃지가 있던 오른쪽 위.
+   흰 바탕에 검은 글씨 — 사진이 어떻든 읽힌다 */
+.r-spon { position:absolute; top:9px; right:9px;
+  font-size:10.5px; font-weight:700; color:#1C1A17;
   background:rgba(255,255,255,.94); padding:3px 9px; border-radius:99px;
-  max-width:56%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  max-width:62%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  box-shadow:0 1px 4px rgba(20,18,15,.18); }
 .r-who { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
 .r-body { padding:12px 0 0; }
 .r-lead { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
@@ -2037,8 +2039,9 @@ function routineTags(r) {
 }
 
 function routineCard(r) {
-  const st = r.status === 'recruit' ? ['c-recruit','모집 중']
-           : r.status === 'active'  ? ['c-active','진행 중'] : ['c-done','종료'];
+  // 상태 뱃지는 뗐다. 위 제목이 「지금 모집 중인 루틴」이라 겹치고,
+  // 진행 중인지는 아래 「시작 D-3 / 종료 D-15」가 말해 준다.
+  // 그 자리는 후원 기업이 쓴다
   const p = myPart(r.id);
   const mine = p && p.status === 'approved';
   const waiting = p && p.status === 'pending';
@@ -2069,11 +2072,10 @@ function routineCard(r) {
     <div class="r-cover">
       ${r.cover_url ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">`
                     : `<div class="r-cover-no">${r.emoji || '📚'}</div>`}
-      <span class="chip ${st[0]} r-badge">${st[1]}</span>
+      ${r.sponsor_name ? `<span class="r-spon">${esc(r.sponsor_name)}</span>` : ''}
       <div class="r-over">
         <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}/${r.max_people}명</span>
         ${waiting ? `<span class="r-who c-wait">확인 중</span>` : ''}
-        ${r.sponsor_name ? `<span class="r-spon">${esc(r.sponsor_name)}</span>` : ''}
       </div>
     </div>
     <div class="r-body">
