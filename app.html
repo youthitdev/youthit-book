@@ -2159,10 +2159,14 @@ function statsStrip() {
     ? `이제 막 시작했어요.<br>곧 함께 읽는 친구가 늘어날 거예요.`
     : `지금 ${n(people)}명이 함께 읽고 있어요.`;
 
-  const body = [
-    st.cert_total    ? `그동안 ${n(st.cert_total)}일이 쌓였고` : '',
-    st.books_bought  ? `${n(st.books_bought)}권이 아이들에게 갔어요.` : '',
-  ].filter(Boolean).join(', ');
+  // 인증 38회를 '38일' 로 부르면 틀리다 — 12명이 3일씩 해도 38회다.
+  // '책 앞에 앉은 하루' 로 세면 정확하면서 숫자도 초라해 보이지 않는다.
+  // 둘 중 하나만 있을 때도 문장이 끝나야 해서 쉼표로 잇지 않는다
+  const days  = st.cert_total   ? `책 앞에 앉은 하루가 ${n(st.cert_total)}번` : '';
+  const books = st.books_bought ? `책 ${n(st.books_bought)}권이 아이들에게 갔어요.` : '';
+  const body  = days && books ? `그동안 ${days}, ${books}`
+              : days          ? `그동안 ${days}이에요.`
+              : books;
 
   const cheer = st.sponsors_count
     ? `곁에서 ${n(st.sponsors_count)}명의 어른이 응원하고 있고요.` : '';
