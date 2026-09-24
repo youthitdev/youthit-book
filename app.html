@@ -521,6 +521,13 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 세로 사진을 320px 로 잘라내면 오른쪽 아래 타임스탬프가 통째로 날아간다.
    비율 그대로 보여주고, 아주 긴 사진만 화면 높이에 맞춰 넣는다 */
 .f-photos img { width:100%; height:auto; display:block; max-height:70vh; object-fit:contain; background:#F2EEE6; }
+/* 루틴 정보. 넷을 세로로 쌓으니 빈 여백이 화면 한 판이었다 */
+.rinfo { display:grid; grid-template-columns:1fr 1fr; gap:14px 12px; }
+.rinfo span { display:block; font-size:12px; color:var(--ink-3); }
+.rinfo b { display:block; font-size:14.5px; font-weight:700; margin-top:2px; }
+.rinfo b.pt { color:var(--green-d); }
+.rinfo i { display:block; font-style:normal; font-size:11px; color:var(--ink-3); margin-top:2px; }
+
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
 .rm-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
@@ -2746,6 +2753,9 @@ async function shareCert(id) {
 // 루틴 후기 30P · 책인증후기 30P. 15일 완주 235P 에 후기 30P 가 붙어야
 // 250P 를 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
 const RV_PR = () => state.settings.points_per_review ?? 30;
+// 댓글 포인트. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20P 를 기다린다
+const CMT_P   = () => state.settings.points_per_comment ?? 1;
+const CMT_CAP = () => state.settings.comment_daily_cap ?? 5;
 const RV_PB = () => state.settings.points_per_bookreview ?? 30;
 
 // 루틴 후기 기한. 서버 review_due() 와 같은 식으로 센다 —
@@ -3370,13 +3380,12 @@ function openRoutine(id) {
   const full = people >= r.max_people;
   $('ovRTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('ovRBody').innerHTML = `
-    <div class="card">
-      <div style="font-size:12.5px;color:var(--ink-3);">기간</div>
-      <div style="font-weight:700;margin-bottom:10px;">${fmtPeriod(r.start_date,r.end_date)}</div>
-      <div style="font-size:12.5px;color:var(--ink-3);">참여</div>
-      <div style="font-weight:700;margin-bottom:10px;">${people} / ${r.max_people}명</div>
-      ${r.points_per_cert ? `<div style="font-size:12.5px;color:var(--ink-3);">인증 1회당</div>
-        <div style="font-weight:700;color:var(--green-d);">${won(r.points_per_cert)}P</div>` : ''}
+    <div class="card rinfo">
+      <div><span>기간</span><b>${fmtPeriod(r.start_date, r.end_date)}</b></div>
+      <div><span>참여</span><b>${people} / ${r.max_people}명</b></div>
+      ${r.points_per_cert ? `<div><span>인증 1회당</span><b class="pt">${won(r.points_per_cert)}P</b></div>` : ''}
+      ${CMT_P() ? `<div><span>댓글 1회당</span><b class="pt">${won(CMT_P())}P</b>
+        ${CMT_CAP() ? `<i>하루 ${CMT_CAP()}개까지</i>` : ''}</div>` : ''}
     </div>
     ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱</div>
       <div class="card kkut-card">
