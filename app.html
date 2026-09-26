@@ -373,9 +373,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .sb-t b { display:block; font-size:14px; font-weight:700;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sb-t span { font-size:12px; color:var(--ink-3); }
-.sb-x { flex:none; border:1px solid var(--line); background:#fff; border-radius:9px;
-  padding:7px 11px; font-size:12px; font-weight:700; color:var(--ink-3);
-  cursor:pointer; font-family:inherit; }
+/* 「빼기」 글자는 책 제목만큼 눈에 띄었다. 어찌다 한 번 쓰는 것이다.
+   「+ 다른 책」과 짝을 맞춰 − 로. 보이는 건 작게, 누르는 자리는 40px 로 남긴다 */
+.sb-x { flex:none; width:40px; height:40px; display:flex; align-items:center;
+  justify-content:center; border:0; background:none; font-size:22px; line-height:1;
+  color:var(--ink-3); cursor:pointer; font-family:inherit; border-radius:50%; }
+.sb-x:active { background:var(--bg); color:var(--ink); }
 /* 읽는 책. 권수만큼 한 줄을 나눠 채운다. 눌러서 그 책으로 바로 인증한다.
    높이를 고정하고 폭만 나누므로 한 권이든 세 권이든 카드 길이가 같다.
    비율을 3:4 로 두면 한 권일 때 타일이 카드 폭을 통째로 먹어 카드가 길어진다 */
@@ -3967,7 +3970,8 @@ function drawBookSheet() {
       <div class="sb-i">${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : '📖'}</div>
       <div class="sb-t"><b>${esc(b.title)}</b>
         <span>${pageOf(sbRid, b.title) ? `${won(pageOf(sbRid, b.title))}쪽까지 읽었어요` : '아직 인증 전'}</span></div>
-      <button class="sb-x" onclick="dropBook('${esc(b.title).replace(/'/g, "\\'")}')">빼기</button>
+      <button class="sb-x" aria-label="목록에서 빼기" title="목록에서 빼기"
+        onclick="dropBook('${esc(b.title).replace(/'/g, "\\'")}')">−</button>
     </div>`).join('') || '<div class="empty" style="padding:18px;">아직 등록한 책이 없어요.</div>';
 
   // 끝난 루틴에 책을 더할 일은 없다. 잘못 넣은 걸 빼는 길만 남긴다
