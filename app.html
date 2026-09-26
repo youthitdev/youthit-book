@@ -3683,10 +3683,13 @@ function drawBookGot(inputId, boxId) {
     : '';
 }
 
-// 저장할 때 붙여 보낼 값. 손으로 적었으면 세 칸 모두 null 이다
+// 저장할 때 붙여 보낼 값.
+// 손으로 적었으면 빈 객체다 — null 세 개를 굳이 보내지 않는다.
+// 덕분에 마이그레이션 53 이 아직이면 검색 안 쓴 책은 그대로 저장된다
 function bookMeta(inputId) {
   const b = bookPick[inputId];
-  return { isbn: b?.isbn || null, authors: b?.authors || null, publisher: b?.publisher || null };
+  if (!b) return {};
+  return { isbn: b.isbn || null, authors: b.authors || null, publisher: b.publisher || null };
 }
 
 // ── 루틴 만들기 (끗짱) ──────────────────────────────────
