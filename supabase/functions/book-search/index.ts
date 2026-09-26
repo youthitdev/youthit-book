@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
   const q = (b.q ?? "").trim();
   if (q.length < 2) return json(200, { books: [] });
 
-  const url = `${KAKAO}?query=${encodeURIComponent(q)}&size=6&sort=accuracy`;
+  const url = `${KAKAO}?query=${encodeURIComponent(q)}&size=8&sort=accuracy`;
   let res: Response;
   try {
     res = await fetch(url, { headers: { Authorization: `KakaoAK ${key}` } });
@@ -64,11 +64,15 @@ Deno.serve(async (req) => {
   if (!res.ok) return json(200, { books: [], note: `카카오 ${res.status}` });
 
   const data = await res.json();
+  // thumbnail · year 는 고를 때만 쓴다. 저장하지 않는다 — 책장에 남는 표지는
+  // 아이가 직접 찍은 사진이다. 「데미안」 네 판본 같은 걸 가르는 데만 필요하다
   const books = (data.documents ?? []).map((d: Record<string, unknown>) => ({
     title:     String(d.title ?? "").trim(),
     authors:   (d.authors as string[] ?? []).join(", "),
     publisher: String(d.publisher ?? "").trim(),
     isbn:      pickIsbn(String(d.isbn ?? "")),
+    thumbnail: String(d.thumbnail ?? "") || null,
+    year:      String(d.datetime ?? "").slice(0, 4) || null,
   })).filter((x: { title: string }) => x.title);
 
   return json(200, { books });

@@ -269,12 +269,21 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
    안 골라도 된다: 독립출판·절판·교재는 검색에 없다 */
 .bk-find { border:1px solid var(--line); border-radius:12px; overflow:hidden;
   margin-top:7px; background:var(--card); }
-.bk-find button { display:block; width:100%; text-align:left; border:0; background:none;
-  padding:10px 13px; cursor:pointer; border-top:1px solid var(--line); }
+.bk-find { max-height:326px; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain; }
+.bk-find button { display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  border:0; background:none; padding:9px 12px; cursor:pointer; border-top:1px solid var(--line); }
 .bk-find button:first-child { border-top:0; }
 .bk-find button:active { background:var(--bg); }
-.bk-find b { display:block; font-size:14px; font-weight:700; color:var(--ink); line-height:1.4; }
-.bk-find span { display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
+/* 표지가 있어야 「데미안」 네 판본을 가른다. 글자만로는 못 고른다 */
+.bk-find i.bk-c { flex:none; width:38px; height:54px; border-radius:4px; overflow:hidden;
+  background:var(--bg); border:1px solid var(--line); display:flex;
+  align-items:center; justify-content:center; font-style:normal; font-size:15px; }
+.bk-find i.bk-c img { width:100%; height:100%; object-fit:cover; }
+.bk-find div { min-width:0; }
+.bk-find b { display:block; font-size:14px; font-weight:700; color:var(--ink); line-height:1.35; }
+.bk-find span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bk-find .bk-wait { padding:10px 13px; font-size:12.5px; color:var(--ink-3); }
 .bk-got { display:flex; align-items:center; gap:6px; margin-top:7px;
   font-size:12.5px; color:var(--green-d); font-weight:700; }
@@ -3659,9 +3668,12 @@ async function runBookFind(inputId, boxId, q) {
   bookFound[inputId] = books;
   box.innerHTML = `<div class="bk-find">${books.map((b, i) => `
     <button type="button" onclick="useFound('${inputId}','${boxId}',${i})">
-      <b>${esc(b.title)}</b>
-      ${b.authors || b.publisher
-        ? `<span>${esc([b.authors, b.publisher].filter(Boolean).join(' · '))}</span>` : ''}
+      <i class="bk-c">${b.thumbnail
+        ? `<img src="${esc(b.thumbnail)}" loading="lazy" alt="">` : '📖'}</i>
+      <div>
+        <b>${esc(b.title)}</b>
+        ${bookSub(b) ? `<span>${esc(bookSub(b))}</span>` : ''}
+      </div>
     </button>`).join('')}</div>`;
 }
 
@@ -3675,12 +3687,14 @@ function useFound(inputId, boxId, i) {
   el.dispatchEvent(new Event('input'));
 }
 
+// 「정혜윤 · 위고 · 2019」 — 판본을 가르는 데 연도까지 있어야 한다
+const bookSub = b => [b.authors, b.publisher, b.year].filter(Boolean).join(' · ');
+
 function drawBookGot(inputId, boxId) {
   const got = $(boxId + 'Got'); if (!got) return;
   const b = bookPick[inputId];
-  got.innerHTML = b && (b.authors || b.publisher)
-    ? `<div class="bk-got"><i class="ti ti-check"></i>${esc([b.authors, b.publisher].filter(Boolean).join(' · '))}</div>`
-    : '';
+  got.innerHTML = b && bookSub(b)
+    ? `<div class="bk-got"><i class="ti ti-check"></i>${esc(bookSub(b))}</div>` : '';
 }
 
 // 저장할 때 붙여 보낼 값.
