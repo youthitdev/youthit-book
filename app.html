@@ -821,7 +821,6 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <button type="button" class="role-btn on" id="segLogin"  onclick="setMode('login')">로그인</button>
     <button type="button" class="role-btn"    id="segSignup" onclick="setMode('signup')">회원가입</button>
   </div>
-  <div id="authErr" class="auth-err" style="display:none;"></div>
 
   <div id="signupOnly" style="display:none;">
     <div class="role-row">
@@ -1363,7 +1362,6 @@ function setMode(m) {
   // 아이폰은 비밀번호 칸의 autocomplete 를 보고 저장된 암호를 들이민다.
   // 가입인데 current-password 면 남의 계정 암호를 채워 넣는다
   $('auPw').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
-  $('authErr').style.display = 'none';
 }
 function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
 
@@ -1390,13 +1388,20 @@ function closePolicy() { $('policySheet').classList.remove('on'); }
 // 무엇이 잘못됐는지 모른 채 멈춘다. 띠는 그대로 두고(고치는 동안 남아 있어야 한다)
 // 배너를 띄우고, 문제가 된 칸으로 데려간다
 function authError(msg, focusId) {
-  const e = $('authErr'); e.textContent = msg; e.style.display = '';
   toast(msg);
   const f = focusId ? $(focusId) : null;
-  (f || e).scrollIntoView({ block: 'center', behavior: 'smooth' });
   if (!f) return;
+  f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
+  // 전에는 폼 맨 위 띠가 남아 「뭐가 문제였지」를 붙잡았다. 그런데 그 자리는
+  // 화면 맨 위라 정작 고치는 사람 눈에는 안 들어왔다. 띠를 빼고, 문제된 칸을
+  // 고칠 때까지 둘러둔다 — 건드리는 순간 풀린다
   f.classList.add('au-bad');
-  setTimeout(() => f.classList.remove('au-bad'), 1800);
+  const off = () => { f.classList.remove('au-bad');
+    f.removeEventListener('input', off); f.removeEventListener('change', off); };
+  f.addEventListener('input', off);
+  f.addEventListener('change', off);
+
   // 글자칸만 커서를 준다. select 는 포커스만으로 고르개가 튀어나와 놀란다
   if (f.tagName === 'INPUT' && f.type !== 'date' && f.type !== 'checkbox')
     setTimeout(() => { try { f.focus({ preventScroll: true }); } catch {} }, 320);
@@ -1445,7 +1450,11 @@ async function submitAuth() {
                          phone, school_status: school || null,
                          marketing_ok: $('agMkt').checked,
                          policy_agreed_at: new Date().toISOString() } } });
-    if (error) { btn.disabled=false; btn.textContent='가입하기'; return authError(authMsg(error.message)); }
+    if (error) {
+      btn.disabled=false; btn.textContent='가입하기';
+      const m = authMsg(error.message);
+      return authError(m, /비밀번호/.test(m) ? 'auPw' : /이메일/.test(m) ? 'auEmail' : null);
+    }
     // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
     // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
     // 이걸 놓치면 고른 역할이 반영되지 않은 채 기존 계정으로 들어가 버린다
@@ -1686,7 +1695,6 @@ async function browseAsGuest() {
 function showAuth() {
   $('authScr').style.display = '';
   $('appScr').style.display = 'none';
-  $('authErr').style.display = 'none';
   setMode(authMode);        // 세그먼트·버튼 글씨를 지금 모드에 맞춘다
   window.scrollTo(0, 0);
 }
