@@ -88,15 +88,27 @@ input:focus, select:focus, textarea:focus { border-color:var(--blue); }
 textarea { resize:none; line-height:1.6; }
 /* 날짜 칸은 브라우저 기본 모양이라 혼자 튄다. 다른 입력칸과 같은 얼굴로 맞춘다 */
 input[type=date] {
-  -webkit-appearance:none; appearance:none; position:relative; height:46px; line-height:1.2;
-  padding-right:40px; background:#fff no-repeat right 13px center / 18px
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238d939e' stroke-width='2' stroke-linecap='round'><rect x='4' y='5' width='16' height='16' rx='3'/><path d='M8 3v4M16 3v4M4 11h16'/></svg>");
+  -webkit-appearance:none; appearance:none; position:relative; line-height:1.2;
+  padding-right:40px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238d939e' stroke-width='2' stroke-linecap='round'><rect x='4' y='5' width='16' height='16' rx='3'/><path d='M8 3v4M16 3v4M4 11h16'/></svg>");
+  background-repeat:no-repeat; background-position:right 13px center; background-size:18px;
 }
 /* 날짜를 고르기 전에는 회색. 그리고 칸 아무 데나 눌러도 달력이 열리게 한다 */
 input[type=date]:invalid { color:var(--ink-3); }
 input[type=date]::-webkit-datetime-edit { padding:0; }
 input[type=date]::-webkit-calendar-picker-indicator {
   position:absolute; inset:0; width:100%; height:100%; margin:0; padding:0; opacity:0; cursor:pointer;
+}
+/* 칸 높이를 46px 로 못 박는다. select 는 브라우저가 제 나름의 높이를 줘
+   글자칸(45)보다 2px 높았고, 줄줄이 쌓이니 열이 어긋나 보였다 */
+input[type=text], input[type=email], input[type=password], input[type=number],
+input[type=date], input[type=tel], select { height:46px; }
+/* select 기본 화살표는 칸 맨 끝에 붙는다. 달력 아이콘과 같은 자리로 내린다.
+   배경은 약부형으로 두어야 .auth 가 색만 덮어도 화살표가 살아남는다 */
+select {
+  -webkit-appearance:none; appearance:none; padding-right:40px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238d939e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat:no-repeat;
+  background-position:right 13px center; background-size:18px;
 }
 select.ph { color:var(--ink-3); }
 .btn { width:100%; padding:15px; border:none; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
@@ -121,7 +133,12 @@ select.ph { color:var(--ink-3); }
 .auth > * { width:100%; max-width:360px; }
 .auth h1 { font-size:27px; font-weight:800; letter-spacing:-1px; line-height:1.35; }
 .auth .sub { font-size:14px; color:rgba(255,255,255,.72); margin-top:10px; margin-bottom:30px; }
-.auth input, .auth select { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); color:#fff; margin-bottom:10px; }
+/* background 약자를 쓰면 화살표·달력 아이콘까지 지워졌다. 색만 바꾸고
+   어두운 바탕이니 아이콘은 흰 것으로 갈아끼운다 */
+.auth input, .auth select { background-color:rgba(255,255,255,.12);
+  border:1.5px solid rgba(255,255,255,.22); color:#fff; margin-bottom:10px; }
+.auth select { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='.66' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>"); }
+.auth input[type=date] { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-opacity='.66' stroke-width='2' stroke-linecap='round'><rect x='4' y='5' width='16' height='16' rx='3'/><path d='M8 3v4M16 3v4M4 11h16'/></svg>"); }
 .auth input::placeholder { color:rgba(255,255,255,.5); }
 .auth input:focus, .auth select:focus { border-color:rgba(255,255,255,.6); }
 /* 사파리는 select 안의 option 을 시스템 색으로 그린다. 흰 바탕에 흰 글자가 되지 않게 */
