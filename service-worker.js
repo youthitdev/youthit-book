@@ -1,7 +1,7 @@
 // 한끗독서 서비스 워커.
 // 있는 이유는 캐시가 아니라 푸시다 — 아이폰은 홈 화면에 추가된 PWA 에만 푸시를 준다.
 const BASE  = '/youthit-book/';
-const CACHE = 'hankkut-book-v1';
+const CACHE = 'hankkut-book-v2';
 const ASSETS = [BASE, BASE + 'app.html', BASE + 'manifest.json',
                 BASE + 'icon-192.png', BASE + 'icon-512.png'];
 
@@ -18,12 +18,22 @@ self.addEventListener('activate', e => {
 });
 
 // 네트워크 우선. 한 파일짜리 앱이라 캐시가 앞서면 고친 게 안 보인다 —
-// 캐시는 오프라인일 때만 꺼낸다
+// 캐시는 오프라인일 때만 꺼낸다.
+//
+// ⚠️ 그런데 「네트워크 우선」만으로는 모자랐다. 깃허브 페이지스가
+//    `cache-control: max-age=600` 을 준다. 그러면 이 fetch 자체를
+//    **브라우저가 제 캐시에서 가로채** 10분 동안 옛 파일을 내준다.
+//    고쳐서 올려도 폰에선 그대로였던 게 이 때문이다.
+//    문서는 늘 서버에 물어본다 — ETag 가 같으면 304 라 사실상 공짜다
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   if (!e.request.url.startsWith(self.location.origin)) return;
+  const isDoc = e.request.mode === 'navigate' || e.request.destination === 'document';
+  const req = isDoc
+    ? new Request(e.request.url, { cache: 'no-cache', credentials: 'same-origin' })
+    : e.request;
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(req).then(res => {
       const clone = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, clone));
       return res;
