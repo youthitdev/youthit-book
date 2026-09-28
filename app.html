@@ -148,6 +148,9 @@ select.ph { color:var(--ink-3); }
 .au-row { display:flex; gap:8px; }
 .au-row select, .au-row input { flex:1; min-width:0; }
 .au-hint { font-size:11.5px; color:rgba(255,255,255,.6); margin:-4px 0 12px; }
+/* 잘못된 칸을 잠긐 두르기게 한다 — 데려다 놓고 아무 표시가 없으면
+   여기가 거기인지 모른다 */
+.au-bad { border-color:#F3B0A4 !important; box-shadow:0 0 0 3px rgba(243,176,164,.22); }
 .auth .btn-primary { background:#fff; color:var(--blue); margin-top:6px; }
 .auth .swap { text-align:center; margin-top:18px; font-size:13px; color:rgba(255,255,255,.7); }
 .auth .swap b { color:#fff; cursor:pointer; text-decoration:underline; }
@@ -1383,7 +1386,21 @@ function setJoinRole(r) {
 
 function openPolicy()  { $('policySheet').classList.add('on'); }
 function closePolicy() { $('policySheet').classList.remove('on'); }
-function authError(msg) { const e = $('authErr'); e.textContent = msg; e.style.display = ''; }
+// 오류 띠는 폼 맨 위에 있다. 아래쪽 「가입하기」를 누른 사람에겐 화면 밖이라,
+// 무엇이 잘못됐는지 모른 채 멈춘다. 띠는 그대로 두고(고치는 동안 남아 있어야 한다)
+// 배너를 띄우고, 문제가 된 칸으로 데려간다
+function authError(msg, focusId) {
+  const e = $('authErr'); e.textContent = msg; e.style.display = '';
+  toast(msg);
+  const f = focusId ? $(focusId) : null;
+  (f || e).scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (!f) return;
+  f.classList.add('au-bad');
+  setTimeout(() => f.classList.remove('au-bad'), 1800);
+  // 글자칸만 커서를 준다. select 는 포커스만으로 고르개가 튀어나와 놀란다
+  if (f.tagName === 'INPUT' && f.type !== 'date' && f.type !== 'checkbox')
+    setTimeout(() => { try { f.focus({ preventScroll: true }); } catch {} }, 320);
+}
 
 // Supabase 오류는 영어로 온다. 청소년이 보는 화면이라 그대로 두지 않는다
 function authMsg(m) {
@@ -1397,30 +1414,31 @@ function authMsg(m) {
 
 async function submitAuth() {
   const email = $('auEmail').value.trim(), pw = $('auPw').value;
-  if (!email || !pw) return authError('이메일과 비밀번호를 입력해주세요.');
+  if (!email || !pw) return authError('이메일과 비밀번호를 입력해주세요.', email ? 'auPw' : 'auEmail');
   const btn = $('auBtn'); btn.disabled = true; btn.textContent = '잠시만요…';
 
   if (authMode === 'signup') {
-    const stop = m => { btn.disabled=false; btn.textContent='가입하기'; return authError(m); };
+    const stop = (m, id) => { btn.disabled=false; btn.textContent='가입하기'; return authError(m, id); };
     const nick = $('auNick').value.trim();
     const name = $('auName').value.trim();
     const sido = $('auSido').value, gu = $('auGu').value;
     const phone = $('auPhone').value.replace(/[^0-9]/g, '');
     // 한 칸에 담는다 — 청소년은 「재학」, 끗짱은 「○○청소년센터」가 들어간다
     const school = joinRole === 'kkut' ? $('auAffil').value.trim() : $('auSchool').value;
-    if (!nick) return stop('닉네임을 입력해주세요.');
-    if (!name) return stop('이름을 입력해주세요.');
+    if (!nick) return stop('닉네임을 입력해주세요.', 'auNick');
+    if (!name) return stop('이름을 입력해주세요.', 'auName');
     const birth = $('auBirth').value;
-    if (!birth) return stop('생년월일을 골라주세요.');
+    if (!birth) return stop('생년월일을 골라주세요.', 'auBirth');
     // 만 14세 미만은 법정대리인 동의가 있어야 개인정보를 받을 수 있다.
     // 동의서를 받아 관리하는 것 자체가 부담이라 14세부터 쓰게 한다
-    if (ageOf(birth) < 14) return stop('한끗독서는 만 14세부터 함께할 수 있어요.');
-    if (phone.length < 10 || phone.length > 11) return stop('휴대폰번호를 다시 확인해주세요.');
-    if (!sido) return stop('사는 곳의 시·도를 골라주세요.');
-    if (!gu)   return stop('사는 곳의 시·군·구를 골라주세요.');
-    if (!school) return stop(joinRole === 'kkut' ? '소속을 적어주세요.' : '재학 상태를 골라주세요.');
-    if (!$('agAge').checked)    return stop('만 14세 이상인지 확인해주세요.');
-    if (!$('agPolicy').checked) return stop('개인정보 수집 및 이용에 동의해주세요.');
+    if (ageOf(birth) < 14) return stop('한끗독서는 만 14세부터 함께할 수 있어요.', 'auBirth');
+    if (phone.length < 10 || phone.length > 11) return stop('휴대폰번호를 다시 확인해주세요.', 'auPhone');
+    if (!sido) return stop('사는 곳의 시·도를 골라주세요.', 'auSido');
+    if (!gu)   return stop('사는 곳의 시·군·구를 골라주세요.', 'auGu');
+    if (!school) return stop(joinRole === 'kkut' ? '소속을 적어주세요.' : '재학 상태를 골라주세요.',
+                             joinRole === 'kkut' ? 'auAffil' : 'auSchool');
+    if (!$('agAge').checked)    return stop('만 14세 이상인지 확인해주세요.', 'agAge');
+    if (!$('agPolicy').checked) return stop('개인정보 수집 및 이용에 동의해주세요.', 'agPolicy');
     const region = joinRegion(sido, gu);
     const { data, error } = await sb.auth.signUp({ email, password: pw,
       options: { data: { name, nick, role: 'youth', region, birth_date: birth,
@@ -1433,13 +1451,13 @@ async function submitAuth() {
     // 이걸 놓치면 고른 역할이 반영되지 않은 채 기존 계정으로 들어가 버린다
     if (data?.user && (data.user.identities || []).length === 0) {
       btn.disabled=false; btn.textContent='가입하기';
-      return authError('이미 가입된 이메일이에요. 로그인으로 들어와 주세요.');
+      return authError('이미 가입된 이메일이에요. 로그인으로 들어와 주세요.', 'auEmail');
     }
     // 끗짱으로 고른 사람은 가입만으로 끝나지 않는다. 신청서를 받아야 운영진이 판단한다
     if (joinRole === 'kkut') sessionStorage.setItem('goKkutApply', '1');
   } else {
     const { error } = await sb.auth.signInWithPassword({ email, password: pw });
-    if (error) { btn.disabled=false; btn.textContent='로그인'; return authError('이메일 또는 비밀번호를 다시 확인해주세요.'); }
+    if (error) { btn.disabled=false; btn.textContent='로그인'; return authError('이메일 또는 비밀번호를 다시 확인해주세요.', 'auPw'); }
   }
   await enter();
 }
