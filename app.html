@@ -111,6 +111,10 @@ select {
   background-position:right 13px center; background-size:18px;
 }
 select.ph { color:var(--ink-3); }
+/* 잘못된 칸 — 데려다 놓고 아무 표시가 없으면 여기가 거기인지 모른다.
+   고칠 때까지 남긴다 (badField) */
+.bad-field { border-color:#C2533F !important; box-shadow:0 0 0 3px rgba(194,83,63,.16); }
+.auth .bad-field { border-color:#F3B0A4 !important; box-shadow:0 0 0 3px rgba(243,176,164,.22); }
 .btn { width:100%; padding:15px; border:none; border-radius:14px; font-size:15.5px; font-weight:700; cursor:pointer; }
 .btn-primary { background:var(--blue); color:#fff; }
 .btn-primary:disabled { background:#BFCBC2; cursor:default; }
@@ -148,16 +152,12 @@ select.ph { color:var(--ink-3); }
 .au-row { display:flex; gap:8px; }
 .au-row select, .au-row input { flex:1; min-width:0; }
 .au-hint { font-size:11.5px; color:rgba(255,255,255,.6); margin:-4px 0 12px; }
-/* 잘못된 칸을 잠긐 두르기게 한다 — 데려다 놓고 아무 표시가 없으면
-   여기가 거기인지 모른다 */
-.au-bad { border-color:#F3B0A4 !important; box-shadow:0 0 0 3px rgba(243,176,164,.22); }
 .auth .btn-primary { background:#fff; color:var(--blue); margin-top:6px; }
 .auth .swap { text-align:center; margin-top:18px; font-size:13px; color:rgba(255,255,255,.7); }
 .auth .swap b { color:#fff; cursor:pointer; text-decoration:underline; }
 .role-row { display:flex; gap:8px; margin-bottom:10px; }
 .role-btn { flex:1; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.22); background:transparent; color:rgba(255,255,255,.6); font-size:14px; cursor:pointer; }
 .role-btn.on { background:#fff; color:var(--blue); font-weight:700; border-color:#fff; }
-.auth-err { background:rgba(255,0,108,.18); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:10px 12px; font-size:12.5px; margin-bottom:12px; }
 /* 가입 칸이 늘어나면 가운데 정렬이 화면 위쪽을 잘라 먹고 스크롤도 안 된다.
    위아래 빈 칸에게 가운데 만드는 일을 맡기면 길어져도 안 잘린다 */
 .auth { justify-content:flex-start; }
@@ -204,7 +204,6 @@ header.k .h-title { color:var(--pink); }
 .gate-bar i { display:block; height:100%; background:var(--pink); border-radius:99px; transition:width .3s; }
 .gate-num { font-size:12.5px; color:var(--ink-3); }
 .gate-num b { color:var(--pink); font-size:14px; }
-#kkutBody .auth-err { background:#FAECE8; border:1px solid #EDC6BC; color:#8E3527; }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:7px; }
 .body { padding:18px; }
@@ -1387,25 +1386,23 @@ function closePolicy() { $('policySheet').classList.remove('on'); }
 // 오류 띠는 폼 맨 위에 있다. 아래쪽 「가입하기」를 누른 사람에겐 화면 밖이라,
 // 무엇이 잘못됐는지 모른 채 멈춘다. 띠는 그대로 두고(고치는 동안 남아 있어야 한다)
 // 배너를 띄우고, 문제가 된 칸으로 데려간다
-function authError(msg, focusId) {
-  toast(msg);
-  const f = focusId ? $(focusId) : null;
+// 오류를 알리는 법 — 배너로 알아차게 하고, 문제된 칸으로 데려가 고칠 때까지 둘러둔다.
+// 폼 맨 위에 띠를 남기는 것보다 낫다 — 정작 고치는 사람 눈에는 그 자리가 안 들어온다
+function badField(id) {
+  const f = id ? $(id) : null;
   if (!f) return;
   f.scrollIntoView({ block: 'center', behavior: 'smooth' });
-
-  // 전에는 폼 맨 위 띠가 남아 「뭐가 문제였지」를 붙잡았다. 그런데 그 자리는
-  // 화면 맨 위라 정작 고치는 사람 눈에는 안 들어왔다. 띠를 빼고, 문제된 칸을
-  // 고칠 때까지 둘러둔다 — 건드리는 순간 풀린다
-  f.classList.add('au-bad');
-  const off = () => { f.classList.remove('au-bad');
+  f.classList.add('bad-field');
+  const off = () => { f.classList.remove('bad-field');
     f.removeEventListener('input', off); f.removeEventListener('change', off); };
   f.addEventListener('input', off);
   f.addEventListener('change', off);
-
-  // 글자칸만 커서를 준다. select 는 포커스만으로 고르개가 튀어나와 놀란다
-  if (f.tagName === 'INPUT' && f.type !== 'date' && f.type !== 'checkbox')
+  // 적는 칸만 커서를 준다. select 는 포커스만으로 고르개가 튀어나와 놀란다
+  if (f.tagName !== 'SELECT' && f.type !== 'date' && f.type !== 'checkbox')
     setTimeout(() => { try { f.focus({ preventScroll: true }); } catch {} }, 320);
 }
+
+function authError(msg, focusId) { toast(msg); badField(focusId); }
 
 // Supabase 오류는 영어로 온다. 청소년이 보는 화면이라 그대로 두지 않는다
 function authMsg(m) {
@@ -1593,8 +1590,6 @@ function renderKkutGate() {
           : `<div class="gate-num" style="margin-top:12px;"><b>${el.days}일</b> 읽고 오셨네요</div>`}
       </div>`}
 
-    <div id="kkutErr" class="auth-err" style="display:none;margin:14px 0 0;"></div>
-
     <div style="margin-top:18px;">
       <div class="field-label">이름</div>
       <input type="text" value="${esc(me.name)}" disabled style="background:#F4F0E8;color:var(--ink-3);">
@@ -1646,7 +1641,7 @@ async function reloadKkutGate() {
 }
 
 async function submitKkutApp() {
-  const err = m => { const e = $('kkutErr'); e.textContent = m; e.style.display = ''; window.scrollTo(0,0); };
+  const err = (m, id) => { toast(m); badField(id); };
   const age     = parseInt($('kAge').value, 10);
   const region  = $('kRegion').value.trim();
   const aff     = $('kAff').value.trim();
@@ -1654,12 +1649,12 @@ async function submitKkutApp() {
   const intro   = $('kIntro').value.trim();
   const motive  = $('kMotive').value.trim();
 
-  if (!(age >= 14 && age <= 100)) return err('나이를 확인해주세요.');
-  if (!region)  return err('활동 지역을 적어주세요.');
-  if (!aff)     return err('소속을 적어주세요. 없으면 없음이라고 적어도 괜찮아요.');
-  if (!contact) return err('연락처를 적어주세요.');
-  if (intro.length  < 20) return err('어떤 분인지 조금만 더 적어주세요. (20자 이상)');
-  if (motive.length < 20) return err('어떤 마음으로 함께하고 싶은지 조금만 더 적어주세요. (20자 이상)');
+  if (!(age >= 14 && age <= 100)) return err('나이를 확인해주세요.', 'kAge');
+  if (!region)  return err('활동 지역을 적어주세요.', 'kRegion');
+  if (!aff)     return err('소속을 적어주세요. 없으면 없음이라고 적어도 괜찮아요.', 'kAff');
+  if (!contact) return err('연락처를 적어주세요.', 'kContact');
+  if (intro.length  < 20) return err('어떤 분인지 조금만 더 적어주세요. (20자 이상)', 'kIntro');
+  if (motive.length < 20) return err('어떤 마음으로 함께하고 싶은지 조금만 더 적어주세요. (20자 이상)', 'kMotive');
 
   const btn = $('kSubmit'); btn.disabled = true; btn.textContent = '보내는 중…';
   const row = { user_id: me.id, age, region, affiliation: aff, contact, intro, motive };
