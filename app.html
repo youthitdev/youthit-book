@@ -829,7 +829,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <div class="au-hint" id="roleHint">읽고 인증하고 포인트를 모아요</div>
 
     <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="12" autocomplete="nickname">
-    <input type="text" id="auName" placeholder="이름 (실명)" maxlength="20"
+    <!-- ⚠️ id 에 'name' 을 넣지 말 것. 암호 관리자들은 id·name 에 name 이
+         들어가면 아이디 칸으로 보고 저장된 메일 주소를 밀어넣는다.
+         auNick 은 멀쩡했고 auName 만 당했다 -->
+    <input type="text" id="auReal" placeholder="이름 (실명)" maxlength="20"
            autocomplete="name" autocorrect="off" spellcheck="false">
     <div class="au-hint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
     <input type="date" id="auBirth" max="2099-12-31" required>
@@ -1426,13 +1429,13 @@ async function submitAuth() {
   if (authMode === 'signup') {
     const stop = (m, id) => { btn.disabled=false; btn.textContent='가입하기'; return authError(m, id); };
     const nick = $('auNick').value.trim();
-    const name = $('auName').value.trim();
+    const name = $('auReal').value.trim();
     const sido = $('auSido').value, gu = $('auGu').value;
     const phone = $('auPhone').value.replace(/[^0-9]/g, '');
     // 한 칸에 담는다 — 청소년은 「재학」, 끗짱은 「○○청소년센터」가 들어간다
     const school = joinRole === 'kkut' ? $('auAffil').value.trim() : $('auSchool').value;
     if (!nick) return stop('닉네임을 입력해주세요.', 'auNick');
-    if (!name) return stop('이름을 입력해주세요.', 'auName');
+    if (!name) return stop('이름을 입력해주세요.', 'auReal');
     const birth = $('auBirth').value;
     if (!birth) return stop('생년월일을 골라주세요.', 'auBirth');
     // 만 14세 미만은 법정대리인 동의가 있어야 개인정보를 받을 수 있다.
