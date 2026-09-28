@@ -430,7 +430,6 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .stat-p p { font-size:14.5px; line-height:1.85; color:var(--ink-2); }
 .stat-p p + p { margin-top:2px; }
 .stat-p b { color:var(--ink); font-weight:800; font-size:17px; letter-spacing:-.3px; }
-.stat-you { margin-top:10px !important; color:var(--green-d) !important; font-weight:700; }
 .hstats { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:20px; }
 .hs { background:var(--card); border:1px solid var(--line); border-radius:15px;
       padding:13px 13px 12px; display:flex; align-items:center; gap:11px; min-width:0; }
@@ -2210,7 +2209,6 @@ function statsStrip() {
       <p>${lead}</p>
       ${body  ? `<p>${body}</p>` : ''}
       ${cheer ? `<p>${cheer}</p>` : ''}
-      ${people > 1 ? `<p class="stat-you">그중 한 명이 너예요.</p>` : ''}
     </div>`;
 }
 
