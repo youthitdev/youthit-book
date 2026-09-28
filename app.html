@@ -111,6 +111,10 @@ select {
   background-position:right 13px center; background-size:18px;
 }
 select.ph { color:var(--ink-3); }
+/* 잠긴 칸 — 값은 보이되 못 고친다. 달력 아이콘은 눈을 속이니 미리 지운다 */
+input:disabled, select:disabled, textarea:disabled {
+  background-color:#F4F0E8; color:var(--ink-3); -webkit-text-fill-color:var(--ink-3); opacity:1; }
+input[type=date]:disabled, select:disabled { background-image:none; }
 /* 잘못된 칸 — 데려다 놓고 아무 표시가 없으면 여기가 거기인지 모른다.
    고칠 때까지 남긴다 (badField) */
 .bad-field { border-color:#C2533F !important; box-shadow:0 0 0 3px rgba(194,83,63,.16); }
@@ -835,7 +839,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <input type="text" id="auReal" placeholder="이름 (실명)" maxlength="20"
            autocomplete="name" autocorrect="off" spellcheck="false">
     <div class="au-hint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
-    <input type="date" id="auBirth" max="2099-12-31" required>
+    <input type="date" id="auBirth" required>
     <div class="au-hint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
     <input type="tel" id="auPhone" placeholder="휴대폰번호 ('-' 없이)" maxlength="13" inputmode="numeric" autocomplete="tel">
     <div class="au-row">
@@ -1237,10 +1241,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       </select>
       <input type="text" id="pfAffil" maxlength="30" placeholder="기관·단체·학교 등" style="display:none;">
     </div>
-    <div id="pfBirthWrap" style="display:none;">
-      <div class="field-label">생년월일 <span class="req">* 필수</span></div>
+    <div id="pfBirthWrap">
+      <div class="field-label">생년월일 <span class="req" id="pfBirthReq">* 필수</span></div>
       <input type="date" id="pfBirth" onchange="checkProfile()" required>
-      <div class="hint">만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b></div>
+      <div class="hint" id="pfBirthHint">만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b></div>
     </div>
     <label class="card" style="display:flex;align-items:center;gap:11px;cursor:pointer;">
       <input type="checkbox" id="pfMkt" style="width:19px;height:19px;flex:none;accent-color:var(--green);">
@@ -1370,6 +1374,16 @@ function setMode(m) {
   $('auPw').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
 }
 function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
+
+// 생년월일 칸의 위·아래 끝. 비어 있으면 아이폰 고르개가 **1970년**에서 열려
+// 서른 해를 굴려야 한다. 만 14세 되는 날을 위 끝으로 두면 거기서 열리고,
+// 나이에 못 미치는 날짜는 고르개에서 아예 흐려진다
+function birthBounds(el) {
+  if (!el) return;
+  const d = new Date(); d.setFullYear(d.getFullYear() - 14);
+  el.max = d.toISOString().slice(0, 10);
+  el.min = '1920-01-01';
+}
 
 // 끗짱은 운영진이 열어 준다. 여기서 고르는 건 「끗짱으로 신청하겠다」는 뜻이고,
 // 가입이 끝나면 곧바로 신청서로 보낸다. 승인 경로는 하나다
@@ -1695,6 +1709,7 @@ async function browseAsGuest() {
 }
 
 function showAuth() {
+  birthBounds($('auBirth'));
   $('authScr').style.display = '';
   $('appScr').style.display = 'none';
   setMode(authMode);        // 세그먼트·버튼 글씨를 지금 모드에 맞춘다
@@ -3485,9 +3500,17 @@ function openProfile() {
   else      $('pfSchool').value = me.school_status || '';
   $('pfMkt').checked  = !!me.marketing_ok;
   // 생년월일은 비어 있을 때만 받는다. 한 번 적으면 서버가 못 바꾸게 막는다 —
-  // 나이를 바꿔가며 우회하는 길을 닫는다
-  $('pfBirthWrap').style.display = me.birth_date ? 'none' : '';
+  // 나이를 바꿔가며 우회하는 길을 닫는다.
+  // 전에는 저장하면 칸이 통째로 사라져, 뭐를 저장했는지도 못 보고
+  // 「고장 난 것」처럼 보였다. 남겨두되 잠금을 걸고 이유를 적는다
+  const bLock = !!me.birth_date;
   $('pfBirth').value = me.birth_date || '';
+  $('pfBirth').disabled = bLock;
+  $('pfBirthReq').style.display = bLock ? 'none' : '';
+  $('pfBirthHint').innerHTML = bLock
+    ? '한 번 적으면 못 바꿔요. 바로잡아야 하면 운영진에게 말해주세요.'
+    : '만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b>';
+  birthBounds($('pfBirth'));
   $('pfPhone').value = me.phone || '';   // 로그인할 때 이미 붙여 왔다
   checkProfile(); openOv('ovProfile');
 }
