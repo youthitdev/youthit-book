@@ -606,6 +606,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
+/* 알림을 이미 켜 둔 사람에게 보여줄 한 줄. 눌러서 펼친다 */
+.push-min { display:flex; align-items:center; gap:8px; padding:14px 16px; cursor:pointer; }
+.push-min b { font-size:14px; font-weight:700; }
+.push-min > span { flex:1; font-size:13px; color:var(--ink-3); }
+.push-min > .ti-chevron-right { color:var(--ink-3); font-size:16px; }
 .rm-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
   padding:6px 0; font-size:13.5px; font-weight:700; }
 .rm-row .rm-sub { font-weight:600; color:var(--ink-2); }
@@ -1970,47 +1975,76 @@ async function disablePush() {
   render(); toast('알림을 껐어요');
 }
 
-// 상태를 비동기로 읽어야 해서, 카드는 먼저 그리고 값이 오면 안쪽만 바꾼다
+// 상태를 비동기로 읽어야 해서, 카드는 먼저 그리고 값이 오면 안쪽을 채운다.
+//
+// 【펼칠지 접을지】 알림은 이 프로그램의 장치다 — 매일 인증을 떠올려 주는 것이
+//   곧 습관이다. 그래서 **안 켜 둔 아이에겐 커야** 하고, **이미 켜 둔 사람에겐
+//   작아야** 한다. 한 번 켜면 다시 건드릴 일이 없는 설정이다.
+//   꺼져 있을 때 빨간색은 쓰지 않는다 — 꺼 둔 건 잘못이 아니라 선택이다
+let pushOpen = false;
+function togglePushCard() { pushOpen = !pushOpen; paintPushCard(); }
+
 function pushBlock() {
-  setTimeout(async () => {
-    const el = $('pushCard'); if (!el) return;
-    const st = await pushState();
-    const body = {
-      'unsupported' : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
-      'needs-install': `<div class="hint" style="margin:0;line-height:1.75;">
-          아이폰은 <b>홈 화면에 추가</b>해야 알림을 받을 수 있어요.<br>
-          사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> → <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>`,
-      'blocked'     : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>`,
-      'off'         : `<button class="btn btn-green" onclick="enablePush()">알림 켜기</button>`,
-      'on'          : `<div style="display:flex;align-items:center;gap:10px;">
-          <div style="flex:1;font-size:13px;color:var(--green-d);font-weight:700;">켜져 있어요</div>
-          <button class="btn btn-line" style="width:auto;padding:9px 14px;font-size:13px;"
-                  onclick="disablePush()">끄기</button></div>`,
-    }[st];
-    el.querySelector('.push-body').innerHTML = body;
-  }, 0);
-  const hhmm = String(me.remind_at || '20:00').slice(0, 5);
-  return `<div class="card" id="pushCard">
-      <div class="field-label" style="margin-bottom:9px;">
-        <i class="ti ti-bell"></i> 알림</div>
+  setTimeout(paintPushCard, 0);
+  return `<div class="card" id="pushCard"><div class="hint" style="margin:0;">확인 중…</div></div>`;
+}
+
+async function paintPushCard() {
+  const el = $('pushCard'); if (!el) return;
+  const st    = await pushState();
+  const hhmm  = String(me.remind_at || '20:00').slice(0, 5);
+  const remOn = me.remind_on !== false;
+
+  if (st === 'on' && !pushOpen) {
+    el.className = 'card push-min';
+    el.onclick = togglePushCard;
+    el.innerHTML = `<i class="ti ti-bell" style="color:var(--green-d);"></i>
+      <b>알림</b>
+      <span>켜짐${remOn ? ` · ${hhmmKo(hhmm)}` : ''}</span>
+      <i class="ti ti-chevron-right"></i>`;
+    return;
+  }
+
+  const body = {
+    'unsupported' : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
+    'needs-install': `<div class="hint" style="margin:0;line-height:1.75;">
+        아이폰은 <b>홈 화면에 추가</b>해야 알림을 받을 수 있어요.<br>
+        사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> → <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>`,
+    'blocked'     : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>`,
+    'off'         : `<button class="btn btn-green" onclick="enablePush()">알림 켜기</button>`,
+    'on'          : `<div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;font-size:13px;color:var(--green-d);font-weight:700;">켜져 있어요</div>
+        <button class="btn btn-line" style="width:auto;padding:9px 14px;font-size:13px;"
+                onclick="disablePush()">끄기</button></div>`,
+  }[st];
+
+  el.className = 'card';
+  el.onclick = null;
+  el.innerHTML = `
+      <div class="field-label" style="margin-bottom:9px;display:flex;align-items:center;">
+        <i class="ti ti-bell${st === 'on' ? '' : '-off'}"
+           style="margin-right:5px;color:${st === 'on' ? 'var(--green-d)' : 'var(--ink-3)'};"></i>
+        <span style="flex:1;">알림</span>
+        ${st === 'on' ? `<span style="font-size:12px;font-weight:700;color:var(--ink-3);cursor:pointer;"
+             onclick="togglePushCard()">접기 <i class="ti ti-chevron-down"></i></span>` : ''}
+      </div>
       <div class="hint" style="margin:0 0 11px;">
         루틴 승인, 후기 기한, 오늘 인증을 알려드려요.</div>
-      <div class="push-body"><div class="hint" style="margin:0;">확인 중…</div></div>
+      <div class="push-body">${body}</div>
       <div class="rm">
         <label class="rm-row">
           <span>매일 독서 리마인더</span>
-          <input type="checkbox" id="rmOn" ${me.remind_on === false ? '' : 'checked'}
-                 onchange="saveRemind()">
+          <input type="checkbox" id="rmOn" ${remOn ? 'checked' : ''} onchange="saveRemind()">
         </label>
-        <div class="rm-row" id="rmTimeRow" style="${me.remind_on === false ? 'display:none;' : ''}">
+        <div class="rm-row" id="rmTimeRow" style="${remOn ? '' : 'display:none;'}">
           <span class="rm-sub">알림 시각</span>
           <input type="time" id="rmAt" value="${hhmm}" step="1800" onchange="pickRemind(this.value)">
         </div>
         <div class="hint" id="rmHint" style="margin:9px 0 0;">
           ${hhmmKo(hhmm)}까지 오늘 인증이 없으면 한 번 알려드려요.</div>
-      </div>
-    </div>`;
+      </div>`;
 }
+
 // 내 이름도 남들이 보는 이름으로 부른다. 실명은 내 정보 화면에만 나온다
 const myName    = () => (me && (me.nick || me.name)) || '나';
 
