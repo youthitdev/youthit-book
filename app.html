@@ -829,7 +829,8 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <div class="au-hint" id="roleHint">읽고 인증하고 포인트를 모아요</div>
 
     <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="12" autocomplete="nickname">
-    <input type="text" id="auName" placeholder="이름 (실명)" maxlength="20" autocomplete="name">
+    <input type="text" id="auName" placeholder="이름 (실명)" maxlength="20"
+           autocomplete="name" autocorrect="off" spellcheck="false">
     <div class="au-hint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
     <input type="date" id="auBirth" max="2099-12-31" required>
     <div class="au-hint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
@@ -847,7 +848,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <input type="text" id="auAffil" placeholder="소속 (기관·단체·학교 등)" maxlength="30" style="display:none;">
   </div>
 
-  <input type="email" id="auEmail" placeholder="이메일" autocomplete="email">
+  <!-- ⚠️ `email` 이 아니라 `username` 이어야 한다. 사파리는 비밀번호와 짝이 될
+       아이디 칸을 찾는데, 없으면 직접 골라버린다 — 이름 칸에 저장된
+       메일 주소를 밀어넣고 있었다 -->
+  <input type="email" id="auEmail" placeholder="이메일" autocomplete="username">
   <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
 
   <div id="signupAgree" style="display:none;margin-top:6px;">
