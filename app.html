@@ -2130,18 +2130,31 @@ function routineCard(r) {
   const per = r.start_date && r.end_date ? `${md(r.start_date)}~${md(r.end_date)}` : '기간 미정';
 
   // 남은 날. 모집 중이면 시작까지, 진행 중이면 끝까지 —
-  // 「언제까지 정해야 하나」가 고를 때 제일 궁금한 것이다
+  // 「언제까지 정해야 하나」가 고를 때 제일 궁금한 것이다.
+  //
+  // ⚠️ 전에는 `n > 0 ? 시작 D-n : 오늘 시작` 이라 **지난 날짜까지 「오늘
+  //    시작」** 으로 떨어졌다. 12일 전에 시작한 루틴이 오늘 시작한다고
+  //    말했다. 끝날짜도 마찬가지였다.
+  //    승인이 늦거나 지난 날짜로 만들면 실제로 생긴다 (「지난 날짜 루틴 막기」는 미뤄둔 할 일).
   const dd = (() => {
     const t = todayKST();
     const days = d => Math.round((new Date(d + 'T00:00:00') - new Date(t + 'T00:00:00')) / 86400e3);
+
+    // 끝날이 지났으면 시작이 언제였든 그 말이 먼저다
+    if (r.end_date) {
+      const e = days(r.end_date);
+      if (e < 0)  return '기간 지남';
+      if (e === 0) return '오늘 끝';
+    }
     if (r.status === 'recruit' && r.start_date) {
       const n = days(r.start_date);
-      return n > 0 ? `시작 D-${n}` : '오늘 시작';
+      if (n > 0)  return `시작 D-${n}`;
+      if (n === 0) return '오늘 시작';
+      // 시작일은 지났는데 아직 모집 중 — 이미 달리고 있다.
+      // 지금 들어가면 며칠 남는지가 더 쓸모 있다
+      return r.end_date ? `종료 D-${days(r.end_date)}` : '이미 시작';
     }
-    if (r.status === 'active' && r.end_date) {
-      const n = days(r.end_date);
-      return n > 0 ? `종료 D-${n}` : '오늘 끝';
-    }
+    if (r.status === 'active' && r.end_date) return `종료 D-${days(r.end_date)}`;
     return '';
   })();
 
