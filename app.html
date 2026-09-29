@@ -656,7 +656,15 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .pf { display:flex; align-items:center; gap:13px; }
 .pf .f-av { width:44px; height:44px; font-size:17px; flex:none; margin:0; }
 .pf-in { flex:1; min-width:0; }
-.pf-n { font-size:15.5px; font-weight:800; letter-spacing:-.3px; }
+.pf-n { font-size:15.5px; font-weight:800; letter-spacing:-.3px;
+  display:flex; align-items:center; gap:6px; min-width:0; }
+.pf-n > span.vbadge { flex:none; }
+/* 조용한 표시다. 자랑하라고 달아 둔 게 아니라, 나중에 확인하려는 아이가
+   볼 자리가 필요해서 둔다 */
+.vbadge { display:inline-flex; align-items:center; gap:2px;
+  background:var(--green-l); color:var(--green-d); border-radius:7px;
+  padding:2px 7px 2px 5px; font-size:11px; font-weight:700; letter-spacing:0; }
+.vbadge .ti { font-size:13px; }
 .pf-m { font-size:12px; color:var(--ink-3); margin-top:2px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .pf-ed { flex:none; background:var(--bg); border:1px solid var(--line); color:var(--ink-2);
@@ -3250,6 +3258,18 @@ const VERIFY = {
 
 // 카드 한 장을 쓰던 자리다. 담긴 건 상태 한 줄뿐이라 프로필 밑으로 옮긴다.
 // 끝난 사람에게는 아예 안 보인다 — 할 일이 없는 줄이 자리를 차지할 이유가 없다
+// 승인되면 확인 줄이 사라져 흔적이 없었다 — 아이가 「나 확인된 거 맞나」
+// 싶을 때 볼 데가 없다. 이름 옆에 작게 남긴다.
+//
+// ⚠️ **MY 의 내 카드에만** 단다. 인증 피드나 댓글에 붙이면 뒤집어서
+//   확인 안 된 아이가 드러난다. 서류를 못 구하는 아이일수록 이 프로그램이
+//   필요한 아이다.
+// ⚠️ 「인증」이 아니라 「확인」이다. 이 앱에서 인증은 매일 하는 독서 인증을 뜻한다
+function verifyBadge() {
+  if (!isYouth() || !me || (me.verify_status || 'none') !== 'approved') return '';
+  return `<span class="vbadge"><i class="ti ti-check"></i>확인됨</span>`;
+}
+
 function verifyLine() {
   if (!isYouth() || !me) return '';
   const st = me.verify_status || 'none';
@@ -3595,7 +3615,7 @@ function viewMy() {
       <div class="pf">
         <div class="f-av">${esc(myName()[0])}</div>
         <div class="pf-in">
-          <div class="pf-n">${esc(myName())}</div>
+          <div class="pf-n">${esc(myName())}${verifyBadge()}</div>
           <div class="pf-m">${esc(who)}</div>
         </div>
         <button class="pf-ed" onclick="openProfile()">수정</button>
