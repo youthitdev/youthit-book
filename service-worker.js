@@ -1,7 +1,7 @@
 // 한끗독서 서비스 워커.
 // 있는 이유는 캐시가 아니라 푸시다 — 아이폰은 홈 화면에 추가된 PWA 에만 푸시를 준다.
 const BASE  = '/youthit-book/';
-const CACHE = 'hankkut-book-v2';
+const CACHE = 'hankkut-book-v3';
 const ASSETS = [BASE, BASE + 'app.html', BASE + 'manifest.json',
                 BASE + 'icon-192.png', BASE + 'icon-512.png'];
 
@@ -45,12 +45,18 @@ self.addEventListener('push', e => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; }
   catch { d = { title: '한끗독서', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || '한끗독서', {
-    body:  d.body || '',
-    icon:  BASE + 'icon-192.png',
-    badge: BASE + 'icon-192.png',
-    data:  { url: d.url || BASE + 'app.html' },
-  }));
+  e.waitUntil((async () => {
+    await self.registration.showNotification(d.title || '한끗독서', {
+      body:  d.body || '',
+      icon:  BASE + 'icon-192.png',
+      badge: BASE + 'icon-192.png',
+      data:  { url: d.url || BASE + 'app.html' },
+    });
+    // 열려 있는 화면은 🔔 목록을 앱 켜질 때 한 번만 읽는다.
+    // 알려주지 않으면 배너만 오고 종은 그대로라, 앱을 꺼다 켜야 숫자가 붙는다
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const c of list) c.postMessage({ type: 'notif-new' });
+  })());
 });
 
 self.addEventListener('notificationclick', e => {
