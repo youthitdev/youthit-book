@@ -1759,6 +1759,7 @@ async function enter() {
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
   await loadAll();
   go('home');
+  startNotifPoll();
 
   // 가입할 때 끗짱을 골랐으면 바로 신청서로. 한 번만 보낸다
   if (sessionStorage.getItem('goKkutApply')) {
@@ -2095,6 +2096,19 @@ async function refreshNotifs() {
   state.notifs = data || [];
   paintBell();
   if (isOvOpen('ovNotif')) openNotif();   // 알림함을 열어둔 채라면 거기도 새로
+}
+
+// 워커가 보낸 전갈이 늘 닿지는 않는다 — 아이폰 PWA 에선 앱을 켜 둔
+// 채로도 끊기는 일이 있다. 열려 있는 동안 45초마다 직접 물어보는 걸
+// 바닥으로 깔는다. 표 하나에 인덱스가 걸려 있어 값이 거의 안 든다.
+// 화면이 숨어 있을 때는 건너뛰고, 돌아올 때 visibilitychange 가 받는다
+let notifTimer = null;
+function startNotifPoll() {
+  clearInterval(notifTimer);
+  if (!me || DEMO || isGuest()) return;
+  notifTimer = setInterval(() => {
+    if (document.visibilityState === 'visible') refreshNotifs();
+  }, 45000);
 }
 
 async function openNotif() {
