@@ -614,11 +614,26 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
-/* 알림을 이미 켜 둔 사람에게 보여줄 한 줄. 눌러서 펼친다 */
-.push-min { display:flex; align-items:center; gap:8px; padding:14px 16px; cursor:pointer; }
-.push-min b { font-size:14px; font-weight:700; }
-.push-min > span { flex:1; font-size:13px; color:var(--ink-3); }
-.push-min > .ti-chevron-right { color:var(--ink-3); font-size:16px; }
+/* 레벨 — 이름 밑 한 줄. 등급표가 아니라 쌓인 것의 이름이다 */
+.lv-row { display:flex; align-items:center; gap:7px; margin-top:5px; flex-wrap:wrap; }
+.lv { display:inline-flex; align-items:center; gap:4px; flex:none;
+  background:var(--blue); color:#fff; border-radius:8px;
+  padding:3px 9px 3px 7px; font-size:11.5px; font-weight:700; }
+.lv em { font-style:normal; font-size:12px; }
+.lv-row i { font-style:normal; font-size:11.5px; color:var(--ink-3); }
+
+/* MY 맨 아래 메뉴. 자주 안 여는 것들을 한 줄씩으로 접는다 */
+.menu { padding:2px 0; }
+.menu button { display:flex; align-items:center; gap:11px; width:100%;
+  border:0; background:none; font-family:inherit; cursor:pointer; text-align:left;
+  padding:14px 16px; border-top:1px solid var(--line); }
+.menu button:first-child { border-top:0; }
+.menu button:active { background:var(--bg); }
+.menu em { font-style:normal; font-size:16px; flex:none; }
+.menu b { font-size:14px; font-weight:700; color:var(--ink); flex:none; }
+.menu span { flex:1; text-align:right; font-size:12.5px; color:var(--ink-3);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.menu i { font-style:normal; color:var(--ink-3); font-size:16px; flex:none; }
 .rm-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
   padding:6px 0; font-size:13.5px; font-weight:700; }
 .rm-row .rm-sub { font-weight:600; color:var(--ink-2); }
@@ -1211,6 +1226,21 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 </div>
 
 <!-- 읽는 책 관리. 더하기만 있으면 잘못 넣었을 때 세 칸이 영영 막힌다 -->
+<!-- 알림 설정. MY 메뉴의 「알림」에서 열린다 -->
+<div class="sheet" id="shPush" onclick="if(event.target===this)closeSheet('shPush')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">알림</div>
+        <div class="sheet-s">루틴 승인, 후기 기한, 오늘 인증을 알려드려요.</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shPush')" aria-label="닫기">✕</button>
+    </div>
+    <div id="shPushBody"><div class="hint" style="margin:0;">확인 중…</div></div>
+  </div>
+</div>
+
 <div class="sheet" id="shBooks" onclick="if(event.target===this)closeSheet('shBooks')">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -2051,29 +2081,14 @@ async function disablePush() {
 //   곧 습관이다. 그래서 **안 켜 둔 아이에겐 커야** 하고, **이미 켜 둔 사람에겐
 //   작아야** 한다. 한 번 켜면 다시 건드릴 일이 없는 설정이다.
 //   꺼져 있을 때 빨간색은 쓰지 않는다 — 꺼 둔 건 잘못이 아니라 선택이다
-let pushOpen = false;
-function togglePushCard() { pushOpen = !pushOpen; paintPushCard(); }
-
-function pushBlock() {
-  setTimeout(paintPushCard, 0);
-  return `<div class="card" id="pushCard"><div class="hint" style="margin:0;">확인 중…</div></div>`;
-}
-
+// 알림 설정은 시트로 옮겼다. MY 에 카드째 놓여 있었는데, 한 번 켜면 다시 볼
+// 일이 없는 설정이라 맨 아래 메뉴 한 줄이면 된다.
+// 상태를 비동기로 읽어야 해서 시트를 먼저 열고 값이 오면 안쪽을 채운다
 async function paintPushCard() {
-  const el = $('pushCard'); if (!el) return;
+  const el = $('shPushBody'); if (!el) return;
   const st    = await pushState();
   const hhmm  = String(me.remind_at || '20:00').slice(0, 5);
   const remOn = me.remind_on !== false;
-
-  if (st === 'on' && !pushOpen) {
-    el.className = 'card push-min';
-    el.onclick = togglePushCard;
-    el.innerHTML = `<i class="ti ti-bell" style="color:var(--green-d);"></i>
-      <b>알림</b>
-      <span>켜짐${remOn ? ` · ${hhmmKo(hhmm)}` : ''}</span>
-      <i class="ti ti-chevron-right"></i>`;
-    return;
-  }
 
   const body = {
     'unsupported' : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
@@ -2088,18 +2103,7 @@ async function paintPushCard() {
                 onclick="disablePush()">끄기</button></div>`,
   }[st];
 
-  el.className = 'card';
-  el.onclick = null;
   el.innerHTML = `
-      <div class="field-label" style="margin-bottom:9px;display:flex;align-items:center;">
-        <i class="ti ti-bell${st === 'on' ? '' : '-off'}"
-           style="margin-right:5px;color:${st === 'on' ? 'var(--green-d)' : 'var(--ink-3)'};"></i>
-        <span style="flex:1;">알림</span>
-        ${st === 'on' ? `<span style="font-size:12px;font-weight:700;color:var(--ink-3);cursor:pointer;"
-             onclick="togglePushCard()">접기 <i class="ti ti-chevron-down"></i></span>` : ''}
-      </div>
-      <div class="hint" style="margin:0 0 11px;">
-        루틴 승인, 후기 기한, 오늘 인증을 알려드려요.</div>
       <div class="push-body">${body}</div>
       <div class="rm">
         <label class="rm-row">
@@ -2113,6 +2117,7 @@ async function paintPushCard() {
         <div class="hint" id="rmHint" style="margin:9px 0 0;">
           ${hhmmKo(hhmm)}까지 오늘 인증이 없으면 한 번 알려드려요.</div>
       </div>`;
+  paintPushRow();
 }
 
 // 내 이름도 남들이 보는 이름으로 부른다. 실명은 내 정보 화면에만 나온다
@@ -3698,6 +3703,67 @@ function calBlock() {
     </div>`;
 }
 
+// ── 레벨 ───────────────────────────────────────────────
+// 인증 횟수로만 오른다. 남과 견주지 않고 내가 쌓은 것만 센다.
+// 이름은 책 읽는 일에서 따왔다 — 첫 장에서 시작해 책숲까지.
+//
+// 【문턱을 낮게 시작한다】 5번이면 벌써 둘째 칸이다. 한 루틴(15일)을 마치면
+//   셋째 칸에 닿는다. 처음 몇 칸이 빨라야 다음 칸이 궁금해진다.
+// 【내려가지 않는다】 인증을 지우면 숫자는 줄지만, 레벨을 뺏는 화면은 만들지 않는다
+const LEVELS = [
+  { n: 1, ico: '📄', name: '첫 장',   at: 0   },
+  { n: 2, ico: '🔖', name: '책갈피', at: 5   },
+  { n: 3, ico: '✏️', name: '밑줄',   at: 15  },
+  { n: 4, ico: '📗', name: '한 권',   at: 30  },
+  { n: 5, ico: '📚', name: '책장',   at: 60  },
+  { n: 6, ico: '🌳', name: '책숲',   at: 100 },
+];
+
+const myCertCount = () => (state.certs || []).filter(c => c.user_id === me.id).length;
+
+function myLevel(n) {
+  const cnt = n ?? myCertCount();
+  let cur = LEVELS[0];
+  for (const l of LEVELS) if (cnt >= l.at) cur = l;
+  const next = LEVELS.find(l => l.at > cnt) || null;
+  return { cur, next, left: next ? next.at - cnt : 0 };
+}
+
+function levelLine() {
+  if (!me || isGuest()) return '';
+  const { cur, next, left } = myLevel();
+  return `<div class="lv-row">
+      <span class="lv"><em>${cur.ico}</em>레벨 ${cur.n} · ${cur.name}</span>
+      ${next ? `<i>${next.name}까지 ${left}번</i>` : `<i>다 올랐어요</i>`}
+    </div>`;
+}
+
+// ── MY 맨 아래 메뉴 ────────────────────────────────────
+// 카드가 세로로 계속 쌓여 아래가 길었다. 자주 안 여는 것들은 한 줄씩으로 접는다.
+// 알림은 카드째 놓여 있던 것을 시트로 옮긴다 — 한 번 켜면 다시 볼 일이 없는 설정이다
+function menuBlock() {
+  if (!me || isGuest()) return '';
+  setTimeout(paintPushRow, 0);
+  return `<div class="sec-t">설정</div>
+    <div class="card menu">
+      <button onclick="openProfile()"><em>🙍</em><b>내 정보</b><span></span><i>›</i></button>
+      <button onclick="openPush()"><em>🔔</em><b>알림</b><span id="mnPush">확인 중…</span><i>›</i></button>
+      ${DEMO ? '' : `<button onclick="doLogout()"><em>🚪</em><b>로그아웃</b><span></span><i>›</i></button>`}
+    </div>`;
+}
+
+async function paintPushRow() {
+  const el = $('mnPush'); if (!el) return;
+  const st = await pushState();
+  el.textContent = st === 'on'
+    ? `켜짐${me.remind_on === false ? '' : ` · ${hhmmKo(String(me.remind_at || '20:00').slice(0, 5))}`}`
+    : st === 'needs-install' ? '홈 화면에 추가하면 받을 수 있어요'
+    : st === 'blocked' ? '브라우저에서 막혀 있어요'
+    : st === 'unsupported' ? '이 브라우저는 안 돼요' : '꺼짐';
+}
+
+function openPush() { paintPushCard(); showLayer('shPush'); }
+
 function viewMy() {
   const total = state.certs.filter(c => c.user_id === me.id).length;
   const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
@@ -3710,6 +3776,7 @@ function viewMy() {
         <div class="f-av">${esc(myName()[0])}</div>
         <div class="pf-in">
           <div class="pf-n">${esc(myName())}${verifyBadge()}</div>
+          ${levelLine()}
           <div class="pf-m">${esc(who)}</div>
         </div>
         <button class="pf-ed" onclick="openProfile()">수정</button>
@@ -3728,12 +3795,9 @@ function viewMy() {
     ${calBlock()}
     ${myBooksBlock()}
     ${pastBlock()}
-    ${pushBlock()}
     ${kkutCard()}
     ${statsStrip()}
-    ${DEMO ? '' : `<div style="text-align:center;margin:26px 0 8px;">
-      <b style="font-size:13px;color:var(--ink-3);cursor:pointer;text-decoration:underline;"
-         onclick="doLogout()">로그아웃</b></div>`}`;
+    ${menuBlock()}`;
 }
 
 // ── 내 정보 ────────────────────────────────────────────
