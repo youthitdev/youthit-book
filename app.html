@@ -2099,12 +2099,31 @@ function whenText(iso) {
 // 앱을 꺼다 켜야 숫자가 붙었다. 표 하나만 다시 읽어 종을 고친다
 async function refreshNotifs() {
   if (!me || DEMO || isGuest()) return;
+  const before = ((state.notifs || [])[0] || {}).id || 0;
+
   const { data, error } = await sb.from('notifications')
     .select('*').order('created_at', { ascending: false }).limit(50);
   if (error) return;
   state.notifs = data || [];
   paintBell();
   if (isOvOpen('ovNotif')) openNotif();   // 알림함을 열어둔 채라면 거기도 새로
+
+  // 알림이 왔다는 건 **나에 관한 무언가가 바뀜다**는 뜻이다 — 청소년
+  // 확인이 끝났거나, 루틴에 들어갔거나, 끗짱이 됐거나. 알림만 새로 읽고
+  // 화면을 그대로 두면 「승인됐다」는 알림 밑에 「확인하고 있어요」가 남는다
+  const after = ((state.notifs || [])[0] || {}).id || 0;
+  if (after > before) await reloadMine();
+}
+
+// 프로필과 자료를 다시 들고 온다. 열려 있는 오버레이는 건드리지 않는다 —
+// 인증을 쓰는 중에 밑에서 다시 그려도 적던 글은 그대로여야 한다
+async function reloadMine() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const fresh = await loadMe(user);
+  if (fresh) me = fresh;
+  await loadAll();
+  render();
 }
 
 // 워커가 보낸 전갈이 늘 닿지는 않는다 — 아이폰 PWA 에선 앱을 켜 둔
