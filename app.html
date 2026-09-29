@@ -1908,7 +1908,24 @@ async function pushState() {
   if (Notification.permission === 'denied') return 'blocked';
   const reg = await swReady();
   if (!reg) return 'off';
-  return (await reg.pushManager.getSubscription()) ? 'on' : 'off';
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return 'off';
+  claimPush(sub);            // 내 것이 아니면 조용히 넘겨받는다
+  return 'on';
+}
+
+// 구독은 **기기**에 붙고 알림함은 **계정**에 붙는다. 한 기기에서 계정을
+// 바꿔 로그인하면 구독 줄은 앞사람 것으로 남는다 — 배너는 이 기기로 오는데
+// 지금 사람의 알림함은 텅 비어 있고, 화면은 「켜져 있어요」라고 말한다.
+// RLS 가 남의 줄을 못 고치게 막아서 서버 함수로 넘겨받는다 (migration-54)
+let pushClaimed = false;
+async function claimPush(sub) {
+  if (pushClaimed || !sub || !me || DEMO || isGuest()) return;
+  pushClaimed = true;
+  const k = sub.toJSON().keys || {};
+  if (!k.p256dh || !k.auth) return;
+  await sb.rpc('claim_push',
+    { p_endpoint: sub.endpoint, p_p256dh: k.p256dh, p_auth: k.auth });
 }
 
 async function enablePush() {
@@ -1926,10 +1943,11 @@ async function enablePush() {
     } catch (e) { return toast('알림을 켜지 못했어요'); }
   }
   const k = sub.toJSON().keys || {};
-  const { error } = await sb.from('push_subscriptions')
-    .upsert({ user_id: me.id, endpoint: sub.endpoint, p256dh: k.p256dh, auth: k.auth },
-            { onConflict: 'endpoint' });
+  // upsert 로 넣으면 이 기기를 앞서 켰던 사람의 줄에 RLS 가 막힌다
+  const { error } = await sb.rpc('claim_push',
+    { p_endpoint: sub.endpoint, p_p256dh: k.p256dh, p_auth: k.auth });
   if (error) return toast('알림 설정을 저장하지 못했어요');
+  pushClaimed = true;
   render(); toast('알림을 켰어요');
 }
 
