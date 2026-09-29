@@ -1416,8 +1416,8 @@ function setJoinRole(r) {
   if (k) $('auSchool').value = ''; else $('auAffil').value = '';
 }
 
-function openPolicy()  { $('policySheet').classList.add('on'); }
-function closePolicy() { $('policySheet').classList.remove('on'); }
+function openPolicy()  { showLayer('policySheet'); }
+function closePolicy() { hideLayer('policySheet'); }
 // 오류 띠는 폼 맨 위에 있다. 아래쪽 「가입하기」를 누른 사람에겐 화면 밖이라,
 // 무엇이 잘못됐는지 모른 채 멈춘다. 띠는 그대로 두고(고치는 동안 남아 있어야 한다)
 // 배너를 띄우고, 문제가 된 칸으로 데려간다
@@ -3251,7 +3251,7 @@ let vfDoc = null;
 function openVerify() {
   vfDoc = null;
   drawVerify();
-  $('shVerify').classList.add('on');
+  showLayer('shVerify');
 }
 
 function drawVerify() {
@@ -4158,7 +4158,7 @@ let sbRid = null, sbCover = null, sbFromCert = false;
 function openBookSheet(rid, fromCert) {
   sbRid = rid; sbCover = null; sbFromCert = !!fromCert; delete bookPick['sbTitle'];
   drawBookSheet();
-  $('shBooks').classList.add('on');
+  showLayer('shBooks');
 }
 
 function drawBookSheet() {
@@ -4646,10 +4646,10 @@ function openStoreInfo(id) {
                 </a>`;
       })() : ''}
     </div>` : ''}`;
-  $('shStore').classList.add('on');
+  showLayer('shStore');
 }
 
-function closeSheet(id) { $(id || 'shStore').classList.remove('on'); }
+function closeSheet(id) { hideLayer(id || 'shStore'); }
 
 // ── 책 받았어요 ────────────────────────────────────────
 // 아이는 돈을 내지 않는다. 서점 외상으로 받아오고, 책값은 유스보이스가 서점에 보낸다
@@ -4731,7 +4731,45 @@ async function addComment(certId) {
 }
 
 // ── 공용 ───────────────────────────────────────────────
-function openOv(id) { $(id).classList.add('on'); }
+// ── 겹쳐 뜨는 화면 (오버레이 · 시트) ──────────────────
+// PWA 로 띄우면 브라우저 뒤로가기가 아예 없다. 겹쳐 뜬 화면을 닫는 길이 ← 버튼
+// 하나뿐이었다. 화면을 열 때마다 방문 기록을 한 칸 쌓아 두면, 아이폰의
+// **가장자리 쓸기(뒤로)** 가 그대로 먹고 안드로이드 뒤로 버튼도 같이 동작한다.
+//
+// 【기록과 화면이 어긋나면 안 된다】 ✕ 나 저장 완료로 직접 닫을 때도 기록을
+//   한 칸 물린다. 안 그러면 쌓인 기록이 남아, 쓸기 한 번에 엉뚱한 게 닫히거나
+//   앱이 통째로 닫힌다.
+// 【화면은 곧바로 지운다】 history.back() 은 늦게 오는데, 부르는 쪽은
+//   `closeOv(...); render();` 처럼 바로 다음 줄을 실행한다. 클래스를 먼저 떼고
+//   기록은 뒤따라 맞춘다. popstate 는 어긋난 만큼만 정리하므로 두 번 닫히지 않는다
+const layers = [];
+
+function showLayer(id) {
+  const el = $(id); if (!el || el.classList.contains('on')) return;
+  el.classList.add('on');
+  layers.push(id);
+  history.pushState({ layers: layers.length }, '');
+}
+
+function hideLayer(id) {
+  const el = $(id); if (el) el.classList.remove('on');
+  const i = layers.lastIndexOf(id);
+  if (i < 0) return;
+  layers.splice(i, 1);
+  history.back();
+}
+
+// 쓸기·뒤로로 돌아왔다. 기록이 말하는 만큼만 남기고 위에서부터 걷는다
+window.addEventListener('popstate', () => {
+  const want = (history.state && history.state.layers) || 0;
+  while (layers.length > want) {
+    const id = layers.pop();
+    const el = $(id); if (el) el.classList.remove('on');
+  }
+});
+
+function openOv(id) { showLayer(id); }
+function closeOv(id) { hideLayer(id); }
 const isOvOpen = id => $(id).classList.contains('on');
 
 // render() 는 탭 화면만 다시 그린다. 오버레이가 열려 있으면 거기도 손봐야
@@ -4744,7 +4782,6 @@ function refreshOpenOv(rid, goneCertId) {
   }
   if (isOvOpen('ovRoutine') && rid != null) openRoutine(rid);
 }
-function closeOv(id) { $(id).classList.remove('on'); }
 
 // 사진은 올리기 전에 적당한 해상도로 줄인다 (업로드 속도·용량)
 // 찍은 시각을 사진에 새긴다. 인증·책 구매 사진처럼 '그때 거기'가 중요한 것에만 쓴다
