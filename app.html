@@ -1242,6 +1242,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div class="hint">운영진만 봐요. 서류 확인과 교환권 정산에 써요.</div>
     </div>
     <div>
+      <div class="field-label">이메일</div>
+      <input type="email" id="pfEmail" disabled>
+      <div class="hint">로그인할 때 쓰는 주소예요. 바꿔야 하면 운영진에게 말해주세요.</div>
+    </div>
+    <div>
       <div class="field-label">휴대폰번호</div>
       <input type="tel" id="pfPhone" maxlength="13" inputmode="numeric" placeholder="'-' 없이">
       <div class="hint">운영진만 봐요. 같은 루틴 사람에게도 보이지 않아요.</div>
@@ -1273,7 +1278,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <span style="font-size:13.5px;">새 루틴·행사 소식 받기 <span class="opt">선택</span></span>
     </label>
     <div class="card" style="font-size:12.5px;color:var(--ink-3);line-height:1.7;">
-      이메일과 역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
+      역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
     </div>
     <button class="btn btn-primary" id="pfSubmit" onclick="saveProfile()">저장하기</button>
   </div>
@@ -1541,7 +1546,7 @@ async function loadMe(user) {
 
   // 마이그레이션 38·41 을 아직 안 돌렸으면 이 표가 없다. 그때는 생년월일이
   // profiles 에 남아 있으니 그걸 쓴다 — 없다고 하면 다시 입력하라고 조르게 된다
-  if (privErr) return { ...data, phone: null, birth_date: data.birth_date ?? null };
+  if (privErr) return { ...data, email: user.email, phone: null, birth_date: data.birth_date ?? null };
 
   if (!priv && (meta.phone || meta.birth_date)) {
     // 트리거가 못 넣었을 때. 가입은 막지 않도록 만들어 둬서 가끔 비어 있다
@@ -1550,7 +1555,8 @@ async function loadMe(user) {
       .select('phone,birth_date').maybeSingle();
     priv = up.data;
   }
-  return { ...data, phone: priv?.phone || null,
+  // 이메일은 profiles 에 없고 auth 에만 있다. 내 정보에서 보여주려면 여기서 업어 와야 한다
+  return { ...data, email: user.email, phone: priv?.phone || null,
            birth_date: priv?.birth_date ?? data.birth_date ?? null };
 }
 
@@ -3668,6 +3674,7 @@ function openProfile() {
     ? '한 번 적으면 못 바꿔요. 바로잡아야 하면 운영진에게 말해주세요.'
     : '만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b>';
   birthBounds($('pfBirth'));
+  $('pfEmail').value = me.email || '';
   $('pfPhone').value = me.phone || '';   // 로그인할 때 이미 붙여 왔다
   checkProfile(); openOv('ovProfile');
 }
