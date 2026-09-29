@@ -614,13 +614,30 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
-/* 레벨 — 이름 밑 한 줄. 등급표가 아니라 쌓인 것의 이름이다 */
-.lv-row { display:flex; align-items:center; gap:7px; margin-top:5px; flex-wrap:wrap; }
-.lv { display:inline-flex; align-items:center; gap:4px; flex:none;
-  background:var(--blue); color:#fff; border-radius:8px;
-  padding:3px 9px 3px 7px; font-size:11.5px; font-weight:700; }
-.lv em { font-style:normal; font-size:12px; }
-.lv-row i { font-style:normal; font-size:11.5px; color:var(--ink-3); }
+/* 레벨 카드 — 지나온 칸과 앞에 올 칸을 같이 보여준다 */
+.lv-card { padding:16px; }
+.lv-top { display:flex; align-items:center; gap:12px; }
+.lv-ico { width:46px; height:46px; flex:none; border-radius:14px; background:var(--bg);
+  display:flex; align-items:center; justify-content:center; font-size:23px; }
+.lv-txt { min-width:0; }
+.lv-txt > b { display:block; font-size:15px; font-weight:800; letter-spacing:-.3px; }
+.lv-txt > i { display:block; font-style:normal; font-size:12.5px; color:var(--ink-3); margin-top:2px; }
+.lv-txt > i b, .lv-txt > i span { white-space:nowrap; }
+.lv-txt > i b { color:var(--green-d); }
+.lv-bar { height:7px; border-radius:99px; background:var(--bg); overflow:hidden; margin:13px 0 12px; }
+.lv-bar span { display:block; height:100%; border-radius:99px; background:var(--green);
+  transition:width .5s ease; }
+.lv-road { display:grid; grid-template-columns:repeat(6, 1fr); gap:2px; }
+.lv-step { text-align:center; }
+.lv-step em { font-style:normal; display:flex; width:30px; height:30px; margin:0 auto 4px;
+  align-items:center; justify-content:center; border-radius:50%; font-size:15px;
+  background:var(--bg); }
+.lv-step i { font-style:normal; font-size:10.5px; color:var(--ink-3); display:block;
+  white-space:nowrap; }
+.lv-step.past em { background:var(--green-l); }
+.lv-step.now em { background:var(--green); box-shadow:0 0 0 3px var(--green-l); }
+.lv-step.now i { color:var(--green-d); font-weight:800; }
+.lv-step.next em, .lv-step.next i { opacity:.4; }
 
 /* MY 맨 아래 메뉴. 자주 안 여는 것들을 한 줄씩으로 접는다 */
 .menu { padding:2px 0; }
@@ -1841,6 +1858,7 @@ async function enter() {
   await loadAll();
   go('home');
   startNotifPoll();
+  cheerLevel();
 
   // 가입할 때 끗짱을 골랐으면 바로 신청서로. 한 번만 보낸다
   if (sessionStorage.getItem('goKkutApply')) {
@@ -2159,7 +2177,7 @@ async function refreshNotifs() {
   // 확인이 끝났거나, 루틴에 들어갔거나, 끗짱이 됐거나. 알림만 새로 읽고
   // 화면을 그대로 두면 「승인됐다」는 알림 밑에 「확인하고 있어요」가 남는다
   const after = ((state.notifs || [])[0] || {}).id || 0;
-  if (after > before) await reloadMine();
+  if (after > before) { await reloadMine(); cheerLevel(); }
 }
 
 // 프로필과 자료를 다시 들고 온다. 열려 있는 오버레이는 건드리지 않는다 —
@@ -3729,13 +3747,47 @@ function myLevel(n) {
   return { cur, next, left: next ? next.at - cnt : 0 };
 }
 
-function levelLine() {
+// 작은 알약 하나로는 아무 일도 안 일어나 보인다. 레벨은 「지금 어디쯤인지」와
+// **「앞에 뭐가 있는지」** 가 같이 보여야 재미가 난다. 여섯 칸을 늘어놓고
+// 지나온 칸은 채우고, 다음 칸은 흐리게 두되 이름은 보여 준다 —
+// 가려 두면 궁금하지 않고 답답하다.
+function levelCard() {
   if (!me || isGuest()) return '';
-  const { cur, next, left } = myLevel();
-  return `<div class="lv-row">
-      <span class="lv"><em>${cur.ico}</em>레벨 ${cur.n} · ${cur.name}</span>
-      ${next ? `<i>${next.name}까지 ${left}번</i>` : `<i>다 올랐어요</i>`}
+  const cnt = myCertCount();
+  const { cur, next, left } = myLevel(cnt);
+  const from = cur.at, to = next ? next.at : cur.at;
+  const pct = next ? Math.min(100, Math.round((cnt - from) / Math.max(to - from, 1) * 100)) : 100;
+
+  const road = LEVELS.map(l => {
+    const cls = l.n < cur.n ? 'past' : l.n === cur.n ? 'now' : 'next';
+    return `<div class="lv-step ${cls}"><em>${l.ico}</em><i>${l.name}</i></div>`;
+  }).join('');
+
+  return `<div class="card lv-card">
+      <div class="lv-top">
+        <div class="lv-ico">${cur.ico}</div>
+        <div class="lv-txt">
+          <b>레벨 ${cur.n} · ${cur.name}</b>
+          <i>${next ? `<span>「${next.name}」까지</span> <b>${left}번</b>` : '여섯 칸을 다 올랐어요'}</i>
+        </div>
+      </div>
+      <div class="lv-bar"><span style="width:${pct}%;"></span></div>
+      <div class="lv-road">${road}</div>
     </div>`;
+}
+
+// 레벨이 오른 날 한 번만 축하한다. 조용히 바뀌면 오른 줄도 모른다.
+// 기기에만 적어 둔다 — 서버에 칸 하나 더 두고 지킬 만한 일이 아니다
+function cheerLevel() {
+  if (!me || DEMO || isGuest()) return;
+  const now = myLevel().cur;
+  const key = `dokseo_lv_${me.id}`;
+  let seen = 0;
+  try { seen = Number(localStorage.getItem(key) || 0); } catch {}
+  if (now.n > seen) {
+    try { localStorage.setItem(key, String(now.n)); } catch {}
+    if (seen) setTimeout(() => toast(`${now.ico} 레벨 ${now.n} · ${now.name}이 됐어요`), 700);
+  }
 }
 
 // ── MY 맨 아래 메뉴 ────────────────────────────────────
@@ -3776,13 +3828,13 @@ function viewMy() {
         <div class="f-av">${esc(myName()[0])}</div>
         <div class="pf-in">
           <div class="pf-n">${esc(myName())}${verifyBadge()}</div>
-          ${levelLine()}
           <div class="pf-m">${esc(who)}</div>
         </div>
         <button class="pf-ed" onclick="openProfile()">수정</button>
       </div>
       ${verifyLine()}
     </div>
+    ${levelCard()}
     ${isYouth() ? balanceBlock() : ''}
     ${noRoutineBlock()}
     ${creditBlock()}
