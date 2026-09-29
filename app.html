@@ -366,6 +366,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .vf-no { background:#FAEBE7; color:#8E3527; margin-top:9px; }
 .vf-ok b, .vf-no b { display:block; font-size:13px; color:var(--ink); margin-bottom:3px; }
 .vf-no b { color:#8E3527; }
+/* 서류 이름은 여럿이지만 조건은 하나다 — 이름과 생년월일이 보이느냐.
+   목록과 같은 모양이면 줄 하나로 흥러버린다 */
+.vf-key { margin-top:9px; padding-top:9px; border-top:1px solid #e4e4ec;
+  font-size:13px; font-weight:700; color:var(--ink); }
 /* 끗짱 적립 */
 .cr { background:#FDF6F4; border:1px solid #F5E0DA; }
 .cr-top b { font-size:26px; font-weight:800; color:var(--pink); letter-spacing:-1px; }
@@ -3239,8 +3243,8 @@ function drawVerify() {
       <b>이런 걸로 확인해요</b>
       <div>청소년증 · 학생증 · 재학증명서</div>
       <div>정원외관리증명서 · 검정고시 합격증서·합격증명서</div>
-      <div>그 밖에 청소년임을 알 수 있는 서류도 돼요.</div>
-      <div>이름과 생년월일(또는 학년)이 보이면 돼요.</div>
+      <div>그 밖에 청소년임을 알 수 있는 서류</div>
+      <div class="vf-key">이름과 생년월일(또는 학년)이 보이면 돼요.</div>
     </div>
     <div class="vf-no">
       <b>⚠️ 주민등록번호는 가려주세요</b>
