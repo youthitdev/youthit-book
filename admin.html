@@ -795,7 +795,7 @@ async function decideVerify(userId, approve) {
     const noDoc = !r.doc_path;
     kind = prompt(noDoc
       ? `${r.name} 님을 무엇으로 확인하셨나요?\n서류가 없으니 여기 적은 것이 유일한 근거로 남습니다.\n(대면 확인 · 학교 담당자 확인 · 기관 추천 등)`
-      : `${r.name} 님을 무엇으로 확인했나요?\n(학생증 · 청소년증 · 재학증명서 등)`,
+      : `${r.name} 님을 무엇으로 확인했나요?\n(청소년증 · 학생증 · 재학증명서 · 정원외관리증명서 · 검정고시 등)`,
       noDoc ? '대면 확인' : '학생증');
     if (kind === null) return;
     if (!kind.trim()) return alert('확인한 방법을 적어주세요.');
