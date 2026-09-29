@@ -1770,7 +1770,7 @@ async function submitSettle() {
       const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
       const path = `${settleTargetId}_${Date.now()}.${ext}`;
       const { error: up } = await sb.storage.from('dokseo-receipts')
-        .upload(path, f, { contentType: f.type || 'application/octet-stream' });
+        .upload(path, f, { contentType: f.type || 'application/octet-stream', cacheControl: '31536000' });
       if (up) { alert('영수증 업로드 실패: ' + up.message + '\n정산은 계속 진행합니다.'); }
       else receiptPath = path;
     }

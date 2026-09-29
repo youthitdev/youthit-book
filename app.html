@@ -3267,7 +3267,7 @@ async function submitVerify() {
 
   const path = `${me.id}/verify_${Date.now()}.jpg`;
   const { error: up } = await sb.storage.from('dokseo-verify')
-    .upload(path, toBlob(vfDoc), { contentType: 'image/jpeg' });
+    .upload(path, toBlob(vfDoc), { contentType: 'image/jpeg', cacheControl: '31536000' });
   if (up) { btn.disabled = false; btn.textContent = '내기'; return toast('올리지 못했어요: ' + up.message); }
 
   const { error } = await sb.from('profiles')
@@ -3735,7 +3735,7 @@ async function apply(rid) {
   if (applyBook) {
     const path = `${me.id}/apply_${rid}_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('cert-photos')
-      .upload(path, toBlob(applyBook), { contentType: 'image/jpeg' });
+      .upload(path, toBlob(applyBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
     if (up) return toast('사진 업로드 실패: ' + up.message);
     bookUrl = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
   }
@@ -4025,7 +4025,7 @@ async function submitMake() {
   if (cover) {
     const path = `${me.id}/cover_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('routine-covers')
-      .upload(path, toBlob(cover), { contentType: 'image/jpeg' });
+      .upload(path, toBlob(cover), { contentType: 'image/jpeg', cacheControl: '31536000' });
     if (up) { btn.disabled = false; btn.textContent = label; return toast('사진 업로드 실패: ' + up.message); }
     coverSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
@@ -4034,7 +4034,7 @@ async function submitMake() {
   if (kkutBook) {
     const path = `${me.id}/kbook_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('routine-covers')
-      .upload(path, toBlob(kkutBook), { contentType: 'image/jpeg' });
+      .upload(path, toBlob(kkutBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
     if (up) { btn.disabled = false; btn.textContent = label; return toast('사진 업로드 실패: ' + up.message); }
     kkutBookSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
@@ -4180,7 +4180,7 @@ async function addBook() {
   if (sbCover) {
     const p = `${me.id}/cover_${sbRid}_${Date.now()}.jpg`;
     const { error } = await sb.storage.from('cert-photos')
-      .upload(p, toBlob(sbCover), { contentType:'image/jpeg' });
+      .upload(p, toBlob(sbCover), { contentType:'image/jpeg', cacheControl: '31536000' });
     if (!error) cover = sb.storage.from('cert-photos').getPublicUrl(p).data.publicUrl;
   }
   const { error } = await sb.from('routine_books')
@@ -4385,7 +4385,7 @@ async function submitCert() {
   for (let i = 0; i < photos.length; i++) {
     const blob = toBlob(photos[i]);
     const path = `${me.id}/${certRid}_${Date.now()}_${i}.jpg`;
-    const { error } = await sb.storage.from('cert-photos').upload(path, blob, { contentType:'image/jpeg' });
+    const { error } = await sb.storage.from('cert-photos').upload(path, blob, { contentType:'image/jpeg', cacheControl: '31536000' });
     if (error) { btn.disabled=false; btn.textContent=label; return toast('사진 업로드 실패: '+error.message); }
     urls.push(sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl);
   }
@@ -4638,14 +4638,14 @@ async function submitBuy() {
   const btn = $('buySubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
   const blob = toBlob(buyPhoto);
   const path = `${me.id}/book_${buyRid}_${Date.now()}.jpg`;
-  const { error: up } = await sb.storage.from('dokseo-proofs').upload(path, blob, { contentType:'image/jpeg' });
+  const { error: up } = await sb.storage.from('dokseo-proofs').upload(path, blob, { contentType:'image/jpeg', cacheControl: '31536000' });
   if (up) { btn.disabled=false; btn.textContent='기록하기'; return toast('사진 업로드 실패: '+up.message); }
 
   // 아이가 동의했을 때만 공개 버킷에도 한 장. 노출 여부는 운영진이 따로 승인한다
   let publicPath = null;
   if ($('buyShare').checked) {
     const pp = `${me.id}/book_${buyRid}_${Date.now()}.jpg`;
-    const { error: up2 } = await sb.storage.from('cert-photos').upload(pp, toBlob(buyPhoto), { contentType:'image/jpeg' });
+    const { error: up2 } = await sb.storage.from('cert-photos').upload(pp, toBlob(buyPhoto), { contentType:'image/jpeg', cacheControl: '31536000' });
     if (!up2) publicPath = sb.storage.from('cert-photos').getPublicUrl(pp).data.publicUrl;
   }
 
