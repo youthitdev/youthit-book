@@ -614,6 +614,25 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
+/* 인증 도장. 사진에 찍히는 그 도장을 화면에도 한 번 찍는다 */
+.stamp { position:fixed; inset:0; z-index:90; display:none;
+  align-items:center; justify-content:center; background:rgba(28,26,23,.34);
+  -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); }
+.stamp.on { display:flex; }
+.stamp-in { text-align:center; animation:stampIn .42s cubic-bezier(.2,1.5,.4,1) both; }
+.stamp-c { width:132px; height:132px; margin:0 auto 16px; border-radius:50%;
+  background:var(--blue); color:#fff; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:2px;
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.92), 0 10px 30px rgba(0,0,0,.25); }
+.stamp-c b { font-size:20px; font-weight:800; letter-spacing:-.5px; line-height:1.15; }
+.stamp-c i { font-style:normal; font-size:12px; opacity:.85; }
+.stamp-d { font-size:17px; font-weight:800; color:#fff; letter-spacing:-.3px; }
+.stamp-p { font-size:13.5px; font-weight:700; color:var(--green); margin-top:4px; }
+@keyframes stampIn {
+  0%   { transform:scale(1.7) rotate(-14deg); opacity:0; }
+  55%  { transform:scale(.94) rotate(3deg);   opacity:1; }
+  100% { transform:scale(1)   rotate(0);      opacity:1; }
+}
 /* 레벨 카드 — 지나온 칸과 앞에 올 칸을 같이 보여준다 */
 .lv-card { padding:16px; }
 .lv-top { display:flex; align-items:center; gap:12px; }
@@ -1372,6 +1391,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   </div>
 </div>
 
+<!-- 인증 도장. 아무 데나 누르면 걷힌다 -->
+<div class="stamp" id="stamp" onclick="hideStamp()">
+  <div class="stamp-in">
+    <div class="stamp-c"><b>한끗<br>독서</b><i>오늘 한 장</i></div>
+    <div class="stamp-d" id="stampDay"></div>
+    <div class="stamp-p" id="stampPt"></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -4661,6 +4688,28 @@ async function delCert(id) {
   toast('삭제했어요');
 }
 
+// ── 인증하고 나서 ──────────────────────────────────────
+// 매일 하는 일인데 저장하면 조용히 닫히고 작은 배너 하나가 전부였다.
+// 앱이 사진에 찍어 주는 그 도장을, 화면에도 한 번 쿵 찍어 준다.
+//
+// 【1.6초면 충분하다】 매일 보는 것이라 길면 방해가 된다. 아무 데나 누르면
+//   바로 걷힌다. 기다리게 하는 축하는 축하가 아니다.
+// 【숫자는 오늘 것만】 「며칠째」와 「+10P」만 말한다. 누적이나 순위는 안 꺼낸다
+let stampT = null;
+
+function showStamp(day, pts) {
+  const el = $('stamp'); if (!el) return;
+  // 도장 안에 이미 「오늘 한 장」이 있다. 기간이 없는 루틴이면 이 줄은 비운다
+  $('stampDay').textContent = day ? `${won(day)}일째` : '';
+  $('stampPt').textContent  = pts ? `+${pts}P` : '';
+  el.classList.remove('on');
+  void el.offsetWidth;                 // 연달아 인증해도 다시 처음부터 찍히게
+  el.classList.add('on');
+  clearTimeout(stampT);
+  stampT = setTimeout(hideStamp, 1600);
+}
+function hideStamp() { clearTimeout(stampT); $('stamp')?.classList.remove('on'); }
+
 async function submitCert() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
@@ -4704,7 +4753,10 @@ async function submitCert() {
     return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증 저장에 실패했어요: ' + error.message);
   }
   await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
-  toast('인증 완료! 오늘도 한 장 읽었어요 🌱');
+  // 배너 한 줄 대신 도장을 찍는다. 매일 하는 일이라 누를 맛이 있어야 한다
+  const r1 = state.routines.find(x => x.id === certRid);
+  showStamp(routineDay(r1)?.n, r1?.points_per_cert);
+  cheerLevel();
 }
 
 // ── 책방 ───────────────────────────────────────────────
