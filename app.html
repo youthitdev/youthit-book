@@ -647,6 +647,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .meet-w { font-size:16px; font-weight:800; letter-spacing:-.3px; margin-top:6px; }
 .meet-p { font-size:13.5px; color:var(--ink-2); margin-top:4px; }
 .meet-a { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+.meet-d { font-size:13px; font-weight:700; color:var(--ink-2); margin-top:3px; }
 .meet-go { display:inline-flex; align-items:center; gap:5px; margin-top:9px;
   padding:7px 13px; border-radius:999px; background:#fff; border:1px solid #E3D6B7;
   font-size:12.5px; font-weight:700; color:var(--ink-2); text-decoration:none; }
@@ -1277,6 +1278,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
                autocomplete="off" oninput="placeFind()">
         <div id="mMeetFind"></div>
         <div id="mMeetGot"></div>
+        <div class="field-label" style="margin-top:14px;">상세 위치 <span class="opt">선택</span></div>
+        <input type="text" id="mMeetDetail" maxlength="60" placeholder="예) 2층 세미나실">
+        <div class="hint">층·호실처럼 지도에 안 나오는 곳을 적어주세요. 주소 바로 아래에 붙습니다.</div>
         <div class="field-label" style="margin-top:14px;">안내할 말 <span class="opt">선택</span></div>
         <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 같은 걸 적어주세요."></textarea>
         <div class="hint">아이들은 루틴을 고를 때부터 이 안내를 봅니다. 나중에 바꿀 수 있고, 모임이 취소되면 체크를 풀면 돼요.</div>
@@ -4570,6 +4574,7 @@ function openMake(id) {
     ? { name: r.meetup_place || '', road: r.meetup_address || null, addr: null,
         lat: r.meetup_lat, lng: r.meetup_lng } : null;
   $('mMeetFind').innerHTML = ''; drawPlaceGot();
+  $('mMeetDetail').value = r?.meetup_detail || '';
   $('mMeetNote').value  = r?.meetup_note  || '';
   toggleMeetFields();
   // 이름을 넣으라고 강제하지 않는다. 누구랑 하는지는 카드에 끗짱 이름이
@@ -4685,6 +4690,7 @@ async function submitMake() {
                     ? new Date(`${$('mMeetDate').value}T${$('mMeetTime').value || '15:00'}`).toISOString() : null,
     meetup_place: $('mMeet').checked ? ($('mMeetPlace').value.trim() || null) : null,
     meetup_address: mp ? (mp.road || mp.addr || null) : null,
+    meetup_detail: $('mMeet').checked ? ($('mMeetDetail').value.trim() || null) : null,
     meetup_lat:     mp ? mp.lat : null,
     meetup_lng:     mp ? mp.lng : null,
     meetup_note:  $('mMeet').checked ? ($('mMeetNote').value.trim()  || null) : null,
@@ -5059,6 +5065,7 @@ function meetCard(r) {
       <div class="meet-w">${meetWhen(r)}</div>
       ${r.meetup_place ? `<div class="meet-p">📍 ${esc(r.meetup_place)}</div>` : ''}
       ${r.meetup_address ? `<div class="meet-a">${esc(r.meetup_address)}</div>` : ''}
+      ${r.meetup_detail ? `<div class="meet-d">${esc(r.meetup_detail)}</div>` : ''}
       ${meetMapUrl(r) ? `<div><a class="meet-go" href="${meetMapUrl(r)}"
         target="_blank" rel="noopener">🗺️ 길찾기</a></div>` : ''}
       ${r.meetup_note ? `<div class="meet-n">${esc(r.meetup_note)}</div>` : ''}
