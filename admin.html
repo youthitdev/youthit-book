@@ -66,6 +66,9 @@ tr:hover td { background:#fcfcfd; }
 .btn-pink { background:var(--pink); color:#fff; }
 .btn-dark { background:var(--ink); color:#fff; }
 .btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
+/* 루틴 지우기. 어찌다 한 번 쓰는 것이라 조용히 둔다 — 알톡이 아니라 장전 */
+.r-del { color:var(--ink-3); padding-left:10px; padding-right:10px; font-size:15px; line-height:1; }
+.r-del:hover { color:#8E3527; border-color:#E0BDB3; }
 .btn-danger { background:#fff; border:1px solid #EDC6BC; color:#8E3527; }
 .r-sel { border:1px solid var(--line); border-radius:9px; padding:6px 8px; font-size:12.5px;
          font-family:inherit; font-weight:700; cursor:pointer; }
@@ -1234,7 +1237,9 @@ function viewRoutines() {
       <td>${r.sponsor_name
         ? `<button class="vq-quiet" onclick="setSponsor(${r.id})">${esc(r.sponsor_name)}</button>`
         : `<button class="vq-quiet" onclick="setSponsor(${r.id})">+ 기업</button>`}</td>
-      <td class="right"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button></td>
+      <td class="right" style="white-space:nowrap;">
+        <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
+        <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 만들어진 루틴이 없습니다.</div>`}`;
 }
@@ -1511,6 +1516,50 @@ function openStore(id) {
   del.title = used > 0 ? `거래가 ${used}건 있어 지울 수 없어요. 대신 체크를 풀어 목록에서 빼세요` : '';
 
   document.getElementById('storeOverlay').classList.add('on');
+}
+
+// 루틴을 지우면 딸린 것이 전부 같이 지워진다 (ON DELETE CASCADE).
+// 되돌릴 수 없으니 무엇이 없어지는지 세어서 보여 주고, 기록이 쌓인 루틴은
+// 이름까지 받아 한 번 더 붙잡는다 — 문턱은 잃는 것의 크기에 맞춘다.
+//
+// ⚠️ 정산이 끝난 구매가 있으면 서버가 막는다 (migration-60). 화면에서도 미리
+//    알려 주지만, 실제로 지키는 건 표에 걸린 트리거다.
+async function delRoutine(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+
+  const parts = rParts(id).length;
+  const certs = rCerts(id).length;
+  const buys  = (DB.purchases || []).filter(g => g.routine_id === id);
+  const paid  = buys.filter(g => g.status === 'settled');
+
+  if (paid.length) {
+    const won = paid.reduce((s, g) => s + (g.amount || 0), 0);
+    alert(`지울 수 없습니다.\n\n「${r.title}」에는 정산이 끝난 구매가 ${paid.length}건`
+      + `(${won.toLocaleString('ko-KR')}원) 있습니다.\n`
+      + `책방에 실제로 돈을 보낸 기록이라 남겨야 합니다.`);
+    return;
+  }
+
+  const lines = [`참여 ${parts}명`, `인증 ${certs}건`,
+                 buys.length ? `대기 중인 구매 ${buys.length}건` : ''].filter(Boolean).join(' · ');
+
+  if (!confirm(`「${r.title}」을(를) 지웁니다.\n\n${lines}\n\n`
+    + `여기에 달린 댓글·후기·읽는 책·공유 글도 같이 사라집니다.\n되돌릴 수 없습니다.`)) return;
+
+  if (parts || certs) {
+    const typed = prompt(`정말 지우려면 루틴 이름을 그대로 적어주세요.\n\n${r.title}`);
+    if (typed === null) return;
+    if (typed.trim() !== r.title.trim()) { alert('이름이 달라서 지우지 않았습니다.'); return; }
+  }
+
+  if (LIVE) {
+    const { error } = await sb.from('routines').delete().eq('id', id);
+    if (error) { alert('지우지 못했습니다.\n\n' + error.message); return; }
+    await loadLive();
+  } else {
+    DB.routines = DB.routines.filter(x => x.id !== id);
+  }
+  render();
 }
 
 async function deleteStore() {
