@@ -143,6 +143,22 @@ tr:hover td { background:#fcfcfd; }
 .rw-d { font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:6px; white-space:pre-wrap; }
 .rw-r { font-size:12.5px; color:#8E3527; margin-top:6px; font-weight:600; }
 .rw-b { flex:none; display:flex; gap:6px; }
+/* 승인 판단에 필요한 것들. 청소년이 보게 될 화면을 여기서 먼저 본다 */
+.rw-img { width:132px; flex:none; aspect-ratio:16/9; border-radius:9px; overflow:hidden;
+  background:#F2EEE6; display:grid; place-items:center; font-size:26px; }
+.rw-img img { width:100%; height:100%; object-fit:cover; display:block; }
+.rw-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+.rw-tag { font-size:11px; font-weight:700; padding:3px 8px; border-radius:99px;
+  background:#EFEAE0; color:var(--ink-2); }
+.rw-tag.kind { background:#E8F3D4; color:#3F6516; }
+.rw-tag.meet { background:#FBF0DC; color:#8A5A16; }
+.rw-book { display:flex; align-items:center; gap:8px; margin-top:8px;
+  font-size:12.5px; color:var(--ink-2); }
+.rw-book i { width:26px; flex:none; aspect-ratio:3/4; border-radius:3px; overflow:hidden;
+  background:#eeeae2; display:grid; place-items:center; font-style:normal; font-size:13px; }
+.rw-book img { width:100%; height:100%; object-fit:cover; display:block; }
+.rw-book b { font-weight:700; color:var(--ink); }
+.rw-meet { font-size:12.5px; color:#8A5A16; margin-top:7px; font-weight:600; }
 .rp-pick { display:flex; align-items:center; gap:8px; }
 .rp-pick b { font-size:14px; min-width:92px; text-align:center; }
 .btn-s { border:1px solid var(--line); background:#fff; border-radius:8px; padding:6px 11px;
@@ -1194,18 +1210,35 @@ function viewRoutines() {
   <div class="panel-hd">
     <div><div class="panel-t">루틴</div>
     <div class="panel-d">끗짱이 만든 루틴은 열어줘야 청소년에게 보여요.
-      상태를 바꾸면 청소년 앱에 바로 반영돼요.</div></div>
+      상태를 바꾸면 청소년 앱에 바로 반영돼요.<br>
+      <b>볼 것</b> — 소개가 청소년이 읽기에 괜찮은지 · 인증 방법이 분명한지 ·
+      읽을 책이 적당한지 · 공유회가 있으면 언제·어디서가 적혀 있는지.</div></div>
   </div>
 
   ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#E5C795;background:#FFFBF0;">
     <div class="preview-t">열어달라고 기다리는 루틴 ${wait.length}건</div>
     ${wait.map(r => `<div class="rw">
+      <div class="rw-img">${r.cover_url
+        ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">` : (r.emoji || '📚')}</div>
       <div class="rw-t">
         <b>${r.emoji || '📚'} ${esc(r.title)}</b>
-        <span class="muted">${esc(rName(r.led_by))} · ${md(r.start_date)}~${md(r.end_date)}
-          · ${r.max_people}명 · 인증 ${r.points_per_cert || 10}P</span>
+        <span class="muted">${esc(rName(r.led_by))}${rWhere(r.led_by)} · ${md(r.start_date)}~${md(r.end_date)}
+          (${rDays(r)}일) · ${r.max_people}명 · 인증 ${r.points_per_cert || 10}P</span>
+        <div class="rw-tags">
+          <span class="rw-tag kind">${R_KIND[r.kind || 'book']}</span>
+          ${r.quote_required ? `<span class="rw-tag">필사 필수</span>` : ''}
+          ${r.camera_only ? `<span class="rw-tag">그 자리 사진만</span>` : ''}
+          ${r.meetup_required ? `<span class="rw-tag meet">공유회 참석해야 책</span>` : ''}
+        </div>
+        ${r.kkut_book_title || r.kkut_book_url ? `<div class="rw-book">
+          <i>${r.kkut_book_url ? `<img src="${esc(r.kkut_book_url)}" loading="lazy" alt="">` : '📖'}</i>
+          <span>${(r.kind === 'one_book') ? '다 같이 읽을 책' : '끗짱이 읽는 책'} ·
+            <b>${esc(r.kkut_book_title || '제목 없음')}</b>${r.kkut_book_authors
+              ? ` <span class="muted">${esc(r.kkut_book_authors)}</span>` : ''}</span>
+        </div>` : ''}
         ${r.description ? `<p class="rw-d">${esc(r.description)}</p>` : ''}
         ${r.cert_guide ? `<p class="rw-d">🎯 ${esc(r.cert_guide)}</p>` : ''}
+        ${r.meetup_required ? `<div class="rw-meet">🤝 ${rMeet(r)}</div>` : ''}
         ${r.reject_reason ? `<p class="rw-r">반려됨 · ${esc(r.reject_reason)}</p>` : ''}
       </div>
       <div class="rw-b">
@@ -1246,6 +1279,33 @@ function viewRoutines() {
         <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 만들어진 루틴이 없어요.</div>`}`;
+}
+
+const R_KIND = { book: '각자 읽는 책', one_book: '함께 읽는 책', shared: '함께 읽는 글' };
+
+const rDays = r => (r.start_date && r.end_date)
+  ? Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1 : 0;
+
+// 끗짱이 어디 사람인지. 승인 판단에 쓰이니 이름 옆에 붙인다.
+// 소속·지역은 프로필이 아니라 끗짱 신청서에 있다
+function rWhere(uid) {
+  const a = (DB.kkutApps || []).find(x => x.user_id === uid);
+  const v = a && (a.affiliation || a.region);
+  return v ? ` <span class="muted">(${esc(v)})</span>` : '';
+}
+
+// 공유회가 걸린 루틴은 언제·어디서가 비어 있으면 안 된다
+function rMeet(r) {
+  const bits = [];
+  if (r.meetup_at) {
+    const d = new Date(r.meetup_at);
+    const w = ['일','월','화','수','목','금','토'][d.getDay()];
+    const h = d.getHours(), m = String(d.getMinutes()).padStart(2, '0');
+    bits.push(`${d.getMonth() + 1}월 ${d.getDate()}일 (${w}) ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${m}`);
+  } else bits.push('날짜 없음');
+  bits.push([r.meetup_place, r.meetup_detail].filter(Boolean).map(esc).join(' ') || '장소 없음');
+  if (r.meetup_address) bits.push(`<span class="muted">${esc(r.meetup_address)}</span>`);
+  return bits.join(' · ');
 }
 
 // 기업 이름은 약속이 오간 뒤에야 붙는 것이라 끗짱이 못 적는다.
