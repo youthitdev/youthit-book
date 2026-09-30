@@ -537,6 +537,8 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kkut-book { width:84px; flex:none; aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#eeeae2; }
 .kkut-book img { width:100%; height:100%; object-fit:cover; display:block; }
 .kkut-note { font-size:12px; color:var(--green-d); font-weight:700; margin-top:9px; }
+.kkut-bt { font-size:13.5px; font-weight:800; color:var(--ink); margin-top:3px; line-height:1.5; }
+.kkut-bt i { display:block; font-style:normal; font-size:12px; font-weight:600; color:var(--ink-3); margin-top:2px; }
 .cover-pick { width:100%; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
   background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
@@ -635,6 +637,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .meet-h i { font-style:normal; font-size:11.5px; font-weight:700; color:var(--green-d); }
 .meet-w { font-size:16px; font-weight:800; letter-spacing:-.3px; margin-top:6px; }
 .meet-p { font-size:13.5px; color:var(--ink-2); margin-top:4px; }
+.meet-a { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+.meet-go { display:inline-flex; align-items:center; gap:5px; margin-top:9px;
+  padding:7px 13px; border-radius:999px; background:#fff; border:1px solid #E3D6B7;
+  font-size:12.5px; font-weight:700; color:var(--ink-2); text-decoration:none; }
+.meet-go:active { background:#F6EEDC; }
 .meet-n { font-size:12.5px; color:var(--ink-3); margin-top:6px; line-height:1.65; white-space:pre-wrap; }
 .meet-f { font-size:12.5px; color:var(--ink-2); margin-top:9px; padding-top:9px;
   border-top:1px solid rgba(0,0,0,.07); line-height:1.6; }
@@ -1194,9 +1201,13 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <textarea id="mDesc" rows="5" placeholder="안녕하세요, 속초에서 작은 책방을 하는 김유스입니다.&#10;혼자서는 잘 안 읽히는 책, 15일만 같이 읽어봐요." maxlength="300"></textarea>
       <div class="hint">어떤 사람인지, 어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 루틴을 고를 때 이걸 봅니다.</div>
       <div class="field-label" style="margin-top:16px;">내가 읽을 책 <span class="opt">선택</span></div>
-      <div id="mBookBox"></div>
+      <input type="text" id="mBookTitle" maxlength="60" placeholder="책 제목을 치면 찾아드려요"
+             autocomplete="off" oninput="bookFind('mBookTitle','mBookFind')">
+      <div id="mBookFind"></div>
+      <div id="mBookFindGot"></div>
+      <div id="mBookBox" style="margin-top:11px;"></div>
       <input type="file" id="mBookInput" accept="image/*" style="display:none;" onchange="pickKkutBook(event)">
-      <div class="hint">소개 옆에 붙어요. 아이들도 참여할 때 자기 책을 올립니다.</div>
+      <div class="hint">소개 옆에 붙어요. 사진은 직접 찍은 걸로 올려주세요 — 아이들도 참여할 때 자기 책을 찍어 올립니다.</div>
     </div>
     <div>
       <div class="field-label">이렇게 인증해 주세요 <span class="opt">선택</span></div>
@@ -1253,7 +1264,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
           <input type="time" id="mMeetTime" step="1800" style="width:126px;flex:none;">
         </div>
         <div class="field-label" style="margin-top:14px;">어디서 <span class="req">* 필수</span></div>
-        <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 속초 당신의강릉 2층">
+        <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 속초 당신의강릉"
+               autocomplete="off" oninput="placeFind()">
+        <div id="mMeetFind"></div>
+        <div id="mMeetGot"></div>
         <div class="field-label" style="margin-top:14px;">안내할 말 <span class="opt">선택</span></div>
         <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 같은 걸 적어주세요."></textarea>
         <div class="hint">아이들은 루틴을 고를 때부터 이 안내를 봅니다. 나중에 바꿀 수 있고, 모임이 취소되면 체크를 풀면 돼요.</div>
@@ -4102,7 +4116,12 @@ function openRoutine(id) {
         ${r.kkut_book_url ? `<div class="kkut-book"><img src="${esc(r.kkut_book_url)}" loading="lazy" alt=""></div>` : ''}
         <div style="min-width:0;">
           <div style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>
-          ${r.kkut_book_url ? `<div class="kkut-note">📖 저는 이 책을 읽어요</div>` : ''}
+          ${r.kkut_book_url || r.kkut_book_title
+            ? `<div class="kkut-note">📖 저는 이 책을 읽어요</div>` : ''}
+          ${r.kkut_book_title ? `<div class="kkut-bt">「${esc(r.kkut_book_title)}」
+            ${r.kkut_book_authors || r.kkut_book_publisher
+              ? `<i>${esc([r.kkut_book_authors, r.kkut_book_publisher].filter(Boolean).join(' · '))}</i>` : ''}
+          </div>` : ''}
         </div>
       </div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
@@ -4307,6 +4326,71 @@ function bookMeta(inputId) {
   return { isbn: b.isbn || null, authors: b.authors || null, publisher: b.publisher || null };
 }
 
+// ── 공유회 장소 찾기 ───────────────────────────────────
+// 책 검색과 같은 결이다. 골라 두면 도로명 주소와 좌표가 따라붙고,
+// 아이 화면에 길찾기 단추가 생긴다.
+//
+// 【손으로 적어도 된다】 학교 도서관, 누구네 집처럼 지도에 없는 곳도 있다.
+//   그럴 땐 예전처럼 장소 이름만 저장된다 — 좌표가 없으면 단추만 안 생긴다.
+//   검색이 비어도, 느려도, 공유회는 열려야 한다.
+let placePick = null, placeFound = [], placeT = null, placeSeq = 0;
+
+function placeFind() {
+  clearTimeout(placeT);
+  const q = $('mMeetPlace').value.trim();
+  // 다시 치면 고른 곳과의 연결이 풀린다. 이름만 바꾸고 좌표를 두면 엉뚱한 데로 보낸다
+  if (placePick && loose(placePick.name) !== loose(q)) placePick = null;
+  drawPlaceGot();
+  if (q.length < 2 || placePick) { $('mMeetFind').innerHTML = ''; return; }
+  placeT = setTimeout(() => runPlaceFind(q), 350);
+}
+
+async function runPlaceFind(q) {
+  const box = $('mMeetFind'); if (!box) return;
+  const seq = ++placeSeq;
+  box.innerHTML = `<div class="bk-find"><div class="bk-wait">찾는 중…</div></div>`;
+
+  let places = [];
+  try {
+    const { data, error } = await sb.functions.invoke('place-search', { body: { q } });
+    if (!error) places = data?.places || [];
+  } catch { /* 검색이 죽어도 손으로 적으면 된다 */ }
+
+  // 그새 더 쳐서 다른 검색이 떠나갔거나, 칸이 비었거나, 이미 고른 뒤면 무시
+  if (seq !== placeSeq || $('mMeetPlace').value.trim() !== q || placePick) return;
+  if (!places.length) { box.innerHTML = ''; return; }
+
+  placeFound = places;
+  box.innerHTML = `<div class="bk-find">${places.map((p, i) => `
+    <button type="button" onclick="usePlace(${i})">
+      <div>
+        <b>${esc(p.name)}</b>
+        ${p.road || p.addr ? `<span>${esc(p.road || p.addr)}</span>` : ''}
+      </div>
+    </button>`).join('')}</div>`;
+}
+
+function usePlace(i) {
+  const p = placeFound[i]; if (!p) return;
+  $('mMeetPlace').value = p.name.slice(0, 80);
+  placePick = p;
+  $('mMeetFind').innerHTML = '';
+  drawPlaceGot();
+}
+
+function drawPlaceGot() {
+  const got = $('mMeetGot'); if (!got) return;
+  const p = placePick;
+  got.innerHTML = p && (p.road || p.addr)
+    ? `<div class="bk-got">📍${esc(p.road || p.addr)}</div>` : '';
+}
+
+// 카카오맵 길찾기. 앱이 깔려 있으면 앱이 열리고, 없으면 웹 지도가 열린다.
+// 쉼표는 주소를 가르는 표시라 그대로 두고 이름만 감싼다
+const meetMapUrl = r => (r?.meetup_lat && r?.meetup_lng)
+  ? `https://map.kakao.com/link/to/${encodeURIComponent(r.meetup_place || '공유회')},${r.meetup_lat},${r.meetup_lng}`
+  : null;
+
 // ── 루틴 만들기 (끗짱) ──────────────────────────────────
 // 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는다.
 // 인증 1회당 포인트는 끗짱이 고르지 않는다 — dokseo_settings.points_per_cert 를
@@ -4448,6 +4532,12 @@ function openMake(id) {
   $('mMeetDate').value = mAt ? `${mAt.getFullYear()}-${p2(mAt.getMonth()+1)}-${p2(mAt.getDate())}` : '';
   $('mMeetTime').value = mAt ? `${p2(mAt.getHours())}:${p2(mAt.getMinutes())}` : '';
   $('mMeetPlace').value = r?.meetup_place || '';
+  // 저장된 좌표로 「고른 곳」을 되살린다. 수정만 하고 장소를 안 건드리면
+  // 길찾기가 그대로 남아야 한다
+  placePick = (r?.meetup_lat && r?.meetup_lng)
+    ? { name: r.meetup_place || '', road: r.meetup_address || null, addr: null,
+        lat: r.meetup_lat, lng: r.meetup_lng } : null;
+  $('mMeetFind').innerHTML = ''; drawPlaceGot();
   $('mMeetNote').value  = r?.meetup_note  || '';
   toggleMeetFields();
   // 이름을 넣으라고 강제하지 않는다. 누구랑 하는지는 카드에 끗짱 이름이
@@ -4457,6 +4547,14 @@ function openMake(id) {
   $('mCoverInput').value = ''; drawCover();
   kkutBook = null; kkutBookUrl = r?.kkut_book_url || null;
   $('mBookInput').value = ''; drawKkutBook();
+  // 책도 마찬가지다. 저장된 서지로 「고른 책」을 되살려 두면
+  // 제목을 안 건드린 수정에서 ISBN 이 날아가지 않는다
+  $('mBookTitle').value = r?.kkut_book_title || '';
+  delete bookPick['mBookTitle'];
+  if (r?.kkut_book_title) bookPick['mBookTitle'] = {
+    title: r.kkut_book_title, isbn: r.kkut_book_isbn,
+    authors: r.kkut_book_authors, publisher: r.kkut_book_publisher };
+  $('mBookFind').innerHTML = ''; drawBookGot('mBookTitle', 'mBookFind');
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
@@ -4533,6 +4631,11 @@ async function submitMake() {
     kkutBookSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
 
+  // 제목을 지웠으면 서지도 비운다 — 제목만 바꿨는데 옛 ISBN 이 남으면 딴 책이 된다
+  const kTitle = $('mBookTitle').value.trim();
+  const kb = kTitle ? bookMeta('mBookTitle') : {};
+  const mp = $('mMeet').checked ? placePick : null;
+
   const row = {
     title, emoji: $('mEmoji').value.trim() || '📚', description: desc,
     cert_guide: $('mGuide').value.trim() || null,
@@ -4543,11 +4646,18 @@ async function submitMake() {
     meetup_at:    $('mMeet').checked && $('mMeetDate').value
                     ? new Date(`${$('mMeetDate').value}T${$('mMeetTime').value || '15:00'}`).toISOString() : null,
     meetup_place: $('mMeet').checked ? ($('mMeetPlace').value.trim() || null) : null,
+    meetup_address: mp ? (mp.road || mp.addr || null) : null,
+    meetup_lat:     mp ? mp.lat : null,
+    meetup_lng:     mp ? mp.lng : null,
     meetup_note:  $('mMeet').checked ? ($('mMeetNote').value.trim()  || null) : null,
     quote_required: makeKind === 'shared' ? false : $('mQuote').checked,
     camera_only: $('mCamera').checked,
     cover_url: coverSaved,
-    kkut_book_url: kkutBookSaved,
+    kkut_book_url:       kkutBookSaved,
+    kkut_book_title:     kTitle || null,
+    kkut_book_isbn:      kb.isbn      || null,
+    kkut_book_authors:   kb.authors   || null,
+    kkut_book_publisher: kb.publisher || null,
     led_by: me.id,
   };
   const { error } = makeId
@@ -4910,6 +5020,9 @@ function meetCard(r) {
       <div class="meet-h"><b>🤝 함께 나누는 자리</b>${met ? '<i>다녀왔어요</i>' : ''}</div>
       <div class="meet-w">${meetWhen(r)}</div>
       ${r.meetup_place ? `<div class="meet-p">📍 ${esc(r.meetup_place)}</div>` : ''}
+      ${r.meetup_address ? `<div class="meet-a">${esc(r.meetup_address)}</div>` : ''}
+      ${meetMapUrl(r) ? `<div><a class="meet-go" href="${meetMapUrl(r)}"
+        target="_blank" rel="noopener">🗺️ 길찾기</a></div>` : ''}
       ${r.meetup_note ? `<div class="meet-n">${esc(r.meetup_note)}</div>` : ''}
       <div class="meet-f">${met
         ? '교환권을 쓸 수 있어요.'
