@@ -48,6 +48,9 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .panel-t { font-size:15px; font-weight:700; }
 .panel-d { font-size:12.5px; color:var(--ink-3); margin-top:1px; }
 .tbl { overflow-x:auto; }
+/* 겹치는 창 안의 표. 기본 min-width:720px 이라 그대로 두면 오른쪽이 잘린다 */
+.tbl.narrow table { min-width:0; }
+.tbl.narrow th, .tbl.narrow td { padding-left:13px; padding-right:13px; }
 table { width:100%; min-width:720px; border-collapse:collapse; }
 th { text-align:left; font-size:11.5px; color:var(--ink-3); font-weight:600; padding:10px 20px; background:#fafafa; border-bottom:1px solid var(--line); }
 td { padding:13px 20px; border-bottom:1px solid #f1f1f4; font-size:13.5px; vertical-align:middle; }
@@ -352,6 +355,20 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('photoOverlay')">닫기</button>
       <button class="btn btn-pink" id="phGo" onclick="confirmPhoto()">확인했어요 · 공개하기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="kkutOverlay">
+  <!-- 맡은 루틴 표까지 들어가야 해서 기본 460px 로는 좁다 -->
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-hd">
+      <div class="modal-t" id="kkutInfoTitle">끗짱</div>
+      <div class="modal-d">끗짱 신청서에 적힌 내용과 맡은 루틴이에요.</div>
+    </div>
+    <div class="modal-bd" id="kkutInfoBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('kkutOverlay')">닫기</button>
     </div>
   </div>
 </div>
@@ -1222,7 +1239,8 @@ function viewRoutines() {
         ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">` : (r.emoji || '📚')}</div>
       <div class="rw-t">
         <b>${r.emoji || '📚'} ${esc(r.title)}</b>
-        <span class="muted">${esc(rName(r.led_by))}${rWhere(r.led_by)} · ${md(r.start_date)}~${md(r.end_date)}
+        <span class="muted"><button class="vq-quiet" onclick="openKkut('${r.led_by}')"
+          title="끗짱 정보 보기">${esc(rName(r.led_by))}</button>${rWhere(r.led_by)} · ${md(r.start_date)}~${md(r.end_date)}
           (${rDays(r)}일) · ${r.max_people}명 · 인증 ${r.points_per_cert || 10}P</span>
         <div class="rw-tags">
           <span class="rw-tag kind">${R_KIND[r.kind || 'book']}</span>
@@ -1261,7 +1279,8 @@ function viewRoutines() {
     ${rows.map(r => `<tr>
       <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
           ${rOverdue(r) ? `<div class="muted" style="color:#8E3527;">종료일이 지났어요</div>` : ''}</td>
-      <td class="muted">${esc(rName(r.led_by))}</td>
+      <td class="muted"><button class="vq-quiet" onclick="openKkut('${r.led_by}')"
+        title="끗짱 정보 보기">${esc(rName(r.led_by))}</button></td>
       <td class="num muted" style="white-space:nowrap;">${md(r.start_date)}~${md(r.end_date)}</td>
       <td class="num right">${rParts(r.id).length}/${r.max_people}</td>
       <td class="num right">${rCerts(r.id).length}</td>
@@ -1282,6 +1301,55 @@ function viewRoutines() {
 }
 
 const R_KIND = { book: '각자 읽는 책', one_book: '함께 읽는 책', shared: '함께 읽는 글' };
+
+// 루틴을 승인하려면 만든 사람이 누군지 알아야 한다. 끗짱 승인 탭까지
+// 갔다 오지 않게, 이름을 누르면 신청서와 맡은 루틴을 여기서 보여준다
+function openKkut(uid) {
+  const a  = (DB.kkutApps || []).find(x => x.user_id === uid);
+  const rs = (DB.routines || []).filter(r => r.led_by === uid)
+    .sort((x, y) => String(y.start_date).localeCompare(String(x.start_date)));
+
+  const mine = rs.length
+    ? `<div class="tbl narrow"><table>
+         <tr><th>루틴</th><th>기간</th><th class="right">참여</th></tr>
+         ${rs.map(r => `<tr>
+           <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
+               <div class="muted">${R_KIND[r.kind || 'book']} ·
+                 <span class="chip ${R_STATUS[r.status] ? R_STATUS[r.status][1] : 'c-wait'}">${
+                   R_STATUS[r.status] ? R_STATUS[r.status][0] : esc(r.status)}</span></div></td>
+           <td class="num muted" style="white-space:nowrap;">${md(r.start_date)}~${md(r.end_date)}</td>
+           <td class="num right">${rParts(r.id).length}/${r.max_people}</td>
+         </tr>`).join('')}
+       </table></div>`
+    : `<div class="empty">아직 만든 루틴이 없어요.</div>`;
+
+  document.getElementById('kkutInfoTitle').textContent = rName(uid);
+  document.getElementById('kkutInfoBody').innerHTML = a
+    ? `<div class="kk" style="border:0;padding:0;">
+         <div class="kk-h">
+           <div>
+             <div class="kk-n">${esc(a.name)} <span class="muted" style="font-weight:500;">${a.age}세</span></div>
+             <div class="kk-m">${esc(a.affiliation || '')}${a.region ? ` · ${esc(a.region)}` : ''}</div>
+           </div>
+           <span class="pill ${a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'no' : 'wait'}">${
+             a.status === 'approved' ? '승인됨' : a.status === 'rejected' ? '반려됨' : '심사 대기'}</span>
+         </div>
+         <div class="kk-g">
+           <div><b>연락처</b><span>${esc(a.contact || '없음')}</span></div>
+           <div><b>이메일</b><span>${esc(a.email || '없음')}</span></div>
+           <div><b>신청일</b><span>${a.applied_at ? fmtDate(a.applied_at) : '—'}</span></div>
+           <div><b>만든 루틴</b><span>${rs.length}개</span></div>
+         </div>
+         ${a.intro  ? `<div class="kk-q"><b>어떤 분인가요</b><p>${esc(a.intro)}</p></div>` : ''}
+         ${a.motive ? `<div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>` : ''}
+         ${a.status === 'rejected' && a.reject_reason
+           ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
+       </div>
+       <div class="panel-t" style="margin-top:16px;">맡은 루틴</div>${mine}`
+    : `<div class="empty">끗짱 신청서가 없어요. 운영진이 직접 올린 계정일 수 있어요.</div>
+       <div class="panel-t" style="margin-top:16px;">맡은 루틴</div>${mine}`;
+  document.getElementById('kkutOverlay').classList.add('on');
+}
 
 const rDays = r => (r.start_date && r.end_date)
   ? Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1 : 0;
