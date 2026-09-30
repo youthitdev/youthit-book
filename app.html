@@ -2713,9 +2713,20 @@ function kkutTodayCard(r) {
       <span>${esc(nameOf(c.user_id))}</span>
     </div>`).join('')}</div>` : '';
 
+  // 끗짱도 아이들과 같이 읽는다. 그런데 맡은 루틴 카드에만 이 버튼이
+  // 없어서, 자기 책을 더하려면 인증 화면까지 들어가야 했다.
+  // 「오늘 글」은 더 이상했다 — 글을 올릴 사람이 바로 끗짱인데 그 버튼이
+  // 참여자 카드에만 있었다
+  const lead = waiting ? '' : isShared(r)
+    ? (routineEnded(r) ? '' : `<button class="tc-add" onclick="event.stopPropagation();openPost(${r.id})">오늘 글</button>`)
+    : `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`;
+
   return `<div class="tcard">
     <div class="tc-b">
-      <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+      <div class="tc-hd">
+        <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+        ${lead}
+      </div>
       ${waiting ? `<div class="k-wait${r.reject_reason ? ' bad' : ''}">
         ${r.reject_reason
           ? `<b>고쳐서 다시 등록해주세요</b><span>${esc(r.reject_reason)}</span>`
