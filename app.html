@@ -80,7 +80,8 @@ body {
 .app { width:100%; max-width:480px; background:var(--bg); min-height:100vh; position:relative;
   padding-bottom:calc(92px + env(safe-area-inset-bottom)); }
 input, select, textarea, button { font-family:inherit; }
-input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], input[type=tel], select, textarea {
+input[type=text], input[type=email], input[type=password], input[type=number],
+input[type=date], input[type=time], input[type=tel], select, textarea {
   width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:12px;
   font-size:15px; color:var(--ink); background:#fff; outline:none;
 }
@@ -102,7 +103,7 @@ input[type=date]::-webkit-calendar-picker-indicator {
 /* 칸 높이를 46px 로 못 박는다. select 는 브라우저가 제 나름의 높이를 줘
    글자칸(45)보다 2px 높았고, 줄줄이 쌓이니 열이 어긋나 보였다 */
 input[type=text], input[type=email], input[type=password], input[type=number],
-input[type=date], input[type=tel], select { height:46px; }
+input[type=date], input[type=time], input[type=tel], select { height:46px; }
 /* select 기본 화살표는 칸 맨 끝에 붙는다. 달력 아이콘과 같은 자리로 내린다.
    배경은 약부형으로 두어야 .auth 가 색만 덮어도 화살표가 살아남는다 */
 select {
@@ -1246,13 +1247,16 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       </label>
       <div class="hint">체크하면 <b>공유회에 온 아이만</b> 모은 포인트로 책을 받을 수 있어요</div>
       <div id="mMeetWrap" style="display:none;margin-top:12px;">
-        <div class="field-label">언제 모이나요 <span class="opt">선택 · 나중에 적어도 돼요</span></div>
-        <input type="datetime-local" id="mMeetAt">
-        <div class="field-label" style="margin-top:14px;">어디서 <span class="opt">선택</span></div>
+        <div class="field-label">언제 모이나요 <span class="req">* 필수</span></div>
+        <div style="display:flex;gap:10px;">
+          <input type="date" id="mMeetDate" style="flex:1;min-width:0;">
+          <input type="time" id="mMeetTime" step="1800" style="width:126px;flex:none;">
+        </div>
+        <div class="field-label" style="margin-top:14px;">어디서 <span class="req">* 필수</span></div>
         <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 속초 당신의강릉 2층">
         <div class="field-label" style="margin-top:14px;">안내할 말 <span class="opt">선택</span></div>
         <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 같은 걸 적어주세요."></textarea>
-        <div class="hint">아이들은 루틴을 고를 때부터 이 안내를 봅니다. 모임이 취소되면 체크를 풀면 돼요.</div>
+        <div class="hint">아이들은 루틴을 고를 때부터 이 안내를 봅니다. 나중에 바꿀 수 있고, 모임이 취소되면 체크를 풀면 돼요.</div>
       </div>
     </div>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
@@ -4426,7 +4430,12 @@ function openMake(id) {
   // 끄는 건 언제든 — 모임이 취소될 수 있다 (서버도 같은 규칙, migration-58)
   $('mMeet').checked  = !!r?.meetup_required;
   $('mMeet').disabled = !!(r && !r.meetup_required);
-  $('mMeetAt').value    = r?.meetup_at ? new Date(r.meetup_at).toLocaleString('sv').slice(0, 16).replace(' ', 'T') : '';
+  // 한 칸짜리 datetime-local 은 다른 칸과 얼굴이 달랐다. 날짜·시각을 갈라
+  // 이미 손봐 둔 모양을 그대로 쓴다
+  const mAt = r?.meetup_at ? new Date(r.meetup_at) : null;
+  const p2  = n => String(n).padStart(2, '0');
+  $('mMeetDate').value = mAt ? `${mAt.getFullYear()}-${p2(mAt.getMonth()+1)}-${p2(mAt.getDate())}` : '';
+  $('mMeetTime').value = mAt ? `${p2(mAt.getHours())}:${p2(mAt.getMinutes())}` : '';
   $('mMeetPlace').value = r?.meetup_place || '';
   $('mMeetNote').value  = r?.meetup_note  || '';
   toggleMeetFields();
@@ -4483,6 +4492,12 @@ async function submitMake() {
   if (!desc) return toast('끗짱 소개를 적어주세요');
   if (!s) return toast('시작일을 골라주세요');
   if (!days || days < MIN_DAYS) return toast(`기간은 ${MIN_DAYS}일 이상이어야 해요`);
+  // 공유회를 켜놓고 비워 두면 아이가 「언제 어디서」를 모른 채 약속만 진다
+  if ($('mMeet').checked) {
+    if (!$('mMeetDate').value) return toast('공유회 날짜를 골라주세요');
+    if (!$('mMeetTime').value) return toast('공유회 시각을 골라주세요');
+    if (!$('mMeetPlace').value.trim()) return toast('공유회 장소를 적어주세요');
+  }
   const e = makeEnd();
 
   const btn = $('mSubmit'); const label = btn.textContent;
@@ -4514,7 +4529,8 @@ async function submitMake() {
     max_people: parseInt($('mPeople').value||'8',10),
     kind: makeKind,
     meetup_required: $('mMeet').checked,
-    meetup_at:    $('mMeet').checked && $('mMeetAt').value ? new Date($('mMeetAt').value).toISOString() : null,
+    meetup_at:    $('mMeet').checked && $('mMeetDate').value
+                    ? new Date(`${$('mMeetDate').value}T${$('mMeetTime').value || '15:00'}`).toISOString() : null,
     meetup_place: $('mMeet').checked ? ($('mMeetPlace').value.trim() || null) : null,
     meetup_note:  $('mMeet').checked ? ($('mMeetNote').value.trim()  || null) : null,
     quote_required: makeKind === 'shared' ? false : $('mQuote').checked,
