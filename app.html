@@ -309,6 +309,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .bk-find span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .bk-find .bk-wait { padding:10px 13px; font-size:12.5px; color:var(--ink-3); }
+/* 검색에 없어도 손으로 적은 게 그대로 저장된다. 아무 말이 없으면
+   안 되는 줄 안다 — 한 줄로 안심시킨다 */
+.bk-none { padding:10px 13px; font-size:12.5px; line-height:1.6; color:var(--ink-3);
+  border:1px dashed var(--line); border-radius:12px; margin-top:9px; }
+.bk-none b { color:var(--ink-2); font-weight:700; }
 .bk-got { display:flex; align-items:center; gap:6px; margin-top:7px;
   font-size:12.5px; color:var(--green-d); font-weight:700; }
 .bk-got i { font-size:14px; }
@@ -4307,7 +4312,11 @@ async function runBookFind(inputId, boxId, q) {
 
   // 그새 더 쳐서 다른 검색이 떠나갔거나, 칸이 비었거나, 이미 고른 뒤면 무시
   if (seq !== bookFindSeq || $(inputId)?.value.trim() !== q || bookPick[inputId]) return;
-  if (!books.length) { box.innerHTML = ''; return; }
+  if (!books.length) {
+    box.innerHTML = `<div class="bk-none">검색에 없는 책이에요.
+      <b>적으신 제목 그대로</b> 저장됩니다.</div>`;
+    return;
+  }
 
   bookFound[inputId] = books;
   box.innerHTML = `<div class="bk-find">${books.map((b, i) => `
@@ -4382,7 +4391,11 @@ async function runPlaceFind(q) {
 
   // 그새 더 쳐서 다른 검색이 떠나갔거나, 칸이 비었거나, 이미 고른 뒤면 무시
   if (seq !== placeSeq || $('mMeetPlace').value.trim() !== q || placePick) return;
-  if (!places.length) { box.innerHTML = ''; return; }
+  if (!places.length) {
+    box.innerHTML = `<div class="bk-none">지도에 없는 곳이에요.
+      <b>적으신 그대로</b> 저장됩니다 — 길찾기 단추만 안 생겨요.</div>`;
+    return;
+  }
 
   placeFound = places;
   box.innerHTML = `<div class="bk-find">${places.map((p, i) => `
