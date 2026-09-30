@@ -60,6 +60,10 @@ tr:hover td { background:#fcfcfd; }
 .chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
 .c-wait { background:#fff4e5; color:#a86400; }
 .c-done { background:#f2f9e5; color:#4E7A1C; }
+.c-void { background:#f0efed; color:#8a8378; }
+/* 취소된 정산. 지우지 않고 남긴다 — 명세는 「왜 이 숫자가 됐나」를 설명해야 한다 */
+.voided { opacity:.62; }
+.voided s { color:var(--ink-3); font-weight:400; }
 .c-act  { background:#eef0ff; color:var(--blue); }
 .c-off  { background:#f0f0f2; color:var(--ink-3); }
 .btn { border:none; border-radius:9px; padding:8px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
@@ -1679,7 +1683,8 @@ async function togglePhoto(id, next) {
 }
 
 function viewSettled() {
-  const rows = DB.purchases.filter(g => g.status === 'settled')
+  // 취소된 건도 같이 보여 준다. 숨기면 「왜 이 숫자가 됐나」를 설명할 수 없다
+  const rows = DB.purchases.filter(g => g.status === 'settled' || g.status === 'void')
                        .sort((a,b) => (b.settled_at||'').localeCompare(a.settled_at||''));
   const wait = unpaid();
 
@@ -1704,8 +1709,16 @@ function viewSettled() {
 
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>서점</th><th class="right">책값</th><th>정산일</th>
-        <th>후원자 공개</th><th>입금</th></tr>
-    ${rows.map(g => `<tr>
+        <th>후원자 공개</th><th>입금</th><th class="right"></th></tr>
+    ${rows.map(g => g.status === 'void' ? `<tr class="voided">
+      <td>${photoCell(g)}</td>
+      <td><b>${esc(g.name)}</b><div class="muted">${esc(g.routine)}</div></td>
+      <td>${esc(g.bookstore)}</td>
+      <td class="right num"><s>${won(g.amount)}원</s></td>
+      <td class="num">${fmtDate(g.settled_at)}</td>
+      <td colspan="3"><span class="chip c-void">취소됨</span>
+        ${g.note ? `<span class="muted" style="margin-left:6px;">${esc(String(g.note).split('[취소]').pop().trim())}</span>` : ''}</td>
+    </tr>` : `<tr>
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b><div class="muted">${esc(g.routine)}</div></td>
       <td>${esc(g.bookstore)}</td>
@@ -1716,8 +1729,75 @@ function viewSettled() {
         ? `<span class="chip c-done">${fmtDate(g.paid_at)} 입금</span>
            <button class="btn btn-line" style="margin-left:6px;" onclick="markPaid(${g.id}, false)">되돌리기</button>`
         : `<button class="btn btn-pink" onclick="markPaid(${g.id}, true)">입금 완료</button>`}</td>
+      <td class="right" style="white-space:nowrap;">${g.paid_at ? '' : `
+        <button class="btn btn-line" onclick="fixPurchase(${g.id})">금액</button>
+        <button class="btn btn-line r-del" onclick="voidPurchase(${g.id})" title="정산 취소">−</button>`}</td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 정산된 건이 없습니다.</div>`}`;
+}
+
+// ── 정산 바로잡기 ──────────────────────────────────────
+// 한 번 정산하면 금액도 책방도 못 고쳤고, 잘못 넣은 건을 물릴 길도 없었다.
+//
+// 지우지 않고 **취소(void)** 한다. 기부금 사용명세는 「무엇을 썼나」뿐 아니라
+// 「왜 이 숫자가 됐나」를 설명해야 한다 — 줄이 사라지면 설명할 게 없다.
+// 취소한 건은 목록에 회색으로 남는다.
+//
+// ⚠️ 돈은 서버가 되돌린다. 정산은 후원금을 차감하므로, 그냥 상태만 바꾸면
+//    기금 잔액이 영영 틀어진다 (migration-61).
+async function fixPurchase(id) {
+  const g = DB.purchases.find(x => x.id === id); if (!g) return;
+  if (g.paid_at) {
+    alert('이미 책방에 입금한 건이라 고칠 수 없습니다.\n\n책방과 먼저 이야기해 주세요.');
+    return;
+  }
+
+  const typed = prompt(`「${g.name}」 · ${g.bookstore}\n\n책값을 얼마로 고칠까요? (원)`, g.amount ?? '');
+  if (typed === null) return;
+  const amount = parseInt(String(typed).replace(/[^0-9]/g, ''), 10);
+  if (!amount || amount <= 0) { alert('금액을 숫자로 적어주세요.'); return; }
+  if (amount === g.amount) return;
+
+  if (!confirm(`책값을 ${won(g.amount)}원 → ${won(amount)}원 으로 고칩니다.\n\n`
+    + `후원금 차감도 다시 계산됩니다.`)) return;
+
+  if (LIVE) {
+    const { error } = await sb.rpc('fix_book_purchase',
+      { p_purchase_id: id, p_amount: amount, p_bookstore: null, p_note: null });
+    if (error) { alert('고치지 못했습니다.\n\n' + error.message); return; }
+    await loadLive();
+  } else {
+    g.amount = amount;
+  }
+  render();
+}
+
+async function voidPurchase(id) {
+  const g = DB.purchases.find(x => x.id === id); if (!g) return;
+  if (g.paid_at) {
+    alert('이미 책방에 입금한 건이라 취소할 수 없습니다.\n\n책방과 먼저 이야기해 주세요.');
+    return;
+  }
+
+  const reason = prompt(`「${g.name}」 · ${g.bookstore} · ${won(g.amount)}원\n\n`
+    + `왜 취소하나요? (명세에 남습니다)`);
+  if (reason === null) return;
+  if (!reason.trim()) { alert('사유를 적어주세요.'); return; }
+
+  if (!confirm(`이 정산을 취소합니다.\n\n`
+    + `· 차감했던 후원금이 되돌아갑니다\n`
+    + `· 줄은 지우지 않고 「취소됨」으로 남습니다\n`
+    + `· 아이의 교환권도 되살아납니다`)) return;
+
+  if (LIVE) {
+    const { error } = await sb.rpc('void_book_purchase',
+      { p_purchase_id: id, p_reason: reason.trim() });
+    if (error) { alert('취소하지 못했습니다.\n\n' + error.message); return; }
+    await loadLive();
+  } else {
+    g.status = 'void';
+  }
+  render();
 }
 
 async function markPaid(id, paid) {
