@@ -523,15 +523,16 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-body { padding:12px 0 0; }
 .r-lead { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
 .r-mine { margin-top:8px; font-size:12.5px; color:var(--green-d); font-weight:700; }
-.day-pick { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:-4px; }
-.day-pick button { min-width:0; padding:10px 8px; border:1px solid var(--line); border-radius:11px;
+/* 2×2 로 두면 145px 을 먹는다. 별명은 고른 뒤 아래 안내줄에서 말해주면 되니
+   숫자만 한 줄에 넷 세운다 */
+.day-pick { display:flex; gap:7px; margin-top:-4px; }
+.day-pick button { flex:1; min-width:0; padding:9px 4px; border:1px solid var(--line); border-radius:11px;
   background:#fff; color:var(--ink-2); cursor:pointer; font-family:inherit; line-height:1.3; }
 .day-pick b { display:block; font-size:13px; font-weight:700; }
-.day-pick span { display:block; font-size:10px; color:var(--ink-3); margin-top:2px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.day-pick button.on span { color:var(--pink); }
+/* 별명은 칩에 넣으면 「습관이 자리 잡…」으로 잘린다. 고른 뒤 아래 안내줄에서 말한다 */
+.day-pick span { display:none; }
 .day-pick button.on { border-color:var(--pink); background:#FCF2EF; color:var(--pink); }
-.kbook-pick { width:110px; aspect-ratio:3/4; border:1px dashed var(--line); border-radius:12px;
+.kbook-pick { width:92px; aspect-ratio:3/4; border:1px dashed var(--line); border-radius:12px;
   background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:4px; color:var(--ink-3); font-size:12px; cursor:pointer; }
 /* 신청 화면에서 「우리가 읽을 책」을 보여 주는 자리. 고르는 게 아니라 알려주는 것이다 */
@@ -547,7 +548,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 바꿀 수 없는 칸. 회색으로 두어 「막힌 게 아니라 정해진 것」으로 읽히게 한다 */
 input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kbook-row { display:flex; gap:10px; align-items:flex-start; }
-.kbook-opt { position:relative; width:110px; flex:none; aspect-ratio:3/4; padding:0; display:block;
+.kbook-opt { position:relative; width:92px; flex:none; aspect-ratio:3/4; padding:0; display:block;
   border:2px solid var(--line); border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .kbook-opt img { width:100%; height:100%; object-fit:cover; display:block; }
 .kbook-opt em, .kbook-prev em { position:absolute; left:0; right:0; bottom:0; padding:4px 0;
@@ -555,7 +556,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kbook-opt.on { border-color:var(--green); }
 .kbook-opt.on em, .kbook-prev.on em { background:var(--green-d); }
 .kbook-prev.on { outline:2px solid var(--green); outline-offset:-2px; }
-.kbook-prev { position:relative; width:110px; flex:none; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#eeeae2; }
+.kbook-prev { position:relative; width:92px; flex:none; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#eeeae2; }
 .kbook-prev img { width:100%; height:100%; object-fit:cover; display:block; }
 .kbook-prev button { position:absolute; top:5px; right:5px; width:24px; height:24px; border:none;
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:13px; cursor:pointer; }
@@ -652,12 +653,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
    셋을 가로로 세우면 한 칸이 110px 이라 설명이 넉 줄로 접힌다. 세로로 쌓는다 */
 .kind button { position:relative; display:flex; align-items:center; gap:12px; width:100%;
   border:2px solid var(--line); background:transparent; border-radius:13px;
-  padding:12px 36px 12px 13px; text-align:left; cursor:pointer; font-family:inherit; }
-.kind button em { font-style:normal; font-size:21px; flex:none; opacity:.45; }
+  padding:9px 34px 9px 12px; text-align:left; cursor:pointer; font-family:inherit; }
+.kind button em { font-style:normal; font-size:19px; flex:none; opacity:.45; }
 .kind button span { min-width:0; }
-.kind button b { display:block; font-size:14px; font-weight:800; color:var(--ink-3); }
-.kind button i { display:block; font-style:normal; font-size:12px; color:var(--ink-3);
-  margin-top:2px; line-height:1.5; }
+.kind button b { display:block; font-size:13.5px; font-weight:800; color:var(--ink-3); }
+.kind button i { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3);
+  margin-top:1px; line-height:1.45; }
 .kind button.on { border-color:var(--green); background:#fff;
   box-shadow:0 2px 10px rgba(78,122,28,.13); }
 .kind button.on em { opacity:1; }
@@ -4508,6 +4509,9 @@ function drawKkutBook() {
   const found = foundCover();
   const mine  = kkutBook || kkutBookUrl;
   const useF  = kkutUseFound && !!found;
+  // 책 제목도 안 적었는데 사진 칸이 먼저 열려 있으면 빈 자리만 먹는다.
+  // 제목을 치기 시작하면 그때 나온다
+  if (!found && !mine && !$('mBookTitle').value.trim()) { $('mBookBox').innerHTML = ''; return; }
   $('mBookBox').innerHTML = `<div class="kbook-row">
     ${found ? `<button type="button" class="kbook-opt${useF ? ' on' : ''}" onclick="pickFoundCover()">
         <img src="${esc(found)}" loading="lazy" alt=""><em>검색한 표지</em></button>` : ''}
@@ -4692,6 +4696,9 @@ const addDays = (ymd, n) => {
 const makeDays = () => Math.max(MIN_DAYS, parseInt($('mDays').value || '0', 10) || MIN_DAYS);
 const makeEnd  = () => { const a = $('mStart').value; return a ? addDays(a, makeDays() - 1) : ''; };
 
+// 칩에서 뺀 별명. 고른 기간 옆에 한 번만 붙여준다
+const DAY_NICK = { 7: '맛보기', 15: '가볍게 시작', 30: '한 달 채우기', 66: '습관이 자리 잡는 시간' };
+
 function pickDays(n) { $('mDays').value = n; makeHint(); }
 
 function makeHint() {
@@ -4707,7 +4714,9 @@ function makeHint() {
   }
   if (!a) { h.style.display = 'none'; return; }
   h.style.display = ''; h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
-  h.innerHTML = `${fmtDay(a)}부터 <b>${makeDays()}일</b> 동안 · <b>${fmtDay(makeEnd())}</b>에 끝나요`;
+  const nick = DAY_NICK[makeDays()];
+  h.innerHTML = `${fmtDay(a)}부터 <b>${makeDays()}일</b> 동안 · <b>${fmtDay(makeEnd())}</b>에 끝나요`
+    + (nick ? ` <i style="font-style:normal;opacity:.75;">— ${nick}</i>` : '');
 }
 
 const fmtDay = d => { const [, m, dd] = d.split('-'); return `${+m}월 ${+dd}일`; };
