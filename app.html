@@ -626,6 +626,28 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kind button.on b { color:var(--green-d); }
 .kind button:disabled { opacity:.45; cursor:default; }
 
+/* 오프라인 공유회 */
+.meet { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:14px; padding:14px 16px; }
+.meet.done { background:var(--green-l); border-color:#CFE6A8; }
+.meet-h { display:flex; align-items:center; gap:8px; }
+.meet-h b { flex:1; font-size:13px; font-weight:800; color:var(--ink); }
+.meet-h i { font-style:normal; font-size:11.5px; font-weight:700; color:var(--green-d); }
+.meet-w { font-size:16px; font-weight:800; letter-spacing:-.3px; margin-top:6px; }
+.meet-p { font-size:13.5px; color:var(--ink-2); margin-top:4px; }
+.meet-n { font-size:12.5px; color:var(--ink-3); margin-top:6px; line-height:1.65; white-space:pre-wrap; }
+.meet-f { font-size:12.5px; color:var(--ink-2); margin-top:9px; padding-top:9px;
+  border-top:1px solid rgba(0,0,0,.07); line-height:1.6; }
+.meet-f b { color:var(--ink); }
+/* 끗짱의 참석 명단 */
+.met-row { display:flex; align-items:center; gap:10px; width:100%; border:0; background:none;
+  font-family:inherit; cursor:pointer; text-align:left; padding:11px 16px;
+  border-top:1px solid var(--line); }
+.met-row:first-child { border-top:0; }
+.met-row:active { background:var(--bg); }
+.met-row em { font-style:normal; font-size:15px; flex:none; }
+.met-row b { flex:1; font-size:14px; font-weight:700; }
+.met-row i { font-style:normal; font-size:12px; color:var(--ink-3); }
+.met-row.on i { color:var(--green-d); font-weight:700; }
 /* 함께 읽는 글 */
 .post { background:#F2EEE6; border-radius:14px; padding:14px 16px; }
 .post-h { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
@@ -1216,6 +1238,22 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
         그 자리에서 찍은 사진만 받기
       </label>
       <div class="hint">저장된 사진을 못 올리고 카메라로 바로 찍어야 해요. 필요하면 해제할 수 있어요</div>
+    </div>
+    <div>
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
+        <input type="checkbox" id="mMeet" style="width:17px;height:17px;" onchange="toggleMeetFields()">
+        오프라인 공유회 함께하기
+      </label>
+      <div class="hint">체크하면 <b>공유회에 온 아이만</b> 모은 포인트로 책을 받을 수 있어요</div>
+      <div id="mMeetWrap" style="display:none;margin-top:12px;">
+        <div class="field-label">언제 모이나요 <span class="opt">선택 · 나중에 적어도 돼요</span></div>
+        <input type="datetime-local" id="mMeetAt">
+        <div class="field-label" style="margin-top:14px;">어디서 <span class="opt">선택</span></div>
+        <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 속초 당신의강릉 2층">
+        <div class="field-label" style="margin-top:14px;">안내할 말 <span class="opt">선택</span></div>
+        <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 같은 걸 적어주세요."></textarea>
+        <div class="hint">아이들은 루틴을 고를 때부터 이 안내를 봅니다. 모임이 취소되면 체크를 풀면 돼요.</div>
+      </div>
     </div>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
   </div>
@@ -2855,6 +2893,7 @@ function kkutCertBlock(mine) {
         </div>
         ${rollLine(r, yet)}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
+      ${meetRoll(r)}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
       ${certGrid(cs)}`;
   }).join('');
@@ -2969,10 +3008,15 @@ function balanceBlock() {
         ? `<div class="bal-pend">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="go('store')">책방 찾기</button>
-            ${p.left > 0 ? (me.verify_status === 'approved'
-              ? `<button class="btn-green" onclick="openBuy(${myRoutines()[0].id})">책 받았어요</button>`
-              : `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`) : ''}
-          </div>`}
+            ${p.left > 0 ? (me.verify_status !== 'approved'
+              ? `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`
+              : buyRoutine()
+                ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">책 받았어요</button>`
+                : '') : ''}
+          </div>
+          ${p.left > 0 && me.verify_status === 'approved' && !buyRoutine() && meetPending()
+            ? `<div class="bal-pend" style="background:#FBF3E4;color:#8A5A16;">
+                 🤝 공유회에 다녀오면 책을 받을 수 있어요</div>` : ''}`}
     </div>`;
 }
 
@@ -4035,6 +4079,7 @@ function openRoutine(id) {
       ${CMT_P() ? `<div><span>댓글 1회당</span><b class="pt">${won(CMT_P())}P</b>
         ${CMT_CAP() ? `<i>하루 ${CMT_CAP()}개까지</i>` : ''}</div>` : ''}
     </div>
+    ${needsMeet(r) ? meetCard(r) : ''}
     ${isShared(r) && (p?.status === 'approved' || leadsIt(r))
       ? `<div class="sec-t">함께 읽는 글</div>${postCard(r)}` : ''}
     ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱</div>
@@ -4352,6 +4397,10 @@ function pickKind(k) {
     : '아이마다 읽고 싶은 책을 골라 인증합니다.';
 }
 
+function toggleMeetFields() {
+  $('mMeetWrap').style.display = $('mMeet').checked ? '' : 'none';
+}
+
 function openMake(id) {
   makeId = id || null;
   const r = id ? state.routines.find(x => x.id === id) : null;
@@ -4373,6 +4422,14 @@ function openMake(id) {
   $('mKindWrap').style.display = r && r.kind !== 'shared' ? 'none' : '';
   $('mQuote').checked  = !!r?.quote_required;
   $('mCamera').checked = r ? !!r.camera_only : true;
+  // 공유회는 만들 때만 켜진다. 들어온 뒤에 「사실 공유회도 와야 해」가 되면 안 된다.
+  // 끄는 건 언제든 — 모임이 취소될 수 있다 (서버도 같은 규칙, migration-58)
+  $('mMeet').checked  = !!r?.meetup_required;
+  $('mMeet').disabled = !!(r && !r.meetup_required);
+  $('mMeetAt').value    = r?.meetup_at ? new Date(r.meetup_at).toLocaleString('sv').slice(0, 16).replace(' ', 'T') : '';
+  $('mMeetPlace').value = r?.meetup_place || '';
+  $('mMeetNote').value  = r?.meetup_note  || '';
+  toggleMeetFields();
   // 이름을 넣으라고 강제하지 않는다. 누구랑 하는지는 카드에 끗짱 이름이
   // 따로 나오고, 제목까지 묶어버리면 「밤에 읽는 15일」 같은 걸 못 쓴다
   $('mTitleHint').textContent = '어떤 루틴인지 한눈에 보이게 적어주세요. 청소년이 이 이름을 보고 고릅니다.';
@@ -4456,6 +4513,10 @@ async function submitMake() {
     start_date: s, end_date: e,
     max_people: parseInt($('mPeople').value||'8',10),
     kind: makeKind,
+    meetup_required: $('mMeet').checked,
+    meetup_at:    $('mMeet').checked && $('mMeetAt').value ? new Date($('mMeetAt').value).toISOString() : null,
+    meetup_place: $('mMeet').checked ? ($('mMeetPlace').value.trim() || null) : null,
+    meetup_note:  $('mMeet').checked ? ($('mMeetNote').value.trim()  || null) : null,
     quote_required: makeKind === 'shared' ? false : $('mQuote').checked,
     camera_only: $('mCamera').checked,
     cover_url: coverSaved,
@@ -4793,6 +4854,72 @@ async function delCert(id) {
   if (error) return toast('지우지 못했어요: ' + error.message);
   await loadAll(); render(); refreshOpenOv(c.routine_id, id);
   toast('삭제했어요');
+}
+
+// 교환권은 계정 전체로 쌓이지만 구매는 루틴에 달린다.
+// 공유회가 걸린 루틴은 다녀와야 쓸 수 있으니, 쓸 수 있는 루틴을 골라 준다
+const buyRoutine  = () => myRoutines().find(r => !needsMeet(r) || myMet(r.id)) || null;
+const meetPending = () => myRoutines().some(r => needsMeet(r) && !myMet(r.id));
+
+// ── 오프라인 공유회 ────────────────────────────────────
+// 어떤 루틴은 마지막에 다 같이 모여 이야기 나누는 게 핵심이다.
+// 그런 루틴은 **공유회에 와야 책을 받는다** — 읽기만 하고 안 오면 반쪽이다.
+const needsMeet = r => !!r?.meetup_required;
+const myMet     = rid => !!myPart(rid)?.met_at;
+
+const meetWhen = r => {
+  if (!r?.meetup_at) return '날짜는 곧 알려드려요';
+  const d = new Date(r.meetup_at);
+  const w = ['일','월','화','수','목','금','토'][d.getDay()];
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${w}) ${hhmmKo(
+    `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`)}`;
+};
+
+// 아이에게 보여 주는 안내. 「못 받는다」가 아니라 「오면 받는다」로 적는다
+function meetCard(r) {
+  if (!needsMeet(r)) return '';
+  const met = myMet(r.id);
+  return `<div class="meet${met ? ' done' : ''}">
+      <div class="meet-h"><b>🤝 함께 나누는 자리</b>${met ? '<i>다녀왔어요</i>' : ''}</div>
+      <div class="meet-w">${meetWhen(r)}</div>
+      ${r.meetup_place ? `<div class="meet-p">📍 ${esc(r.meetup_place)}</div>` : ''}
+      ${r.meetup_note ? `<div class="meet-n">${esc(r.meetup_note)}</div>` : ''}
+      <div class="meet-f">${met
+        ? '교환권을 쓸 수 있어요.'
+        : '이 루틴은 <b>공유회에 오면</b> 모은 포인트로 책을 받을 수 있어요.'}</div>
+    </div>`;
+}
+
+// ── 끗짱이 참석을 표시한다 ─────────────────────────────
+// 그 자리에 있는 사람만 누가 왔는지 안다. 운영진은 모임에 없다
+function meetRoll(r) {
+  if (!needsMeet(r) || !leadsIt(r)) return '';
+  const ps = partsOf(r.id).filter(p => p.status === 'approved');
+  if (!ps.length) return '';
+  const n = ps.filter(p => p.met_at).length;
+  return `<div class="sec-t" style="margin-top:16px;">공유회 참석 <span>${n}/${ps.length}</span></div>
+    <div class="card" style="padding:4px 0;">
+      ${ps.map(p => `<button class="met-row${p.met_at ? ' on' : ''}"
+          onclick="toggleMet(${r.id},'${p.user_id}',this)">
+          <em>${p.met_at ? '✅' : '⬜️'}</em>
+          <b>${p.user_id === me.id ? '나' : esc(nameOf(p.user_id))}</b>
+          <i>${p.met_at ? '왔어요' : '아직'}</i></button>`).join('')}
+    </div>
+    <div class="hint" style="margin-top:7px;">체크하면 그 아이가 교환권을 쓸 수 있어요. 잘못 눌렀으면 다시 눌러 되돌립니다.</div>`;
+}
+
+async function toggleMet(rid, uid, btn) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const p = (state.parts || []).find(x => x.routine_id === rid && x.user_id === uid);
+  const next = p?.met_at ? null : new Date().toISOString();
+  btn.disabled = true;
+  const { error } = await sb.from('routine_participants')
+    .update({ met_at: next }).eq('routine_id', rid).eq('user_id', uid);
+  btn.disabled = false;
+  if (error) return toast('바꾸지 못했어요: ' + error.message);
+  if (p) p.met_at = next;
+  render();
+  toast(next ? '참석으로 표시했어요' : '참석을 지웠어요');
 }
 
 // ── 함께 읽는 글 ───────────────────────────────────────
