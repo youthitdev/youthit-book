@@ -1201,9 +1201,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div class="field-label">어떻게 읽나요 <span class="req">*</span></div>
       <div class="kind">
         <button type="button" id="mKindBook" class="on" onclick="pickKind('book')">
-          <em>📚</em><b>각자 책</b><i>아이마다 제 책을 골라 읽어요</i></button>
+          <em>📚</em><b>각자 읽는 책</b><i>청소년마다 제 책을 고릅니다</i></button>
         <button type="button" id="mKindShared" onclick="pickKind('shared')">
-          <em>📖</em><b>함께 읽는 글</b><i>내가 매일 글을 올리고 같이 읽어요</i></button>
+          <em>📖</em><b>함께 읽는 글</b><i>내가 올린 글을 같이 읽습니다</i></button>
       </div>
       <div class="hint" id="mKindHint"></div>
     </div>
@@ -4552,8 +4552,8 @@ function pickKind(k) {
   // 함께 읽는 글은 필사를 따로 켜고 끔 일이 없다 — 소감이 늘 필수다
   $('mQuote').closest('div').style.display = k === 'shared' ? 'none' : '';
   $('mKindHint').textContent = k === 'shared'
-    ? '매일 글을 한 편씩 올려주세요. 아이들은 책 제목·쪽수 없이 소감만 남긱니다.'
-    : '아이마다 읽고 싶은 책을 골라 인증합니다.';
+    ? '매일 글을 한 편씩 올려주세요. 청소년은 책 제목·쪽수 없이 소감만 남깁니다.'
+    : '청소년마다 읽고 싶은 책을 골라 인증합니다.';
 }
 
 function toggleMeetFields() {
