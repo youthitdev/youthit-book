@@ -565,10 +565,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kkut-note { font-size:12px; color:var(--green-d); font-weight:700; margin-top:9px; }
 .kkut-bt { font-size:13.5px; font-weight:800; color:var(--ink); margin-top:3px; line-height:1.5; }
 .kkut-bt i { display:block; font-style:normal; font-size:12px; font-weight:600; color:var(--ink-3); margin-top:2px; }
-.cover-pick { width:100%; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
+/* 화면 절반을 먹을 그림이 아니다. 카드에 나갈 16:9 비율만 알아보면 되니
+   책 사진 타일처럼 작게 둔다 */
+.cover-pick { width:100%; max-width:210px; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:13px;
   background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:5px; color:var(--ink-3); font-size:13px; cursor:pointer; }
-.cover-prev { position:relative; border-radius:13px; overflow:hidden; aspect-ratio:16/9; }
+.cover-prev { position:relative; width:100%; max-width:210px; border-radius:13px; overflow:hidden; aspect-ratio:16/9; }
 /* 책 사진은 세로로 긴 경우가 많아 자르면 안 된다. 비율 그대로 다 보여준다 */
 /* 참여할 때 고른 책 사진 미리보기.
    사진 전체를 보여주지 않는다. 홈 카드에 나갈 3:4 틀로 잘라서 보여준다 —
@@ -4485,7 +4487,7 @@ function drawCover() {
     ? `<div class="cover-prev"><img src="${esc(src)}" alt="">
          <button type="button" onclick="clearCover(event)">×</button></div>`
     : `<div class="cover-pick" onclick="document.getElementById('mCoverInput').click()">
-         <i class="ti ti-photo" style="font-size:22px;"></i>사진 고르기</div>`;
+         <i class="ti ti-photo" style="font-size:20px;"></i>사진 고르기</div>`;
 }
 
 function clearCover(e) {
