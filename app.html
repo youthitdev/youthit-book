@@ -4511,6 +4511,10 @@ const isMyPhoto = u => !!u && u.includes('/storage/v1/object/public/');
 function drawKkutBook() {
   const found = foundCover();
   const mine  = kkutBook || kkutBookUrl;
+  // 검색해서 고른 책에 표지가 딸려 오면 그걸 그냥 쓴다. 한 번 더 눌러야
+  // 골라지는 줄 몰라 표지 없이 저장되는 일이 있었다.
+  // 직접 올린 사진이 있으면 건드리지 않는다 — 올린 사람 뜻이 먼저다
+  if (found && !mine) kkutUseFound = true;
   const useF  = kkutUseFound && !!found;
   // 책 제목도 안 적었는데 사진 칸이 먼저 열려 있으면 빈 자리만 먹는다.
   // 제목을 치기 시작하면 그때 나온다
