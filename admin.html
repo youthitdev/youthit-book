@@ -1203,9 +1203,14 @@ async function loadRoutines() {
   if (ids.length) {
     // 소속·지역도 같이 가져온다. 승인제 도입 전에 등록된 끗짱은 신청서가
     // 비어 있어 프로필에서 채워야 한다
-    const { data } = await sb.from('profiles').select('id, name, school_status, region').in('id', ids);
+    // 연락처는 profiles_private 에 따로 있다. 운영진만 읽을 수 있는 자리다(pp_read)
+    const [pr, pv] = await Promise.all([
+      sb.from('profiles').select('id, name, school_status, region').in('id', ids),
+      sb.from('profiles_private').select('id, phone').in('id', ids),
+    ]);
     DB.profs = DB.profs || {};
-    (data || []).forEach(p => { DB.names[p.id] = p.name; DB.profs[p.id] = p; });
+    (pr.data || []).forEach(p => { DB.names[p.id] = p.name; DB.profs[p.id] = { ...(DB.profs[p.id] || {}), ...p }; });
+    (pv.data || []).forEach(p => { DB.profs[p.id] = { ...(DB.profs[p.id] || {}), phone: p.phone }; });
   }
 }
 
@@ -1340,7 +1345,7 @@ function openKkut(uid) {
              a.status === 'approved' ? '승인됨' : a.status === 'rejected' ? '반려됨' : '심사 대기'}</span>
          </div>
          <div class="kk-g">
-           <div><b>연락처</b><span>${esc(a.contact || '없음')}</span></div>
+           <div><b>연락처</b><span>${esc(kkutPhone(uid) || '없음')}</span></div>
            <div><b>이메일</b><span>${esc(a.email || '없음')}</span></div>
            <div><b>신청일</b><span>${a.applied_at ? fmtDate(a.applied_at) : '—'}</span></div>
            <div><b>만든 루틴</b><span>${rs.length}개</span></div>
@@ -1351,7 +1356,20 @@ function openKkut(uid) {
            ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
        </div>
        <div class="panel-t" style="margin-top:16px;">맡은 루틴</div>${mine}`
-    : `<div class="empty">끗짱 신청서가 없어요. 운영진이 직접 올린 계정일 수 있어요.</div>
+    : `<div class="kk" style="border:0;padding:0;">
+         <div class="kk-h">
+           <div>
+             <div class="kk-n">${esc(rName(uid))}</div>
+             <div class="kk-m">${esc(kkutWhere(uid).join(' · ') || '소속 미상')}</div>
+           </div>
+         </div>
+         <div class="kk-g">
+           <div><b>연락처</b><span>${esc(kkutPhone(uid) || '없음')}</span></div>
+           <div><b>만든 루틴</b><span>${rs.length}개</span></div>
+         </div>
+         <div class="hint">끗짱 신청서가 없어요. 승인제를 들이기 전에 등록됐거나
+           운영진이 직접 올린 계정이에요.</div>
+       </div>
        <div class="panel-t" style="margin-top:16px;">맡은 루틴</div>${mine}`;
   document.getElementById('kkutOverlay').classList.add('on');
 }
@@ -1366,6 +1384,22 @@ const emptyish = v => {
   const t = String(v || '').trim();
   return !t || t === '-' || t === '없음' || t.includes('승인제 도입 전');
 };
+
+// 가입할 때는 숫자만 받는다. 눈으로 읽고 손으로 걸 수 있게 끊어 준다
+const fmtPhone = v => {
+  const d = String(v || '').replace(/[^0-9]/g, '');
+  if (d.length === 11) return `${d.slice(0,3)}-${d.slice(3,7)}-${d.slice(7)}`;
+  if (d.length === 10) return `${d.slice(0,3)}-${d.slice(3,6)}-${d.slice(6)}`;
+  return String(v || '');
+};
+
+// 끗짱 신청서의 연락처가 먼저고, 없으면 가입할 때 받은 번호를 쓴다
+function kkutPhone(uid) {
+  const a = (DB.kkutApps || []).find(x => x.user_id === uid) || {};
+  const p = (DB.profs || {})[uid] || {};
+  const v = emptyish(a.contact) ? p.phone : a.contact;
+  return emptyish(v) ? '' : fmtPhone(v);
+}
 
 function kkutWhere(uid) {
   const a = (DB.kkutApps || []).find(x => x.user_id === uid) || {};
