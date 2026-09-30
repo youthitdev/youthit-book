@@ -534,6 +534,18 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kbook-pick { width:110px; aspect-ratio:3/4; border:1px dashed var(--line); border-radius:12px;
   background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:4px; color:var(--ink-3); font-size:12px; cursor:pointer; }
+/* 신청 화면에서 「우리가 읽을 책」을 보여 주는 자리. 고르는 게 아니라 알려주는 것이다 */
+.one-book { display:flex; gap:13px; align-items:center; background:#fff;
+  border:1px solid var(--line); border-radius:13px; padding:12px 14px; }
+.one-book .ob-i { width:54px; flex:none; aspect-ratio:3/4; border-radius:7px; overflow:hidden;
+  background:#eeeae2; display:grid; place-items:center; font-size:20px; }
+.one-book .ob-i img { width:100%; height:100%; object-fit:cover; display:block; }
+.one-book div { min-width:0; }
+.one-book span { display:block; font-size:11.5px; font-weight:700; color:var(--green-d); }
+.one-book b { display:block; font-size:15px; font-weight:800; line-height:1.4; margin-top:3px; }
+.one-book i { display:block; font-style:normal; font-size:12px; color:var(--ink-3); margin-top:2px; }
+/* 바꿀 수 없는 칸. 회색으로 두어 「막힌 게 아니라 정해진 것」으로 읽히게 한다 */
+input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kbook-row { display:flex; gap:10px; align-items:flex-start; }
 .kbook-opt { position:relative; width:110px; flex:none; aspect-ratio:3/4; padding:0; display:block;
   border:2px solid var(--line); border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
@@ -632,24 +644,27 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
 /* 루틴 종류 고르기 */
-.kind { display:flex; gap:8px; }
+.kind { display:flex; flex-direction:column; gap:8px; }
 /* 안 고른 쪽이 흰색이면 크림색 배경에서 되레 튄다. 안 고른 쪽을 배경에
-   묻히게 두고, 고른 쪽만 흰 카드로 띄운다 */
-.kind button { position:relative; flex:1; min-width:0; border:2px solid var(--line);
-  background:transparent; border-radius:13px; padding:12px 10px; text-align:left;
-  cursor:pointer; font-family:inherit; }
-.kind button em { font-style:normal; font-size:19px; display:block; margin-bottom:5px; opacity:.45; }
-.kind button b { display:block; font-size:13.5px; font-weight:800; color:var(--ink-3); }
-.kind button i { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3);
-  margin-top:3px; line-height:1.5; }
+   묻히게 두고, 고른 쪽만 흰 카드로 띄운다.
+   셋을 가로로 세우면 한 칸이 110px 이라 설명이 넉 줄로 접힌다. 세로로 쌓는다 */
+.kind button { position:relative; display:flex; align-items:center; gap:12px; width:100%;
+  border:2px solid var(--line); background:transparent; border-radius:13px;
+  padding:12px 36px 12px 13px; text-align:left; cursor:pointer; font-family:inherit; }
+.kind button em { font-style:normal; font-size:21px; flex:none; opacity:.45; }
+.kind button span { min-width:0; }
+.kind button b { display:block; font-size:14px; font-weight:800; color:var(--ink-3); }
+.kind button i { display:block; font-style:normal; font-size:12px; color:var(--ink-3);
+  margin-top:2px; line-height:1.5; }
 .kind button.on { border-color:var(--green); background:#fff;
   box-shadow:0 2px 10px rgba(78,122,28,.13); }
 .kind button.on em { opacity:1; }
 .kind button.on b { color:var(--green-d); }
 .kind button.on i { color:var(--ink-2); }
 /* 테두리와 글자만으로는 눈에 덜 든다. 고른 쪽에만 체크를 하나 붙인다 */
-.kind button.on::after { content:'\2713'; position:absolute; top:9px; right:9px;
-  width:19px; height:19px; border-radius:50%; background:var(--green); color:#fff;
+.kind button.on::after { content:'\2713'; position:absolute; top:50%; right:12px;
+  transform:translateY(-50%); width:19px; height:19px; border-radius:50%;
+  background:var(--green); color:#fff;
   font-size:11px; font-weight:900; line-height:19px; text-align:center; }
 .kind button:disabled { opacity:.45; cursor:default; }
 .kind button.on:disabled { opacity:1; }
@@ -1201,9 +1216,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div class="field-label">어떻게 읽나요 <span class="req">*</span></div>
       <div class="kind">
         <button type="button" id="mKindBook" class="on" onclick="pickKind('book')">
-          <em>📚</em><b>각자 읽는 책</b><i>청소년마다 제 책을 고릅니다</i></button>
+          <em>📚</em><span><b>각자 읽는 책</b><i>청소년마다 제 책을 고릅니다</i></span></button>
+        <button type="button" id="mKindOne" onclick="pickKind('one_book')">
+          <em>📕</em><span><b>함께 읽는 책</b><i>내가 정한 한 권을 다 같이 읽습니다</i></span></button>
         <button type="button" id="mKindShared" onclick="pickKind('shared')">
-          <em>📖</em><b>함께 읽는 글</b><i>내가 올린 글을 같이 읽습니다</i></button>
+          <em>📖</em><span><b>함께 읽는 글</b><i>내가 올린 글을 같이 읽습니다</i></span></button>
       </div>
       <div class="hint" id="mKindHint"></div>
     </div>
@@ -1233,7 +1250,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div id="mBookFindGot"></div>
       <div id="mBookBox" style="margin-top:11px;"></div>
       <input type="file" id="mBookInput" accept="image/*" style="display:none;" onchange="pickKkutBook(event)">
-      <div class="hint">검색한 표지를 그대로 쓰거나, 직접 찍은 사진을 올릴 수 있어요. 눌러서 고릅니다.</div>
+      <div class="hint" id="mBookHint">검색한 표지를 그대로 쓰거나, 직접 찍은 사진을 올릴 수 있어요. 눌러서 고릅니다.</div>
     </div>
     <div>
       <div class="field-label">이렇게 인증해 주세요 <span class="req">* 필수</span></div>
@@ -2694,6 +2711,7 @@ function todayCard(r) {
         ${isShared(r)
           ? (leadsIt(r) && !routineEnded(r)
               ? `<button class="tc-add" onclick="event.stopPropagation();openPost(${r.id})">오늘 글</button>` : '')
+          : isOneBook(r) ? ''
           : books.length || !routineEnded(r)
             ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`
             : ''}
@@ -2762,6 +2780,7 @@ function kkutTodayCard(r) {
   // 참여자 카드에만 있었다
   const lead = waiting ? '' : isShared(r)
     ? (routineEnded(r) ? '' : `<button class="tc-add" onclick="event.stopPropagation();openPost(${r.id})">오늘 글</button>`)
+    : isOneBook(r) ? ''
     : `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`;
 
   return `<div class="tcard">
@@ -4146,7 +4165,7 @@ function openRoutine(id) {
         <div style="min-width:0;">
           <div style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>
           ${r.kkut_book_url || r.kkut_book_title
-            ? `<div class="kkut-note">📖 저는 이 책을 읽어요</div>` : ''}
+            ? `<div class="kkut-note">${isOneBook(r) ? '📕 이 책을 다 같이 읽어요' : '📖 저는 이 책을 읽어요'}</div>` : ''}
           ${r.kkut_book_title ? `<div class="kkut-bt">「${esc(r.kkut_book_title)}」
             ${r.kkut_book_authors || r.kkut_book_publisher
               ? `<i>${esc([r.kkut_book_authors, r.kkut_book_publisher].filter(Boolean).join(' · '))}</i>` : ''}
@@ -4175,15 +4194,27 @@ function openRoutine(id) {
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : me.verify_status !== 'approved' ? verifyGate()
       : `<div>
-          <div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
-          <div id="apBookBox"></div>
-          <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
-          <div class="hint">시작할 책의 표지를 <b>세로로</b> 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
-          <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
-          <input type="text" id="applyBookTitle" placeholder="예) 시간자결권" maxlength="60"
-                 autocomplete="off" oninput="bookFind('applyBookTitle','apFind',checkApply)">
-          <div id="apFind"></div><div id="apFindGot"></div>
-          <div class="hint">적다 보면 책을 찾아줍니다. <b>못 찾으면 그냥 적어도 돼요.</b></div>
+          ${isOneBook(r)
+            ? `<div class="field-label">우리가 읽을 책</div>
+               <div class="one-book">
+                 <div class="ob-i">${r.kkut_book_url
+                   ? `<img src="${esc(r.kkut_book_url)}" loading="lazy" alt="">` : '📕'}</div>
+                 <div>
+                   <span>다 같이 읽어요</span>
+                   <b>${esc(r.kkut_book_title || '끗짱이 곧 알려줘요')}</b>
+                   ${r.kkut_book_authors ? `<i>${esc(r.kkut_book_authors)}</i>` : ''}
+                 </div>
+               </div>
+               <div class="hint">이 책으로 인증해요. 없으면 도서관이나 책방에서 구해 주세요.</div>`
+            : `<div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
+               <div id="apBookBox"></div>
+               <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
+               <div class="hint">시작할 책의 표지를 <b>세로로</b> 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
+               <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
+               <input type="text" id="applyBookTitle" placeholder="예) 시간자결권" maxlength="60"
+                      autocomplete="off" oninput="bookFind('applyBookTitle','apFind',checkApply)">
+               <div id="apFind"></div><div id="apFindGot"></div>
+               <div class="hint">적다 보면 책을 찾아줍니다. <b>못 찾으면 그냥 적어도 돼요.</b></div>`}
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
           <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
           <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`
@@ -4216,25 +4247,31 @@ async function pickApplyBook(e) {
   catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
 }
 
-// 셋 다 채워야 참여할 수 있다. 서버에도 같은 검사가 걸려 있다
+// 셋 다 채워야 참여할 수 있다. 서버에도 같은 검사가 걸려 있다.
+// 함께 읽는 책이면 책 칸이 아예 없다 — 각오만 받는다
 function checkApply() {
   const b = $('apSubmit'); if (!b) return;
-  b.disabled = !(applyBook
-    && $('applyBookTitle')?.value.trim()
-    && $('applyNote')?.value.trim());
+  const note = $('applyNote')?.value.trim();
+  b.disabled = $('applyBookTitle')
+    ? !(applyBook && $('applyBookTitle').value.trim() && note)
+    : !note;
 }
 
 async function apply(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
-  const note  = $('applyNote')?.value.trim() || '';
-  const title = $('applyBookTitle')?.value.trim() || '';
-  if (!applyBook) return toast('읽을 책 사진을 올려주세요');
-  if (!title) return toast('읽을 책 제목을 적어주세요');
+  const r0   = state.routines.find(x => x.id === rid);
+  const one  = isOneBook(r0);
+  const note = $('applyNote')?.value.trim() || '';
+  // 함께 읽는 책이면 끗짱이 정한 한 권으로 간다. 고르는 칸 자체가 없다
+  const title = one ? (r0?.kkut_book_title || '') : ($('applyBookTitle')?.value.trim() || '');
+  if (!one && !applyBook) return toast('읽을 책 사진을 올려주세요');
+  if (!title) return toast(one ? '끗짱이 아직 책을 정하지 않았어요' : '읽을 책 제목을 적어주세요');
   if (!note) return toast('참여 각오를 적어주세요');
 
-  let bookUrl = null;
-  if (applyBook) {
+  // 끗짱이 건 표지를 그대로 쓴다 — 같은 책이니 따로 찍을 게 없다
+  let bookUrl = one ? (r0?.kkut_book_url || null) : null;
+  if (!one && applyBook) {
     const path = `${me.id}/apply_${rid}_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('cert-photos')
       .upload(path, toBlob(applyBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
@@ -4248,8 +4285,11 @@ async function apply(rid) {
   if (error) return toast('참여하지 못했어요: ' + error.message);
   // 첫 권을 '읽는 책' 목록에 올려둔다. 인증할 때 칩으로 바로 고를 수 있게
   // cover_url 은 아이가 찍은 사진 그대로. 검색에서 온 건 서지정보뿐이다
-  await sb.from('routine_books')
-    .insert({ routine_id: rid, user_id: me.id, title, cover_url: bookUrl, ...bookMeta('applyBookTitle') });
+  await sb.from('routine_books').insert({ routine_id: rid, user_id: me.id, title,
+    cover_url: bookUrl,
+    ...(one ? { isbn: r0?.kkut_book_isbn || null, authors: r0?.kkut_book_authors || null,
+                publisher: r0?.kkut_book_publisher || null }
+            : bookMeta('applyBookTitle')) });
   delete bookPick['applyBookTitle'];
   applyBook = null;
   await loadAll(); closeOv('ovRoutine'); render();
@@ -4548,14 +4588,23 @@ let makeKind = 'book';
 function pickKind(k) {
   makeKind = k;
   $('mKindBook').classList.toggle('on', k === 'book');
+  $('mKindOne').classList.toggle('on', k === 'one_book');
   $('mKindShared').classList.toggle('on', k === 'shared');
   // 함께 읽는 글은 필사를 따로 켜고 끔 일이 없다 — 소감이 늘 필수다
   $('mQuote').closest('div').style.display = k === 'shared' ? 'none' : '';
-  $('mBookLabel').innerHTML = '내가 읽을 책 ' + (k === 'shared'
-    ? '<span class="opt">선택</span>' : '<span class="req">* 필수</span>');
-  $('mKindHint').textContent = k === 'shared'
-    ? '매일 글을 한 편씩 올려주세요. 청소년은 책 제목·쪽수 없이 소감만 남깁니다.'
-    : '청소년마다 읽고 싶은 책을 골라 인증합니다.';
+  // 함께 읽는 책에서는 이 칸이 「내 책」이 아니라 「우리 책」이다.
+  // 청소년은 따로 고르지 않고 이 한 권으로 인증한다
+  $('mBookLabel').innerHTML = k === 'one_book'
+    ? '함께 읽을 책 <span class="req">* 필수</span>'
+    : '내가 읽을 책 ' + (k === 'shared'
+        ? '<span class="opt">선택</span>' : '<span class="req">* 필수</span>');
+  $('mBookHint').textContent = k === 'one_book'
+    ? '청소년은 이 책으로 인증합니다. 신청할 때 책을 따로 고르지 않아요.'
+    : '검색한 표지를 그대로 쓰거나, 직접 찍은 사진을 올릴 수 있어요. 눌러서 고릅니다.';
+  $('mKindHint').textContent =
+      k === 'shared'   ? '매일 글을 한 편씩 올려주세요. 청소년은 책 제목·쪽수 없이 소감만 남깁니다.'
+    : k === 'one_book' ? '내가 정한 한 권을 다 같이 읽습니다. 청소년은 책을 고르지 않아요.'
+    :                    '청소년마다 읽고 싶은 책을 골라 인증합니다.';
 }
 
 function toggleMeetFields() {
@@ -4579,8 +4628,10 @@ function openMake(id) {
   $('mPeople').value = r?.max_people ?? 8;
   // 이미 만든 루틴은 종류를 못 바꾼다. 바꾸면 쌓인 인증이 붕 뜼다
   pickKind(r?.kind || 'book');
-  $('mKindBook').disabled = $('mKindShared').disabled = !!r;
-  $('mKindWrap').style.display = r && r.kind !== 'shared' ? 'none' : '';
+  $('mKindBook').disabled = $('mKindOne').disabled = $('mKindShared').disabled = !!r;
+  // 수정 화면에서 각자 읽는 책은 굳이 안 보여준다. 나머지는 어떤 루틴인지
+  // 알아야 아래 칸들이 왜 이렇게 생겼는지 이해가 된다
+  $('mKindWrap').style.display = r && r.kind === 'book' ? 'none' : '';
   $('mQuote').checked  = !!r?.quote_required;
   $('mCamera').checked = r ? !!r.camera_only : true;
   // 공유회는 만들 때만 켜진다. 들어온 뒤에 「사실 공유회도 와야 해」가 되면 안 된다.
@@ -4773,7 +4824,8 @@ function openCert(rid, pickTitle) {
   else               $('phInput').removeAttribute('capture');
   // 「함께 읽는 글」 은 책도 쪽수도 없다. 있으면 가짜가 된다.
   // 대신 오늘 글을 위에 깔고, 소감을 받는다
-  const sh = isShared(r);
+  const sh  = isShared(r);
+  const one = isOneBook(r);
   $('cBookWrap').style.display = sh ? 'none' : '';
   $('cTodayPost').innerHTML    = sh ? postCard(r, true) : '';
   $('cPhLabel').innerHTML = sh
@@ -4795,7 +4847,12 @@ function openCert(rid, pickTitle) {
   // 직전 인증에서 읽던 책 → 없으면 참여할 때 적은 책. 바뀌었으면 고쳐 쓰면 된다
   const last = myCerts(rid).find(c => c.book_title);
   $('cQuote').value = ''; $('cMemo').value = '';
-  $('cBook').value = pickTitle || last?.book_title || myPart(rid)?.book_title || '';
+  // 함께 읽는 책이면 제목이 정해져 있다. 고쳐 쓰면 같은 책이 갈라진다
+  $('cBook').value = one ? (r.kkut_book_title || '')
+    : (pickTitle || last?.book_title || myPart(rid)?.book_title || '');
+  $('cBook').readOnly = one;
+  $('cBook').classList.toggle('ro', one);
+  $('cBookChips').style.display = one ? 'none' : '';
   $('cPage').value = '';
   $('cPageHint').style.display = 'none';
   drawBookChips();
@@ -4810,6 +4867,8 @@ let sbRid = null, sbCover = null, sbFromCert = false;
 // 책을 더하면 시트를 닫고 그 책을 골라둔 채로 돌려보낸다 —
 // 더해놓고 「어디 갔지」 가 되면 안 된다
 function openBookSheet(rid, fromCert) {
+  // 한 권을 다 같이 읽는 루틴에는 더할 책이 없다. 단추도 안 보이지만 한 번 더 막는다
+  if (isOneBook(state.routines.find(x => x.id === rid))) return;
   sbRid = rid; sbCover = null; sbFromCert = !!fromCert; delete bookPick['sbTitle'];
   drawBookSheet();
   showLayer('shBooks');
@@ -5145,6 +5204,9 @@ async function toggleMet(rid, uid, btn) {
 // 끗짱이 매일 글 한 편을 올리고, 아이들은 그 글을 읽고 소감을 남긴다.
 // 각자 책을 읽는 루틴과 달리 책 제목도 쪽수도 없다 — 있으면 가짜가 된다.
 const isShared   = r => (r?.kind || 'book') === 'shared';
+// 한 권을 다 같이 읽는 루틴. 책은 끗짱이 정하고 청소년은 고르지 않는다 —
+// 그래서 신청 화면의 책 칸도, 병렬독서도 없다
+const isOneBook  = r => (r?.kind || 'book') === 'one_book';
 const postOf     = (rid, day) => (state.posts || [])
   .find(p => p.routine_id === rid && p.day === (day || todayKST()));
 const leadsIt    = r => !!(me && r && r.led_by === me.id);
