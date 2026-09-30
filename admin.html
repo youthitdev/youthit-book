@@ -198,9 +198,11 @@ tr:hover td { background:#fcfcfd; }
 .kk-h { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .kk-n { font-size:15.5px; font-weight:700; }
 .kk-m { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
-.kk-g { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 16px; margin:14px 0; padding:12px 14px; background:var(--bg); border-radius:10px; }
-.kk-g > div { display:flex; gap:8px; font-size:12.5px; }
+.kk-g { display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:8px 16px; margin:14px 0; padding:12px 14px; background:var(--bg); border-radius:10px; }
+.kk-g > div { display:flex; gap:8px; font-size:12.5px; min-width:0; }
 .kk-g b { color:var(--ink-3); font-weight:600; flex-shrink:0; min-width:48px; }
+/* 메일 주소가 길면 옆 칸까지 밀고 들어갔다. 칸 안에서 접히게 둔다 */
+.kk-g > div > span { min-width:0; overflow-wrap:anywhere; }
 .kk-q { margin-top:12px; }
 .kk-q b { display:block; font-size:11.5px; color:var(--ink-3); margin-bottom:4px; }
 .kk-q p { margin:0; font-size:13.5px; line-height:1.7; white-space:pre-wrap; }
@@ -1199,8 +1201,11 @@ async function loadRoutines() {
               .filter(Boolean);
   DB.names = DB.names || {};
   if (ids.length) {
-    const { data } = await sb.from('profiles').select('id, name').in('id', ids);
-    (data || []).forEach(p => DB.names[p.id] = p.name);
+    // 소속·지역도 같이 가져온다. 승인제 도입 전에 등록된 끗짱은 신청서가
+    // 비어 있어 프로필에서 채워야 한다
+    const { data } = await sb.from('profiles').select('id, name, school_status, region').in('id', ids);
+    DB.profs = DB.profs || {};
+    (data || []).forEach(p => { DB.names[p.id] = p.name; DB.profs[p.id] = p; });
   }
 }
 
@@ -1329,7 +1334,7 @@ function openKkut(uid) {
          <div class="kk-h">
            <div>
              <div class="kk-n">${esc(a.name)} <span class="muted" style="font-weight:500;">${a.age}세</span></div>
-             <div class="kk-m">${esc(a.affiliation || '')}${a.region ? ` · ${esc(a.region)}` : ''}</div>
+             <div class="kk-m">${esc(kkutWhere(uid).join(' · ') || '소속 미상')}</div>
            </div>
            <span class="pill ${a.status === 'approved' ? 'ok' : a.status === 'rejected' ? 'no' : 'wait'}">${
              a.status === 'approved' ? '승인됨' : a.status === 'rejected' ? '반려됨' : '심사 대기'}</span>
@@ -1355,11 +1360,24 @@ const rDays = r => (r.start_date && r.end_date)
   ? Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1 : 0;
 
 // 끗짱이 어디 사람인지. 승인 판단에 쓰이니 이름 옆에 붙인다.
-// 소속·지역은 프로필이 아니라 끗짱 신청서에 있다
+// 신청서가 먼저고, 비었으면 프로필에서 가져온다 — 승인제 도입 전에
+// 등록된 끗짱은 신청서가 「(승인제 도입 전 등록)」 같은 껍데기다
+const emptyish = v => {
+  const t = String(v || '').trim();
+  return !t || t === '-' || t === '없음' || t.includes('승인제 도입 전');
+};
+
+function kkutWhere(uid) {
+  const a = (DB.kkutApps || []).find(x => x.user_id === uid) || {};
+  const p = (DB.profs || {})[uid] || {};
+  const aff = emptyish(a.affiliation) ? p.school_status : a.affiliation;
+  const reg = emptyish(a.region)      ? p.region        : a.region;
+  return [aff, reg].map(v => String(v || '').trim()).filter(v => v && v !== '-');
+}
+
 function rWhere(uid) {
-  const a = (DB.kkutApps || []).find(x => x.user_id === uid);
-  const v = a && (a.affiliation || a.region);
-  return v ? ` <span class="muted">(${esc(v)})</span>` : '';
+  const w = kkutWhere(uid);
+  return w.length ? ` <span class="muted">(${esc(w.join(' · '))})</span>` : '';
 }
 
 // 공유회가 걸린 루틴은 언제·어디서가 비어 있으면 안 된다
