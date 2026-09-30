@@ -1162,6 +1162,17 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   <div class="ov-h"><button onclick="closeOv('ovMake')"><i class="ti ti-arrow-left"></i></button>
     <div><div class="s">끗짱</div><div class="t" id="ovMakeTitle">루틴 만들기</div></div></div>
   <div class="ov-b">
+    <!-- 종류는 만들 때만 고른다. 중간에 바꾸면 이미 쌓인 인증이 붕 뜼다 -->
+    <div id="mKindWrap">
+      <div class="field-label">어떻게 읽나요 <span class="req">*</span></div>
+      <div class="kind">
+        <button type="button" id="mKindBook" class="on" onclick="pickKind('book')">
+          <em>📚</em><b>각자 책</b><i>아이마다 제 책을 골라 읽어요</i></button>
+        <button type="button" id="mKindShared" onclick="pickKind('shared')">
+          <em>📖</em><b>함께 읽는 글</b><i>내가 매일 글을 올리고 같이 읽어요</i></button>
+      </div>
+      <div class="hint" id="mKindHint"></div>
+    </div>
     <div>
       <div class="field-label">루틴 이름 <span class="req">* 필수</span></div>
       <input type="text" id="mTitle" placeholder="예) 밤에 읽는 15일" maxlength="40">
@@ -1212,17 +1223,6 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <div>
       <div class="field-label">모집 인원 <span class="req">*</span></div>
       <input type="number" id="mPeople" min="1" max="50" value="8">
-    </div>
-    <!-- 종류는 만들 때만 고른다. 중간에 바꾸면 이미 쌓인 인증이 붕 뜼다 -->
-    <div id="mKindWrap">
-      <div class="field-label">어떻게 읽나요 <span class="req">*</span></div>
-      <div class="kind">
-        <button type="button" id="mKindBook" class="on" onclick="pickKind('book')">
-          <em>📚</em><b>각자 책</b><i>아이마다 제 책을 골라 읽어요</i></button>
-        <button type="button" id="mKindShared" onclick="pickKind('shared')">
-          <em>📖</em><b>함께 읽는 글</b><i>내가 매일 글을 올리고 같이 읽어요</i></button>
-      </div>
-      <div class="hint" id="mKindHint"></div>
     </div>
     <div id="mHint" style="font-size:12.5px;line-height:1.6;padding:11px 13px;border-radius:11px;background:#f7fbf0;color:var(--green-d);"></div>
     <div>
