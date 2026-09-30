@@ -1348,7 +1348,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">오늘 읽을 글</div>
-        <div class="sheet-s">아이들이 이 글을 읽고 소감을 남긲 거예요. 하루에 한 편이에요.</div>
+        <div class="sheet-s">아이들이 이 글을 읽고 소감을 남길 거예요. 하루에 한 편이에요.<br><b style="display:inline;">올리면 아이들에게 바로 알림이 갑니다.</b></div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shPost')" aria-label="닫기">✕</button>
     </div>
@@ -1357,7 +1357,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <input type="text" id="poTitle" maxlength="60" placeholder="예) 박완서, 『어딘가에 존재할 부상하지 않은 영혼』">
       <div class="field-label" style="margin-top:14px;">글 <span class="req">* 필수</span></div>
       <textarea id="poBody" rows="9" maxlength="4000" placeholder="오늘 함께 읽고 싶은 글을 그대로 옮겨 적어주세요." oninput="checkPost()"></textarea>
-      <div class="hint">짧아도 괜찮아요. 한 문단이면 충분해요.</div>
+      <div class="hint">짧아도 괜찮아요. 한 문단이면 충분해요. 고쳐 올릴 때는 알림이 다시 가지 않아요.</div>
       <button class="btn btn-primary" id="poSave" style="margin-top:14px;" disabled onclick="savePost()">올리기</button>
     </div>
   </div>
