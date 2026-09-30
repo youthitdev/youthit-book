@@ -1216,11 +1216,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="field-label">어떻게 읽나요 <span class="req">*</span></div>
       <div class="kind">
         <button type="button" id="mKindBook" class="on" onclick="pickKind('book')">
-          <em>📚</em><span><b>각자 읽는 책</b><i>청소년마다 제 책을 고릅니다</i></span></button>
+          <em>📚</em><span><b>각자 읽는 책</b><i>청소년마다 제 책을 골라요</i></span></button>
         <button type="button" id="mKindOne" onclick="pickKind('one_book')">
-          <em>📕</em><span><b>함께 읽는 책</b><i>내가 정한 한 권을 다 같이 읽습니다</i></span></button>
+          <em>📕</em><span><b>함께 읽는 책</b><i>내가 정한 한 권을 다 같이 읽어요</i></span></button>
         <button type="button" id="mKindShared" onclick="pickKind('shared')">
-          <em>📖</em><span><b>함께 읽는 글</b><i>내가 올린 글을 같이 읽습니다</i></span></button>
+          <em>📖</em><span><b>함께 읽는 글</b><i>내가 올린 글을 같이 읽어요</i></span></button>
       </div>
       <div class="hint" id="mKindHint"></div>
     </div>
@@ -1242,7 +1242,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div>
       <div class="field-label">끗짱 소개 <span class="req">* 필수</span></div>
       <textarea id="mDesc" rows="5" placeholder="안녕하세요, 성수에서 작은 책방을 하는 김유스입니다.&#10;혼자서는 잘 안 읽히는 책, 15일만 같이 읽어봐요." maxlength="300"></textarea>
-      <div class="hint">어떤 사람인지, 어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 루틴을 고를 때 이걸 봅니다.</div>
+      <div class="hint">어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 이걸 보고 골라요.</div>
       <div class="field-label" style="margin-top:16px;" id="mBookLabel">내가 읽을 책 <span class="req">* 필수</span></div>
       <input type="text" id="mBookTitle" maxlength="60" placeholder="책 제목을 검색하면 찾아드려요"
              autocomplete="off" oninput="bookFind('mBookTitle','mBookFind',drawKkutBook)">
@@ -1250,7 +1250,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div id="mBookFindGot"></div>
       <div id="mBookBox" style="margin-top:11px;"></div>
       <input type="file" id="mBookInput" accept="image/*" style="display:none;" onchange="pickKkutBook(event)">
-      <div class="hint" id="mBookHint">검색한 표지를 그대로 쓰거나, 직접 찍은 사진을 올릴 수 있어요. 눌러서 고릅니다.</div>
+      <div class="hint" id="mBookHint">검색한 표지나 직접 찍은 사진, 눌러서 골라요.</div>
     </div>
     <div>
       <div class="field-label">이렇게 인증해 주세요 <span class="req">* 필수</span></div>
@@ -1292,14 +1292,14 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <input type="checkbox" id="mCamera" checked style="width:17px;height:17px;">
         그 자리에서 찍은 사진만 받기
       </label>
-      <div class="hint">저장된 사진을 못 올리고 카메라로 바로 찍어야 해요. 필요하면 해제할 수 있어요</div>
+      <div class="hint">카메라로 바로 찍어야 해요. 필요하면 해제할 수 있어요</div>
     </div>
     <div>
       <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
         <input type="checkbox" id="mMeet" style="width:17px;height:17px;" onchange="toggleMeetFields()">
         오프라인 공유회 함께하기
       </label>
-      <div class="hint">체크하면 <b>공유회에 온 아이만</b> 모은 포인트로 책을 받을 수 있어요</div>
+      <div class="hint">체크하면 <b>공유회에 온 청소년만</b> 모은 포인트로 책을 받을 수 있어요</div>
       <div id="mMeetWrap" style="display:none;margin-top:12px;">
         <div class="field-label">언제 모이나요 <span class="req">* 필수</span></div>
         <div style="display:flex;gap:10px;">
@@ -1313,10 +1313,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <div id="mMeetGot"></div>
         <div class="field-label" style="margin-top:14px;">상세 위치 <span class="opt">선택</span></div>
         <input type="text" id="mMeetDetail" maxlength="60" placeholder="예) 2층 세미나실">
-        <div class="hint">층·호실처럼 지도에 안 나오는 곳을 적어주세요. 주소 바로 아래에 붙습니다.</div>
+        <div class="hint">층·호실처럼 지도에 안 나오는 곳을 적어주세요.</div>
         <div class="field-label" style="margin-top:14px;">안내할 말 <span class="opt">선택</span></div>
         <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 같은 걸 적어주세요."></textarea>
-        <div class="hint">아이들은 루틴을 고를 때부터 이 안내를 봅니다. 나중에 바꿀 수 있고, 모임이 취소되면 체크를 풀면 돼요.</div>
+        <div class="hint">청소년이 루틴을 고를 때부터 봐요. 나중에 바꿀 수 있어요.</div>
       </div>
     </div>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
@@ -1412,7 +1412,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">오늘 읽을 글</div>
-        <div class="sheet-s">아이들이 이 글을 읽고 소감을 남길 거예요. 하루에 한 편이에요.<br><b style="display:inline;">올리면 아이들에게 바로 알림이 갑니다.</b></div>
+        <div class="sheet-s">청소년이 읽고 소감을 남겨요. 하루에 한 편이에요.<br><b style="display:inline;">올리면 바로 알림이 가요.</b></div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shPost')" aria-label="닫기">✕</button>
     </div>
@@ -1725,7 +1725,7 @@ function authMsg(m) {
   if (/at least 6|Password should be/i.test(s)) return '비밀번호는 6자 이상으로 해주세요.';
   if (/valid email|invalid format/i.test(s))    return '이메일 주소를 다시 확인해주세요.';
   if (/rate limit|too many/i.test(s))       return '잠시 뒤에 다시 시도해주세요.';
-  return '가입에 실패했어요. 잠시 뒤 다시 시도해주세요.';
+  return '가입하지 못했어요. 잠시 뒤 다시 해주세요.';
 }
 
 async function submitAuth() {
@@ -1869,13 +1869,13 @@ function renderKkutGate() {
         <div class="gate-t">신청서를 잘 받았어요</div>
         <div class="gate-s">
           운영진이 읽어보고 연락드릴게요. 보통 2~3일 걸려요.<br>
-          적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드립니다.
+          적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드려요.
         </div>
       </div>
       <div class="gate-why">
         <b>왜 기다려야 하나요?</b>
         끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.
-        아이들이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 엽니다.
+        청소년이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 열어요.
       </div>
       <div style="text-align:center;margin-top:18px;">
         <b style="font-size:13px;color:var(--ink-3);cursor:pointer;" onclick="reloadKkutGate()">새로고침</b>
@@ -1899,7 +1899,7 @@ function renderKkutGate() {
         <div class="gate-t">끗짱으로 함께해 주셔서 고마워요</div>
         <div class="gate-s">
           끗짱은 청소년과 한 그룹에서 매일 책 이야기를 나누는 사람이에요.
-          아이들이 안심하고 지낼 수 있도록, 어떤 분인지 먼저 알려주세요.
+          청소년이 안심하고 지낼 수 있도록, 어떤 분인지 먼저 알려주세요.
         </div>
         ${el.invited ? `<div class="gate-num" style="margin-top:12px;">운영진이 모신 끗짱이에요</div>`
           : `<div class="gate-num" style="margin-top:12px;"><b>${el.days}일</b> 읽고 오셨네요</div>`}
@@ -1928,7 +1928,7 @@ function renderKkutGate() {
     <div style="margin-top:16px;">
       <div class="field-label">연락처 <span class="req">* 필수</span></div>
       <input type="tel" id="kContact" maxlength="40" value="${v('contact')}" placeholder="010-0000-0000">
-      <div class="hint">운영진이 확인 연락을 드릴 번호예요. 청소년에게는 보이지 않습니다.</div>
+      <div class="hint">운영진이 확인 연락을 드릴 번호예요. 청소년에게는 안 보여요.</div>
     </div>
     <div style="margin-top:16px;">
       <div class="field-label">어떤 분인가요 <span class="req">* 필수</span></div>
@@ -1936,13 +1936,13 @@ function renderKkutGate() {
     </div>
     <div style="margin-top:16px;">
       <div class="field-label">어떤 마음으로 함께하고 싶으신가요 <span class="req">* 필수</span></div>
-      <textarea id="kMotive" rows="5" maxlength="500" placeholder="왜 끗짱을 하고 싶은지, 아이들과 어떻게 지내고 싶은지 적어주세요.">${v('motive')}</textarea>
+      <textarea id="kMotive" rows="5" maxlength="500" placeholder="왜 끗짱을 하고 싶은지, 청소년과 어떻게 지내고 싶은지 적어주세요.">${v('motive')}</textarea>
     </div>
 
     <div class="gate-why" style="margin-top:18px;">
-      <b>적어주신 내용은 운영진만 봅니다.</b>
+      <b>적어주신 내용은 운영진만 봐요.</b>
       나이·연락처·소속은 청소년에게 보이지 않아요.
-      아이들에게 보이는 소개는 루틴을 만들 때 따로 적습니다.
+      청소년에게 보이는 소개는 루틴을 만들 때 따로 적어요.
     </div>
 
     <button class="btn btn-primary" id="kSubmit" style="margin-top:18px;" onclick="submitKkutApp()">
@@ -2269,7 +2269,7 @@ async function saveRemind() {
   $('rmTimeRow').style.display = on ? '' : 'none';
   $('rmHint').textContent = on
     ? `${hhmmKo(me.remind_at)}까지 오늘 인증이 없으면 한 번 알려드려요.`
-    : '리마인더를 껐어요. 승인·기한 알림은 그대로 갑니다.';
+    : '리마인더를 껐어요. 승인·기한 알림은 그대로 가요.';
   if (DEMO) return;
   const { error } = await sb.from('profiles').update({ remind_on: on }).eq('id', me.id);
   if (error) return toast('저장하지 못했어요: ' + error.message);
@@ -2792,7 +2792,7 @@ function kkutTodayCard(r) {
       ${waiting ? `<div class="k-wait${r.reject_reason ? ' bad' : ''}">
         ${r.reject_reason
           ? `<b>고쳐서 다시 등록해주세요</b><span>${esc(r.reject_reason)}</span>`
-          : `<b>운영진이 확인하고 있어요</b><span>열리면 아이들이 신청할 수 있어요.</span>`}
+          : `<b>운영진이 확인하고 있어요</b><span>열리면 청소년이 신청할 수 있어요.</span>`}
       </div>` : ''}
       <div class="tc-day">${routineLine(r, d)}</div>
       ${d && !waiting ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
@@ -2898,7 +2898,7 @@ function viewHome() {
     // 7일 루틴을 다 해도 135P 라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
     // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
     if (p.left === 0 && mine.some(routineEnded))
-      h += `<div class="tc-keep">포인트는 사라지지 않아요. 다음 루틴을 이어서 하면 채워집니다.</div>`;
+      h += `<div class="tc-keep">포인트는 사라지지 않아요. 다음 루틴에서 이어서 채워져요.</div>`;
   } else {
     h += `<div class="card" style="text-align:center;padding:26px 20px;">
       <div style="font-size:30px;">📚</div>
@@ -3592,7 +3592,7 @@ function drawVerify() {
     <input type="file" id="vfInput" accept="image/*" style="display:none;" onchange="pickVerifyDoc(event)">
     <button class="btn btn-primary" id="vfSave" style="margin-top:14px;" disabled onclick="submitVerify()">
       내기</button>
-    <div class="hint" style="margin-top:10px;">확인이 끝나면 <b>서류는 바로 지웁니다.</b>
+    <div class="hint" style="margin-top:10px;">확인이 끝나면 <b>서류는 바로 지워요.</b>
       확인했다는 사실만 남아요.</div>`;
   drawVfDoc();
 }
@@ -3682,7 +3682,7 @@ function creditBlock() {
           : `끗짱들이 함께 모은 <b>${won(c.total)}원</b>이에요.
              <b>${won(Math.max(0, price - (c.total || 0)))}원</b>이 더 모이면 책 한 권이 돼요.`}
       </div>
-      <div class="cr-note">끗짱님 돈이 아니라 ${esc(c.funder)}가 냅니다.
+      <div class="cr-note">끗짱님 돈이 아니라 ${esc(c.funder)}가 내는 돈이에요.
         끗짱님이 읽은 날, 아이들 책값이 한 칸 늘어나요.</div>
       <a class="btn btn-line" style="margin-top:14px;display:block;text-align:center;
          text-decoration:none;" href="index.html#donate" target="_blank" rel="noopener">
@@ -3821,8 +3821,8 @@ function kkutStatBlock() {
     <div class="kstat">
       ${cell(led.length, '맡은 루틴')}
       ${cell(kids.size, '함께한 청소년')}
-      ${cell(certs.length, '아이들의 인증')}
-      ${cell(kbooks.size, '아이들이 읽은 책')}
+      ${cell(certs.length, '청소년 인증')}
+      ${cell(kbooks.size, '청소년이 읽은 책')}
     </div>
     ${parts.length ? `<div class="kstat-l">${led.length}개 루틴에서 <b>${parts.length}번</b> 함께했어요.</div>` : ''}`;
 }
@@ -4131,7 +4131,7 @@ async function saveProfile() {
   const { error } = await sb.from('profiles').update(row).eq('id', me.id);
   const pe = error ? null : (await sb.from('profiles_private').upsert(priv)).error;
   btn.disabled = false; btn.textContent = '저장하기';
-  if (error) return toast('저장에 실패했어요: ' + error.message);
+  if (error) return toast('저장하지 못했어요: ' + error.message);
   // 번호·생년월일만 실패하면 「바꿨어요」가 거짓말이 된다
   if (pe) return toast('번호와 생년월일은 저장하지 못했어요: ' + pe.message);
 
@@ -4214,7 +4214,7 @@ function openRoutine(id) {
                <input type="text" id="applyBookTitle" placeholder="예) 시간자결권" maxlength="60"
                       autocomplete="off" oninput="bookFind('applyBookTitle','apFind',checkApply)">
                <div id="apFind"></div><div id="apFindGot"></div>
-               <div class="hint">적다 보면 책을 찾아줍니다. <b>못 찾으면 그냥 적어도 돼요.</b></div>`}
+               <div class="hint">적다 보면 책을 찾아줘요. <b>못 찾으면 그냥 적어도 돼요.</b></div>`}
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
           <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
           <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`
@@ -4275,7 +4275,7 @@ async function apply(rid) {
     const path = `${me.id}/apply_${rid}_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('cert-photos')
       .upload(path, toBlob(applyBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
-    if (up) return toast('사진 업로드 실패: ' + up.message);
+    if (up) return toast('사진을 올리지 못했어요: ' + up.message);
     bookUrl = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
   }
 
@@ -4301,7 +4301,7 @@ async function decide(rid, uid, status) {
 
   const { error } = await sb.from('routine_participants').update({ status })
     .eq('routine_id', rid).eq('user_id', uid);
-  if (error) return toast('처리에 실패했어요: ' + error.message);
+  if (error) return toast('처리하지 못했어요: ' + error.message);
   await loadAll(); render();
   toast(status === 'approved' ? '승인했어요' : '거절했어요');
 }
@@ -4354,7 +4354,7 @@ async function runBookFind(inputId, boxId, q) {
   if (seq !== bookFindSeq || $(inputId)?.value.trim() !== q || bookPick[inputId]) return;
   if (!books.length) {
     box.innerHTML = `<div class="bk-none">검색에 없는 책이에요.
-      <b>적으신 제목 그대로</b> 저장됩니다.</div>`;
+      <b>적으신 제목 그대로</b> 저장돼요.</div>`;
     return;
   }
 
@@ -4433,7 +4433,7 @@ async function runPlaceFind(q) {
   if (seq !== placeSeq || $('mMeetPlace').value.trim() !== q || placePick) return;
   if (!places.length) {
     box.innerHTML = `<div class="bk-none">지도에 없는 곳이에요.
-      <b>적으신 그대로</b> 저장됩니다 — 길찾기 단추만 안 생겨요.</div>`;
+      <b>적으신 그대로</b> 저장돼요 — 길찾기 단추만 안 생겨요.</div>`;
     return;
   }
 
@@ -4599,12 +4599,12 @@ function pickKind(k) {
     : '내가 읽을 책 ' + (k === 'shared'
         ? '<span class="opt">선택</span>' : '<span class="req">* 필수</span>');
   $('mBookHint').textContent = k === 'one_book'
-    ? '청소년은 이 책으로 인증합니다. 신청할 때 책을 따로 고르지 않아요.'
-    : '검색한 표지를 그대로 쓰거나, 직접 찍은 사진을 올릴 수 있어요. 눌러서 고릅니다.';
+    ? '청소년은 이 책으로 인증해요. 따로 고르지 않아요.'
+    : '검색한 표지나 직접 찍은 사진, 눌러서 골라요.';
   $('mKindHint').textContent =
-      k === 'shared'   ? '매일 글을 한 편씩 올려주세요. 청소년은 책 제목·쪽수 없이 소감만 남깁니다.'
-    : k === 'one_book' ? '내가 정한 한 권을 다 같이 읽습니다. 청소년은 책을 고르지 않아요.'
-    :                    '청소년마다 읽고 싶은 책을 골라 인증합니다.';
+      k === 'shared'   ? '매일 글을 한 편씩 올려주세요. 청소년은 소감만 남겨요.'
+    : k === 'one_book' ? '내가 정한 한 권을 다 같이 읽어요. 청소년은 고르지 않아요.'
+    :                    '청소년마다 읽고 싶은 책을 골라 인증해요.';
 }
 
 function toggleMeetFields() {
@@ -4656,7 +4656,7 @@ function openMake(id) {
   toggleMeetFields();
   // 이름을 넣으라고 강제하지 않는다. 누구랑 하는지는 카드에 끗짱 이름이
   // 따로 나오고, 제목까지 묶어버리면 「밤에 읽는 15일」 같은 걸 못 쓴다
-  $('mTitleHint').textContent = '어떤 루틴인지 한눈에 보이게 적어주세요. 청소년이 이 이름을 보고 고릅니다.';
+  $('mTitleHint').textContent = '한눈에 보이게 적어주세요. 청소년이 이 이름을 보고 골라요.';
   cover = null; coverUrl = r?.cover_url || null;
   $('mCoverInput').value = ''; drawCover();
   // 저장된 서지로 「고른 책」을 되살려 두면 제목을 안 건드린 수정에서
@@ -4745,7 +4745,7 @@ async function submitMake() {
     const path = `${me.id}/cover_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('routine-covers')
       .upload(path, toBlob(cover), { contentType: 'image/jpeg', cacheControl: '31536000' });
-    if (up) { btn.disabled = false; btn.textContent = label; return toast('사진 업로드 실패: ' + up.message); }
+    if (up) { btn.disabled = false; btn.textContent = label; return toast('사진을 올리지 못했어요: ' + up.message); }
     coverSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
 
@@ -4755,7 +4755,7 @@ async function submitMake() {
     const path = `${me.id}/kbook_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('routine-covers')
       .upload(path, toBlob(kkutBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
-    if (up) { btn.disabled = false; btn.textContent = label; return toast('사진 업로드 실패: ' + up.message); }
+    if (up) { btn.disabled = false; btn.textContent = label; return toast('사진을 올리지 못했어요: ' + up.message); }
     kkutBookSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
 
@@ -4793,7 +4793,7 @@ async function submitMake() {
     ? await sb.from('routines').update(row).eq('id', makeId)
     : await sb.from('routines').insert(row);
   btn.disabled = false; btn.textContent = label;
-  if (error) return toast('저장에 실패했어요: ' + error.message);
+  if (error) return toast('저장하지 못했어요: ' + error.message);
 
   await loadAll(); closeOv('ovMake'); render();
   // 토스트는 2.6초면 사라진다. 자세한 설명은 홈 카드에 계속 남아 있으니
@@ -5183,7 +5183,7 @@ function meetRoll(r) {
           <b>${p.user_id === me.id ? '나' : esc(nameOf(p.user_id))}</b>
           <i>${p.met_at ? '왔어요' : '아직'}</i></button>`).join('')}
     </div>
-    <div class="hint" style="margin-top:7px;">체크하면 그 아이가 교환권을 쓸 수 있어요. 잘못 눌렀으면 다시 눌러 되돌립니다.</div>`;
+    <div class="hint" style="margin-top:7px;">체크하면 교환권을 쓸 수 있어요. 잘못 눌렀으면 다시 누르면 돼요.</div>`;
 }
 
 async function toggleMet(rid, uid, btn) {
@@ -5218,7 +5218,7 @@ function postCard(r, forCert) {
   const p = postOf(r.id);
   if (!p) return `<div class="post-wait">
       <b>오늘 글은 아직이에요</b>
-      <span>${leadsIt(r) ? '글을 올리면 아이들이 읽고 소감을 남겨요.' : '끗짱이 올리면 알려드릴게요.'}</span>
+      <span>${leadsIt(r) ? '글을 올리면 청소년이 읽고 소감을 남겨요.' : '끗짱이 올리면 알려드릴게요.'}</span>
       ${leadsIt(r) ? `<button class="btn btn-primary" style="margin-top:11px;" onclick="openPost(${r.id})">오늘 글 올리기</button>` : ''}
     </div>`;
   return `<div class="post">
@@ -5311,14 +5311,14 @@ async function submitCert() {
     const blob = toBlob(photos[i]);
     const path = `${me.id}/${certRid}_${Date.now()}_${i}.jpg`;
     const { error } = await sb.storage.from('cert-photos').upload(path, blob, { contentType:'image/jpeg', cacheControl: '31536000' });
-    if (error) { btn.disabled=false; btn.textContent=label; return toast('사진 업로드 실패: '+error.message); }
+    if (error) { btn.disabled=false; btn.textContent=label; return toast('사진을 올리지 못했어요: '+error.message); }
     urls.push(sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl);
   }
   if (certEditId) {
     const { error } = await sb.from('certifications')
       .update({ photo_urls: urls, ...row }).eq('id', certEditId);
     btn.disabled = false; btn.textContent = label;
-    if (error) return toast('저장에 실패했어요: ' + error.message);
+    if (error) return toast('저장하지 못했어요: ' + error.message);
     certEditId = null;
     await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
     return toast('수정했어요');
@@ -5328,7 +5328,7 @@ async function submitCert() {
     .insert({ routine_id: certRid, user_id: me.id, photo_urls: urls, ...row });
   btn.disabled = false; btn.textContent = label;
   if (error) {
-    return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증 저장에 실패했어요: ' + error.message);
+    return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증을 저장하지 못했어요: ' + error.message);
   }
   await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
   // 배너 한 줄 대신 도장을 찍는다. 매일 하는 일이라 누를 맛이 있어야 한다
@@ -5347,7 +5347,7 @@ function storeGoal() {
     </div>`;
   if (!isYouth()) return `<div class="sg">
       <b>아이들이 책을 받으러 가는 곳이에요</b>
-      <span>아이는 돈을 내지 않아요. 책값은 유스보이스가 책방에 보냅니다.</span>
+      <span>아이는 돈을 내지 않아요. 책값은 유스보이스가 책방에 보내요.</span>
     </div>`;
 
   const p = myPoints();
@@ -5567,7 +5567,7 @@ async function submitBuy() {
   const blob = toBlob(buyPhoto);
   const path = `${me.id}/book_${buyRid}_${Date.now()}.jpg`;
   const { error: up } = await sb.storage.from('dokseo-proofs').upload(path, blob, { contentType:'image/jpeg', cacheControl: '31536000' });
-  if (up) { btn.disabled=false; btn.textContent='기록하기'; return toast('사진 업로드 실패: '+up.message); }
+  if (up) { btn.disabled=false; btn.textContent='기록하기'; return toast('사진을 올리지 못했어요: '+up.message); }
 
   // 아이가 동의했을 때만 공개 버킷에도 한 장. 노출 여부는 운영진이 따로 승인한다
   let publicPath = null;
@@ -5583,7 +5583,7 @@ async function submitBuy() {
     book_photo_url: publicPath,
   });
   btn.disabled = false; btn.textContent = '기록하기';
-  if (error) return toast('기록에 실패했어요: ' + error.message);
+  if (error) return toast('기록하지 못했어요: ' + error.message);
   await loadAll(); closeOv('ovBuy'); render();
   await showCheer();
 }
@@ -5606,7 +5606,7 @@ async function addComment(certId) {
   if (!text) return;
   el.value = '';
   const { error } = await sb.from('cert_comments').insert({ cert_id: certId, user_id: me.id, content: text });
-  if (error) return toast('댓글 저장에 실패했어요');
+  if (error) return toast('댓글을 저장하지 못했어요');
   const c0 = state.certs.find(x => x.id === certId);
   await loadAll(); render(); refreshOpenOv(c0?.routine_id);
 }
