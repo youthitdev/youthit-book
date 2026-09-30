@@ -529,7 +529,16 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kbook-pick { width:110px; aspect-ratio:3/4; border:1px dashed var(--line); border-radius:12px;
   background:#FAF7F1; display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:4px; color:var(--ink-3); font-size:12px; cursor:pointer; }
-.kbook-prev { position:relative; width:110px; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#eeeae2; }
+.kbook-row { display:flex; gap:10px; align-items:flex-start; }
+.kbook-opt { position:relative; width:110px; flex:none; aspect-ratio:3/4; padding:0; display:block;
+  border:2px solid var(--line); border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
+.kbook-opt img { width:100%; height:100%; object-fit:cover; display:block; }
+.kbook-opt em, .kbook-prev em { position:absolute; left:0; right:0; bottom:0; padding:4px 0;
+  font-style:normal; font-size:11px; font-weight:700; color:#fff; background:rgba(0,0,0,.48); }
+.kbook-opt.on { border-color:var(--green); }
+.kbook-opt.on em, .kbook-prev.on em { background:var(--green-d); }
+.kbook-prev.on { outline:2px solid var(--green); outline-offset:-2px; }
+.kbook-prev { position:relative; width:110px; flex:none; aspect-ratio:3/4; border-radius:12px; overflow:hidden; background:#eeeae2; }
 .kbook-prev img { width:100%; height:100%; object-fit:cover; display:block; }
 .kbook-prev button { position:absolute; top:5px; right:5px; width:24px; height:24px; border:none;
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:13px; cursor:pointer; }
@@ -1202,12 +1211,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
       <div class="hint">어떤 사람인지, 어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 루틴을 고를 때 이걸 봅니다.</div>
       <div class="field-label" style="margin-top:16px;">내가 읽을 책 <span class="opt">선택</span></div>
       <input type="text" id="mBookTitle" maxlength="60" placeholder="책 제목을 치면 찾아드려요"
-             autocomplete="off" oninput="bookFind('mBookTitle','mBookFind')">
+             autocomplete="off" oninput="bookFind('mBookTitle','mBookFind',drawKkutBook)">
       <div id="mBookFind"></div>
       <div id="mBookFindGot"></div>
       <div id="mBookBox" style="margin-top:11px;"></div>
       <input type="file" id="mBookInput" accept="image/*" style="display:none;" onchange="pickKkutBook(event)">
-      <div class="hint">소개 옆에 붙어요. 사진은 직접 찍은 걸로 올려주세요 — 아이들도 참여할 때 자기 책을 찍어 올립니다.</div>
+      <div class="hint">검색한 표지를 그대로 쓰거나, 직접 찍은 사진을 올릴 수 있어요. 눌러서 고릅니다.</div>
     </div>
     <div>
       <div class="field-label">이렇게 인증해 주세요 <span class="opt">선택</span></div>
@@ -4397,7 +4406,8 @@ const meetMapUrl = r => (r?.meetup_lat && r?.meetup_lng)
 // 서버 트리거가 자동으로 붙인다.
 let makeId = null;
 
-let kkutBook = null, kkutBookUrl = null;   // 끗짱이 읽는 책
+let kkutBook = null, kkutBookUrl = null;   // 끗짱이 읽는 책 (직접 올린 사진)
+let kkutUseFound = false;                  // 검색한 표지를 쓸지
 let cover = null;       // 새로 고른 사진 (data URL)
 let coverUrl = null;    // 이미 올라가 있는 사진 주소
 
@@ -4417,22 +4427,44 @@ function clearCover(e) {
   drawCover();
 }
 
+// 검색해서 고른 책의 표지. 카카오가 준 주소를 그대로 건다 —
+// 우리 저장소에 옮겨 담지 않으니 용량을 안 먹는다
+const foundCover = () => bookPick['mBookTitle']?.thumbnail || null;
+
+// 우리 저장소에 올린 사진인지. 수정 화면에서 「검색한 표지」였는지를 가른다
+const isMyPhoto = u => !!u && u.includes('/storage/v1/object/public/');
+
 function drawKkutBook() {
-  const src = kkutBook || kkutBookUrl;
-  $('mBookBox').innerHTML = src
-    ? `<div class="kbook-prev"><img src="${esc(src)}" alt="">
-         <button type="button" onclick="clearKkutBook(event)">×</button></div>`
-    : `<div class="kbook-pick" onclick="document.getElementById('mBookInput').click()">
-         <i class="ti ti-book" style="font-size:20px;"></i>책 사진</div>`;
+  const found = foundCover();
+  const mine  = kkutBook || kkutBookUrl;
+  const useF  = kkutUseFound && !!found;
+  $('mBookBox').innerHTML = `<div class="kbook-row">
+    ${found ? `<button type="button" class="kbook-opt${useF ? ' on' : ''}" onclick="pickFoundCover()">
+        <img src="${esc(found)}" loading="lazy" alt=""><em>검색한 표지</em></button>` : ''}
+    ${mine
+      ? `<div class="kbook-prev${!useF ? ' on' : ''}" onclick="pickMyCover()">
+           <img src="${esc(mine)}" alt="">
+           ${found ? '<em>내 사진</em>' : ''}
+           <button type="button" onclick="clearKkutBook(event)">×</button></div>`
+      : `<div class="kbook-pick" onclick="document.getElementById('mBookInput').click()">
+           <i class="ti ti-book" style="font-size:20px;"></i>책 사진</div>`}
+  </div>`;
 }
+
+// 표지를 골라도 찍어둔 사진은 안 버린다. 다시 누르면 그대로 돌아온다
+function pickFoundCover() { kkutUseFound = true;  drawKkutBook(); }
+function pickMyCover()    { kkutUseFound = false; drawKkutBook(); }
+
 function clearKkutBook(e) {
   e.stopPropagation();
   kkutBook = null; kkutBookUrl = null;
+  if (foundCover()) kkutUseFound = true;
   $('mBookInput').value = ''; drawKkutBook();
 }
 async function pickKkutBook(e) {
   const f = e.target.files[0]; if (!f) return;
-  try { kkutBook = await resize(f, 1280, .82); kkutBookUrl = null; drawKkutBook(); }
+  // 방금 찍은 걸 쓰려는 것이다. 검색 표지에서 자동으로 넘어온다
+  try { kkutBook = await resize(f, 1280, .82); kkutBookUrl = null; kkutUseFound = false; drawKkutBook(); }
   catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
 }
 
@@ -4545,16 +4577,21 @@ function openMake(id) {
   $('mTitleHint').textContent = '어떤 루틴인지 한눈에 보이게 적어주세요. 청소년이 이 이름을 보고 고릅니다.';
   cover = null; coverUrl = r?.cover_url || null;
   $('mCoverInput').value = ''; drawCover();
-  kkutBook = null; kkutBookUrl = r?.kkut_book_url || null;
-  $('mBookInput').value = ''; drawKkutBook();
-  // 책도 마찬가지다. 저장된 서지로 「고른 책」을 되살려 두면
-  // 제목을 안 건드린 수정에서 ISBN 이 날아가지 않는다
+  // 저장된 서지로 「고른 책」을 되살려 두면 제목을 안 건드린 수정에서
+  // ISBN 이 날아가지 않는다. 표지도 마찬가지 —
+  // 우리 저장소 주소가 아니면 검색해서 건 표지였다는 뜻이다
+  const wasFound = !!(r?.kkut_book_url && !isMyPhoto(r.kkut_book_url));
   $('mBookTitle').value = r?.kkut_book_title || '';
   delete bookPick['mBookTitle'];
   if (r?.kkut_book_title) bookPick['mBookTitle'] = {
     title: r.kkut_book_title, isbn: r.kkut_book_isbn,
-    authors: r.kkut_book_authors, publisher: r.kkut_book_publisher };
+    authors: r.kkut_book_authors, publisher: r.kkut_book_publisher,
+    thumbnail: wasFound ? r.kkut_book_url : null };
   $('mBookFind').innerHTML = ''; drawBookGot('mBookTitle', 'mBookFind');
+  kkutBook = null;
+  kkutBookUrl  = wasFound ? null : (r?.kkut_book_url || null);
+  kkutUseFound = wasFound;
+  $('mBookInput').value = ''; drawKkutBook();
   buildGuideSel(r?.cert_guide || '');
   makeHint(); openOv('ovMake');
 }
@@ -4622,8 +4659,9 @@ async function submitMake() {
     coverSaved = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
   }
 
-  let kkutBookSaved = kkutBookUrl;
-  if (kkutBook) {
+  // 검색한 표지를 골랐으면 올릴 게 없다. 주소만 그대로 건다
+  let kkutBookSaved = (kkutUseFound && foundCover()) ? foundCover() : kkutBookUrl;
+  if (kkutBook && !(kkutUseFound && foundCover())) {
     const path = `${me.id}/kbook_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('routine-covers')
       .upload(path, toBlob(kkutBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
