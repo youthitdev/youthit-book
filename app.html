@@ -2296,7 +2296,7 @@ const allDoneToday = rid => booksOf(rid).length
 // 서버 dokseo_points() 와 같은 식. 포인트는 루틴을 가리지 않고 계정에 쌓인다.
 // 정산 대기 중인 구매도 교환권을 이미 쓴 것으로 센다 (중복 사용 방지)
 function myPoints() {
-  const per = state.settings.points_per_voucher || 250;
+  const per = state.settings.points_per_voucher || 150;
   const ppc = state.settings.points_per_comment ?? 1;
   const cap = state.settings.comment_daily_cap ?? 5;
   const pm  = state.settings.points_per_milestone ?? 10;
@@ -2331,7 +2331,7 @@ function myPoints() {
   const points = from_cert + from_comment + from_bonus + from_review;
   const used = state.purchases.filter(p => p.user_id === me.id && p.status !== 'void').length;
   // 크게 뜨는 숫자는 「지금 쓸 수 있는 것」이어야 한다.
-  // 누적을 크게 띄우면 이미 쓴 250P 까지 남아 있는 줄 안다
+  // 누적을 크게 띄우면 이미 쓴 분까지 남아 있는 줄 안다
   const balance = Math.max(0, points - used * per);
   const into = balance % per;
   return { points, balance, into, cert_count, from_cert, from_comment, from_bonus, from_review,
@@ -3123,7 +3123,7 @@ async function shareCert(id) {
 // '모두' 탭 — 루틴을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
 // ── 후기 ───────────────────────────────────────────────
 // 루틴 후기 30P · 책인증후기 30P. 15일 완주 235P 에 후기 30P 가 붙어야
-// 250P 를 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
+// 문턱을 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
 const RV_PR = () => state.settings.points_per_review ?? 30;
 // 댓글 포인트. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20P 를 기다린다
 const CMT_P   = () => state.settings.points_per_comment ?? 1;
@@ -5202,7 +5202,7 @@ function enterDemo(role) {
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
   const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
 
-  state.settings = { book_fund_rate: 0.8, points_per_cert: 10, points_per_comment: 1, comment_daily_cap: 5, points_per_voucher: 250, voucher_max_amount: 20000, points_per_milestone: 10, bonus_milestones: [10,30,66,100,200] };
+  state.settings = { book_fund_rate: 0.8, points_per_cert: 10, points_per_comment: 1, comment_daily_cap: 5, points_per_voucher: 150, voucher_max_amount: 20000, points_per_milestone: 10, bonus_milestones: [10,30,66,100,200] };
   state.stores = [
     { id:1, name:'완벽한날들', region:'강원 속초', address:'강원특별자치도 속초시 동해대로 4344',
       hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
