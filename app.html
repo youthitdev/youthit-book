@@ -4175,7 +4175,7 @@ function openRoutine(id) {
           <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
           <div class="hint">시작할 책의 표지를 <b>세로로</b> 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
           <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
-          <input type="text" id="applyBookTitle" placeholder="예) 속초에서의 겨울" maxlength="60"
+          <input type="text" id="applyBookTitle" placeholder="예) 시간자결권" maxlength="60"
                  autocomplete="off" oninput="bookFind('applyBookTitle','apFind',checkApply)">
           <div id="apFind"></div><div id="apFindGot"></div>
           <div class="hint">적다 보면 책을 찾아줍니다. <b>못 찾으면 그냥 적어도 돼요.</b></div>
@@ -5718,7 +5718,7 @@ function enterDemo(role) {
       max_people:8, points_per_cert:10, camera_only:true, status:'done', led_by: kid },
   ];
   state.parts = [
-    { routine_id:901, user_id:y1, status:'approved', book_title:'속초에서의 겨울', joined_at:day(7),
+    { routine_id:901, user_id:y1, status:'approved', book_title:'시간자결권', joined_at:day(7),
       book_photo_url:'https://qvpahwvihvkasrznboaa.supabase.co/storage/v1/object/public/routine-covers/20e305ef-c435-4712-b633-8795c724f136/cover_1789454390859.jpg' },
     { routine_id:901, user_id:'u2', status:'approved', joined_at:day(7) },
     { routine_id:901, user_id:'u3', status:'approved', joined_at:day(6) },
@@ -5729,18 +5729,18 @@ function enterDemo(role) {
   state.names = { [uid]: me.name, [y1]:'서연', [kid]:'민지', u2:'하준', u3:'지우', u4:'예린' };
   state.certs = [
     { id:1, routine_id:901, user_id:y1, photo_urls:[], quote:'밤에는 바다가 더 크게 들렸다. 그 소리를 혼자 듣는 게 싫지 않았다.',
-      book_title:'속초에서의 겨울', page_end:132, content:'', cert_date:dstr(1), created_at:day(1) },
+      book_title:'시간자결권', page_end:132, content:'', cert_date:dstr(1), created_at:day(1) },
     { id:2, routine_id:901, user_id:'u2', photo_urls:[], quote:'나는 내가 좋아하는 것을 아주 늦게 알았다.',
       book_title:'아무튼, 메모', page_end:64, content:'오늘은 짧게 읽었다.', cert_date:dstr(1), created_at:day(1) },
-    { id:3, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:104,
+    { id:3, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'시간자결권', page_end:104,
       content:'버스에서 읽었다.', cert_date:dstr(2), created_at:day(2) },
     { id:4, routine_id:901, user_id:'u3', photo_urls:[], quote:'천천히 걷는 사람에게만 보이는 것이 있다.',
       book_title:'느리게 걷는 법', page_end:88, content:'', cert_date:dstr(2), created_at:day(2) },
-    { id:5, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:70,
+    { id:5, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'시간자결권', page_end:70,
       content:'', cert_date:dstr(3), created_at:day(3) },
-    { id:6, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:41,
+    { id:6, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'시간자결권', page_end:41,
       content:'', cert_date:dstr(4), created_at:day(4) },
-    { id:7, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'속초에서의 겨울', page_end:22,
+    { id:7, routine_id:901, user_id:y1, photo_urls:[], quote:'', book_title:'시간자결권', page_end:22,
       content:'', cert_date:dstr(5), created_at:day(5) },
   ];
   state.comments = [
