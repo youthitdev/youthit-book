@@ -226,7 +226,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 </head>
 <body>
 
-<div class="demo-flag" id="demoFlag">데모 데이터로 동작 중 — 실제 정산이 아닙니다 (새로고침하면 초기화)</div>
+<div class="demo-flag" id="demoFlag">데모 데이터로 동작 중 — 실제 정산이 아니에요 (새로고침하면 초기화)</div>
 
 <!-- 정산은 관리자 계정으로만. is_admin() 이 이메일로 판정한다 -->
 <div id="gate" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:60;
@@ -320,7 +320,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-t">후원자 화면에 올릴 책인증</div>
-      <div class="modal-d">아이가 공개에 동의한 책인증입니다. 눈으로 확인하고 올려주세요.</div>
+      <div class="modal-d">청소년이 공개에 동의한 책인증이에요. 눈으로 확인하고 올려주세요.</div>
     </div>
     <div class="modal-bd">
       <img id="phImg" alt="" style="width:100%;height:auto;max-height:52vh;object-fit:contain;
@@ -331,7 +331,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <div>· 교복 명찰, 학생증, 이름이 찍히지 않았나요</div>
         <div>· 집 주소나 문패가 배경에 보이지 않나요</div>
       </div>
-      <div class="ph-warn">한 번 올라가면 되돌리기 어렵습니다. 아이가 보낸 책인증입니다.</div>
+      <div class="ph-warn">한 번 올라가면 되돌리기 어려워요. 청소년이 보낸 책인증이에요.</div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('photoOverlay')">닫기</button>
@@ -344,7 +344,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-t" id="peopleTitle">참여자</div>
-      <div class="modal-d">이 루틴에 참여한 청소년과 인증 횟수입니다.</div>
+      <div class="modal-d">이 루틴에 참여한 청소년과 인증 횟수예요.</div>
     </div>
     <div class="modal-bd" id="peopleBody"></div>
     <div class="modal-ft">
@@ -416,7 +416,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-t">후원 입력</div>
-      <div class="modal-d">도너스 연동 전까지는 여기서 수기로 입력합니다.</div>
+      <div class="modal-d">도너스 연동 전까지는 여기서 손으로 넣어요.</div>
     </div>
     <div class="modal-bd">
       <div class="field">
@@ -426,7 +426,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <div class="field">
         <div class="label">이메일 <span>*</span></div>
         <input type="email" id="cEmail" placeholder="donor@example.com">
-        <div class="hint">도너스 데이터와 맞추는 기준값입니다.</div>
+        <div class="hint">도너스 데이터와 맞추는 기준값이에요.</div>
       </div>
       <div class="field">
         <div class="label">후원 금액 <span>*</span></div>
@@ -435,7 +435,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <div class="field">
         <div class="label">후원일 <span>*</span></div>
         <input type="date" id="cDate">
-        <div class="hint">차감은 후원일이 이른 순서(FIFO)로 진행됩니다.</div>
+        <div class="hint">도너스에 찍힌 날짜로 적어주세요.</div>
       </div>
       <div class="field">
         <div class="label">도너스 거래번호</div>
@@ -464,7 +464,7 @@ const fmtDate = d => d ? d.slice(0,10).replace(/-/g,'.') : '-';
 
 // ── 데모 데이터 (LIVE 전환 시 Supabase 조회로 대체) ─────
 let DB = {
-  settings: { book_fund_rate: 0.8, voucher_max_amount: 20000 },
+  settings: { book_fund_rate: 0.3, voucher_max_amount: 20000 },
   sponsors: [
     { id:'s1', nickname:'책읽는고래', email:'whale@example.com' },
     { id:'s2', nickname:'민들레',     email:'dan@example.com' },
@@ -742,7 +742,7 @@ function vqRows() {
     || (r.region || '').toLowerCase().includes(q)
     || (r.email || '').toLowerCase().includes(q)
     || (r.phone || '').includes(q));
-  if (!rows.length) return `<div class="empty">찾는 사람이 없습니다.</div>`;
+  if (!rows.length) return `<div class="empty">찾는 사람이 없어요.</div>`;
   return rows.map(vqCard).join('');
 }
 
@@ -753,8 +753,8 @@ function viewVerify() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">청소년 확인 <b style="color:var(--pink);">${rows.length}</b>명</div>
-    <div class="panel-d">책을 받기 전에 한 번 확인합니다. 읽고 포인트 모으는 건 확인 전에도 됩니다.<br>
-      <b>승인하면 서류 파일은 바로 지워집니다.</b> 확인했다는 사실과 방법만 남아요.</div></div>
+    <div class="panel-d">책을 받기 전에 한 번 확인해요. 읽고 포인트 모으는 건 확인 전에도 돼요.<br>
+      <b>승인하면 서류 파일은 바로 지워져요.</b> 확인했다는 사실과 방법만 남아요.</div></div>
   </div>
   ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
     <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 아래 맨 위에 있어요</div>
@@ -770,13 +770,13 @@ function viewVerify() {
 // 이 명단에서 어른에게 할 수 있는 일은 이것뿐이다
 async function revokeLead(userId) {
   const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
-  const reason = prompt(`${r.name} 님의 끗짱 자격을 거둡니다.\n사유를 적어주세요 — 본인 화면에 그대로 보입니다.`);
+  const reason = prompt(`${r.name} 님의 끗짱 자격을 거둬요.\n사유를 적어주세요 — 본인 화면에 그대로 보여요.`);
   if (reason === null) return;
   if (!reason.trim()) return alert('사유를 적어주세요.');
   if (!confirm(`${r.name} 님의 끗짱 자격을 거둘까요?\n\n`
-      + `· 새 루틴을 만들 수 없게 됩니다\n`
-      + `· 아직 모집 중이던 루틴은 닫힙니다\n`
-      + `· 진행 중인 루틴과 아이들 기록은 그대로입니다\n\n`
+      + `· 새 루틴을 만들 수 없어요\n`
+      + `· 아직 모집 중이던 루틴은 닫혀요\n`
+      + `· 진행 중인 루틴과 청소년 기록은 그대로예요\n\n`
       + `사유: ${reason.trim()}`)) return;
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
 
@@ -801,27 +801,27 @@ async function decideVerify(userId, approve) {
     // 「무엇으로 확인했나」가 반드시 남아야 한다
     const noDoc = !r.doc_path;
     kind = prompt(noDoc
-      ? `${r.name} 님을 무엇으로 확인하셨나요?\n서류가 없으니 여기 적은 것이 유일한 근거로 남습니다.\n(대면 확인 · 학교 담당자 확인 · 기관 추천 등)`
+      ? `${r.name} 님을 무엇으로 확인하셨나요?\n서류가 없으니 여기 적은 것이 유일한 근거로 남아요.\n(대면 확인 · 학교 담당자 확인 · 기관 추천 등)`
       : `${r.name} 님을 무엇으로 확인했나요?\n(청소년증 · 학생증 · 재학증명서 · 정원외관리증명서 · 검정고시 등)`,
       noDoc ? '대면 확인' : '학생증');
     if (kind === null) return;
     if (!kind.trim()) return alert('확인한 방법을 적어주세요.');
     if (!confirm(noDoc
       ? `${r.name} 님을 서류 없이 청소년으로 확인할까요?\n\n근거: ${kind.trim()}\n\n되돌릴 수 없어요.`
-      : `${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워집니다. 되돌릴 수 없어요.`)) return;
+      : `${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워져요. 되돌릴 수 없어요.`)) return;
   } else {
     // 이미 확인된 사람을 되돌리는 건 그냥 반려와 무게가 다르다.
     // 루틴 참여와 책 받기가 다시 막히므로 그렇게 말해 준다
     const undo = r.status === 'approved';
     reason = prompt(undo
-      ? `${r.name} 님의 청소년 확인을 취소합니다.\n사유를 적어주세요 — 앱 화면에 그대로 보입니다.`
-      : `${r.name} 님에게 전할 사유를 적어주세요.\n앱 화면에 그대로 보입니다.`);
+      ? `${r.name} 님의 청소년 확인을 취소해요.\n사유를 적어주세요 — 앱 화면에 그대로 보여요.`
+      : `${r.name} 님에게 전할 사유를 적어주세요.\n앱 화면에 그대로 보여요.`);
     if (reason === null) return;
     if (!reason.trim()) return alert('사유를 적어주세요.');
     if (undo && !confirm(`${r.name} 님의 확인을 취소할까요?\n\n`
-        + `· 루틴에 새로 참여할 수 없게 됩니다\n`
-        + `· 교환권으로 책을 받을 수 없게 됩니다\n`
-        + `· 이미 받아 간 책과 기록은 그대로입니다\n\n`
+        + `· 루틴에 새로 참여할 수 없어요\n`
+        + `· 교환권으로 책을 받을 수 없어요\n`
+        + `· 이미 받아 간 책과 기록은 그대로예요\n\n`
         + `사유: ${reason.trim()}`)) return;
   }
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
@@ -858,8 +858,8 @@ async function nfCount() {
   const n = Array.isArray(data) ? (data[0]?.people ?? 0) : (data?.people ?? data ?? 0);
   nfReach = Number(n) || 0;
   box.innerHTML = nfReach
-    ? `알림을 켜 둔 <b>${nfReach}명</b>에게 갑니다`
-    : `<span style="color:#8E3527;">받을 사람이 없어요.</span> 아직 아무도 알림을 안 켰습니다`;
+    ? `알림을 켜 둔 <b>${nfReach}명</b>에게 가요`
+    : `<span style="color:#8E3527;">받을 사람이 없어요.</span> 아직 아무도 알림을 안 켰어요`;
 }
 
 function nfTargetChange() {
@@ -888,8 +888,8 @@ async function nfSubmit() {
   if (!LIVE) return alert('데모 모드에서는 보내지지 않아요.');
 
   const who = t === 'all' ? '전체' : (DB.routines || []).find(r => r.id === rid)?.title || '그 루틴';
-  const when = later ? `\n\n보낼 때: ${at.replace('T', ' ')}` : '\n\n지금 바로 나갑니다. 되돌릴 수 없어요.';
-  if (!confirm(`${who} · ${nfReach != null ? nfReach + '명' : '구독자'}에게 보냅니다.\n\n${title}\n${body}${when}`)) return;
+  const when = later ? `\n\n보낼 때: ${at.replace('T', ' ')}` : '\n\n지금 바로 나가요. 되돌릴 수 없어요.';
+  if (!confirm(`${who} · ${nfReach != null ? nfReach + '명' : '구독자'}에게 보내요.\n\n${title}\n${body}${when}`)) return;
 
   const btn = document.getElementById('nfSend');
   btn.disabled = true; const was = btn.textContent; btn.textContent = '보내는 중…';
@@ -909,7 +909,7 @@ async function nfSubmit() {
     if (error) return alert('보내지 못했어요: ' + error.message);
     alert(`보냈어요.\n\n받은 기기 ${data?.sent ?? 0}대` +
           (data?.removed ? `\n끊긴 구독 ${data.removed}건은 정리했어요` : '') +
-          (data?.failed  ? `\n실패 ${data.failed}건` : ''));
+          (data?.failed  ? `\n못 간 곳 ${data.failed}건` : ''));
   }
   document.getElementById('nfTitle').value = '';
   document.getElementById('nfBody').value = '';
@@ -953,7 +953,7 @@ function viewNotify() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">알림 보내기</div>
-    <div class="panel-d"><b>알림을 켜 둔 사람에게만 갑니다.</b> 앱을 안 열어봤거나 알림을 끈 사람에게는 가지 않아요.<br>
+    <div class="panel-d"><b>알림을 켜 둔 사람에게만 가요.</b> 앱을 안 열어봤거나 알림을 끈 사람에게는 가지 않아요.<br>
       한 번 나가면 되돌릴 수 없어요.</div></div>
   </div>
 
@@ -993,7 +993,7 @@ function viewNotify() {
     <div class="nf-f" id="nfAtWrap" style="display:none;">
       <label>보낼 때</label>
       <input type="datetime-local" id="nfAt" value="${def}">
-      <div class="muted" style="font-size:11.5px;margin-top:5px;">정한 시각이 지나면 보냅니다. <b>5분 안에 나가요.</b></div>
+      <div class="muted" style="font-size:11.5px;margin-top:5px;">정한 시각이 지나면 보내요. <b>5분 안에 나가요.</b></div>
     </div>
 
     <button class="btn btn-dark" id="nfSend" style="width:100%;padding:13px;" onclick="nfSubmit()">지금 보내기</button>
@@ -1021,7 +1021,7 @@ function viewReport() {
   const head = `
   <div class="panel-hd">
     <div><div class="panel-t">월간 보고</div>
-    <div class="panel-d">후원자에게 보낼 한 달치입니다. 아이 이름은 어디에도 담기지 않아요.</div></div>
+    <div class="panel-d">후원자에게 보낼 한 달치예요. 청소년 이름은 어디에도 담기지 않아요.</div></div>
     <div class="rp-pick">
       <button class="btn-s" onclick="rpMove(-1)">‹</button>
       <b>${RP.y}년 ${RP.m}월</b>
@@ -1052,10 +1052,10 @@ function viewReport() {
 
   ${RP.credit && RP.credit.amount ? `<div class="rp-warn" style="background:#FFF4F8;border-color:#EDC6BC;color:#8A0040;">
     끗짱 ${RP.credit.kkuts}명이 ${won(RP.credit.days)}일을 함께해
-    <b>${won(RP.credit.amount)}원</b>이 책값으로 나갔어요. 유스보이스가 낸 몫입니다.</div>` : ''}
+    <b>${won(RP.credit.amount)}원</b>이 책값으로 나갔어요. 유스보이스가 낸 몫이에요.</div>` : ''}
 
   ${d.books_waiting ? `<div class="rp-warn">정산을 기다리는 책이 <b>${d.books_waiting}권</b> 있어요.
-    정산하지 않으면 「전해진 책」에 안 잡힙니다.</div>` : ''}
+    정산하지 않으면 「전해진 책」에 안 잡혀요.</div>` : ''}
 
   <div class="rp-sec">아이들이 읽은 책 <i>${(d.books_read || []).length}</i></div>
   <div class="rp-books">${list(d.books_read,
@@ -1084,8 +1084,8 @@ function viewReport() {
   <div class="rp-sec">보낼 문자</div>
   <textarea id="rpText" class="rp-text" rows="14">${esc(rpMessage(d))}</textarea>
   <button class="btn-s go" style="margin-top:10px;" onclick="rpCopy()">문자 본문 복사하기</button>
-  <div class="rp-note">이름 자리(○○○)만 바꿔서 보내면 됩니다.
-    문장은 <b>분기마다 갈아 끼우세요</b> — 같은 문장이 두 번 가면 자동 발송으로 읽힙니다.</div>`;
+  <div class="rp-note">이름 자리(○○○)만 바꿔서 보내면 돼요.
+    문장은 <b>분기마다 갈아 끼우세요</b> — 같은 문장이 두 번 가면 자동 발송으로 읽혀요.</div>`;
 }
 
 function rpMove(k) {
@@ -1193,7 +1193,7 @@ function viewRoutines() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">루틴</div>
-    <div class="panel-d">끗짱이 만든 루틴은 열어줘야 아이들에게 보입니다.
+    <div class="panel-d">끗짱이 만든 루틴은 열어줘야 청소년에게 보여요.
       상태를 바꾸면 청소년 앱에 바로 반영돼요.</div></div>
   </div>
 
@@ -1245,14 +1245,14 @@ function viewRoutines() {
         <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
         <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">아직 만들어진 루틴이 없습니다.</div>`}`;
+  </table></div>` : `<div class="empty">아직 만들어진 루틴이 없어요.</div>`}`;
 }
 
 // 기업 이름은 약속이 오간 뒤에야 붙는 것이라 끗짱이 못 적는다.
 // 서버 트리거가 막고, 넣는 길은 여기 하나뿐이다
 async function setSponsor(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
-  const v = prompt(`「${r.title}」 썸네일 오른쪽 아래에 띄울 기업·기관 이름.\n비우면 안 보입니다.`,
+  const v = prompt(`「${r.title}」 썸네일 오른쪽 아래에 띄울 기업·기관 이름.\n비우면 안 보여요.`,
                    r.sponsor_name || '');
   if (v === null) return;
   const name = v.trim() || null;
@@ -1271,7 +1271,7 @@ async function setRoutineStatus(id, status) {
   const label = R_STATUS[status][0];
 
   if (status === 'done' && rParts(id).length) {
-    if (!confirm(`${r.title} 을(를) 종료할까요?\n\n참여 중인 청소년 ${rParts(id).length}명의 화면에서 '오늘 인증하기' 가 사라지고\n후기를 쓸 수 있게 됩니다. 쌓인 기록과 포인트는 그대로예요.`)) {
+    if (!confirm(`${r.title} 을(를) 종료할까요?\n\n참여 중인 청소년 ${rParts(id).length}명의 화면에서 '오늘 인증하기' 가 사라지고\n후기를 쓸 수 있게 돼요. 쌓인 기록과 포인트는 그대로예요.`)) {
       render(); return;                       // 드롭다운을 원래대로 되돌린다
     }
   }
@@ -1287,9 +1287,9 @@ async function decideRoutine(id, open) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   let reason = null;
   if (open) {
-    if (!confirm(`「${r.title}」을(를) 열까요?\n모집 중으로 바뀌고 아이들이 신청할 수 있게 됩니다.`)) return;
+    if (!confirm(`「${r.title}」을(를) 열까요?\n모집 중으로 바뀌고 청소년이 신청할 수 있게 돼요.`)) return;
   } else {
-    reason = prompt('반려 사유를 적어주세요.\n끗짱 화면에 그대로 보입니다.');
+    reason = prompt('반려 사유를 적어주세요.\n끗짱 화면에 그대로 보여요.');
     if (reason === null) return;
     if (!reason.trim()) return alert('사유를 적어주세요.');
   }
@@ -1315,7 +1315,7 @@ function openRoutinePeople(id) {
              <td class="num muted">${last ? fmtDate(last) : '아직 없어요'}</td></tr>`;
          }).join('')}
        </table></div>`
-    : `<div class="empty">아직 참여한 청소년이 없습니다.</div>`;
+    : `<div class="empty">아직 참여한 청소년이 없어요.</div>`;
   document.getElementById('peopleTitle').textContent = `${r.emoji || '📚'} ${r.title}`;
   document.getElementById('peopleBody').innerHTML = body;
   document.getElementById('peopleOverlay').classList.add('on');
@@ -1364,12 +1364,12 @@ function viewKkut() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">끗짱 승인</div>
-    <div class="panel-d">승인해야 루틴을 만들 수 있고, 청소년 기록 화면이 열립니다.
-      연락처로 한 번 통화해 보고 누르시는 걸 권합니다.<br>
+    <div class="panel-d">승인해야 루틴을 만들 수 있고, 청소년 기록 화면이 열려요.
+      연락처로 한 번 통화해 보고 누르시길 권해요.<br>
       <b>14세부터</b> 신청할 수 있고 그 밖의 조건은 없어요.
       소속·나이·지원동기를 보고 판단해 주세요.</div></div>
   </div>
-  ${wait.length ? wait.map(card).join('') : `<div class="empty">심사를 기다리는 신청이 없습니다.</div>`}
+  ${wait.length ? wait.map(card).join('') : `<div class="empty">심사를 기다리는 신청이 없어요.</div>`}
   ${done.length ? `<div class="panel-t" style="margin:26px 0 12px;font-size:14px;">지난 심사 ${done.length}건</div>
     ${done.map(card).join('')}` : ''}`;
 }
@@ -1381,16 +1381,16 @@ async function decideKkut(userId, approve) {
 
   let adult = null;
   if (approve) {
-    if (!confirm(`${who} 님을 끗짱으로 승인할까요?\n\n승인하면 루틴을 만들고 청소년들의 기록을 볼 수 있게 됩니다.`)) return;
+    if (!confirm(`${who} 님을 끗짱으로 승인할까요?\n\n승인하면 루틴을 만들고 청소년 기록을 볼 수 있게 돼요.`)) return;
     // 청소년인지 어른인지는 여기서만 정해진다. 어른은 포인트·교환권·책을 못 받는다.
     // 도서기금은 청소년에게 쓰는 돈이고 기부금 사용명세에도 그렇게 적힌다
     const age = a?.age ? `${a.age}세 · ` : '';
     adult = confirm(
       `${who} 님(${age}${a?.affiliation || '소속 미상'})은 어른인가요?\n\n` +
-      `[확인] 어른 — 루틴만 만듭니다. 포인트·교환권·책은 받지 않아요.\n` +
-      `[취소] 청소년 — 계속 읽고 포인트도 쌓습니다.`);
+      `[확인] 어른 — 루틴만 만들어요. 포인트·교환권·책은 받지 않아요.\n` +
+      `[취소] 청소년 — 계속 읽고 포인트도 쌓아요.`);
   } else {
-    reason = prompt(`${who} 님에게 전할 반려 사유를 적어주세요.\n신청자 화면에 그대로 보입니다.`);
+    reason = prompt(`${who} 님에게 전할 반려 사유를 적어주세요.\n신청자 화면에 그대로 보여요.`);
     if (reason === null) return;
     if (!reason.trim()) return alert('반려 사유를 적어주세요.');
   }
@@ -1449,7 +1449,7 @@ function viewQuotes() {
           ${r.is_public ? '공개 중' : '공개하기'}</button>
       </td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">아직 올라온 후기가 없습니다.</div>`}
+  </table></div>` : `<div class="empty">아직 올라온 후기가 없어요.</div>`}
 
   <div class="panel-t" style="font-size:14px;margin:26px 0 12px;">문장</div>
   ${rows.length ? `<div class="tbl"><table>
@@ -1463,7 +1463,7 @@ function viewQuotes() {
           ${q.quote_public ? '공개 중' : '공개하기'}</button>
       </td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">아직 올라온 문장이 없습니다.</div>`}`;
+  </table></div>` : `<div class="empty">아직 올라온 문장이 없어요.</div>`}`;
 }
 
 async function toggleQuote(id) {
@@ -1472,7 +1472,7 @@ async function toggleQuote(id) {
   const next = !q.quote_public;
   if (LIVE) {
     const { error } = await sb.from('certifications').update({ quote_public: next }).eq('id', id);
-    if (error) { alert('변경 실패: ' + error.message); return; }
+    if (error) { alert('바꾸지 못했어요: ' + error.message); return; }
   }
   q.quote_public = next;
   render();
@@ -1496,7 +1496,7 @@ function viewStores() {
       <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">비활성</span>'}</td>
       <td class="right"><button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">등록된 서점이 없습니다. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
+  </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
 }
 
 let storeEditId = null;
@@ -1538,27 +1538,27 @@ async function delRoutine(id) {
 
   if (paid.length) {
     const won = paid.reduce((s, g) => s + (g.amount || 0), 0);
-    alert(`지울 수 없습니다.\n\n「${r.title}」에는 정산이 끝난 구매가 ${paid.length}건`
-      + `(${won.toLocaleString('ko-KR')}원) 있습니다.\n`
-      + `책방에 실제로 돈을 보낸 기록이라 남겨야 합니다.`);
+    alert(`지울 수 없어요.\n\n「${r.title}」에는 정산이 끝난 구매가 ${paid.length}건`
+      + `(${won.toLocaleString('ko-KR')}원) 있어요.\n`
+      + `책방에 실제로 돈을 보낸 기록이라 남겨야 해요.`);
     return;
   }
 
   const lines = [`참여 ${parts}명`, `인증 ${certs}건`,
                  buys.length ? `대기 중인 구매 ${buys.length}건` : ''].filter(Boolean).join(' · ');
 
-  if (!confirm(`「${r.title}」을(를) 지웁니다.\n\n${lines}\n\n`
-    + `여기에 달린 댓글·후기·읽는 책·공유 글도 같이 사라집니다.\n되돌릴 수 없습니다.`)) return;
+  if (!confirm(`「${r.title}」을(를) 지워요.\n\n${lines}\n\n`
+    + `여기에 달린 댓글·후기·읽는 책·공유 글도 같이 사라져요.\n되돌릴 수 없어요.`)) return;
 
   if (parts || certs) {
     const typed = prompt(`정말 지우려면 루틴 이름을 그대로 적어주세요.\n\n${r.title}`);
     if (typed === null) return;
-    if (typed.trim() !== r.title.trim()) { alert('이름이 달라서 지우지 않았습니다.'); return; }
+    if (typed.trim() !== r.title.trim()) { alert('이름이 달라서 지우지 않았어요.'); return; }
   }
 
   if (LIVE) {
     const { error } = await sb.from('routines').delete().eq('id', id);
-    if (error) { alert('지우지 못했습니다.\n\n' + error.message); return; }
+    if (error) { alert('지우지 못했어요.\n\n' + error.message); return; }
     await loadLive();
   } else {
     DB.routines = DB.routines.filter(x => x.id !== id);
@@ -1571,10 +1571,10 @@ async function deleteStore() {
   if (!s) return;
   const used = (DB.purchaseCounts || {})[s.id] || 0;
   if (used > 0) {
-    alert(`거래가 ${used}건 있어 지울 수 없어요.\n\n지우면 지난 정산에서 어느 책방이었는지가 사라집니다.\n대신 '현재 파트너 서점' 체크를 풀어 목록에서 빼주세요.`);
+    alert(`거래가 ${used}건 있어 지울 수 없어요.\n\n지우면 지난 정산에서 어느 책방이었는지가 사라져요.\n대신 '현재 파트너 서점' 체크를 풀어 목록에서 빼주세요.`);
     return;
   }
-  if (!confirm(`${s.name} 을(를) 지울까요?\n\n되돌릴 수 없습니다.\n잠시 쉬는 것뿐이면 체크를 푸는 쪽이 낫습니다.`)) return;
+  if (!confirm(`${s.name} 을(를) 지울까요?\n\n되돌릴 수 없어요.\n잠시 쉬는 것뿐이면 체크를 푸는 쪽이 나아요.`)) return;
 
   if (LIVE) {
     const { error } = await sb.from('bookstores').delete().eq('id', s.id);
@@ -1598,7 +1598,7 @@ async function submitStore() {
       ? sb.from('bookstores').update(payload).eq('id', storeEditId)
       : sb.from('bookstores').insert(payload);
     const { error } = await q;
-    if (error) { alert('저장 실패: ' + error.message); return; }
+    if (error) { alert('저장하지 못했어요: ' + error.message); return; }
     await loadLive();
   } else if (storeEditId) {
     Object.assign((DB.bookstores || []).find(x => x.id === storeEditId), payload);
@@ -1615,7 +1615,7 @@ function viewPending() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
-    <div class="panel-d">교환권으로 책을 받아온 건입니다. 서점이 보낸 영수증과 금액을 확인해 확정하세요.</div></div>
+    <div class="panel-d">교환권으로 책을 받아온 건이에요. 서점이 보낸 영수증과 금액을 확인해 확정하세요.</div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
@@ -1627,7 +1627,7 @@ function viewPending() {
       <td>${sharePhotoCell(g)}</td>
       <td class="right"><button class="btn btn-pink" onclick="openSettle(${g.id})">금액 입력</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">정산 대기 중인 건이 없습니다.</div>`}`;
+  </table></div>` : `<div class="empty">정산 대기 중인 건이 없어요.</div>`}`;
 }
 
 // 사진이 세 장이다. 이름을 헷갈리면 엉뚱한 걸 보고 공개하게 된다.
@@ -1640,7 +1640,7 @@ function viewPending() {
 //                    전에는 올리기만 하고 볼 방법이 없었다
 function photoCell(g) {
   const a = g.photo_path
-    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="아이가 책 받고 찍은 사진">책인증</div>`
+    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="청소년이 책 받고 찍은 사진">책인증</div>`
     : `<div class="thumb">책인증</div>`;
   const b = g.receipt
     ? `<div class="thumb" style="cursor:pointer;" onclick="viewReceipt('${esc(g.receipt)}')" title="서점이 보낸 영수증">영수증</div>`
@@ -1676,7 +1676,7 @@ async function togglePhoto(id, next) {
   if (!next && !confirm('후원자 화면에서 이 사진을 내릴까요?')) return;
   if (LIVE) {
     const { error } = await sb.from('book_purchases').update({ photo_public: next }).eq('id', id);
-    if (error) return alert('변경에 실패했습니다: ' + error.message);
+    if (error) return alert('바꾸지 못했어요: ' + error.message);
   }
   g.photo_public = next;
   render();
@@ -1695,7 +1695,7 @@ function viewSettled() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">서점 입금</div>
-    <div class="panel-d">아이는 돈 없이 책을 가져갑니다. 책값은 유스보이스가 서점에 보냅니다 — 다녀간 뒤 5영업일 안에.<br>
+    <div class="panel-d">청소년은 돈 없이 책을 가져가요. 책값은 유스보이스가 서점에 보내요 — 다녀간 뒤 5영업일 안에.<br>
       정산을 마친 뒤에도 사진 공개는 여기서 할 수 있어요.</div></div>
   </div>
 
@@ -1733,7 +1733,7 @@ function viewSettled() {
         <button class="btn btn-line" onclick="fixPurchase(${g.id})">금액</button>
         <button class="btn btn-line r-del" onclick="voidPurchase(${g.id})" title="정산 취소">−</button>`}</td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">아직 정산된 건이 없습니다.</div>`}`;
+  </table></div>` : `<div class="empty">아직 정산된 건이 없어요.</div>`}`;
 }
 
 // ── 정산 바로잡기 ──────────────────────────────────────
@@ -1748,7 +1748,7 @@ function viewSettled() {
 async function fixPurchase(id) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
   if (g.paid_at) {
-    alert('이미 책방에 입금한 건이라 고칠 수 없습니다.\n\n책방과 먼저 이야기해 주세요.');
+    alert('이미 책방에 입금한 건이라 고칠 수 없어요.\n\n책방과 먼저 이야기해 주세요.');
     return;
   }
 
@@ -1758,13 +1758,13 @@ async function fixPurchase(id) {
   if (!amount || amount <= 0) { alert('금액을 숫자로 적어주세요.'); return; }
   if (amount === g.amount) return;
 
-  if (!confirm(`책값을 ${won(g.amount)}원 → ${won(amount)}원 으로 고칩니다.\n\n`
-    + `후원금 차감도 다시 계산됩니다.`)) return;
+  if (!confirm(`책값을 ${won(g.amount)}원 → ${won(amount)}원 으로 고쳐요.\n\n`
+    + `후원금 차감도 다시 계산돼요.`)) return;
 
   if (LIVE) {
     const { error } = await sb.rpc('fix_book_purchase',
       { p_purchase_id: id, p_amount: amount, p_bookstore: null, p_note: null });
-    if (error) { alert('고치지 못했습니다.\n\n' + error.message); return; }
+    if (error) { alert('고치지 못했어요.\n\n' + error.message); return; }
     await loadLive();
   } else {
     g.amount = amount;
@@ -1775,24 +1775,24 @@ async function fixPurchase(id) {
 async function voidPurchase(id) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
   if (g.paid_at) {
-    alert('이미 책방에 입금한 건이라 취소할 수 없습니다.\n\n책방과 먼저 이야기해 주세요.');
+    alert('이미 책방에 입금한 건이라 취소할 수 없어요.\n\n책방과 먼저 이야기해 주세요.');
     return;
   }
 
   const reason = prompt(`「${g.name}」 · ${g.bookstore} · ${won(g.amount)}원\n\n`
-    + `왜 취소하나요? (명세에 남습니다)`);
+    + `왜 취소하나요? (명세에 남아요)`);
   if (reason === null) return;
   if (!reason.trim()) { alert('사유를 적어주세요.'); return; }
 
-  if (!confirm(`이 정산을 취소합니다.\n\n`
-    + `· 차감했던 후원금이 되돌아갑니다\n`
-    + `· 줄은 지우지 않고 「취소됨」으로 남습니다\n`
-    + `· 아이의 교환권도 되살아납니다`)) return;
+  if (!confirm(`이 정산을 취소해요.\n\n`
+    + `· 차감했던 후원금이 되돌아와요\n`
+    + `· 줄은 지우지 않고 「취소됨」으로 남아요\n`
+    + `· 청소년의 교환권도 되살아나요`)) return;
 
   if (LIVE) {
     const { error } = await sb.rpc('void_book_purchase',
       { p_purchase_id: id, p_reason: reason.trim() });
-    if (error) { alert('취소하지 못했습니다.\n\n' + error.message); return; }
+    if (error) { alert('취소하지 못했어요.\n\n' + error.message); return; }
     await loadLive();
   } else {
     g.status = 'void';
@@ -1802,10 +1802,10 @@ async function voidPurchase(id) {
 
 async function markPaid(id, paid) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
-  if (paid && !confirm(`${g.bookstore}에 ${won(g.amount)}원을 실제로 보내셨나요?\n앱이 이체를 대신하지는 않습니다.`)) return;
+  if (paid && !confirm(`${g.bookstore}에 ${won(g.amount)}원을 실제로 보내셨나요?\n앱이 이체를 대신하지는 않아요.`)) return;
   if (LIVE) {
     const { error } = await sb.rpc('mark_purchase_paid', { p_purchase_id: id, p_paid: paid });
-    if (error) return alert('변경에 실패했습니다: ' + error.message);
+    if (error) return alert('바꾸지 못했어요: ' + error.message);
   }
   g.paid_at = paid ? new Date().toISOString() : null;
   render();
@@ -1816,7 +1816,7 @@ function viewCharges() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">후원 내역</div>
-    <div class="panel-d">위에서부터 먼저 차감됩니다 (FIFO). 잔액이 0이 되면 후원자에게 완료 카드가 보입니다.</div></div>
+    <div class="panel-d">책값은 후원 건별로 나누지 않고 도서기금 전체에서 나가요.</div></div>
     <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
   </div>
 
@@ -1824,10 +1824,10 @@ function viewCharges() {
        왜 막혔는지 알 수 없어서 여기에 둔다 -->
   <div class="fund">
     <div><b>${won(fundLeft())}원</b><span>남은 도서기금</span></div>
-    <div><b>${won(pool().fund)}원</b><span>도서기금 (80%)</span></div>
+    <div><b>${won(pool().fund)}원</b><span>도서기금 (${Math.round((DB.settings.book_fund_rate || 0) * 100)}%)</span></div>
     <div><b>${won(pool().total)}원</b><span>누적 후원</span></div>
     <p>책 한 권을 약 16,500원으로 보면 <b>${Math.floor(fundLeft() / 16500)}권</b>쯤 더 보낼 수 있어요.
-      모자라면 정산이 막힙니다.</p>
+      모자라면 정산이 막혀요.</p>
   </div>
   <div class="tbl"><table>
     <tr><th>#</th><th>후원자</th><th>후원일</th><th class="right">후원금</th><th class="right">도서기금</th><th class="right">잔액</th><th>상태</th></tr>
@@ -1868,12 +1868,12 @@ function renderPreview() {
   if (!amt) { box.innerHTML = ''; btn.disabled = false; return; }
 
   if (amt > voucherCap()) {
-    box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘습니다. 초과분은 후원금에서 나갈 수 없어요.</div>`;
+    box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘어요. 초과분은 후원금에서 나갈 수 없어요.</div>`;
     btn.disabled = true; return;
   }
   const left = fundLeft();
   if (amt > left) {
-    box.innerHTML = `<div class="warn">도서기금이 ${won(amt - left)}원 부족합니다 (남은 ${won(left)}원). 후원 입력 후 다시 시도하세요.</div>`;
+    box.innerHTML = `<div class="warn">도서기금이 ${won(amt - left)}원 모자라요 (남은 ${won(left)}원). 후원을 먼저 넣어주세요.</div>`;
     btn.disabled = true; return;
   }
   btn.disabled = false;
@@ -1881,7 +1881,7 @@ function renderPreview() {
     <div class="preview-t">정산하면</div>
     <div class="preview-row"><span>도서기금 남은 금액</span>
       <span class="num">${won(left)}원 → ${won(left - amt)}원</span></div>
-    <div class="preview-row out"><span>후원 건별로 나누지 않습니다. 기금은 책뿐 아니라 창작지원·북페어에도 쓰입니다</span><span></span></div>
+    <div class="preview-row out"><span>후원 건별로 나누지 않아요. 기금은 책뿐 아니라 창작지원·북페어에도 쓰여요</span><span></span></div>
   </div>`;
 }
 
@@ -1900,15 +1900,15 @@ async function submitSettle() {
       const path = `${settleTargetId}_${Date.now()}.${ext}`;
       const { error: up } = await sb.storage.from('dokseo-receipts')
         .upload(path, f, { contentType: f.type || 'application/octet-stream', cacheControl: '31536000' });
-      if (up) { alert('영수증 업로드 실패: ' + up.message + '\n정산은 계속 진행합니다.'); }
+      if (up) { alert('영수증을 올리지 못했어요: ' + up.message + '\n정산은 계속 진행해요.'); }
       else receiptPath = path;
     }
     const { error } = await sb.rpc('settle_book_purchase',
       { p_purchase_id: settleTargetId, p_amount: amt, p_receipt_url: receiptPath, p_note: note || null });
-    if (error) { alert('정산 실패: ' + error.message); return; }
+    if (error) { alert('정산하지 못했어요: ' + error.message); return; }
     await loadLive();
   } else {
-    if (amt > fundLeft()) { alert('도서기금이 부족합니다.'); return; }
+    if (amt > fundLeft()) { alert('도서기금이 모자라요.'); return; }
     const g = DB.purchases.find(x => x.id === settleTargetId);
     Object.assign(g, { status:'settled', amount:amt, note,
                        settled_at:new Date().toISOString().slice(0,10) });
@@ -1940,7 +1940,7 @@ async function submitCharge() {
     let { data: sp } = await sb.from('sponsors').select('id').eq('email', email).maybeSingle();
     if (!sp) {
       const ins = await sb.from('sponsors').insert({ email, nickname: nick }).select('id').single();
-      if (ins.error) { alert('후원자 등록 실패: ' + ins.error.message); return; }
+      if (ins.error) { alert('후원자를 등록하지 못했어요: ' + ins.error.message); return; }
       sp = ins.data;
     }
     // book_fund/operation_fee/remaining 은 charges_split 트리거가 채움
@@ -1949,7 +1949,7 @@ async function submitCharge() {
       source: ref ? 'donus' : 'manual', external_ref: ref || null,
       book_fund_amount: 0, operation_fee_amount: 0, remaining_amount: 0,
     });
-    if (error) { alert('후원 등록 실패: ' + error.message); return; }
+    if (error) { alert('후원을 등록하지 못했어요: ' + error.message); return; }
     await loadLive();
   } else {
     let sp = DB.sponsors.find(s => s.email === email);
@@ -2088,11 +2088,11 @@ async function adminLogin() {
   btn.disabled = true; btn.textContent = '확인 중…';
   const { error } = await sb.auth.signInWithPassword({ email, password: pw });
   btn.disabled = false; btn.textContent = '로그인';
-  if (error) return showGate('로그인에 실패했어요: ' + error.message);
+  if (error) return showGate('로그인하지 못했어요: ' + error.message);
 
   if (!ADMIN_EMAILS.includes(email.toLowerCase())) {
     await sb.auth.signOut();
-    return showGate('관리자 계정이 아닙니다. 운영진 이메일로 로그인해 주세요.');
+    return showGate('관리자 계정이 아니에요. 운영진 이메일로 로그인해 주세요.');
   }
   location.reload();
 }
@@ -2108,7 +2108,7 @@ async function adminLogout() { await sb.auth.signOut(); location.reload(); }
   if (!email) return showGate();
   if (!ADMIN_EMAILS.includes(email)) {
     await sb.auth.signOut();
-    return showGate('관리자 계정이 아닙니다. 운영진 이메일로 로그인해 주세요.');
+    return showGate('관리자 계정이 아니에요. 운영진 이메일로 로그인해 주세요.');
   }
 
   document.getElementById('whoami').textContent = email;
