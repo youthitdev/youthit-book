@@ -41,6 +41,12 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .tab { padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:var(--card); font-size:13.5px; font-weight:600; color:var(--ink-2); cursor:pointer; font-family:inherit; }
 .tab.on { background:var(--ink); color:#fff; border-color:var(--ink); }
 .tab i { font-style:normal; opacity:.6; margin-left:4px; }
+/* 손대야 하는 건이 있으면 숫자가 아니라 표시로 보여야 한다.
+   0 이면 아예 안 그린다 — 있을 때만 눈에 걸리게 */
+.tab i.todo { opacity:1; display:inline-block; min-width:18px; padding:1px 6px; margin-left:6px;
+  border-radius:99px; background:var(--pink); color:#fff; font-size:11.5px; font-weight:800;
+  line-height:16px; text-align:center; vertical-align:1px; }
+.tab.on i.todo { background:#fff; color:var(--pink); }
 
 /* 테이블 */
 .panel { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
@@ -645,15 +651,23 @@ function renderSummary() {
     : card('책이 된 금액', won(p.spent), '원', false)
       + card('정산 대기', p.pending, '건', p.pending)
       + card('서점 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
-  document.getElementById('cntKkut').textContent = ` ${(DB.kkutApps || []).filter(a => a.status === 'pending').length}`;
-  document.getElementById('cntRoutines').textContent = ` ${(DB.routines || []).length}`;
-  document.getElementById('cntPending').textContent = ` ${p.pending}`;
-  document.getElementById('cntSettled').textContent = ` ${p.delivered}`;
-  document.getElementById('cntCharges').textContent = ` ${DB.charges.length}`;
-  document.getElementById('cntStores').textContent = ` ${(DB.bookstores || []).length}`;
-  document.getElementById('cntQuotes').textContent = ` ${(DB.quotes || []).filter(q => q.quote_public).length}`;
-  document.getElementById('cntVerify').textContent = ` ${(DB.verify || []).filter(v => v.status === 'pending').length}`;
-  document.getElementById('cntNotify').textContent = ` ${(DB.scheduled || []).filter(n => !n.sent_at).length}`;
+  // 손대야 하는 건(todo)은 분홍 표시로, 그냥 개수는 회색 숫자로.
+  // 할 일이 0 이면 아무것도 안 그린다 — 0 을 띄워두면 1 이 안 보인다
+  const setCnt = (id, n, todo) => {
+    const el = document.getElementById(id); if (!el) return;
+    el.className = todo ? 'todo' : '';
+    el.textContent = todo ? (n ? String(n) : '') : ` ${n}`;
+    el.style.display = (todo && !n) ? 'none' : '';
+  };
+  setCnt('cntVerify',   waitV, true);
+  setCnt('cntKkut',     waitK, true);
+  setCnt('cntRoutines', waitR, true);
+  setCnt('cntPending',  p.pending, true);
+  setCnt('cntSettled',  p.delivered, false);
+  setCnt('cntCharges',  DB.charges.length, false);
+  setCnt('cntStores',   (DB.bookstores || []).length, false);
+  setCnt('cntQuotes',   (DB.quotes || []).filter(q => q.quote_public).length, false);
+  setCnt('cntNotify',   (DB.scheduled || []).filter(n => !n.sent_at).length, false);
 }
 
 function renderPanel() {
