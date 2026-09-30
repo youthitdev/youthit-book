@@ -2812,7 +2812,10 @@ function kkutTodayCard(r) {
 
 function viewHome() {
   const mine   = myRoutines();
-  const others = state.routines.filter(r => !mine.includes(r) && r.status !== 'done');
+  // 운영진이 열어준 것만 고를 수 있다. done 만 걸러내면 승인 전(pending)
+  // 루틴까지 「지금 모집 중인 루틴」에 끼어든다
+  const others = state.routines.filter(r => !mine.includes(r)
+    && (r.status === 'recruit' || r.status === 'active'));
   const recruit = recruitSection(others);
 
   if (isGuest()) {
