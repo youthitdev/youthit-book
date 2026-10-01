@@ -93,8 +93,16 @@ tr:hover td { background:#fcfcfd; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 /* ── 월간 보고 ── */
 /* 청소년 확인 한 줄 */
-.vq { display:flex; align-items:flex-start; gap:12px; padding:12px 0; }
-.vq + .vq { border-top:1px solid var(--line); }
+/* 회원 목록도 길어질 자리다. 넓으면 둘씩 세워 스크롤을 반으로 줄인다.
+   한 줄에 단추가 셋까지 붙어서 끗짱 신청서보다 폭을 더 준다 */
+.vq-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(470px,1fr)); gap:0 22px; }
+.vq { display:flex; align-items:flex-start; gap:12px; padding:12px 0;
+  border-top:1px solid var(--line); }
+/* 맨 윗줄은 선을 긋지 않는다. 두 칸일 때는 위 둘 다 */
+.vq-grid > .vq:nth-child(-n+2) { border-top:0; }
+@media (max-width:1020px) { .vq-grid > .vq:nth-child(2) { border-top:1px solid var(--line); } }
+/* 좁아지면 단추가 아래로 내려간다 — 이름이 눌려 줄어드는 것보다 낫다 */
+.vq-b { flex-wrap:wrap; justify-content:flex-end; }
 .vq-t { flex:1; min-width:0; }
 .vq-t b { font-size:14px; }
 .vq-t > span { margin-left:7px; font-size:12px; }
@@ -826,7 +834,7 @@ function vqRows() {
     || (r.email || '').toLowerCase().includes(q)
     || (r.phone || '').includes(q));
   if (!rows.length) return `<div class="empty">찾는 사람이 없어요.</div>`;
-  return rows.map(vqCard).join('');
+  return `<div class="vq-grid">${rows.map(vqCard).join('')}</div>`;
 }
 
 function viewVerify() {
