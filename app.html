@@ -513,6 +513,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   padding:5px 11px; border-radius:8px; cursor:pointer; font-family:inherit; }
 .seg button.on { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
 .cgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+.cg-item { cursor:pointer; min-width:0; }
+.cg-who { font-size:12px; font-weight:700; margin-top:5px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cg-sub { font-size:11px; color:var(--ink-3); margin-top:1px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .cg img { width:100%; height:100%; object-fit:cover; display:block; }
 .cg-no { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:22px; }
@@ -779,6 +783,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .met-row b { flex:1; font-size:14px; font-weight:700; }
 .met-row i { font-style:normal; font-size:12px; color:var(--ink-3); }
 .met-row.on i { color:var(--green-d); font-weight:700; }
+/* 오늘 글에 붙인 사진. 시는 모양이 곧 글이라 크게 보여준다 */
+.post-ph { display:flex; flex-direction:column; gap:7px; margin-top:11px; }
+.post-ph img { width:100%; border-radius:10px; display:block; }
 /* 함께 읽는 글 */
 .post { background:#F2EEE6; border-radius:14px; padding:14px 16px; }
 .post-h { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
@@ -1252,15 +1259,15 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="ov-b">
     <div id="certGuide"></div>
     <div>
-      <div class="field-label" id="cPhLabel">책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span></div>
+      <div class="field-label" id="cPhLabel">책 읽는 순간 <span class="opt">선택 · 최대 3장</span></div>
       <div class="ph-grid" id="phGrid"></div>
       <input type="file" id="phInput" accept="image/*" multiple style="display:none;" onchange="pickPhotos(event)">
       <div class="hint" id="camHint">지금 읽고 있는 모습을 바로 찍어주세요</div>
     </div>
     <!-- 「함께 읽는 글」 루틴이면 오늘 끗짱이 올린 글을 여기서 바로 읽는다 -->
     <div id="cTodayPost"></div>
-    <div>
-      <div class="field-label" id="cQuoteLabel">마음에 남은 문장 <span id="cQuoteReq" class="opt">선택</span></div>
+    <div id="cQuoteWrap">
+      <div class="field-label">마음에 남은 문장 <span id="cQuoteReq" class="opt">선택</span></div>
       <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300" oninput="checkCert()"></textarea>
     </div>
     <!-- 주석: 각자 책을 읽는 루틴에서만 쓴다. 함께 읽는 글은 책도 쪽수도 없다 -->
@@ -1281,8 +1288,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div id="cPageHint" style="display:none;font-size:12.5px;line-height:1.6;padding:10px 13px;border-radius:11px;"></div>
     </div>
     <div>
-      <div class="field-label">더 남기고 싶은 말 <span class="opt">선택</span></div>
-      <textarea id="cMemo" rows="3" placeholder="오늘 읽으면서 든 생각이 있다면." maxlength="1000"></textarea>
+      <div class="field-label" id="cMemoLabel">더 남기고 싶은 말 <span class="opt">선택</span></div>
+      <textarea id="cMemo" rows="3" placeholder="오늘 읽으면서 든 생각이 있다면." maxlength="1000" oninput="checkCert()"></textarea>
     </div>
     <button class="btn btn-primary" id="cSubmit" disabled onclick="submitCert()">인증하기</button>
   </div>
@@ -1520,6 +1527,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="field-label" style="margin-top:14px;">글 <span class="req">* 필수</span></div>
       <textarea id="poBody" rows="9" maxlength="4000" placeholder="오늘 함께 읽고 싶은 글을 그대로 옮겨 적어주세요." oninput="checkPost()"></textarea>
       <div class="hint">짧아도 괜찮아요. 한 문단이면 충분해요. 고쳐 올릴 때는 알림이 다시 가지 않아요.</div>
+      <div class="field-label" style="margin-top:14px;">사진 <span class="opt">선택 · 최대 3장</span></div>
+      <div class="ph-grid" id="poPhGrid"></div>
+      <input type="file" id="poPhInput" accept="image/*" multiple style="display:none;" onchange="pickPostPhotos(event)">
+      <div class="hint">시처럼 줄바꿈이 곧 글인 것은 책에서 찍어 올려주세요. 여러 편도 괜찮아요.</div>
       <button class="btn btn-primary" id="poSave" style="margin-top:14px;" disabled onclick="savePost()">올리기</button>
     </div>
   </div>
@@ -3169,11 +3180,21 @@ function certGrid(all) {
   if (!cs.length)
     return head + `<div class="empty">아직 내가 남긴 기록이 없어요.</div>`;
 
-  return head + `<div class="cgrid">${cs.map(c => `<div class="cg" onclick="openOneCert(${c.id})">
-    ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
-                            : `<div class="cg-no">📖</div>`}
-    ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 기록</i>` : ''}
-  </div>`).join('')}</div>`;
+  // 격자만 있으면 누가 언제 올렸는지 알 수 없어 댓글로 말을 걸기 어렵다.
+  // 사진 아래 한 줄로 이름·날짜·댓글 수를 붙인다
+  const talkOf = id => (state.comments || []).filter(m => m.cert_id === id).length;
+  return head + `<div class="cgrid">${cs.map(c => {
+    const n = talkOf(c.id);
+    return `<div class="cg-item" onclick="openOneCert(${c.id})">
+      <div class="cg">
+        ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
+                                : `<div class="cg-no">📖</div>`}
+        ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 기록</i>` : ''}
+      </div>
+      <div class="cg-who">${c.user_id === me.id ? '나' : esc(nameOf(c.user_id))}</div>
+      <div class="cg-sub">${esc(dayKo(c.cert_date))}${n ? ` · 💬 ${n}` : ''}</div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 // 루틴이 며칠짜리고 오늘이 며칠째인지
@@ -4322,7 +4343,8 @@ function openRoutine(id) {
     </div>
     ${isShared(r) && (p?.status === 'approved' || leadsIt(r))
       ? `<div class="sec-t">함께 읽는 글</div>${postCard(r)}` : ''}
-    ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱</div>
+    ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱${
+        r.led_by ? ` <span class="sec-n" style="color:var(--pink);">${esc(nameOf(r.led_by))}</span>` : ''}</div>
       <div class="card kkut-card">
         ${r.kkut_book_url ? `<div class="kkut-book"><img src="${esc(r.kkut_book_url)}" loading="lazy" alt=""></div>` : ''}
         <div style="min-width:0;">
@@ -4916,6 +4938,18 @@ function makeHint() {
 
 const fmtDay = d => { const [, m, dd] = d.split('-'); return `${+m}월 ${+dd}일`; };
 
+// 격자 아래에 붙는 짧은 날짜. 오늘·어제는 말로 적는다
+const dayKo = d => {
+  if (!d) return '';
+  const t = todayKST();
+  if (d === t) return '오늘';
+  const y = new Date(new Date(t + 'T00:00:00').getTime() - 86400e3);
+  const p = x => String(x).padStart(2, '0');
+  if (d === `${y.getFullYear()}-${p(y.getMonth() + 1)}-${p(y.getDate())}`) return '어제';
+  const [, m, dd] = d.split('-');
+  return `${+m}.${+dd}`;
+};
+
 async function submitMake() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
@@ -5019,16 +5053,15 @@ function openCert(rid, pickTitle) {
   certRid = rid; photos = []; keptUrls = []; certEditId = null;
   $('ovCLabel').textContent = '오늘의 인증';
   $('cSubmit').textContent = '인증하기';
-  $('cPhLabel').innerHTML = '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
-  $('camHint').style.display = '';
+  $('cPhLabel').innerHTML = '책 읽는 순간 <span class="opt">선택 · 최대 3장</span>';
   $('ovCTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('certGuide').innerHTML = r.cert_guide
     ? `<div style="background:#F2EEE6;border-radius:12px;padding:12px 14px;">
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
   $('camHint').textContent = r.camera_only
-    ? '지금 읽고 있는 모습을 바로 찍어주세요. 저장된 사진은 올릴 수 없어요'
-    : '읽고 있는 순간을 사진으로 담아주세요';
+    ? '사진을 올린다면 그 자리에서 찍어주세요. 저장된 사진은 올릴 수 없어요' : '';
+  $('camHint').style.display = r.camera_only ? '' : 'none';
   if (r.camera_only) $('phInput').setAttribute('capture', 'environment');
   else               $('phInput').removeAttribute('capture');
   // 「함께 읽는 글」 은 책도 쪽수도 없다. 있으면 가짜가 된다.
@@ -5039,19 +5072,23 @@ function openCert(rid, pickTitle) {
   $('cTodayPost').innerHTML    = sh ? postCard(r, true) : '';
   $('cPhLabel').innerHTML = sh
     ? '오늘의 한 장 <span class="opt">선택 · 최대 3장</span>'
-    : '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
-  $('cQuoteLabel').innerHTML = sh
-    ? '오늘 글을 읽고 <span id="cQuoteReq" class="req">* 필수</span>'
-    : '마음에 남은 문장 <span id="cQuoteReq" class="opt">선택</span>';
-
-  // 필사 루틴이면 문장이 선택이 아니라 필수가 된다
-  const q = sh || !!r.quote_required;
+    : '책 읽는 순간 <span class="opt">선택 · 최대 3장</span>';
+  // 「마음에 남은 문장」은 책에서 옮겨 적는 칸이라 MY 의 「모은 문장」에 쌓인다.
+  // 글 루틴에서 거기에 소감을 적으면 남의 문장인 척 섞인다. 칸을 아예 접고
+  // 「남기고 싶은 말」을 필수로 받는다
+  $('cQuoteWrap').style.display = sh ? 'none' : '';
+  const q = !sh && !!r.quote_required;
   $('cQuoteReq').textContent = q ? '* 필수' : '선택';
   $('cQuoteReq').className   = q ? 'req' : 'opt';
-  $('cQuote').placeholder    = sh
+  $('cQuote').placeholder    = q
+    ? '오늘 읽은 데서 마음에 남은 문장을 그대로 옮겨 적어주세요.'
+    : '옮겨 적고 싶은 문장이 있다면 적어주세요.';
+  $('cMemoLabel').innerHTML = sh
+    ? '오늘 글을 읽고 <span class="req">* 필수</span>'
+    : '더 남기고 싶은 말 <span class="opt">선택</span>';
+  $('cMemo').placeholder = sh
     ? '글을 읽고 든 생각을 적어주세요. 한 줄도 괜찮아요.'
-    : q ? '오늘 읽은 데서 마음에 남은 문장을 그대로 옮겨 적어주세요.'
-      : '옮겨 적고 싶은 문장이 있다면 적어주세요.';
+    : '오늘 읽으면서 든 생각이 있다면.';
   // 책 제목은 매번 다시 치지 않게 채워둔다.
   // 직전 인증에서 읽던 책 → 없으면 참여할 때 적은 책. 바뀌었으면 고쳐 쓰면 된다
   const last = myCerts(rid).find(c => c.book_title);
@@ -5258,14 +5295,14 @@ function checkCert() {
   // 함께 읽는 글: 소감만 필수다. 사진은 선택이고 책·쪽수는 아예 없다.
   // 단, 오늘 글이 아직 안 올라왔으면 읽을 게 없으니 막는다
   if (sh) {
-    $('cSubmit').disabled = !$('cQuote').value.trim() || !postOf(certRid);
+    $('cSubmit').disabled = !$('cMemo').value.trim() || !postOf(certRid);
     return;
   }
   const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
   const needPage  = !parseInt($('cPage').value || '0', 10);
   const needBook  = !$('cBook').value.trim();   // 비면 쪽수 범위 계산이 틀어진다
-  const needPhoto = keptUrls.length + photos.length === 0;
-  $('cSubmit').disabled = needPhoto || needQuote || needPage || needBook;
+  // 사진은 선택이다. 버스에서 읽은 날, 찍기 어려운 날이 있다
+  $('cSubmit').disabled = needQuote || needPage || needBook;
 }
 
 // 같은 책의 직전 인증부터 오늘까지. 새 책이거나 첫 인증이면 0부터
@@ -5320,7 +5357,7 @@ function editCert(id) {
   $('cBook').value  = c.book_title || '';
   $('cPage').value  = c.page_end || '';
   $('cMemo').value  = c.content || '';
-  $('cPhLabel').innerHTML = '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
+  $('cPhLabel').innerHTML = '책 읽는 순간 <span class="opt">선택 · 최대 3장</span>';
   $('camHint').style.display = '';
   $('cSubmit').textContent = '수정하기';
   $('cPageHint').style.display = 'none';
@@ -5360,8 +5397,9 @@ function rewardBox(r) {
     <li>하루 한 번 인증하면 ${won(r.points_per_cert || 10)}P${
       needsMeet(r) ? `, 공유회에 다녀오면 ${won(MEET_P())}P` : ''}가 쌓여요.</li>
     ${needsMeet(r)
-      ? `<li><em>공유회에 다녀와야</em> 책을 받을 수 있어요.
-           공유회 날 책방에서 바로 받아가면 돼요.</li>
+      ? `<li><em>공유회 당일에만</em> 교환권을 사용할 수 있어요.
+           그날 책방에서 바로 받아가면 돼요.</li>
+         <li>공유회에 참석하면 <em>+${won(MEET_P())}P</em>를 적립해드려요!</li>
          <li>공유회에 <em>안 오면</em> 이 루틴에서 모은 포인트는 사라져요.</li>`
       : `<li>모으면 아무 때나 함께하는 책방에 가서 받으면 돼요.</li>`}
   </div>`;
@@ -5442,10 +5480,12 @@ function meetCard(r) {
           ? `공유회에 오지 않아 이 루틴에서 모은 포인트는 <b>쓸 수 없게</b> 됐어요.
              끗짱이 참석을 늦게 표시하면 돌아와요.`
         : myPart(r.id)?.status === 'approved'
-          ? `이 자리에 <b>와야</b> 책을 받아요. 오면 <b>+${won(MEET_P())}P</b>예요.<br>
+          ? `<b>공유회 당일에만</b> 교환권을 사용할 수 있어요.
+             공유회에 참석하면 <b>+${won(MEET_P())}P</b>를 적립해드려요!<br>
              <b>안 오면</b> 이 루틴에서 모은 포인트는 사라져요.`
           : `이 루틴은 <b>공유회에 참석해야 하는</b> 루틴이에요.<br>
-             와야 모은 포인트로 책을 받고, 오면 <b>+${won(MEET_P())}P</b>예요.
+             <b>공유회 당일에만</b> 교환권을 사용할 수 있고, 참석하면
+             <b>+${won(MEET_P())}P</b>를 적립해드려요!
              <b>안 오면 모은 포인트가 사라져요.</b>`}</div>
     </div>`;
 }
@@ -5524,20 +5564,54 @@ function postCard(r, forCert) {
         ${leadsIt(r) && !forCert ? `<button onclick="openPost(${r.id})">고치기</button>` : ''}</div>
       ${p.title ? `<div class="post-t">${esc(p.title)}</div>` : ''}
       <div class="post-b">${esc(p.body)}</div>
+      ${(p.photo_urls || []).length ? `<div class="post-ph">${
+        p.photo_urls.map(u => `<img src="${esc(u)}" loading="lazy" alt="">`).join('')}</div>` : ''}
     </div>`;
 }
 
 // ── 끗짱이 글 올리기 ───────────────────────────────────
 let postRid = null;
 
+let postPhotos = [], postKept = [];
+const POST_PH_MAX = 3;
+
 function openPost(rid) {
   postRid = rid;
   const p = postOf(rid);
   $('poTitle').value = p?.title || '';
   $('poBody').value  = p?.body  || '';
+  postPhotos = []; postKept = [...(p?.photo_urls || [])];
+  $('poPhInput').value = ''; drawPostPhotos();
   $('poSave').textContent = p ? '고쳐 올리기' : '올리기';
   checkPost();
   showLayer('shPost');
+}
+
+function drawPostPhotos() {
+  const total = postKept.length + postPhotos.length;
+  $('poPhGrid').innerHTML =
+      postKept.map((u, i) => `<div class="ph-wrap"><img src="${esc(u)}">
+        <button class="ph-del" onclick="dropPostPhoto(${i}, -1)">×</button></div>`).join('')
+    + postPhotos.map((d, i) => `<div class="ph-wrap"><img src="${d}">
+        <button class="ph-del" onclick="dropPostPhoto(-1, ${i})">×</button></div>`).join('')
+    + (total < POST_PH_MAX
+        ? `<div class="ph-box" onclick="document.getElementById('poPhInput').click()">
+             <i class="ti ti-plus" style="font-size:20px;"></i>${total}/${POST_PH_MAX}</div>` : '');
+}
+
+function dropPostPhoto(keptIdx, newIdx) {
+  if (keptIdx >= 0) postKept.splice(keptIdx, 1);
+  else postPhotos.splice(newIdx, 1);
+  drawPostPhotos();
+}
+
+async function pickPostPhotos(e) {
+  const room = POST_PH_MAX - (postKept.length + postPhotos.length);
+  for (const f of [...e.target.files].slice(0, Math.max(0, room))) {
+    try { postPhotos.push(await resize(f, 1600, .85)); }
+    catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+  }
+  e.target.value = ''; drawPostPhotos();
 }
 function checkPost() { $('poSave').disabled = !$('poBody').value.trim(); }
 
@@ -5549,8 +5623,21 @@ async function savePost() {
 
   const btn = $('poSave'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '올리는 중…';
+
+  // 새로 고른 사진만 올린다. 이미 올라가 있던 건 주소 그대로 쓴다
+  const urls = [...postKept];
+  for (const d of postPhotos) {
+    const path = `${me.id}/post_${postRid}_${Date.now()}_${urls.length}.jpg`;
+    const { error: up } = await sb.storage.from('cert-photos')
+      .upload(path, toBlob(d), { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (up) { btn.disabled = false; btn.textContent = label;
+      return toast('사진을 올리지 못했어요: ' + up.message); }
+    urls.push(sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl);
+  }
+
   const { error } = await sb.from('routine_posts')
-    .upsert({ routine_id: postRid, user_id: me.id, day: todayKST(), title, body },
+    .upsert({ routine_id: postRid, user_id: me.id, day: todayKST(), title, body,
+              photo_urls: urls },
             { onConflict: 'routine_id,day' });
   btn.disabled = false; btn.textContent = label;
   if (error) return toast('올리지 못했어요: ' + error.message);
@@ -5587,9 +5674,8 @@ async function submitCert() {
   const r0 = state.routines.find(x => x.id === certRid);
   if (isShared(r0)) {
     if (!postOf(certRid)) return toast('오늘 글이 아직 안 올라왔어요');
-    if (!$('cQuote').value.trim()) return toast('글을 읽고 든 생각을 적어주세요');
+    if (!$('cMemo').value.trim()) return toast('글을 읽고 든 생각을 적어주세요');
   } else {
-    if (!keptUrls.length && !photos.length) return toast('사진을 한 장 올려주세요');
     if (r0?.quote_required && !$('cQuote').value.trim()) return toast('마음에 남은 문장을 적어주세요');
     if (!$('cBook').value.trim()) return toast('읽는 책 제목을 적어주세요');
     if (!parseInt($('cPage').value || '0', 10)) return toast('오늘까지 읽은 쪽을 적어주세요');
