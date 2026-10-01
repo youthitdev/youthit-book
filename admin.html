@@ -373,7 +373,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-hd">
       <div class="modal-t" id="reTitleTop">루틴 수정</div>
       <div class="modal-d" id="reDescTop">끗짱이 잘못 적은 것을 운영진이 바로잡아요.
-        고쳐도 승인 상태는 그대로예요.</div>
+        수정해도 승인 상태는 그대로예요.</div>
     </div>
     <div class="modal-bd" id="routineEditBody"></div>
     <div class="modal-ft">
@@ -1511,7 +1511,7 @@ function openRoutineEdit(id) {
   document.getElementById('reTitleTop').textContent = isNew ? '루틴 만들기' : '루틴 수정';
   document.getElementById('reDescTop').innerHTML = isNew
     ? '운영진이 루틴을 만들고 끗짱을 정해요. 만들면 바로 <b>모집 중</b>이 됩니다.'
-    : '끗짱이 잘못 적은 것을 운영진이 바로잡아요. 고쳐도 승인 상태는 그대로예요.';
+    : '끗짱이 잘못 적은 것을 운영진이 바로잡아요. 수정해도 승인 상태는 그대로예요.';
 
   document.getElementById('routineEditBody').innerHTML = `
     ${isNew ? '' : `<div class="target"><b>${r.emoji || '📚'} ${esc(r.title)}</b>
@@ -2197,23 +2197,23 @@ function viewSettled() {
 async function fixPurchase(id) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
   if (g.paid_at) {
-    alert('이미 책방에 입금한 건이라 고칠 수 없어요.\n\n책방과 먼저 이야기해 주세요.');
+    alert('이미 책방에 입금한 건이라 수정할 수 없어요.\n\n책방과 먼저 이야기해 주세요.');
     return;
   }
 
-  const typed = prompt(`「${g.name}」 · ${g.bookstore}\n\n책값을 얼마로 고칠까요? (원)`, g.amount ?? '');
+  const typed = prompt(`「${g.name}」 · ${g.bookstore}\n\n책값을 얼마로 수정할까요? (원)`, g.amount ?? '');
   if (typed === null) return;
   const amount = parseInt(String(typed).replace(/[^0-9]/g, ''), 10);
   if (!amount || amount <= 0) { alert('금액을 숫자로 적어주세요.'); return; }
   if (amount === g.amount) return;
 
-  if (!confirm(`책값을 ${won(g.amount)}원 → ${won(amount)}원 으로 고쳐요.\n\n`
+  if (!confirm(`책값을 ${won(g.amount)}원 → ${won(amount)}원 으로 수정해요.\n\n`
     + `후원금 차감도 다시 계산돼요.`)) return;
 
   if (LIVE) {
     const { error } = await sb.rpc('fix_book_purchase',
       { p_purchase_id: id, p_amount: amount, p_bookstore: null, p_note: null });
-    if (error) { alert('고치지 못했어요.\n\n' + error.message); return; }
+    if (error) { alert('수정하지 못했어요.\n\n' + error.message); return; }
     await loadLive();
   } else {
     g.amount = amount;
