@@ -2334,14 +2334,16 @@ function viewCharges() {
     <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
   </div>
 
-  <!-- 정산할 때 도서기금이 모자라면 막힌다. 숫자가 아무 데도 없으면
-       왜 막혔는지 알 수 없어서 여기에 둔다 -->
+  <!-- 잔액은 보여주되 정산을 막지는 않는다(72번). 기부금품법상 사용명세를
+       남기는 자리라 숫자는 계속 둔다 -->
   <div class="fund">
-    <div><b>${won(fundLeft())}원</b><span>남은 도서기금</span></div>
+    <div><b>${won(fundLeft())}원</b><span>${fundLeft() < 0 ? '기금보다 더 쓴 금액' : '남은 도서기금'}</span></div>
     <div><b>${won(pool().fund)}원</b><span>도서기금 (${Math.round((DB.settings.book_fund_rate || 0) * 100)}%)</span></div>
     <div><b>${won(pool().total)}원</b><span>누적 후원</span></div>
-    <p>책 한 권을 약 16,500원으로 보면 <b>${Math.floor(fundLeft() / 16500)}권</b>쯤 더 보낼 수 있어요.
-      모자라면 정산이 막혀요.</p>
+    <p>${fundLeft() > 0
+      ? `책 한 권을 약 16,500원으로 보면 <b>${Math.floor(fundLeft() / 16500)}권</b>쯤 더 보낼 수 있어요.`
+      : '적어 둔 기금보다 더 나갔어요.'}
+      모자라도 정산은 되고, 후원 입력은 사용명세를 남기는 기록이에요.</p>
   </div>
   <div class="tbl"><table>
     <tr><th>#</th><th>후원자</th><th>후원일</th><th class="right">후원금</th><th class="right">도서기금</th><th class="right">잔액</th><th>상태</th></tr>
@@ -2385,16 +2387,17 @@ function renderPreview() {
     box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘어요. 초과분은 후원금에서 나갈 수 없어요.</div>`;
     btn.disabled = true; return;
   }
+  // 잔액이 모자라도 막지 않는다. 책방에 보낼 돈을 장부 때문에 못 보내는
+  // 일은 없어야 한다. 대신 눈에 띄게 알린다
   const left = fundLeft();
-  if (amt > left) {
-    box.innerHTML = `<div class="warn">도서기금이 ${won(amt - left)}원 모자라요 (남은 ${won(left)}원). 후원을 먼저 넣어주세요.</div>`;
-    btn.disabled = true; return;
-  }
   btn.disabled = false;
   box.innerHTML = `<div class="preview">
     <div class="preview-t">정산하면</div>
     <div class="preview-row"><span>도서기금 남은 금액</span>
       <span class="num">${won(left)}원 → ${won(left - amt)}원</span></div>
+    ${left - amt < 0 ? `<div class="preview-row out">
+      <span style="color:#8E3527;font-weight:700;">기금에 적힌 것보다 ${won(amt - left)}원 더 나가요.
+        정산은 되지만 후원 입력을 맞춰 두는 게 좋아요</span><span></span></div>` : ''}
     <div class="preview-row out"><span>후원 건별로 나누지 않아요. 기금은 책뿐 아니라 창작지원·북페어에도 쓰여요</span><span></span></div>
   </div>`;
 }
@@ -2422,7 +2425,6 @@ async function submitSettle() {
     if (error) { alert('정산하지 못했어요: ' + error.message); return; }
     await loadLive();
   } else {
-    if (amt > fundLeft()) { alert('도서기금이 모자라요.'); return; }
     const g = DB.purchases.find(x => x.id === settleTargetId);
     Object.assign(g, { status:'settled', amount:amt, note,
                        settled_at:new Date().toISOString().slice(0,10) });
