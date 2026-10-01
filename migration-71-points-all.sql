@@ -10,11 +10,19 @@
 --   dokseo_points() 를 사람 수만큼 돌려서 한 번에 돌려줄 뿐이다.
 --
 -- 【운영진만】 남의 포인트를 보는 일이다.
+--
+-- ⚠️ SQL 편집기에서는 auth.uid() 가 비어 있어 is_admin() 이 거짓이 된다.
+--   그냥 NOT is_admin() 으로 막으면 아래 확인 SELECT 가 터지고, 붙여넣기는
+--   한 트랜잭션이라 함수까지 같이 되돌아간다. 집 안의 다른 함수들처럼
+--   「로그인한 사람인데 운영진이 아니면」으로 적는다.
+--   밖에서는 anon 에게 EXECUTE 를 안 줬으니 로그인 없이는 아예 못 부른다.
 
 CREATE OR REPLACE FUNCTION dokseo_points_all()
 RETURNS TABLE(user_id uuid, points int, earned int, used int, remain int) AS $$
 BEGIN
-  IF NOT is_admin() THEN RAISE EXCEPTION '권한이 없습니다'; END IF;
+  IF auth.uid() IS NOT NULL AND NOT is_admin() THEN
+    RAISE EXCEPTION '권한이 없습니다';
+  END IF;
 
   RETURN QUERY
     SELECT p.id,
