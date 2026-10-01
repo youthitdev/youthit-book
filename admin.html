@@ -367,6 +367,22 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
+<!-- 루틴 고치기 -->
+<div class="overlay" id="routineEditOverlay">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-hd">
+      <div class="modal-t">루틴 고치기</div>
+      <div class="modal-d">끗짱이 잘못 적은 것을 운영진이 바로잡아요.
+        고쳐도 승인 상태는 그대로예요.</div>
+    </div>
+    <div class="modal-bd" id="routineEditBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('routineEditOverlay')">닫기</button>
+      <button class="btn btn-dark" id="reSave" onclick="saveRoutineEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="kkutOverlay">
   <!-- 맡은 루틴 표까지 들어가야 해서 기본 460px 로는 좁다 -->
   <div class="modal" style="max-width:560px;">
@@ -1285,6 +1301,7 @@ function viewRoutines() {
       </div>
       <div class="rw-b">
         <button class="btn btn-dark" onclick="decideRoutine(${r.id}, true)">승인</button>
+        <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">고치기</button>
         <button class="btn btn-line" onclick="decideRoutine(${r.id}, false)">반려</button>
       </div>
     </div>`).join('')}
@@ -1318,6 +1335,7 @@ function viewRoutines() {
         ? `<button class="vq-quiet" onclick="setSponsor(${r.id})">${esc(r.sponsor_name)}</button>`
         : `<button class="vq-quiet" onclick="setSponsor(${r.id})">+ 기업</button>`}</td>
       <td class="right" style="white-space:nowrap;">
+        <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">고치기</button>
         <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
         <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
@@ -1440,6 +1458,177 @@ function rMeet(r) {
   bits.push([r.meetup_place, r.meetup_detail].filter(Boolean).map(esc).join(' ') || '장소 없음');
   if (r.meetup_address) bits.push(`<span class="muted">${esc(r.meetup_address)}</span>`);
   return bits.join(' · ');
+}
+
+// ── 루틴 고치기 ────────────────────────────────────────
+// 끗짱이 시각을 오전/오후 거꾸로 넣거나 장소를 빼먹는 일이 있다. 승인하려고
+// 보다가 발견하면 돌려보내는 것보다 여기서 고치는 게 빠르다.
+//
+// 【사진은 안 건드린다】 대표 사진과 책 표지는 끗짱이 고른 것이다.
+//   운영진이 바꿀 일이면 그건 반려할 일이다.
+//
+// 【승인 상태는 그대로】 끗짱이 고치면 다시 대기로 돌아가지만, 운영진이
+//   고치는 건 이미 보고 있다는 뜻이라 되돌릴 이유가 없다.
+//   서버 트리거도 is_admin() 이면 손대지 않는다.
+//
+// 【좌표는 장소 이름을 바꾸면 버린다】 이름만 바꾸고 좌표를 두면 길찾기가
+//   엉뚱한 데로 보낸다. 끗짱이 앱에서 다시 고르면 붙는다.
+let reId = null;
+
+function openRoutineEdit(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  reId = id;
+  const at = r.meetup_at ? new Date(r.meetup_at) : null;
+  const p2 = n => String(n).padStart(2, '0');
+  const v  = x => esc(x == null ? '' : String(x));
+  const parts = rParts(id).length;
+
+  document.getElementById('routineEditBody').innerHTML = `
+    <div class="target"><b>${r.emoji || '📚'} ${esc(r.title)}</b>
+      <span class="muted"> · ${esc(rName(r.led_by))} · ${R_KIND[r.kind || 'book']}</span></div>
+
+    <div class="field">
+      <div class="label">루틴 이름 <span>*</span></div>
+      <input type="text" id="reTitle" maxlength="40" value="${v(r.title)}">
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="field" style="width:96px;flex:none;">
+        <div class="label">이모지</div>
+        <input type="text" id="reEmoji" maxlength="4" style="text-align:center;" value="${v(r.emoji || '📚')}">
+      </div>
+      <div class="field" style="flex:1;min-width:0;">
+        <div class="label">모집 인원 <span>*</span></div>
+        <input type="number" id="rePeople" min="1" max="50" value="${r.max_people ?? 8}">
+      </div>
+    </div>
+    <div class="field">
+      <div class="label">끗짱 소개 <span>*</span></div>
+      <textarea id="reDesc" rows="4" maxlength="300">${v(r.description)}</textarea>
+    </div>
+    <div class="field">
+      <div class="label">이렇게 인증해 주세요 <span>*</span></div>
+      <textarea id="reGuide" rows="3" maxlength="200">${v(r.cert_guide)}</textarea>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div class="field" style="flex:1;min-width:0;">
+        <div class="label">시작일 <span>*</span></div>
+        <input type="date" id="reStart" value="${v(r.start_date)}">
+      </div>
+      <div class="field" style="flex:1;min-width:0;">
+        <div class="label">종료일 <span>*</span></div>
+        <input type="date" id="reEnd" value="${v(r.end_date)}">
+      </div>
+    </div>
+    <div class="field">
+      <div class="label">${r.kind === 'one_book' ? '함께 읽을 책' : '끗짱이 읽는 책'}</div>
+      <input type="text" id="reBook" maxlength="60" value="${v(r.kkut_book_title)}"
+             placeholder="제목">
+      <div class="hint">표지 사진은 여기서 못 바꿔요. 끗짱이 앱에서 고릅니다.</div>
+    </div>
+
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+        <input type="checkbox" id="reQuote" style="width:16px;height:16px;"
+               ${r.quote_required ? 'checked' : ''}> 필사도 함께하기</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:8px;">
+        <input type="checkbox" id="reCamera" style="width:16px;height:16px;"
+               ${r.camera_only ? 'checked' : ''}> 그 자리에서 찍은 사진만 받기</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:8px;">
+        <input type="checkbox" id="reMeet" style="width:16px;height:16px;" onchange="reMeetToggle()"
+               ${r.meetup_required ? 'checked' : ''}> 오프라인 공유회 함께하기</label>
+      ${!r.meetup_required && parts ? `<div class="hint" style="color:#8E3527;">
+        이미 ${parts}명이 참여 중이에요. 지금 켜면 들어올 때 없던 조건이 생깁니다.</div>` : ''}
+    </div>
+
+    <div id="reMeetWrap" style="display:${r.meetup_required ? '' : 'none'};
+         border-top:1px solid var(--line);padding-top:14px;">
+      <div style="display:flex;gap:10px;">
+        <div class="field" style="flex:1;min-width:0;">
+          <div class="label">공유회 날짜</div>
+          <input type="date" id="reMeetDate"
+                 value="${at ? `${at.getFullYear()}-${p2(at.getMonth()+1)}-${p2(at.getDate())}` : ''}">
+        </div>
+        <div class="field" style="width:150px;flex:none;">
+          <div class="label">시각</div>
+          <input type="time" id="reMeetTime" step="1800"
+                 value="${at ? `${p2(at.getHours())}:${p2(at.getMinutes())}` : ''}">
+        </div>
+      </div>
+      <div class="field">
+        <div class="label">장소</div>
+        <input type="text" id="reMeetPlace" maxlength="80" value="${v(r.meetup_place)}">
+        <div class="hint">${r.meetup_address
+          ? `지금 주소 <b>${esc(r.meetup_address)}</b> · 이름을 바꾸면 주소와 길찾기가 지워져요`
+          : '주소·길찾기는 끗짱이 앱에서 지도로 골라야 붙어요'}</div>
+      </div>
+      <div class="field">
+        <div class="label">상세 위치</div>
+        <input type="text" id="reMeetDetail" maxlength="60" value="${v(r.meetup_detail)}">
+      </div>
+      <div class="field">
+        <div class="label">안내할 말</div>
+        <textarea id="reMeetNote" rows="2" maxlength="300">${v(r.meetup_note)}</textarea>
+      </div>
+    </div>`;
+  document.getElementById('routineEditOverlay').classList.add('on');
+}
+
+function reMeetToggle() {
+  document.getElementById('reMeetWrap').style.display =
+    document.getElementById('reMeet').checked ? '' : 'none';
+}
+
+async function saveRoutineEdit() {
+  const r = (DB.routines || []).find(x => x.id === reId); if (!r) return;
+  const g = id => document.getElementById(id);
+  const title = g('reTitle').value.trim();
+  const desc  = g('reDesc').value.trim();
+  const guide = g('reGuide').value.trim();
+  const s0 = g('reStart').value, e0 = g('reEnd').value;
+  if (!title) return alert('루틴 이름을 적어주세요.');
+  if (!desc)  return alert('끗짱 소개를 적어주세요.');
+  if (!guide) return alert('인증 안내를 적어주세요.');
+  if (!s0 || !e0) return alert('시작일과 종료일을 골라주세요.');
+  if (e0 < s0)    return alert('종료일이 시작일보다 빠를 수 없어요.');
+
+  const meet = g('reMeet').checked;
+  const place = meet ? (g('reMeetPlace').value.trim() || null) : null;
+  // 이름을 바꿨으면 좌표는 더 이상 그 장소의 것이 아니다
+  const kept = meet && place === (r.meetup_place || null);
+  if (meet) {
+    if (!g('reMeetDate').value || !g('reMeetTime').value)
+      return alert('공유회 날짜와 시각을 골라주세요.');
+    if (!place) return alert('공유회 장소를 적어주세요.');
+  }
+
+  const row = {
+    title, description: desc, cert_guide: guide,
+    emoji: g('reEmoji').value.trim() || '📚',
+    max_people: parseInt(g('rePeople').value || '8', 10),
+    start_date: s0, end_date: e0,
+    kkut_book_title: g('reBook').value.trim() || null,
+    quote_required: g('reQuote').checked,
+    camera_only: g('reCamera').checked,
+    meetup_required: meet,
+    meetup_at: meet ? new Date(`${g('reMeetDate').value}T${g('reMeetTime').value}`).toISOString() : null,
+    meetup_place:   place,
+    meetup_detail:  meet ? (g('reMeetDetail').value.trim() || null) : null,
+    meetup_note:    meet ? (g('reMeetNote').value.trim()   || null) : null,
+    meetup_address: kept ? (r.meetup_address ?? null) : null,
+    meetup_lat:     kept ? (r.meetup_lat ?? null) : null,
+    meetup_lng:     kept ? (r.meetup_lng ?? null) : null,
+  };
+
+  const btn = g('reSave'); btn.disabled = true; btn.textContent = '저장 중…';
+  if (LIVE) {
+    const { error } = await sb.from('routines').update(row).eq('id', reId);
+    if (error) { btn.disabled = false; btn.textContent = '저장';
+      return alert('저장하지 못했어요: ' + error.message); }
+  }
+  Object.assign(r, row);
+  btn.disabled = false; btn.textContent = '저장';
+  closeModal('routineEditOverlay');
+  render();
 }
 
 // 기업 이름은 약속이 오간 뒤에야 붙는 것이라 끗짱이 못 적는다.
