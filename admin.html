@@ -201,7 +201,11 @@ tr:hover td { background:#fcfcfd; }
 @media (max-width:640px) { .rp-grid { grid-template-columns:repeat(2,1fr); } }
 
 /* 끗짱 승인 */
-.kk { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:17px 18px; margin-bottom:13px; }
+/* 신청서 한 장이 화면을 다 먹었다. 넓으면 둘씩 세운다 —
+   창이 좁아지면 저절로 한 줄로 돌아간다 */
+.kk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:13px; }
+.kk { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:17px 18px; }
+.kk-grid .kk { margin-bottom:0; }
 .kk-h { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .kk-n { font-size:15.5px; font-weight:700; }
 .kk-m { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
@@ -789,7 +793,13 @@ function vqCard(r) {
         ${r.email ? chip('✉', r.email) : ''}
         ${r.phone ? chip('📱', phoneKo(r.phone)) : `<span class="muted" style="font-size:11.5px;padding:4px 0;">번호 없음</span>`}
       </div>
-      <div class="vq-when">${when(r)}</div>
+      <div class="vq-when">${when(r)}${(() => {
+        const pt = (DB.points || {})[r.user_id];
+        if (!pt || adult) return '';
+        return ` · <b>${won(pt.points)}P</b>`
+          + (pt.remain ? ` · 교환권 <b>${pt.remain}장</b>` : '')
+          + (pt.used ? ` <span class="muted">(${pt.used}장 썼어요)</span>` : '');
+      })()}</div>
     </div>
     <div class="vq-b">
       <span class="vq-st st-${st.key}">${st.label}</span>
@@ -1864,9 +1874,10 @@ function viewKkut() {
       <b>14세부터</b> 신청할 수 있고 그 밖의 조건은 없어요.
       소속·나이·지원동기를 보고 판단해 주세요.</div></div>
   </div>
-  ${wait.length ? wait.map(card).join('') : `<div class="empty">심사를 기다리는 신청이 없어요.</div>`}
+  ${wait.length ? `<div class="kk-grid">${wait.map(card).join('')}</div>`
+    : `<div class="empty">심사를 기다리는 신청이 없어요.</div>`}
   ${done.length ? `<div class="panel-t" style="margin:26px 0 12px;font-size:14px;">지난 심사 ${done.length}건</div>
-    ${done.map(card).join('')}` : ''}`;
+    <div class="kk-grid">${done.map(card).join('')}</div>` : ''}`;
 }
 
 async function decideKkut(userId, approve) {
@@ -2481,6 +2492,13 @@ async function loadLive() {
     sb.rpc('verify_queue'),
   ]);
   DB.verify   = verify.data || [];
+
+  // 포인트는 사람마다 묻지 않고 한 번에 받는다(71번). 함수가 아직 없는
+  // 프로젝트에서도 화면은 그대로 떠야 하니 조용히 비워 둔다
+  DB.points = {};
+  const pts = await sb.rpc('dokseo_points_all');
+  if (pts.error) console.warn('포인트 목록', pts.error.message);
+  else (pts.data || []).forEach(x => DB.points[x.user_id] = x);
   DB.settings = settings.data || DB.settings;
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];
