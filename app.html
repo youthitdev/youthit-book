@@ -599,6 +599,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .r-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
 .r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
+/* 공유회가 있는 루틴은 몸이 가야 한다. 고르기 전에 보여야 하고,
+   어디로 가야 하는지가 같이 보여야 한다 */
+.r-meet { display:inline-flex; align-items:center; gap:4px; margin-top:7px;
+  padding:3px 8px; border-radius:7px; background:#FBF3E4; border:1px solid #EFDFBE;
+  font-size:10.5px; font-weight:700; color:#8A5A16;
+  max-width:100%; overflow:hidden; white-space:nowrap; }
+.r-meet span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .r-tags { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:8px; }
 .tag { font-size:11px; font-weight:600; color:var(--ink-3); background:var(--bg);
        padding:3px 8px; border-radius:8px; white-space:nowrap; }
@@ -1654,6 +1661,17 @@ function fillGu(id, sido, picked) {
   el.classList.toggle('ph', !el.value);
 }
 
+// 카카오는 「강원특별자치도 강릉시 강릉대로 217」처럼 길게 준다.
+// 책방·프로필과 같은 「강원 강릉시」 모양으로 줄인다.
+// 시·군·구가 아니면(세종처럼 바로 길 이름이 오면) 시·도만 남긴다
+const shortRegion = addr => {
+  const p = String(addr || '').trim().split(/\s+/);
+  if (!p[0]) return '';
+  const sido = SIDO.find(v => p[0].startsWith(v)) || '';
+  if (!sido) return '';
+  return /[시군구]$/.test(p[1] || '') ? `${sido} ${p[1]}` : sido;
+};
+
 // 저장은 '서울 성북구' 한 줄로. 책방의 region 과 같은 모양이어야 한다
 const joinRegion = (sido, gu) => [String(sido||'').trim(), String(gu||'').trim()].filter(Boolean).join(' ');
 const splitRegion = r => {
@@ -2652,6 +2670,10 @@ function routineCard(r) {
       <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${lead ? `<div class="r-lead">🤝 ${esc(lead)}</div>` : ''}
       <div class="r-meta">${per}${dd ? ` · <b>${dd}</b>` : ''}</div>
+      ${needsMeet(r) ? (() => {
+        const g = shortRegion(r.meetup_address);
+        return `<div class="r-meet">📍<span>공유회${g ? ` · ${esc(g)}` : ''}</span></div>`;
+      })() : ''}
       ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
       ${routineTags(r).length ? `<div class="r-tags">
         ${routineTags(r).map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
