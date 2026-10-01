@@ -8,14 +8,26 @@
 // 【왜 로그인을 요구하나】
 //   publishable 키는 app.html 에 적혀 있다. 그것만으로 열어두면 아무나
 //   우리 카카오 할당량을 쓸 수 있다. 실제 로그인한 사람만 통과시킨다.
-import { createClient } from "npm:@supabase/supabase-js@2";
-
 const KAKAO = "https://dapi.kakao.com/v3/search/book";
 
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-);
+// 【왜 supabase-js 를 안 쓰나】
+//   예전에는 service_role 키로 getUser(token) 을 불러 확인했다. 그런데 프로젝트가
+//   새 API 키(sb_publishable_…)로 옮겨가면서 옛 service_role 키가 막히자,
+//   로그인한 사람까지 전부 403 이 됐다. 검색이 통째로 멈췄다.
+//
+//   서명 검사는 게이트웨이가 이미 한다(verify_jwt). 여기서 가릴 것은
+//   「사람의 토큰인가, 그냥 공개 키인가」뿐이다. 공개 키는 JWT 가 아니라
+//   아래 해독에서 걸린다. 키가 또 바뀌어도 이 문은 안 닫힌다.
+const isUser = (req: Request): boolean => {
+  const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+  const part = jwt.split(".")[1];
+  if (!part) return false;
+  try {
+    const b64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const p = JSON.parse(atob(b64 + "=".repeat((4 - b64.length % 4) % 4)));
+    return p.role === "authenticated" && !!p.sub;
+  } catch { return false; }
+};
 
 // app.html 은 github.io 에서 돈다. 다른 도메인이라 CORS 헤더가 없으면 막힌다
 const cors = {
@@ -43,9 +55,7 @@ Deno.serve(async (req) => {
   // 키를 아직 안 넣었어도 앱이 멈추면 안 된다. 빈 목록으로 조용히 돌려보낸다
   if (!key) return json(200, { books: [], note: "KAKAO_REST_KEY 미설정" });
 
-  const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
-  const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
-  if (authErr || !user) return json(403, { error: "로그인이 필요해요" });
+  if (!isUser(req)) return json(403, { error: "로그인이 필요해요" });
 
   let b: { q?: string };
   try { b = await req.json(); } catch { return json(400, { error: "JSON 본문이 필요해요" }); }
