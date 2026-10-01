@@ -350,8 +350,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 오늘 하는 루틴 — 홈 맨 위 주인공 */
 .tcard { background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:12px; }
 .tc-b { padding:14px 15px 15px; }
-.tc-t { font-size:16px; font-weight:800; letter-spacing:-.4px;
+/* 눌러서 루틴 화면으로. 참여하거나 맡은 뒤에는 목록에서 빠지기 때문에
+   여기서 못 들어가면 끗짱 소개도, 공유회 길찾기도, 루틴 수정도 길이 끊긴다 */
+.tc-t { font-size:16px; font-weight:800; letter-spacing:-.4px; cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tc-t i { font-size:15px; color:var(--ink-3); vertical-align:-2px; margin-left:1px; }
+.tc-t:active { opacity:.6; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
 /* 청소년 확인 */
@@ -2728,7 +2732,7 @@ function todayCard(r) {
   return `<div class="tcard">
     <div class="tc-b">
       <div class="tc-hd">
-        <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+        <div class="tc-t" onclick="openRoutine(${r.id})">${r.emoji||'📚'} ${esc(r.title)}<i class="ti ti-chevron-right"></i></div>
         ${isShared(r)
           ? (leadsIt(r) && !routineEnded(r)
               ? `<button class="tc-add" onclick="event.stopPropagation();openPost(${r.id})">오늘 글</button>` : '')
@@ -2807,7 +2811,7 @@ function kkutTodayCard(r) {
   return `<div class="tcard">
     <div class="tc-b">
       <div class="tc-hd">
-        <div class="tc-t">${r.emoji||'📚'} ${esc(r.title)}</div>
+        <div class="tc-t" onclick="openRoutine(${r.id})">${r.emoji||'📚'} ${esc(r.title)}<i class="ti ti-chevron-right"></i></div>
         ${lead}
       </div>
       ${waiting ? `<div class="k-wait${r.reject_reason ? ' bad' : ''}">
