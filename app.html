@@ -3696,7 +3696,7 @@ function verifyGate() {
     </div>
   </div>
   <button class="btn btn-primary" style="margin-top:10px;"
-    onclick="closeOv('ovRoutine');openVerify()">청소년 확인하러 가기</button>`;
+    onclick="goFromOv('ovRoutine', () => openVerify())">청소년 확인하러 가기</button>`;
 }
 
 // 끗짱이 함께한 날에 유스보이스가 낸 책값.
@@ -4212,17 +4212,17 @@ function openRoutine(id) {
         </div>
       </div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
-    ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');openMake(${r.id})">루틴 수정하기</button>` : ''}
+    ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="goFromOv('ovRoutine', () => openMake(${r.id}))">루틴 수정하기</button>` : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
       : p && p.status==='approved' ? (
           r.status === 'done'
             ? `<div class="card" style="text-align:center;color:var(--ink-3);">끝난 루틴이에요. 함께해줘서 고마워요 🌱</div>`
             : !didToday(r.id)
-              ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');openCert(${r.id})">오늘 인증하기</button>`
+              ? `<button class="btn btn-primary" onclick="goFromOv('ovRoutine', () => openCert(${r.id}))">오늘 인증하기</button>`
               : leftToday(r.id).length
                 ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>
-                   <button class="btn btn-line" onclick="closeOv('ovRoutine');openCert(${r.id}, '${esc(leftToday(r.id)[0].title).replace(/'/g, "\\'")}')">
+                   <button class="btn btn-line" onclick="goFromOv('ovRoutine', () => openCert(${r.id}, '${esc(leftToday(r.id)[0].title).replace(/'/g, "\\'")}'))">
                      「${esc(leftToday(r.id)[0].title)}」도 인증하기</button>`
                 : `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;">오늘 인증을 마쳤어요 🌱</div>
                    <button class="btn btn-line" onclick="closeOv('ovRoutine');go('feed')">다른 사람 기록 보기</button>`)
@@ -5702,8 +5702,36 @@ window.addEventListener('popstate', () => {
   }
 });
 
-function openOv(id) { showLayer(id); }
+function openOv(id) {
+  // 바꿔 끼우는 중이면 깊이를 그대로 둔다
+  if (swapFrom) { const f = swapFrom; swapFrom = null; return swapOv(f, id); }
+  showLayer(id);
+}
 function closeOv(id) { hideLayer(id); }
+
+// ── 겹친 화면 바꿔 끼우기 ──────────────────────────────
+// 【무엇이 잘못됐나】 「루틴 수정하기」는 closeOv('ovRoutine') 뒤에
+//   openMake() 를 불렀다. history.back() 은 바로 돌지 않고 줄을 서는데
+//   그 사이에 pushState 가 끼어들어, 뒤늦게 돈 back 이 방금 연 화면까지
+//   걷어냈다. 수정 화면이 열렸다가 홈으로 떨어졌다.
+//
+// 【어떻게 고치나】 닫고 여는 대신 자리를 바꾼다. 기록 깊이가 그대로라
+//   엇갈릴 게 없다. 뒤로가기 한 번이면 둘 다 닫힌다 — 어차피 같은 걸음이다.
+let swapFrom = null;
+
+function swapOv(from, to) {
+  const f = $(from); if (f) f.classList.remove('on');
+  const i = layers.lastIndexOf(from);
+  if (i >= 0) layers[i] = to; else layers.push(to);
+  const t = $(to); if (t) t.classList.add('on');
+  history.replaceState({ layers: layers.length }, '');
+}
+
+// 열다 말고 돌아가는 길(루틴을 못 찾는다든지)이 있어도 깃발이 안 남게 한다
+function goFromOv(from, fn) {
+  swapFrom = from;
+  try { fn(); } finally { swapFrom = null; }
+}
 const isOvOpen = id => $(id).classList.contains('on');
 
 // render() 는 탭 화면만 다시 그린다. 오버레이가 열려 있으면 거기도 손봐야
