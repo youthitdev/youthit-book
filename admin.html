@@ -85,9 +85,10 @@ tr:hover td { background:#fcfcfd; }
 .btn-danger { background:#fff; border:1px solid #EDC6BC; color:#8E3527; }
 .r-sel { border:1px solid var(--line); border-radius:9px; padding:6px 8px; font-size:12.5px;
          font-family:inherit; font-weight:700; cursor:pointer; }
-.r-sel.s-recruit { background:#fff4e5; color:#a86400; border-color:#f6e2c2; }
-.r-sel.s-active  { background:#eef0ff; color:var(--blue); border-color:#d9ddff; }
-.r-sel.s-done    { background:#f0f0f2; color:var(--ink-3); }
+/* background 한 줄로 쓰면 화살표 그림까지 같이 지워진다. 색만 바꾼다 */
+.r-sel.s-recruit { background-color:#fff4e5; color:#a86400; border-color:#f6e2c2; }
+.r-sel.s-active  { background-color:#eef0ff; color:var(--blue); border-color:#d9ddff; }
+.r-sel.s-done    { background-color:#f0f0f2; color:var(--ink-3); }
 .btn-danger:disabled { color:var(--ink-3); border-color:var(--line); cursor:not-allowed; }
 .empty { padding:44px 20px; text-align:center; color:var(--ink-3); font-size:13.5px; }
 /* ── 월간 보고 ── */
@@ -238,6 +239,12 @@ tr:hover td { background:#fcfcfd; }
 .label { font-size:12.5px; font-weight:700; margin-bottom:6px; }
 .label span { color:var(--pink); }
 input, select, textarea { width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px; font-size:14px; font-family:inherit; color:var(--ink); background:#fff; }
+/* 기본 화살표는 칸 맨 끝에 붙어 글자와 너무 멀다. 앱과 같은 모양으로 그린다 */
+select { -webkit-appearance:none; appearance:none; padding-right:40px;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238d939e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat; background-position:right 13px center; background-size:18px; }
+/* 표 안의 상태 칸은 작다. 화살표도 그만큼 당겨 둔다 */
+.r-sel { padding-right:27px; background-position:right 8px center; background-size:15px; }
 input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink-3); }
 .hint { font-size:11.5px; color:var(--ink-3); margin-top:5px; }
 .target { background:#fafafa; border-radius:12px; padding:13px 15px; margin-bottom:18px; font-size:13px; }
@@ -1497,6 +1504,16 @@ function leadOptions(picked) {
   return list;
 }
 
+// 끗짱이 늘면 목록에서 찾기 어렵다. 치는 대로 걸러낸다 —
+// 고른 사람은 걸러져도 남긴다. 안 그러면 저장할 때 빈 값이 된다
+function leadFilter() {
+  const q = (document.getElementById('reLeadFind')?.value || '').trim().toLowerCase();
+  const sel = document.getElementById('reLead'); if (!sel) return;
+  [...sel.options].forEach(o => {
+    o.hidden = !!(q && o.value && o.value !== sel.value && !o.textContent.toLowerCase().includes(q));
+  });
+}
+
 function openRoutineEdit(id) {
   const isNew = id == null;
   const r = isNew ? {} : (DB.routines || []).find(x => x.id === id);
@@ -1519,6 +1536,8 @@ function openRoutineEdit(id) {
 
     <div class="field">
       <div class="label">끗짱 <span>*</span></div>
+      ${leads.length > 6 ? `<input type="text" id="reLeadFind" placeholder="이름·소속으로 걸러보기"
+        autocomplete="off" oninput="leadFilter()" style="margin-bottom:8px;">` : ''}
       <select id="reLead">
         <option value="">고르세요</option>
         ${leads.map(l => `<option value="${esc(l.id)}"${l.id === r.led_by ? ' selected' : ''}>${
