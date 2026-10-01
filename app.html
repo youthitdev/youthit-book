@@ -1307,7 +1307,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <div class="field-label">언제 모이나요 <span class="req">* 필수</span></div>
         <div style="display:flex;gap:10px;">
           <input type="date" id="mMeetDate" style="flex:1;min-width:0;">
-          <input type="time" id="mMeetTime" step="1800" style="width:126px;flex:none;">
+          <!-- 「오후 02:00」에 시계 아이콘까지 들어가야 한다. 126px 에서는 분이 잘렸다 -->
+          <input type="time" id="mMeetTime" step="1800" style="width:150px;flex:none;">
         </div>
         <div class="field-label" style="margin-top:14px;">어디서 <span class="req">* 필수</span></div>
         <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 서울숲"
