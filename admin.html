@@ -464,6 +464,13 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <input type="text" id="sPhone" placeholder="예) 033-000-0000">
       </div>
       <div class="field">
+        <div class="label">확인 번호</div>
+        <input type="text" id="sCode" maxlength="4" inputmode="numeric"
+               placeholder="네 자리" style="letter-spacing:4px;font-weight:800;">
+        <div class="hint">책방이 아이 폰에 누르는 번호예요. 등록하면 저절로 하나 생기고,
+          새어 나갔다 싶으면 여기서 바꾸세요. 비우면 번호 없이 운영돼요.</div>
+      </div>
+      <div class="field">
         <div class="label">인스타그램 · 홈페이지</div>
         <input type="url" id="sLink" placeholder="https://">
       </div>
@@ -1997,13 +2004,16 @@ function viewStores() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">파트너 서점</div>
-    <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.</div></div>
+    <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.<br>
+      <b>확인 번호</b>는 책방이 그 자리에서 아이 폰에 누르는 네 자리예요. 청소년에게는 안 보입니다.</div></div>
     <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>서점</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
+    <tr><th>서점</th><th class="num">확인 번호</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(s => `<tr>
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}</td>
+      <td class="num"><button class="vq-quiet" style="letter-spacing:2px;font-weight:800;"
+          onclick="vqCopy(this, '${esc(s.code || '')}')">${esc(s.code || '—')}</button></td>
       <td class="muted">${esc(s.address) || '-'}</td>
       <td class="muted">${esc(s.hours) || '-'}${s.closed_days ? `<div>${esc(s.closed_days)}</div>` : ''}</td>
       <td class="num">${(DB.purchaseCounts || {})[s.id] || 0}건</td>
@@ -2017,12 +2027,30 @@ let storeEditId = null;
 const STORE_FIELDS = { sName:'name', sRegion:'region', sAddress:'address', sHours:'hours',
                        sClosed:'closed_days', sPhone:'phone', sLink:'link', sIntro:'intro' };
 
+// 번호는 bookstores 가 아니라 bookstore_codes 에 있다. 따로 넣고 뺀다
+async function saveStoreCode(id) {
+  const v = (document.getElementById('sCode').value || '').replace(/[^0-9]/g, '').slice(0, 4);
+  const now = (DB.bookstores || []).find(b => b.id === id)?.code || '';
+  if (v === now) return null;
+  if (v && v.length !== 4) return '확인 번호는 네 자리예요.';
+  const q = v
+    ? await sb.from('bookstore_codes').upsert({ bookstore_id: id, code: v, updated_at: new Date().toISOString() })
+    : await sb.from('bookstore_codes').delete().eq('bookstore_id', id);
+  if (q.error) return q.error.message.includes('duplicate')
+    ? '다른 책방이 쓰는 번호예요.' : q.error.message;
+  const b = (DB.bookstores || []).find(x => x.id === id); if (b) b.code = v || null;
+  return null;
+}
+
 function openStore(id) {
   storeEditId = id || null;
   const s = id ? (DB.bookstores || []).find(x => x.id === id) : null;
   document.getElementById('storeModalTitle').textContent = s ? '서점 수정' : '서점 등록';
   Object.entries(STORE_FIELDS).forEach(([el, key]) => document.getElementById(el).value = s ? (s[key] || '') : '');
   document.getElementById('sActive').checked = s ? !!s.active : true;
+  document.getElementById('sCode').value = s ? (s.code || '') : '';
+  // 새 책방은 아직 id 가 없어 번호를 못 붙인다. 저장한 뒤 다시 열어 넣는다
+  document.getElementById('sCode').disabled = !s;
 
   // 거래가 한 건이라도 있으면 지울 수 없다.
   // book_purchases.bookstore_id 가 ON DELETE SET NULL 이라, 지우면 지난 정산 기록에서
@@ -2113,6 +2141,10 @@ async function submitStore() {
       : sb.from('bookstores').insert(payload);
     const { error } = await q;
     if (error) { alert('저장하지 못했어요: ' + error.message); return; }
+    if (storeEditId) {
+      const bad = await saveStoreCode(storeEditId);
+      if (bad) { alert('확인 번호는 저장하지 못했어요.\n\n' + bad); }
+    }
     await loadLive();
   } else if (storeEditId) {
     Object.assign((DB.bookstores || []).find(x => x.id === storeEditId), payload);
@@ -2129,14 +2161,16 @@ function viewPending() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
-    <div class="panel-d">교환권으로 책을 받아온 건이에요. 서점이 보낸 영수증과 금액을 확인해 확정하세요.</div></div>
+    <div class="panel-d">교환권으로 책을 받아온 건이에요. 서점이 보낸 영수증과 금액을 확인해 확정하세요.<br>
+      <b>번호 없이</b>로 적힌 건은 책방이 그 자리에서 번호를 못 눌렀다는 뜻이에요. 영수증과 한 번 더 맞춰보세요.</div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b></td>
-      <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}</div></td>
+      <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}
+        ${g.code_ok ? '' : '<span class="chip c-wait">번호 없이</span>'}</div></td>
       <td class="num">${fmtDate(g.created_at)}</td>
       <td>${sharePhotoCell(g)}</td>
       <td class="right"><button class="btn btn-pink" onclick="openSettle(${g.id})">금액 입력</button></td>
@@ -2513,6 +2547,15 @@ async function loadLive() {
   DB.sponsors = sponsors.data || [];
   DB.charges  = charges.data || [];
   DB.bookstores = stores.data || [];
+  // 번호는 운영진만 읽는 표에 따로 있다(73번). 아직 없는 프로젝트에서도
+  // 화면은 그대로 떠야 하니 조용히 넘어간다
+  const codes = await sb.from('bookstore_codes').select('bookstore_id, code');
+  if (codes.error) console.warn('책방 번호', codes.error.message);
+  else {
+    const byId = {};
+    (codes.data || []).forEach(c => byId[c.bookstore_id] = c.code);
+    DB.bookstores.forEach(b => b.code = byId[b.id] || null);
+  }
   DB.quotes = quotes.data || [];
 
   const purchaseUserIds = [...new Set((purchases.data || []).map(p => p.user_id))];
@@ -2528,6 +2571,7 @@ async function loadLive() {
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, paid_at: p.paid_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
+    code_ok: !!p.code_ok,
     receipt: p.receipt_url || null,
     allocs: p.consumption_allocations || [],
   }));

@@ -274,6 +274,18 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .c-active { background:#EAF3DE; color:#3B6D11; }
 
 /* 읽는 책 고르기 */
+/* 「책 받았어요」의 책방 확인. 번호는 아이가 아니라 책방이 누른다 */
+.buy-hand { background:#F2EEE6; border-radius:12px; padding:12px 14px; margin-bottom:9px;
+  font-size:13.5px; line-height:1.6; }
+.buy-hand span { display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
+#buyCode { text-align:center; letter-spacing:12px; font-size:22px; font-weight:800;
+  padding-left:12px; }
+.buy-msg { font-size:12.5px; font-weight:700; margin-top:7px; min-height:18px; }
+.buy-msg.ok { color:var(--green-d); }
+.buy-msg.no { color:#8E3527; }
+.buy-skip { background:none; border:none; padding:0; font-family:inherit;
+  font-size:12px; font-weight:700; color:var(--ink-3); text-decoration:underline;
+  cursor:pointer; margin-top:10px; }
 .bk-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
 .bk-chip { display:flex; align-items:center; gap:6px; border:1px solid var(--line);
   background:#fff; border-radius:99px; padding:5px 12px 5px 5px; font-size:12.5px;
@@ -1376,9 +1388,19 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div><div class="s">책 받았어요</div><div class="t" id="ovBuyTitle"></div></div></div>
   <div class="ov-b">
     <div id="buyBal"></div>
-    <div>
+    <div id="buyCodeWrap">
+      <div class="field-label">책방 확인 <span class="req">* 필수</span></div>
+      <div class="buy-hand">📱 <b>책방 사장님께 폰을 건네주세요</b><span>네 자리를 눌러주시면 돼요</span></div>
+      <input type="password" id="buyCode" inputmode="numeric" maxlength="4" autocomplete="off"
+             placeholder="● ● ● ●" oninput="buyCodeIn()">
+      <div id="buyCodeMsg" class="buy-msg"></div>
+      <button type="button" class="buy-skip" onclick="buyNoCode()">책방이 번호를 못 눌렀어요</button>
+    </div>
+    <div id="buyPickWrap" style="display:none;">
       <div class="field-label">어느 책방에서 받았나요? <span class="req">* 필수</span></div>
       <select id="buyStore" onchange="checkBuy()"></select>
+      <div class="hint">번호 없이 기록하면 운영진이 영수증과 한 번 맞춰봐요.
+        <button type="button" class="buy-skip" style="margin-top:6px;" onclick="buyUseCode()">번호로 다시 할래요</button></div>
     </div>
     <div style="background:#F2EEE6;border-radius:12px;padding:13px 15px;">
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
@@ -5695,7 +5717,50 @@ function openBuy(rid) {
     state.stores.filter(s=>s.active).map(s =>
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
   $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = ''; $('buyShare').checked = false;
+  buyUseCode();
   checkBuy(); openOv('ovBuy');
+}
+
+// 번호로 할지, 목록에서 고를지. 기본은 번호다
+let buyByCode = true, buyCodeStore = null, buyCodeT = null;
+
+function buyUseCode() {
+  buyByCode = true; buyCodeStore = null;
+  $('buyCodeWrap').style.display = ''; $('buyPickWrap').style.display = 'none';
+  $('buyCode').value = ''; $('buyCodeMsg').textContent = ''; $('buyCodeMsg').className = 'buy-msg';
+  checkBuy();
+}
+
+function buyNoCode() {
+  buyByCode = false; buyCodeStore = null;
+  $('buyCodeWrap').style.display = 'none'; $('buyPickWrap').style.display = '';
+  $('buyStore').value = '';
+  checkBuy();
+}
+
+// 네 자리가 다 차면 그 자리에서 책방을 찾아 보여준다 —
+// 사장님이 누르고 나서 「맞게 들어갔나」를 바로 알 수 있어야 한다
+function buyCodeIn() {
+  const el = $('buyCode');
+  el.value = el.value.replace(/[^0-9]/g, '').slice(0, 4);
+  buyCodeStore = null; checkBuy();
+  const msg = $('buyCodeMsg');
+  clearTimeout(buyCodeT);
+  if (el.value.length < 4) { msg.textContent = ''; msg.className = 'buy-msg'; return; }
+  msg.textContent = '찾는 중…'; msg.className = 'buy-msg';
+  buyCodeT = setTimeout(async () => {
+    const code = el.value;
+    const { data, error } = await sb.rpc('bookstore_by_code', { p_code: code });
+    if ($('buyCode').value !== code) return;
+    const hit = Array.isArray(data) ? data[0] : data;
+    if (error || !hit) {
+      msg.textContent = '그런 번호가 없어요'; msg.className = 'buy-msg no';
+      buyCodeStore = null; checkBuy(); return;
+    }
+    buyCodeStore = hit;
+    msg.textContent = `${hit.name} 맞나요?`; msg.className = 'buy-msg ok';
+    checkBuy();
+  }, 250);
 }
 async function pickBuyPhoto(e) {
   const f = e.target.files[0]; if (!f) return;
@@ -5705,7 +5770,10 @@ async function pickBuyPhoto(e) {
   } catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
   checkBuy();
 }
-function checkBuy() { $('buySubmit').disabled = !(buyPhoto && $('buyStore').value); }
+function checkBuy() {
+  const storeOk = buyByCode ? !!buyCodeStore : !!$('buyStore').value;
+  $('buySubmit').disabled = !(buyPhoto && storeOk);
+}
 
 async function submitBuy() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
@@ -5725,10 +5793,13 @@ async function submitBuy() {
     if (!up2) publicPath = sb.storage.from('cert-photos').getPublicUrl(pp).data.publicUrl;
   }
 
-  const { error } = await sb.from('book_purchases').insert({
-    user_id: me.id, routine_id: buyRid,
-    bookstore_id: parseInt($('buyStore').value,10), proof_photo_url: path,
-    book_photo_url: publicPath,
+  // 직접 넣지 않고 서버 문을 거친다. 번호를 눌렀는지는 서버만 적을 수 있다
+  const { error } = await sb.rpc('redeem_voucher', {
+    p_routine_id: buyRid,
+    p_code:     buyByCode ? $('buyCode').value : null,
+    p_store_id: buyByCode ? null : parseInt($('buyStore').value, 10),
+    p_proof:    path,
+    p_public:   publicPath,
   });
   btn.disabled = false; btn.textContent = '기록하기';
   if (error) return toast('기록하지 못했어요: ' + error.message);
