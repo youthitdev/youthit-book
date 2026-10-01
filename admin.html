@@ -56,6 +56,8 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .tbl { overflow-x:auto; }
 /* 겹치는 창 안의 표. 기본 min-width:720px 이라 그대로 두면 오른쪽이 잘린다 */
 .tbl.narrow table { min-width:0; }
+/* 루틴 표는 열이 아홉이다. 기본 720px 로는 칸마다 눌린다 */
+.tbl.wide table { min-width:980px; }
 .tbl.narrow th, .tbl.narrow td { padding-left:13px; padding-right:13px; }
 table { width:100%; min-width:720px; border-collapse:collapse; }
 th { text-align:left; font-size:11.5px; color:var(--ink-3); font-weight:600; padding:10px 20px; background:#fafafa; border-bottom:1px solid var(--line); }
@@ -255,8 +257,10 @@ input, select, textarea { width:100%; padding:11px 13px; border:1px solid var(--
 select { -webkit-appearance:none; appearance:none; padding-right:40px;
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%238d939e' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M6 9l6 6 6-6'/></svg>");
   background-repeat:no-repeat; background-position:right 13px center; background-size:18px; }
-/* 표 안의 상태 칸은 작다. 화살표도 그만큼 당겨 둔다 */
-.r-sel { padding-right:27px; background-position:right 8px center; background-size:15px; }
+/* 표 안의 상태 칸은 작다. 화살표도 그만큼 당겨 둔다.
+   칸이 눌려도 글자가 잘리지 않게 제 폭은 지킨다 */
+.r-sel { width:auto; min-width:max-content; white-space:nowrap;
+  padding-right:28px; background-position:right 9px center; background-size:15px; }
 input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink-3); }
 .hint { font-size:11.5px; color:var(--ink-3); margin-top:5px; }
 .target { background:#fafafa; border-radius:12px; padding:13px 15px; margin-bottom:18px; font-size:13px; }
@@ -1353,7 +1357,7 @@ function viewRoutines() {
     </div>`).join('')}
   </div>` : ''}
 
-  ${rows.length ? `<div class="tbl"><table>
+  ${rows.length ? `<div class="tbl wide"><table>
     <tr><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>상태</th><th>함께하는 책방</th><th>후원 기업</th><th class="right"></th></tr>
     ${rows.map(r => `<tr>
       <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
