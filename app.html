@@ -677,21 +677,25 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kind button.on:disabled { opacity:1; }
 
 /* 오프라인 공유회 */
-.meet { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:14px; padding:14px 16px; }
+.meet { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:14px; padding:12px 14px; }
 .meet.done { background:var(--green-l); border-color:#CFE6A8; }
 .meet-h { display:flex; align-items:center; gap:8px; }
 .meet-h b { flex:1; font-size:13px; font-weight:800; color:var(--ink); }
 .meet-h i { font-style:normal; font-size:11.5px; font-weight:700; color:var(--green-d); }
-.meet-w { font-size:16px; font-weight:800; letter-spacing:-.3px; margin-top:6px; }
-.meet-p { font-size:13.5px; color:var(--ink-2); margin-top:4px; }
-.meet-a { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
-.meet-d { font-size:13px; font-weight:700; color:var(--ink-2); margin-top:3px; }
-.meet-go { display:inline-flex; align-items:center; gap:5px; margin-top:9px;
-  padding:7px 13px; border-radius:999px; background:#fff; border:1px solid #E3D6B7;
+/* 와야 책을 받는다는 걸 글로만 말하면 맨 아래 한 줄로 묻힌다. 제목 옆에 세운다 */
+.meet-h em { font-style:normal; font-size:10.5px; font-weight:800; padding:2px 7px;
+  border-radius:99px; background:#E8A33D; color:#3a2a0c; }
+.meet-w { font-size:15.5px; font-weight:800; letter-spacing:-.3px; margin-top:5px; }
+/* 장소·주소·층을 세 줄로 쌓으면 카드가 길어진다. 한 덩이로 묶고 길찾기를 옆에 */
+.meet-row { display:flex; align-items:center; gap:10px; margin-top:5px; }
+.meet-p { flex:1; min-width:0; font-size:13.5px; color:var(--ink-2); }
+.meet-p span { display:block; font-size:12px; color:var(--ink-3); margin-top:1px; }
+.meet-go { flex:none; display:inline-flex; align-items:center; gap:4px;
+  padding:6px 12px; border-radius:999px; background:#fff; border:1px solid #E3D6B7;
   font-size:12.5px; font-weight:700; color:var(--ink-2); text-decoration:none; }
 .meet-go:active { background:#F6EEDC; }
-.meet-n { font-size:12.5px; color:var(--ink-3); margin-top:6px; line-height:1.65; white-space:pre-wrap; }
-.meet-f { font-size:12.5px; color:var(--ink-2); margin-top:9px; padding-top:9px;
+.meet-n { font-size:12.5px; color:var(--ink-3); margin-top:6px; line-height:1.6; white-space:pre-wrap; }
+.meet-f { font-size:12.5px; color:var(--ink-2); margin-top:8px; padding-top:8px;
   border-top:1px solid rgba(0,0,0,.07); line-height:1.6; }
 .meet-f b { color:var(--ink); }
 /* 끗짱의 참석 명단 */
@@ -5176,18 +5180,20 @@ const meetWhen = r => {
 function meetCard(r) {
   if (!needsMeet(r)) return '';
   const met = myMet(r.id);
+  const where = [r.meetup_place, r.meetup_detail].filter(Boolean).map(esc).join(' ');
   return `<div class="meet${met ? ' done' : ''}">
-      <div class="meet-h"><b>🤝 함께 나누는 자리</b>${met ? '<i>다녀왔어요</i>' : ''}</div>
+      <div class="meet-h"><b>🤝 공유회</b>${met ? '<i>다녀왔어요</i>' : '<em>필수</em>'}</div>
       <div class="meet-w">${meetWhen(r)}</div>
-      ${r.meetup_place ? `<div class="meet-p">📍 ${esc(r.meetup_place)}</div>` : ''}
-      ${r.meetup_address ? `<div class="meet-a">${esc(r.meetup_address)}</div>` : ''}
-      ${r.meetup_detail ? `<div class="meet-d">${esc(r.meetup_detail)}</div>` : ''}
-      ${meetMapUrl(r) ? `<div><a class="meet-go" href="${meetMapUrl(r)}"
-        target="_blank" rel="noopener">🗺️ 길찾기</a></div>` : ''}
+      ${where || r.meetup_address ? `<div class="meet-row">
+        <div class="meet-p">${where ? `📍 ${where}` : '📍 장소는 곧 알려드려요'}
+          ${r.meetup_address ? `<span>${esc(r.meetup_address)}</span>` : ''}</div>
+        ${meetMapUrl(r) ? `<a class="meet-go" href="${meetMapUrl(r)}"
+          target="_blank" rel="noopener">🗺️ 길찾기</a>` : ''}
+      </div>` : ''}
       ${r.meetup_note ? `<div class="meet-n">${esc(r.meetup_note)}</div>` : ''}
       <div class="meet-f">${met
         ? '교환권을 쓸 수 있어요.'
-        : '이 루틴은 <b>공유회에 오면</b> 모은 포인트로 책을 받을 수 있어요.'}</div>
+        : '이 자리에 <b>와야</b> 모은 포인트로 책을 받아요.'}</div>
     </div>`;
 }
 
