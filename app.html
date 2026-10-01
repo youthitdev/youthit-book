@@ -704,6 +704,16 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   padding:6px 12px; border-radius:999px; background:#fff; border:1px solid #E3D6B7;
   font-size:12.5px; font-weight:700; color:var(--ink-2); text-decoration:none; }
 .meet-go:active { background:#F6EEDC; }
+/* 「확인했어요」 — 읽었다는 표시이자 간다는 약속. 안 눌러도 책은 받는다 */
+.meet-ack { display:flex; align-items:center; gap:8px; width:100%; margin-top:9px;
+  padding:9px 12px; border-radius:11px; border:1px solid #E3D6B7; background:#fff;
+  font-family:inherit; font-size:13px; font-weight:700; color:var(--ink-2);
+  cursor:pointer; text-align:left; }
+.meet-ack em { font-style:normal; font-size:14px; flex:none; }
+.meet-ack i { margin-left:auto; flex:none; font-style:normal;
+  font-size:11.5px; font-weight:600; color:var(--ink-3); }
+.meet-ack.on { border-color:var(--green); background:var(--green-l); color:var(--green-d); }
+.meet-ack.on i { color:var(--green-d); }
 .meet-n { font-size:12.5px; color:var(--ink-3); margin-top:6px; line-height:1.6; white-space:pre-wrap; }
 .meet-f { font-size:12.5px; color:var(--ink-2); margin-top:8px; padding-top:8px;
   border-top:1px solid rgba(0,0,0,.07); line-height:1.6; }
@@ -5191,6 +5201,8 @@ const meetPending = () => myRoutines().some(r => needsMeet(r) && !myMet(r.id));
 // 그런 루틴은 **공유회에 와야 책을 받는다** — 읽기만 하고 안 오면 반쪽이다.
 const needsMeet = r => !!r?.meetup_required;
 const myMet     = rid => !!myPart(rid)?.met_at;
+// 「갈게요」는 본인이 누르고, 「왔어요」는 끗짱이 표시한다. 약속과 출석은 다르다
+const myAck     = rid => !!myPart(rid)?.meet_ack_at;
 
 const meetWhen = r => {
   if (!r?.meetup_at) return '날짜는 곧 알려드려요';
@@ -5215,6 +5227,12 @@ function meetCard(r) {
           target="_blank" rel="noopener">🗺️ 길찾기</a>` : ''}
       </div>` : ''}
       ${r.meetup_note ? `<div class="meet-n">${esc(r.meetup_note)}</div>` : ''}
+      ${!met && myPart(r.id)?.status === 'approved' && !routineEnded(r) ? (() => {
+        const ack = myAck(r.id);
+        return `<button class="meet-ack${ack ? ' on' : ''}" onclick="toggleAck(${r.id})">
+          <em>${ack ? '✅' : '⬜️'}</em>확인했어요
+          <i>${ack ? '다시 누르면 지워져요' : '누르면 끗짱이 알아요'}</i></button>`;
+      })() : ''}
       <div class="meet-f">${met
         ? '교환권을 쓸 수 있어요.'
         : '이 자리에 <b>와야</b> 모은 포인트로 책을 받아요.'}</div>
@@ -5227,16 +5245,32 @@ function meetRoll(r) {
   if (!needsMeet(r) || !leadsIt(r)) return '';
   const ps = partsOf(r.id).filter(p => p.status === 'approved');
   if (!ps.length) return '';
-  const n = ps.filter(p => p.met_at).length;
+  const n   = ps.filter(p => p.met_at).length;
+  const ack = ps.filter(p => p.meet_ack_at).length;
+  // 모임 전에는 몇 명이 온다고 했는지가, 모임 뒤에는 몇 명이 왔는지가 궁금하다
   return `<div class="sec-t" style="margin-top:16px;">공유회 참석 <span>${n}/${ps.length}</span></div>
+    ${ack ? `<div class="hint" style="margin:-4px 0 7px;">${ack}명이 간다고 했어요</div>` : ''}
     <div class="card" style="padding:4px 0;">
       ${ps.map(p => `<button class="met-row${p.met_at ? ' on' : ''}"
           onclick="toggleMet(${r.id},'${p.user_id}',this)">
           <em>${p.met_at ? '✅' : '⬜️'}</em>
           <b>${p.user_id === me.id ? '나' : esc(nameOf(p.user_id))}</b>
-          <i>${p.met_at ? '왔어요' : '아직'}</i></button>`).join('')}
+          <i>${p.met_at ? '왔어요' : p.meet_ack_at ? '간다고 했어요' : '아직'}</i></button>`).join('')}
     </div>
     <div class="hint" style="margin-top:7px;">체크하면 교환권을 쓸 수 있어요. 잘못 눌렀으면 다시 누르면 돼요.</div>`;
+}
+
+// 리워드 조건은 met_at 하나다. 이건 안 눌러도 책을 받는다 —
+// 서로 준비하자고 두는 표시일 뿐이다
+async function toggleAck(rid) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  const p = myPart(rid); if (!p) return;
+  const next = !p.meet_ack_at;
+  const { data, error } = await sb.rpc('ack_meetup', { p_routine_id: rid, p_ack: next });
+  if (error) return toast('표시하지 못했어요: ' + error.message);
+  p.meet_ack_at = data || null;
+  render(); refreshOpenOv(rid);
+  toast(next ? '갈게요 하고 표시했어요 🤝' : '표시를 지웠어요');
 }
 
 async function toggleMet(rid, uid, btn) {
