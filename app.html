@@ -2582,21 +2582,25 @@ function myPoints() {
   const pb  = state.settings.points_per_bookreview ?? 30;
   const pmt = state.settings.points_per_meetup ?? 50;
   if (!me) return { points:0, cert_count:0, from_cert:0, from_comment:0, from_bonus:0,
-                    from_review:0, from_meetup:0,
+                    from_review:0, from_meetup:0, lost_meetup:0,
                     next_milestone:ms[0], per, earned:0, used:0, left:0, to_next:per };
 
   // 하루에 한 번이다. 같은 날 세 권을 읽어도 그날치 한 번 — 서버
   // dokseo_points() 와 같은 식이어야 한다. 행 수를 세면 병렬독서 하는
   // 아이의 화면에만 포인트가 부풀어 보인다
   const mine = state.certs.filter(c => c.user_id === me.id);
+  // 읽은 날은 읽은 날이다. 이정표는 공유회와 상관없이 센다
   const cert_count = new Set(mine.map(c => c.cert_date)).size;
-  const perDay = {};
+  const perDay = {}, lostDay = {};
   mine.forEach(c => {
+    const r = state.routines.find(x => x.id === c.routine_id);
     const k = `${c.routine_id}|${c.cert_date}`;
-    const v = state.routines.find(r => r.id === c.routine_id)?.points_per_cert || 0;
-    perDay[k] = Math.max(perDay[k] || 0, v);
+    const v = r?.points_per_cert || 0;
+    const box = meetMissed(r) ? lostDay : perDay;
+    box[k] = Math.max(box[k] || 0, v);
   });
-  const from_cert = Object.values(perDay).reduce((n, v) => n + v, 0);
+  const from_cert   = Object.values(perDay).reduce((n, v) => n + v, 0);
+  const lost_meetup = Object.values(lostDay).reduce((n, v) => n + v, 0);
 
   // 하루 상한까지만. 자기 인증에 스스로 단 댓글은 빼고 (혼자 무한히 만들 수 있다)
   const byDay = {};
@@ -2625,7 +2629,8 @@ function myPoints() {
   // 누적을 크게 띄우면 이미 쓴 분까지 남아 있는 줄 안다
   const balance = Math.max(0, points - used * per);
   const into = balance % per;
-  return { points, balance, into, cert_count, from_cert, from_comment, from_bonus, from_review, from_meetup,
+  return { points, balance, into, cert_count, from_cert, from_comment, from_bonus, from_review,
+           from_meetup, lost_meetup,
            next_milestone, per, earned: Math.floor(points / per), used,
            left: Math.floor(balance / per), to_next: per - into };
 }
@@ -4389,7 +4394,8 @@ function openRoutine(id) {
           ${rewardBox(r)}
           ${needsMeet(r) ? `<label class="meet-agree">
             <input type="checkbox" id="apMeet" onchange="checkApply()">
-            <span>이 루틴은 <b>공유회에 참석해야</b> 책을 받아요.<br>
+            <span>이 루틴은 <b>공유회에 참석해야</b> 책을 받아요.
+              안 오면 모은 포인트가 사라져요.<br>
               ${meetWhen(r)}${r.meetup_place ? ` · ${esc(r.meetup_place)}` : ''}
               <i>갈 수 있는지 확인했어요</i></span></label>` : ''}
           <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`
@@ -5355,7 +5361,8 @@ function rewardBox(r) {
       needsMeet(r) ? `, 공유회에 다녀오면 ${won(MEET_P())}P` : ''}가 쌓여요.</li>
     ${needsMeet(r)
       ? `<li><em>공유회에 다녀와야</em> 책을 받을 수 있어요.
-           공유회 날 책방에서 바로 받아가면 돼요.</li>`
+           공유회 날 책방에서 바로 받아가면 돼요.</li>
+         <li>공유회에 <em>안 오면</em> 이 루틴에서 모은 포인트는 사라져요.</li>`
       : `<li>모으면 아무 때나 함께하는 책방에 가서 받으면 돼요.</li>`}
   </div>`;
 }
@@ -5389,6 +5396,11 @@ async function shareRoutine(rid) {
   catch { toast('링크를 복사하지 못했어요'); }
 }
 
+// 공유회 시각이 지났는데 참석 표시가 없다. 그 루틴에서 모은 건 못 쓴다.
+// 끗짱이 뒤늦게 체크하면 거짓으로 돌아오고 포인트도 같이 돌아온다
+const meetMissed = r => !!(r?.meetup_required && r.meetup_at
+  && new Date(r.meetup_at) < new Date() && !myPart(r.id)?.met_at);
+
 const needsMeet = r => !!r?.meetup_required;
 const myMet     = rid => !!myPart(rid)?.met_at;
 // 「갈게요」는 본인이 누르고, 「왔어요」는 끗짱이 표시한다. 약속과 출석은 다르다
@@ -5417,7 +5429,8 @@ function meetCard(r) {
           target="_blank" rel="noopener">🗺️ 길찾기</a>` : ''}
       </div>` : ''}
       ${r.meetup_note ? `<div class="meet-n">${esc(r.meetup_note)}</div>` : ''}
-      ${!met && myPart(r.id)?.status === 'approved' && !routineEnded(r) ? (() => {
+      ${!met && myPart(r.id)?.status === 'approved' && !routineEnded(r)
+        && !(r.meetup_at && new Date(r.meetup_at) < new Date()) ? (() => {
         const ack = myAck(r.id);
         return `<button class="meet-ack${ack ? ' on' : ''}" onclick="toggleAck(${r.id})">
           <em>${ack ? '✅' : '⬜️'}</em>확인했어요
@@ -5425,10 +5438,15 @@ function meetCard(r) {
       })() : ''}
       <div class="meet-f">${met
         ? `다녀왔으니 <b>+${won(MEET_P())}P</b> 들어갔어요. 교환권을 쓸 수 있어요.`
+        : meetMissed(r)
+          ? `공유회에 오지 않아 이 루틴에서 모은 포인트는 <b>쓸 수 없게</b> 됐어요.
+             끗짱이 참석을 늦게 표시하면 돌아와요.`
         : myPart(r.id)?.status === 'approved'
-          ? `이 자리에 <b>와야</b> 책을 받아요. 오면 <b>+${won(MEET_P())}P</b>예요.`
+          ? `이 자리에 <b>와야</b> 책을 받아요. 오면 <b>+${won(MEET_P())}P</b>예요.<br>
+             <b>안 오면</b> 이 루틴에서 모은 포인트는 사라져요.`
           : `이 루틴은 <b>공유회에 참석해야 하는</b> 루틴이에요.<br>
-             와야 모은 포인트로 책을 받고, 오면 <b>+${won(MEET_P())}P</b>예요.`}</div>
+             와야 모은 포인트로 책을 받고, 오면 <b>+${won(MEET_P())}P</b>예요.
+             <b>안 오면 모은 포인트가 사라져요.</b>`}</div>
     </div>`;
 }
 
