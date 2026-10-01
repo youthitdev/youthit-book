@@ -367,11 +367,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
-<!-- 루틴 고치기 -->
+<!-- 루틴 수정 -->
 <div class="overlay" id="routineEditOverlay">
   <div class="modal" style="max-width:560px;">
     <div class="modal-hd">
-      <div class="modal-t" id="reTitleTop">루틴 고치기</div>
+      <div class="modal-t" id="reTitleTop">루틴 수정</div>
       <div class="modal-d" id="reDescTop">끗짱이 잘못 적은 것을 운영진이 바로잡아요.
         고쳐도 승인 상태는 그대로예요.</div>
     </div>
@@ -1302,7 +1302,7 @@ function viewRoutines() {
       </div>
       <div class="rw-b">
         <button class="btn btn-dark" onclick="decideRoutine(${r.id}, true)">승인</button>
-        <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">고치기</button>
+        <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">수정</button>
         <button class="btn btn-line" onclick="decideRoutine(${r.id}, false)">반려</button>
       </div>
     </div>`).join('')}
@@ -1336,7 +1336,7 @@ function viewRoutines() {
         ? `<button class="vq-quiet" onclick="setSponsor(${r.id})">${esc(r.sponsor_name)}</button>`
         : `<button class="vq-quiet" onclick="setSponsor(${r.id})">+ 기업</button>`}</td>
       <td class="right" style="white-space:nowrap;">
-        <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">고치기</button>
+        <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">수정</button>
         <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
         <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
@@ -1461,7 +1461,7 @@ function rMeet(r) {
   return bits.join(' · ');
 }
 
-// ── 루틴 고치기 ────────────────────────────────────────
+// ── 루틴 수정 ──────────────────────────────────────────
 // 끗짱이 시각을 오전/오후 거꾸로 넣거나 장소를 빼먹는 일이 있다. 승인하려고
 // 보다가 발견하면 돌려보내는 것보다 여기서 고치는 게 빠르다.
 //
@@ -1508,7 +1508,7 @@ function openRoutineEdit(id) {
   const parts = isNew ? 0 : rParts(id).length;
   const leads = leadOptions(r.led_by);
 
-  document.getElementById('reTitleTop').textContent = isNew ? '루틴 만들기' : '루틴 고치기';
+  document.getElementById('reTitleTop').textContent = isNew ? '루틴 만들기' : '루틴 수정';
   document.getElementById('reDescTop').innerHTML = isNew
     ? '운영진이 루틴을 만들고 끗짱을 정해요. 만들면 바로 <b>모집 중</b>이 됩니다.'
     : '끗짱이 잘못 적은 것을 운영진이 바로잡아요. 고쳐도 승인 상태는 그대로예요.';
