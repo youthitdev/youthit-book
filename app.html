@@ -677,6 +677,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kind button.on:disabled { opacity:1; }
 
 /* 오프라인 공유회 */
+/* 한 루틴만 보고 있다는 표시 겸 돌아가는 길 */
+.only-one { display:inline-flex; align-items:center; gap:5px; margin-bottom:12px;
+  padding:7px 13px 7px 10px; border-radius:999px; border:1px solid var(--line); background:#fff;
+  font-family:inherit; font-size:12.5px; font-weight:700; color:var(--green-d); cursor:pointer; }
+.only-one i { font-size:15px; line-height:1; }
+.only-one:active { background:var(--green-l); }
 .meet { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:14px; padding:12px 14px; }
 .meet.done { background:var(--green-l); border-color:#CFE6A8; }
 .meet-h { display:flex; align-items:center; gap:8px; }
@@ -1588,6 +1594,8 @@ const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
 let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[] };
 let tab = 'home';
+// 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
+let certFocus = null;
 // 지역은 자유 입력으로 두면 '속초' / '강원도 속초시' / '강원속초' 가 섞여
 // 책방 매칭이 깨진다. 시·도는 고르게 하고 시·군·구만 적게 한다
 const SIDO = ['서울','부산','대구','인천','광주','대전','울산','세종',
@@ -2521,8 +2529,9 @@ const pendingBuy = rid => me && state.purchases.find(p =>
   p.routine_id === rid && p.user_id === me.id && p.status === 'pending');
 
 // ── 화면 ───────────────────────────────────────────────
-function go(t) {
+function go(t, rid) {
   tab = t;
+  certFocus = (t === 'cert') ? (rid || null) : null;
   document.querySelectorAll('nav div').forEach(d => d.classList.toggle('on', d.dataset.tab === t));
   render();
   window.scrollTo(0,0);
@@ -2695,7 +2704,7 @@ function todayCard(r) {
            <button class="btn btn-line" onclick="openCert(${r.id}, '${esc(rest[0].title).replace(/'/g, "\\'")}')">
              「${esc(rest[0].title)}」도 인증하기</button>`
         : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
-           <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>`;
+           <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 기록 보기</button>`;
 
   // 루틴 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
   // 두 권 넘게 읽으면(병렬독서) 오른쪽 한 장 대신 막대 아래 한 줄로 내린다 —
@@ -2762,14 +2771,14 @@ function kkutTodayCard(r) {
     const poked = (state.nudges || []).some(n => n.routine_id === r.id && n.to_id === p.user_id);
     const ok    = live && !done && !p.self;
     return `<span class="kroll-p ${done ? 'on' : ''}"
-       onclick="event.stopPropagation();${p.self && !done ? `openCert(${r.id})` : `go('cert')`}">
+       onclick="event.stopPropagation();${p.self && !done ? `openCert(${r.id})` : `go('cert', ${r.id})`}">
       ${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}
       ${ok ? `<button class="kroll-poke" ${poked ? 'disabled' : ''}
         onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉</button>` : ''}</span>`;
   }).join('')}${ps.length > SHOW ? (() => {
       const rest = ps.slice(SHOW);
       const left = rest.filter(p => !today.some(c => c.user_id === p.user_id)).length;
-      return `<span class="kroll-p more" onclick="event.stopPropagation();go('cert')">+${rest.length}${left ? ` · ${left} 아직` : ''}</span>`;
+      return `<span class="kroll-p more" onclick="event.stopPropagation();go('cert', ${r.id})">+${rest.length}${left ? ` · ${left} 아직` : ''}</span>`;
     })() : ''}</div>` : '';
 
   // 기록 보기로 넘어가지 않고도 아이들이 뭘 올렸는지 보인다.
@@ -2813,7 +2822,7 @@ function kkutTodayCard(r) {
       ${waiting ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
       ${certAction(r, 'btn-primary', 'margin-bottom:8px;')}
-      <button class="btn btn-line" onclick="go('cert')">우리 기록 보기</button>
+      <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 기록 보기</button>
     </div>
   </div>`;
 }
@@ -2929,11 +2938,22 @@ function viewCert() {
   // 청소년 끗짱은 위에 맡은 루틴(누가 했나), 아래에 참여 루틴(내 기록)을 본다
   // 끝난 루틴은 홈과 마찬가지로 여기서도 뺀다. 지난 것은 MY 「지난 루틴」에서 들어간다 —
   // 두 화면이 다른 목록을 보여주면 어느 쪽이 맞는지 알 수 없다
-  const led  = canLead() ? state.routines.filter(r => r.led_by === me.id && !isOver(r)) : [];
-  const join = state.routines.filter(r => {
+  let led  = canLead() ? state.routines.filter(r => r.led_by === me.id && !isOver(r)) : [];
+  let join = state.routines.filter(r => {
     const p = myPart(r.id); return p && p.status === 'approved';
   });
-  return (led.length ? kkutCertBlock(led) : '')
+
+  // 「우리 기록 보기」는 그 루틴을 보러 누르는 단추다. 전부 펼쳐 놓으면
+  // 어느 게 내가 누른 건지 찾아야 한다. 하나만 세우고 돌아갈 길을 남긴다.
+  // 그새 끝나 목록에서 빠졌으면 조용히 전체로 돌아간다
+  const one = (certFocus && [...led, ...join].find(r => r.id === certFocus)) || null;
+  // 루틴 이름은 바로 아래 블록 제목에 또 나온다. 띠는 돌아가는 길만 한다
+  const back = one ? `<button class="only-one" onclick="go('cert')">
+      <i class="ti ti-arrow-left"></i>전체 루틴 보기</button>` : '';
+  if (one) { led = led.filter(r => r.id === one.id); join = join.filter(r => r.id === one.id); }
+
+  return back
+       + (led.length ? kkutCertBlock(led) : '')
        + (join.length ? youthCertBlock(join) : '')
        + (led.length || join.length ? ''
           : `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
