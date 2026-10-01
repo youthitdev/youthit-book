@@ -275,6 +275,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 /* 읽는 책 고르기 */
 /* 「책 받았어요」의 책방 확인. 번호는 아이가 아니라 책방이 누른다 */
+/* 리워드 안내. 들어가기 전에 「무엇을 받고, 언제 받나」가 한자리에 모여야 한다 */
+.rw-box { background:#f7fbf0; border:1px solid #D8E9BC; border-radius:13px;
+  padding:13px 15px; margin-top:16px; }
+.rw-box b { display:block; font-size:13px; font-weight:800; color:var(--green-d); margin-bottom:7px; }
+.rw-box li { list-style:none; font-size:12.5px; line-height:1.65; color:var(--ink-2);
+  padding-left:14px; text-indent:-14px; margin-top:4px; }
+.rw-box li::before { content:'· '; color:var(--green-d); font-weight:800; }
+.rw-box em { font-style:normal; font-weight:700; color:var(--ink); }
 .buy-hand { background:#F2EEE6; border-radius:12px; padding:12px 14px; margin-bottom:9px;
   font-size:13.5px; line-height:1.6; }
 .buy-hand span { display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
@@ -4378,6 +4386,7 @@ function openRoutine(id) {
                <div class="hint">적다 보면 책을 찾아줘요. <b>못 찾으면 그냥 적어도 돼요.</b></div>`}
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
           <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
+          ${rewardBox(r)}
           ${needsMeet(r) ? `<label class="meet-agree">
             <input type="checkbox" id="apMeet" onchange="checkApply()">
             <span>이 루틴은 <b>공유회에 참석해야</b> 책을 받아요.<br>
@@ -5332,6 +5341,25 @@ const meetPending = () => myRoutines().some(r => needsMeet(r) && !myMet(r.id));
 // ── 오프라인 공유회 ────────────────────────────────────
 // 어떤 루틴은 마지막에 다 같이 모여 이야기 나누는 게 핵심이다.
 // 그런 루틴은 **공유회에 와야 책을 받는다** — 읽기만 하고 안 오면 반쪽이다.
+// 들어가기 전에 「무엇을 받고, 언제 받나」를 한자리에 모아 보여 준다.
+// 여기저기 흩어져 있으면 아이는 결국 아무것도 모른 채 들어온다
+function rewardBox(r) {
+  const cap = won(state.settings.voucher_max_amount || 20000);
+  const per = won(state.settings.points_per_voucher || 150);
+  const st  = storeOf(r);
+  return `<div class="rw-box">
+    <b>🎁 책은 이렇게 받아요</b>
+    <li><em>${per}P</em>를 모으면 ${st ? `<em>${esc(st.name)}</em>에서 ` : '함께하는 책방에서 '}
+      원하는 책 한 권(${cap}원 이하)을 <em>무료로</em> 받아요.</li>
+    <li>하루 한 번 인증하면 ${won(r.points_per_cert || 10)}P${
+      needsMeet(r) ? `, 공유회에 다녀오면 ${won(MEET_P())}P` : ''}가 쌓여요.</li>
+    ${needsMeet(r)
+      ? `<li><em>공유회에 다녀와야</em> 책을 받을 수 있어요.
+           공유회 날 책방에서 바로 받아가면 돼요.</li>`
+      : `<li>모으면 아무 때나 함께하는 책방에 가서 받으면 돼요.</li>`}
+  </div>`;
+}
+
 // 이 루틴과 함께하는 책방. 후원 기업과도, 공유회 장소와도 다른 것이다
 const storeOf = r => r?.bookstore_id
   ? (state.stores || []).find(s => s.id === r.bookstore_id) || null : null;
