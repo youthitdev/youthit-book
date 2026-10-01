@@ -540,6 +540,10 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-spon i { font-style:normal; color:var(--pink); font-size:10px; line-height:1; flex:none; }
 .r-spon span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .r-who { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
+/* 공유회는 들어가기 전에 알아야 하는 조건이다. 사진 위 오른쪽에 먼저 건다 */
+.r-badge { position:absolute; top:8px; right:8px; display:inline-flex; align-items:center; gap:3px;
+  padding:3px 9px; border-radius:99px; background:rgba(232,163,61,.95); color:#3a2a0c;
+  font-size:10.5px; font-weight:800; }
 .r-body { padding:12px 0 0; }
 .r-lead { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
 .r-mine { margin-top:8px; font-size:12.5px; color:var(--green-d); font-weight:700; }
@@ -611,6 +615,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .r-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
 .r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
 .r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
+.r-where { font-size:12px; font-weight:700; color:var(--ink-2); margin-top:3px; }
 /* 공유회가 있는 루틴은 몸이 가야 한다. 고르기 전에 보여야 하고,
    어디로 가야 하는지가 같이 보여야 한다 */
 .r-meet { display:inline-flex; align-items:center; gap:4px; margin-top:7px;
@@ -2716,6 +2721,7 @@ function routineCard(r) {
     <div class="r-cover">
       ${r.cover_url ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">`
                     : `<div class="r-cover-no">${r.emoji || '📚'}</div>`}
+      ${needsMeet(r) ? `<span class="r-badge">🤝 공유회</span>` : ''}
       <div class="r-over">
         <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}/${r.max_people}명</span>
         ${waiting ? `<span class="r-who c-wait">확인 중</span>` : ''}
@@ -2725,10 +2731,11 @@ function routineCard(r) {
       <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${lead ? `<div class="r-lead">🤝 ${esc(lead)}</div>` : ''}
       <div class="r-meta">${per}${dd ? ` · <b>${dd}</b>` : ''}</div>
-      ${needsMeet(r) ? (() => {
-        const g = shortRegion(r.meetup_address);
-        return `<div class="r-meet">📍<span>공유회${g ? ` · ${esc(g)}` : ''}</span></div>`;
-      })() : ''}
+      ${(() => {
+        // 공유회가 있으면 그 자리, 없으면 함께하는 책방이 있는 데
+        const g = shortRegion(r.meetup_address) || storeOf(r)?.region || '';
+        return g ? `<div class="r-where">📍 ${esc(g)}</div>` : '';
+      })()}
       ${(() => {
         const st = storeOf(r);
         return st ? `<div class="r-store">🏠<span>${esc(st.name)}</span></div>` : '';
