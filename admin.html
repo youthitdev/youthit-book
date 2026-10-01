@@ -1539,7 +1539,7 @@ function openRoutineEdit(id) {
       ${leads.length > 6 ? `<input type="text" id="reLeadFind" placeholder="이름·소속으로 걸러보기"
         autocomplete="off" oninput="leadFilter()" style="margin-bottom:8px;">` : ''}
       <select id="reLead">
-        <option value="">고르세요</option>
+        <option value="">누구를 세울까요</option>
         ${leads.map(l => `<option value="${esc(l.id)}"${l.id === r.led_by ? ' selected' : ''}>${
           esc(l.name)}${l.where ? ` — ${esc(l.where)}` : ''}</option>`).join('')}
       </select>
