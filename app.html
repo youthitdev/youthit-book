@@ -514,11 +514,15 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-ppl { font-size:11px; font-weight:700; color:#fff; display:inline-flex; align-items:center; gap:3px;
   background:rgba(20,18,15,.6); padding:3px 8px; border-radius:99px;
   -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
-/* 후원 기업. 사진 위에 얹으면 썸네일이 시끄러워진다 — 기간 밑에 한 줄로 */
-.r-spon { display:inline-block; margin-top:6px; font-size:10.5px; font-weight:700;
+/* 후원 기업. 사진 위에 얹으면 썸네일이 시끄러워진다 — 기간 밑에 한 줄로.
+   「후원」 두 글자는 자리만 먹는다. 하트가 더 빨리 읽히고 이름도 더 들어간다 */
+.r-spon { display:inline-flex; align-items:center; gap:3px; margin-top:6px;
+  font-size:10.5px; font-weight:700;
   color:var(--ink-2); background:var(--bg); border:1px solid var(--line);
   border-radius:7px; padding:2px 7px;
-  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  max-width:100%; overflow:hidden; white-space:nowrap; }
+.r-spon i { font-style:normal; color:var(--pink); font-size:10px; line-height:1; flex:none; }
+.r-spon span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .r-who { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
 .r-body { padding:12px 0 0; }
 .r-lead { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
@@ -2621,7 +2625,7 @@ function routineCard(r) {
       <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${lead ? `<div class="r-lead">🤝 ${esc(lead)}</div>` : ''}
       <div class="r-meta">${per}${dd ? ` · <b>${dd}</b>` : ''}</div>
-      ${r.sponsor_name ? `<div class="r-spon">${esc(r.sponsor_name)} 후원</div>` : ''}
+      ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
       ${routineTags(r).length ? `<div class="r-tags">
         ${routineTags(r).map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
       ${mine && r.points_per_cert ? `<div class="r-mine">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}P</div>` : ''}
