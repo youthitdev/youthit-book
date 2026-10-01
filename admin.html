@@ -408,7 +408,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-t" id="peopleTitle">참여자</div>
-      <div class="modal-d">이 루틴에 참여한 청소년과 인증 횟수예요.</div>
+      <div class="modal-d">이 루틴에 참여한 청소년이에요. 포인트는 계정 전체 누적이고,
+        이 루틴만의 것이 아니에요.</div>
     </div>
     <div class="modal-bd" id="peopleBody"></div>
     <div class="modal-ft">
@@ -1768,25 +1769,51 @@ async function decideRoutine(id, open) {
   await loadLive(); render();
 }
 
-function openRoutinePeople(id) {
+// 【포인트는 서버에 물어본다】 인증·댓글·이정표·후기·공유회가 다 섞여 있어
+//   관리자 화면에서 다시 계산하면 두 벌이 생기고, 두 벌은 언젠가 어긋난다.
+//   dokseo_points() 는 운영진에게 열려 있으니 사람마다 한 번씩 부른다.
+//   한 루틴에 많아야 50명이고 한꺼번에 보내니 기다릴 만하다.
+async function openRoutinePeople(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   const ps = rParts(id);
   const cs = rCerts(id);
-  const body = ps.length
-    ? `<div class="tbl"><table>
-         <tr><th>청소년</th><th class="right">인증</th><th>마지막 인증</th></tr>
-         ${ps.map(p => {
-           const mine = cs.filter(c => c.user_id === p.user_id);
-           const last = mine.map(c => c.cert_date).sort().pop();
-           return `<tr><td>${esc(rName(p.user_id))}</td>
-             <td class="num right">${mine.length}회</td>
-             <td class="num muted">${last ? fmtDate(last) : '아직 없어요'}</td></tr>`;
-         }).join('')}
-       </table></div>`
-    : `<div class="empty">아직 참여한 청소년이 없어요.</div>`;
+
+  const row = (p, pt) => {
+    const mine = cs.filter(c => c.user_id === p.user_id);
+    const last = mine.map(c => c.cert_date).sort().pop();
+    // 인증은 하루에 한 번만 포인트가 붙는다. 날짜로 세야 화면끼리 안 어긋난다
+    const days = new Set(mine.map(c => c.cert_date)).size;
+    return `<tr><td>${esc(rName(p.user_id))}
+        ${p.met_at ? '<div class="muted">공유회 다녀감</div>'
+          : p.meet_ack_at ? '<div class="muted">간다고 했어요</div>' : ''}</td>
+      <td class="num right">${days}일</td>
+      <td class="num muted">${last ? fmtDate(last) : '아직 없어요'}</td>
+      <td class="num right">${pt === undefined ? '…'
+        : pt === null ? '<span class="muted">—</span>'
+        : `<b>${won(pt.points)}P</b>${pt.left ? `<div class="muted">교환권 ${pt.left}장</div>` : ''}`}</td>
+    </tr>`;
+  };
+
+  const draw = (pts) => {
+    document.getElementById('peopleBody').innerHTML = ps.length
+      ? `<div class="tbl narrow"><table>
+           <tr><th>청소년</th><th class="right">인증</th><th>마지막 인증</th><th class="right">포인트</th></tr>
+           ${ps.map((p, i) => row(p, pts ? pts[i] : undefined)).join('')}
+         </table></div>`
+      : `<div class="empty">아직 참여한 청소년이 없어요.</div>`;
+  };
+
   document.getElementById('peopleTitle').textContent = `${r.emoji || '📚'} ${r.title}`;
-  document.getElementById('peopleBody').innerHTML = body;
+  draw(undefined);                 // 먼저 표를 띄우고 포인트 자리는 「…」로 둔다
   document.getElementById('peopleOverlay').classList.add('on');
+  if (!ps.length || !LIVE) return;
+
+  const pts = await Promise.all(ps.map(async p => {
+    const { data, error } = await sb.rpc('dokseo_points', { p_user: p.user_id });
+    return error ? null : data;
+  }));
+  // 그새 다른 루틴을 열었으면 덮어쓰지 않는다
+  if (document.getElementById('peopleTitle').textContent === `${r.emoji || '📚'} ${r.title}`) draw(pts);
 }
 
 // 끗짱 승인.
