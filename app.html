@@ -618,6 +618,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   font-size:10.5px; font-weight:700; color:#8A5A16;
   max-width:100%; overflow:hidden; white-space:nowrap; }
 .r-meet span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+/* 함께하는 책방. 후원 기업과 같은 줄에 나란히 선다 */
+.r-store { display:inline-flex; align-items:center; gap:4px; margin-top:6px; margin-right:5px;
+  padding:2px 8px; border-radius:7px; background:var(--green-l); border:1px solid #D8E9BC;
+  font-size:10.5px; font-weight:700; color:var(--green-d);
+  max-width:100%; overflow:hidden; white-space:nowrap; }
+.r-store span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .r-tags { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:8px; }
 .tag { font-size:11px; font-weight:600; color:var(--ink-3); background:var(--bg);
        padding:3px 8px; border-radius:8px; white-space:nowrap; }
@@ -1336,6 +1342,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div>
       <div class="field-label">모집 인원 <span class="req">*</span></div>
       <input type="number" id="mPeople" min="1" max="50" value="8">
+    </div>
+    <div>
+      <div class="field-label">함께하는 책방 <span class="opt">선택</span></div>
+      <select id="mStore"></select>
+      <div class="hint">청소년이 책을 받으러 갈 곳이에요. 모집 카드에 같이 보입니다.</div>
     </div>
     <div id="mHint" style="font-size:12.5px;line-height:1.6;padding:11px 13px;border-radius:11px;background:#f7fbf0;color:var(--green-d);"></div>
     <div>
@@ -2718,6 +2729,10 @@ function routineCard(r) {
         const g = shortRegion(r.meetup_address);
         return `<div class="r-meet">📍<span>공유회${g ? ` · ${esc(g)}` : ''}</span></div>`;
       })() : ''}
+      ${(() => {
+        const st = storeOf(r);
+        return st ? `<div class="r-store">🏠<span>${esc(st.name)}</span></div>` : '';
+      })()}
       ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
       ${routineTags(r).length ? `<div class="r-tags">
         ${routineTags(r).map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
@@ -4289,6 +4304,15 @@ function openRoutine(id) {
         </div>
       </div>` : ''}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
+    ${(() => {
+      const st = storeOf(r); if (!st) return '';
+      return `<div class="sec-t">🏠 함께하는 책방</div>
+        <div class="card one-book" onclick="go('store')" style="cursor:pointer;">
+          <div class="ob-i">🏠</div>
+          <div><span>책을 받으러 가는 곳</span><b>${esc(st.name)}</b>
+            ${st.region || st.address ? `<i>${esc(st.region || st.address)}</i>` : ''}</div>
+        </div>`;
+    })()}
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
     ${needsMeet(r) ? meetCard(r) : ''}
     ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="goFromOv('ovRoutine', () => openMake(${r.id}))">루틴 수정하기</button>` : ''}
@@ -4762,6 +4786,10 @@ function openMake(id) {
     ? Math.max(MIN_DAYS, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1)
     : MIN_DAYS;
   $('mPeople').value = r?.max_people ?? 8;
+  $('mStore').innerHTML = `<option value="">고르지 않음</option>` +
+    (state.stores || []).filter(s => s.active || s.id === r?.bookstore_id).map(s =>
+      `<option value="${s.id}"${s.id === r?.bookstore_id ? ' selected' : ''}>${esc(s.name)}${
+        s.region ? ` (${esc(s.region)})` : ''}</option>`).join('');
   // 이미 만든 루틴은 종류를 못 바꾼다. 바꾸면 쌓인 인증이 붕 뜼다
   pickKind(r?.kind || 'book');
   $('mKindBook').disabled = $('mKindOne').disabled = $('mKindShared').disabled = !!r;
@@ -4910,6 +4938,7 @@ async function submitMake() {
     cert_guide: $('mGuide').value.trim() || null,
     start_date: s, end_date: e,
     max_people: parseInt($('mPeople').value||'8',10),
+    bookstore_id: parseInt($('mStore').value, 10) || null,
     kind: makeKind,
     meetup_required: $('mMeet').checked,
     meetup_at:    $('mMeet').checked && $('mMeetDate').value
@@ -5279,6 +5308,10 @@ const meetPending = () => myRoutines().some(r => needsMeet(r) && !myMet(r.id));
 // ── 오프라인 공유회 ────────────────────────────────────
 // 어떤 루틴은 마지막에 다 같이 모여 이야기 나누는 게 핵심이다.
 // 그런 루틴은 **공유회에 와야 책을 받는다** — 읽기만 하고 안 오면 반쪽이다.
+// 이 루틴과 함께하는 책방. 후원 기업과도, 공유회 장소와도 다른 것이다
+const storeOf = r => r?.bookstore_id
+  ? (state.stores || []).find(s => s.id === r.bookstore_id) || null : null;
+
 const needsMeet = r => !!r?.meetup_required;
 const myMet     = rid => !!myPart(rid)?.met_at;
 // 「갈게요」는 본인이 누르고, 「왔어요」는 끗짱이 표시한다. 약속과 출석은 다르다
