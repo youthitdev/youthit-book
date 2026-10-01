@@ -717,6 +717,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   font-family:inherit; font-size:12.5px; font-weight:700; color:var(--green-d); cursor:pointer; }
 .only-one i { font-size:15px; line-height:1; }
 .only-one:active { background:var(--green-l); }
+/* 시작 전 루틴의 모집 안내 */
+.tc-wait { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:12px;
+  padding:11px 13px; margin:9px 0; }
+.tc-wait b { display:block; font-size:14px; font-weight:800; color:#8A5A16; }
+.tc-wait span { display:block; font-size:12.5px; color:var(--ink-2); margin-top:3px; line-height:1.55; }
 .meet { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:14px; padding:12px 14px; }
 .meet.done { background:var(--green-l); border-color:#CFE6A8; }
 .meet-h { display:flex; align-items:center; gap:8px; }
@@ -1299,10 +1304,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="hint" id="mTitleHint"></div>
     </div>
     <div>
-      <div class="field-label">대표 사진 <span class="opt">선택</span></div>
+      <div class="field-label">대표 사진 <span class="req">* 필수</span></div>
       <div id="mCoverBox"></div>
       <input type="file" id="mCoverInput" accept="image/*" style="display:none;" onchange="pickCover(event)">
-      <div class="hint">청소년이 루틴을 고를 때 제일 먼저 보는 그림이에요. 없으면 이모지로 보여요.</div>
+      <div class="hint">청소년이 루틴을 고를 때 제일 먼저 보는 그림이에요.</div>
     </div>
     <div>
       <div class="field-label">이모지 <span class="opt">선택</span></div>
@@ -1346,7 +1351,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div>
       <div class="field-label">모집 인원 <span class="req">*</span></div>
-      <input type="number" id="mPeople" min="1" max="50" value="8">
+      <input type="number" id="mPeople" min="1" max="50" value="10">
     </div>
     <div>
       <div class="field-label">함께하는 책방 <span class="opt">선택</span></div>
@@ -2799,6 +2804,8 @@ function todayCard(r) {
   const action = ended
     ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
        ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}`
+    : d?.notYet
+      ? recruitBlock(r)
     : !done
       ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`
       : rest.length
@@ -2840,8 +2847,8 @@ function todayCard(r) {
             : ''}
       </div>
       <div class="tc-day">${routineLine(r, d)}</div>
-      ${d ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
-      ${shelf}
+      ${d && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${d?.notYet ? '' : shelf}
       ${action}
     </div>
   </div>`;
@@ -2918,12 +2925,12 @@ function kkutTodayCard(r) {
           : `<b>운영진이 확인하고 있어요</b><span>열리면 청소년이 신청할 수 있어요.</span>`}
       </div>` : ''}
       <div class="tc-day">${routineLine(r, d)}</div>
-      ${d && !waiting ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
-      ${waiting || d?.ended ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
-      ${waiting || d?.ended ? '' : shelf}
-      ${waiting ? '' : strip}
+      ${d && !waiting && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${waiting || d?.ended || d?.notYet ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
+      ${waiting || d?.ended || d?.notYet ? '' : shelf}
+      ${waiting || d?.notYet ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
-      ${certAction(r, 'btn-primary', 'margin-bottom:8px;')}
+      ${!waiting && d?.notYet ? recruitBlock(r) : certAction(r, 'btn-primary', 'margin-bottom:8px;')}
       <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 기록 보기</button>
     </div>
   </div>`;
@@ -3164,6 +3171,7 @@ const isOver = r => { const d = routineDay(r); return r.status === 'done' || !!(
 
 function routineLine(r, d) {
   if (!d) return '기간 미정';
+  if (d.notYet) return `<b>D-${d.dLeft}</b> · ${fmtDay(r.start_date)} 시작`;
   if (d.ended) return `완주 · ${d.total}일`;
   if (r.status === 'done') return `종료됨 · ${d.n}일까지 함께했어요`;
   return `<b>${d.n}일째</b> · ${d.total}일 중`;
@@ -3176,7 +3184,9 @@ function routineDay(r) {
   const td = new Date(todayKST() + 'T00:00:00');
   const total = Math.round((d1 - d0) / 86400e3) + 1;
   const n = Math.round((td - d0) / 86400e3) + 1;
-  return { total, n: Math.min(total, Math.max(1, n)), ended: n > total };
+  // 시작 전에도 1일째로 보였다. 그래서 아직 안 연 루틴에 인증이 올라갔다
+  return { total, n: Math.min(total, Math.max(1, n)), ended: n > total,
+           notYet: n < 1, dLeft: 1 - n };
 }
 
 // 격자에서 한 장을 누르면 그 인증만 크게
@@ -3931,6 +3941,8 @@ async function poke(rid, uid, btn) {
 // 병렬독서까지 얽혀 있어서 따로 쓰면 반드시 어긋난다
 function certAction(r, cls = 'btn-primary', style = '') {
   if (routineEnded(r) || r.status === 'pending') return '';
+  // 아직 안 연 루틴이다. 첫날부터 세야 「15일」이 15일이다
+  if (routineDay(r)?.notYet) return '';
   if (!didToday(r.id))
     return `<button class="btn ${cls}" style="${style}" onclick="openCert(${r.id})">오늘 인증하기</button>`;
   const left = leftToday(r.id);
@@ -4343,7 +4355,7 @@ function openRoutine(id) {
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : me.verify_status !== 'approved' ? verifyGate()
       : `<div>
-          ${isOneBook(r)
+          ${isShared(r) ? '' : isOneBook(r)
             ? `<div class="field-label">우리가 읽을 책</div>
                <div class="one-book">
                  <div class="ob-i">${r.kkut_book_url
@@ -4418,17 +4430,20 @@ async function apply(rid) {
 
   const r0   = state.routines.find(x => x.id === rid);
   const one  = isOneBook(r0);
+  // 함께 읽는 글에는 책이 없다. 묻지도, 넣지도 않는다
+  const noBook = isShared(r0);
   const note = $('applyNote')?.value.trim() || '';
   // 함께 읽는 책이면 끗짱이 정한 한 권으로 간다. 고르는 칸 자체가 없다
-  const title = one ? (r0?.kkut_book_title || '') : ($('applyBookTitle')?.value.trim() || '');
-  if (!one && !applyBook) return toast('읽을 책 사진을 올려주세요');
-  if (!title) return toast(one ? '끗짱이 아직 책을 정하지 않았어요' : '읽을 책 제목을 적어주세요');
+  const title = noBook ? null
+              : one ? (r0?.kkut_book_title || '') : ($('applyBookTitle')?.value.trim() || '');
+  if (!noBook && !one && !applyBook) return toast('읽을 책 사진을 올려주세요');
+  if (!noBook && !title) return toast(one ? '끗짱이 아직 책을 정하지 않았어요' : '읽을 책 제목을 적어주세요');
   if (!note) return toast('참여 각오를 적어주세요');
   if ($('apMeet') && !$('apMeet').checked) return toast('공유회에 갈 수 있는지 확인해주세요');
 
   // 끗짱이 건 표지를 그대로 쓴다 — 같은 책이니 따로 찍을 게 없다
   let bookUrl = one ? (r0?.kkut_book_url || null) : null;
-  if (!one && applyBook) {
+  if (!noBook && !one && applyBook) {
     const path = `${me.id}/apply_${rid}_${Date.now()}.jpg`;
     const { error: up } = await sb.storage.from('cert-photos')
       .upload(path, toBlob(applyBook), { contentType: 'image/jpeg', cacheControl: '31536000' });
@@ -4442,7 +4457,7 @@ async function apply(rid) {
   if (error) return toast('참여하지 못했어요: ' + error.message);
   // 첫 권을 '읽는 책' 목록에 올려둔다. 인증할 때 칩으로 바로 고를 수 있게
   // cover_url 은 아이가 찍은 사진 그대로. 검색에서 온 건 서지정보뿐이다
-  await sb.from('routine_books').insert({ routine_id: rid, user_id: me.id, title,
+  if (!noBook) await sb.from('routine_books').insert({ routine_id: rid, user_id: me.id, title,
     cover_url: bookUrl,
     ...(one ? { isbn: r0?.kkut_book_isbn || null, authors: r0?.kkut_book_authors || null,
                 publisher: r0?.kkut_book_publisher || null }
@@ -4792,7 +4807,7 @@ function openMake(id) {
   $('mDays').value = (r?.start_date && r?.end_date)
     ? Math.max(MIN_DAYS, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1)
     : MIN_DAYS;
-  $('mPeople').value = r?.max_people ?? 8;
+  $('mPeople').value = r?.max_people ?? 10;
   $('mStore').innerHTML = `<option value="">고르지 않음</option>` +
     (state.stores || []).filter(s => s.active || s.id === r?.bookstore_id).map(s =>
       `<option value="${s.id}"${s.id === r?.bookstore_id ? ' selected' : ''}>${esc(s.name)}${
@@ -4894,6 +4909,8 @@ async function submitMake() {
   const days = parseInt($('mDays').value || '0', 10);
   if (!title) return toast('루틴 이름을 적어주세요');
   if (!desc) return toast('끗짱 소개를 적어주세요');
+  // 이모지만 띄우면 카드가 허전하다. 청소년이 제일 먼저 보는 그림이다
+  if (!cover && !coverUrl) return authError('대표 사진을 올려주세요', 'mCoverBox');
   // 함께 읽는 글은 끗짱이 글을 올린다. 읽는 책이 없을 수 있다
   if (makeKind !== 'shared' && !$('mBookTitle').value.trim())
     return authError('읽을 책 제목을 적어주세요', 'mBookTitle');
@@ -4944,7 +4961,7 @@ async function submitMake() {
     title, emoji: $('mEmoji').value.trim() || '📚', description: desc,
     cert_guide: $('mGuide').value.trim() || null,
     start_date: s, end_date: e,
-    max_people: parseInt($('mPeople').value||'8',10),
+    max_people: parseInt($('mPeople').value||'10',10),
     bookstore_id: parseInt($('mStore').value, 10) || null,
     kind: makeKind,
     meetup_required: $('mMeet').checked,
@@ -5318,6 +5335,31 @@ const meetPending = () => myRoutines().some(r => needsMeet(r) && !myMet(r.id));
 // 이 루틴과 함께하는 책방. 후원 기업과도, 공유회 장소와도 다른 것이다
 const storeOf = r => r?.bookstore_id
   ? (state.stores || []).find(s => s.id === r.bookstore_id) || null : null;
+
+// 시작 전 루틴의 홈 카드. 인증 자리에 「모집 중」을 대신 세운다
+function recruitBlock(r) {
+  const now = peopleOf(r.id), left = Math.max(0, (r.max_people || 0) - now);
+  return `<div class="tc-wait">
+      <b>모집 중 · ${now}/${r.max_people}명</b>
+      <span>${left ? `자리가 ${left}개 남았어요. 같이 읽을 친구를 불러볼까요?`
+                   : '자리가 다 찼어요. 시작하는 날 만나요'}</span>
+    </div>
+    ${left ? `<button class="btn btn-line" onclick="event.stopPropagation();shareRoutine(${r.id})">
+      링크 보내서 친구 부르기</button>` : ''}`;
+}
+
+// 루틴 하나를 가리키는 주소. 열면 바로 그 루틴 화면이 뜬다
+async function shareRoutine(rid) {
+  const r = state.routines.find(x => x.id === rid); if (!r) return;
+  const url = `${location.origin}${location.pathname}?routine=${rid}`;
+  const text = `${r.emoji || '📚'} ${r.title}\n한끗독서에서 같이 읽어요. 하루 한 장이면 돼요.`;
+  if (navigator.share) {
+    try { await navigator.share({ title: r.title, text, url }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(text + '\n' + url); toast('링크를 복사했어요'); }
+  catch { toast('링크를 복사하지 못했어요'); }
+}
 
 const needsMeet = r => !!r?.meetup_required;
 const myMet     = rid => !!myPart(rid)?.met_at;
