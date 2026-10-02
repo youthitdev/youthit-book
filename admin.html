@@ -532,7 +532,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 <div class="overlay" id="mkKkutOverlay">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-t">끗짱으로 세우기</div>
+      <div class="modal-t">끗짱으로 이동</div>
       <div class="modal-d" id="mkWho"></div>
     </div>
     <div class="modal-bd">
@@ -561,7 +561,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     </div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('mkKkutOverlay')">취소</button>
-      <button class="btn btn-dark" onclick="submitMakeKkut()">끗짱으로 세우기</button>
+      <button class="btn btn-dark" onclick="submitMakeKkut()">끗짱으로 이동</button>
     </div>
   </div>
 </div>
@@ -898,7 +898,7 @@ function vqCard(r) {
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
       ${r.can_lead
         ? `<button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
-        : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 세우기</button>`}
+        : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 이동</button>`}
     </div>
   </div>`;
 }
@@ -984,7 +984,7 @@ async function submitMakeKkut() {
 
   if (!age || age < 14 || age > 100) return alert('나이를 14~100 사이로 적어주세요.');
   if (!why) return alert('왜 세우는지 한 줄 적어주세요.\n끗짱 승인 탭에 그대로 남아요.');
-  if (!confirm(`${r.name} 님을 ${adult ? '어른' : '청소년'} 끗짱으로 세울까요?\n\n`
+  if (!confirm(`${r.name} 님을 ${adult ? '어른' : '청소년'} 끗짱으로 옮길까요?\n\n`
       + `· 루틴을 만들고 청소년 기록을 볼 수 있게 돼요\n`
       + (adult ? `· 어른이라 포인트·교환권·책은 받지 않아요\n` : '')
       + `· 본인에게 알림이 가요`)) return;
