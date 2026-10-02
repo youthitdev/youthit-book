@@ -342,6 +342,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
       <!-- 후원 입력은 「정산 → 후원 내역」에 같은 단추가 있다. 달에 한 번 쓰는
            일을 늘 보이는 자리에 둘 이유가 없고, 폰에서 머리가 세 줄로 터졌다 -->
+      <button class="btn btn-line" id="pushBtn" style="display:none;" onclick="openPush()">🔔 알림</button>
       <button class="btn btn-line" id="logoutBtn" style="display:none;" onclick="adminLogout()">로그아웃</button>
     </div>
   </div>
@@ -541,6 +542,20 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 </div>
 
 <!-- 후원 입력 -->
+<!-- 운영진 알림. 청소년 앱을 따로 깔지 않아도 여기로 받는다 -->
+<div class="overlay" id="pushOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">알림 받기</div>
+      <div class="modal-d">새 청소년이 가입하거나 끗짱 신청이 들어오면 이 기기로 알려드려요.</div>
+    </div>
+    <div class="modal-bd" id="pushBody"><div class="hint" style="margin:0;">확인 중…</div></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('pushOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 운영진이 직접 세우는 끗짱. 유스보이스가 섭외한 어른은 신청서를 쓸 일이 없다 -->
 <div class="overlay" id="mkKkutOverlay">
   <div class="modal">
@@ -1651,6 +1666,111 @@ function rMeet(r) {
   bits.push([r.meetup_place, r.meetup_detail].filter(Boolean).map(esc).join(' ') || '장소 없음');
   if (r.meetup_address) bits.push(`<span class="muted">${esc(r.meetup_address)}</span>`);
   return bits.join(' · ');
+}
+
+// ── 운영진 알림 ────────────────────────────────────────
+// 【왜 관리자 화면에 붙이나】 전에는 알림 장치가 청소년 앱에만 있어서,
+//   운영진이 소식을 받으려면 청소년 앱을 제 계정으로 깔아야 했다. 기형이다.
+//   서비스워커 범위가 사이트 전체라 여기서도 그대로 쓸 수 있다.
+const VAPID_PUBLIC = 'BP3CgWxwraHSVllsGJz6vghp4p2A5Zh7ff8jPxi97JAtr6OFmLz_43ltK4ZPF7fmeziq-4QpqE_CJFBLicXOh_M';
+const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+// 아이폰은 홈 화면에 추가한 뒤에야 푸시를 준다. 사파리로 연 상태면 물어봐도 소용없다
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches
+  || navigator.standalone === true;
+
+function b64ToU8(str) {
+  const pad = '='.repeat((4 - str.length % 4) % 4);
+  const raw = atob((str + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// serviceWorker.ready 는 설치가 어긋나면 영영 안 풀린다. 화면이 멎지 않게 시간을 끊는다
+async function swReady(ms = 2000) {
+  if (!('serviceWorker' in navigator)) return null;
+  return Promise.race([navigator.serviceWorker.ready,
+                       new Promise(r => setTimeout(() => r(null), ms))]);
+}
+
+async function pushState() {
+  if (!pushOK()) return 'unsupported';
+  if (isIOS() && !isStandalone()) return 'needs-install';
+  if (Notification.permission === 'denied') return 'blocked';
+  const reg = await swReady();
+  if (!reg) return 'off';
+  const sub = await reg.pushManager.getSubscription();
+  if (!sub) return 'off';
+  claimPush(sub);
+  return 'on';
+}
+
+// 구독은 **기기**에 붙고 알림함은 **계정**에 붙는다. 한 기기에서 계정을 바꿔
+// 로그인하면 구독 줄은 앞사람 것으로 남는다 — 배너는 오는데 알림은 남의 것이다.
+// RLS 가 남의 줄을 못 고치게 막아 서버 함수로 넘겨받는다 (migration-54)
+let pushClaimed = false;
+async function claimPush(sub) {
+  if (pushClaimed || !sub || !LIVE) return;
+  const k = sub.toJSON().keys || {};
+  if (!k.p256dh || !k.auth) return;
+  pushClaimed = true;
+  await sb.rpc('claim_push',
+    { p_endpoint: sub.endpoint, p_p256dh: k.p256dh, p_auth: k.auth });
+}
+
+function openPush() {
+  document.getElementById('pushOverlay').classList.add('on');
+  paintPush();
+}
+
+async function paintPush() {
+  const el = document.getElementById('pushBody'); if (!el) return;
+  const st = await pushState();
+  el.innerHTML = {
+    'unsupported'  : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
+    'needs-install': `<div class="hint" style="margin:0;line-height:1.8;">
+        아이폰은 <b>홈 화면에 추가</b>해야 알림을 받을 수 있어요.<br>
+        사파리 아래 <b>공유</b> → <b>홈 화면에 추가</b> → 홈 화면 아이콘으로 다시 열기</div>`,
+    'blocked'      : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>`,
+    'off'          : `<button class="btn btn-dark" onclick="enablePush()">알림 켜기</button>
+        <div class="hint">가입·끗짱 신청이 들어오면 이 기기로 바로 와요.</div>`,
+    'on'           : `<div style="display:flex;align-items:center;gap:10px;">
+        <b style="flex:1;color:var(--green);">켜져 있어요</b>
+        <button class="btn btn-line" onclick="disablePush()">끄기</button></div>
+        <div class="hint">기기마다 따로 켜야 해요. 폰과 PC 둘 다 받으시려면 양쪽에서 켜주세요.</div>`,
+  }[st];
+}
+
+async function enablePush() {
+  if (!pushOK()) return alert('이 브라우저는 알림을 지원하지 않아요.');
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { paintPush(); return alert('알림이 꺼져 있어요.'); }
+  const reg = await swReady(5000);
+  if (!reg) return alert('잠시 뒤 다시 눌러주세요.');
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) {
+    try {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+    } catch (e) { return alert('알림을 켜지 못했어요.'); }
+  }
+  const k = sub.toJSON().keys || {};
+  const { error } = await sb.rpc('claim_push',
+    { p_endpoint: sub.endpoint, p_p256dh: k.p256dh, p_auth: k.auth });
+  if (error) return alert('알림 설정을 저장하지 못했어요: ' + error.message);
+  pushClaimed = true;
+  paintPush();
+}
+
+async function disablePush() {
+  const reg = await swReady();
+  const sub = reg && await reg.pushManager.getSubscription();
+  if (sub) {
+    await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    await sub.unsubscribe();
+  }
+  pushClaimed = false;
+  paintPush();
 }
 
 // 폰 사진은 한 장에 4MB 가 넘는다. 그대로 올리면 트래픽이 터진다 —
@@ -2919,6 +3039,23 @@ async function adminLogin() {
 
 async function adminLogout() { await sb.auth.signOut(); location.reload(); }
 
+// 푸시는 서비스워커가 있어야 한다. 겸사겸사 이 화면도 워커 그물 안으로 들어와
+// 「고쳐 올렸는데 폰에선 그대로」가 없어진다 (깃허브가 주는 max-age=600)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js')
+      .catch(e => console.warn('서비스 워커 등록 실패', e));
+  });
+  // 화면을 켜 둔 채로 알림을 누르면 워커가 초점만 옮긴다. 어느 탭인지도 받아서
+  // 직접 옮겨 준다 — 안 그러면 「끗짱 신청」을 눌렀는데 청소년 확인이 떠 있다
+  navigator.serviceWorker.addEventListener('message', e => {
+    const d = e.data || {};
+    if (d.type !== 'notif-open' || !d.url) return;
+    const h = (String(d.url).split('#')[1] || '');
+    if (h && h !== location.hash.replace('#', '')) location.hash = h;
+  });
+}
+
 (async function init() {
   if (!LIVE) { render(); return; }
   document.getElementById('demoFlag').style.display = 'none';
@@ -2934,6 +3071,7 @@ async function adminLogout() { await sb.auth.signOut(); location.reload(); }
 
   document.getElementById('whoami').textContent = email;
   document.getElementById('logoutBtn').style.display = '';
+  if (pushOK()) document.getElementById('pushBtn').style.display = '';
   await loadLive();
   const t = tabFromHash();
   if (t) switchTab(t); else render();
