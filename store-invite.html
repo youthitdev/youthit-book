@@ -131,6 +131,14 @@ h2+.sec-lead{margin-top:14px}
 .qa p{font-size:14px;color:var(--ink-2);line-height:1.85;padding:0 0 20px}
 
 /* 숫자 */
+/* 이미 함께하는 곳 — 처음 보는 사장님에게 「다른 데도 한다」만큼 센 말이 없다.
+   ⚠️ index.html 의 .stores 와 같은 목록이다. 한쪽만 고치지 말 것 */
+.stores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:28px}
+@media(max-width:560px){.stores{grid-template-columns:repeat(2,1fr)}}
+.store{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 14px;text-align:center}
+.store b{display:block;font-size:14px;font-weight:800;letter-spacing:-.4px}
+.store span{font-size:11.5px;color:var(--ink-3)}
+
 .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
   border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-top:28px}
 .num{background:var(--card);padding:24px 10px;text-align:center}
@@ -323,6 +331,20 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
         <p>언제든 말씀만 주시면 됩니다. 계약이 없으니 해지도 없습니다.
            남은 정산만 마무리해 드립니다.</p>
       </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">이미 함께하는 곳</div>
+    <h2>여섯 곳이 먼저 문을 열어주셨습니다</h2>
+    <p class="sec-lead">강원부터 전남까지, 동네책방 여섯 곳이 한끗독서 청소년을 맞고 있습니다.</p>
+    <div class="stores">
+      <div class="store"><b>당신의강릉</b><span>강원 강릉</span></div>
+      <div class="store"><b>골목책방서성이다</b><span>전남 순천</span></div>
+      <div class="store"><b>책방채움</b><span>대전 유성</span></div>
+      <div class="store"><b>초록서림</b><span>서울 성북</span></div>
+      <div class="store"><b>하우스 결</b><span>경기 수원</span></div>
+      <div class="store"><b>빈칸놀이터</b><span>경기 용인</span></div>
     </div>
   </section>
 
