@@ -333,7 +333,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="logo">한끗독서 <b>관리자</b></div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
-      <button class="btn btn-line" onclick="openCharge()">+ 후원 입력</button>
+      <!-- 후원 입력은 「정산 → 후원 내역」에 같은 단추가 있다. 달에 한 번 쓰는
+           일을 늘 보이는 자리에 둘 이유가 없고, 폰에서 머리가 세 줄로 터졌다 -->
       <button class="btn btn-line" id="logoutBtn" style="display:none;" onclick="adminLogout()">로그아웃</button>
     </div>
   </div>
