@@ -1,4 +1,4 @@
-<!-- 랜딩페이지 탭 구분용 — 같은 마크의 초록 변형 (index.html --green) -->
+<!-- 랜딩페이지 탭 구분용 — 같은 마크의 초록 변형 (index.html 의 green) -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
