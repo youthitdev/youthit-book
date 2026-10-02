@@ -28,6 +28,9 @@ DECLARE a uuid; v_who text; v_where text;
 BEGIN
   -- 어른은 끗짱 승인 쪽에서 따로 본다
   IF COALESCE(NEW.role, 'youth') <> 'youth' THEN RETURN NEW; END IF;
+  -- 운영진이 앱에 처음 로그인하면 프로필이 생긴다. 서로에게 「가입했어요」가
+  -- 가면 안 된다 — 첫 알림이 거짓이면 그다음부터 안 읽는다
+  IF EXISTS (SELECT 1 FROM admin_user_ids() a WHERE a = NEW.id) THEN RETURN NEW; END IF;
 
   v_who := COALESCE(NULLIF(btrim(NEW.name), ''), '이름 없음');
   IF COALESCE(btrim(NEW.nick), '') <> '' AND NEW.nick <> NEW.name THEN
@@ -36,7 +39,6 @@ BEGIN
   v_where := COALESCE(NULLIF(btrim(NEW.region), ''), '지역 없음');
 
   FOR a IN SELECT * FROM admin_user_ids() LOOP
-    CONTINUE WHEN a = NEW.id;        -- 운영진이 제 계정을 만든 거면 보내지 않는다
     PERFORM notify_push(a,
       '새 청소년이 가입했어요 🌱',
       v_who || ' · ' || v_where || ' · 확인해 주세요',
