@@ -83,6 +83,11 @@ h2+.sec-lead{margin-top:14px}
   .jn b{width:auto;font-size:16px}
 }
 
+/* 로그인 없이도 모집 중인 루틴이 보인다 — 설명보다 그게 빠르다 */
+.links{margin-top:18px;display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-flex;align-items:center;font-size:13.5px;font-weight:700;text-decoration:none;
+  color:var(--green-d);background:var(--green-l);border:1px solid #f0dcb6;border-radius:12px;padding:11px 16px}
+
 /* 다정함 — 어두운 띠 하나에 이 문장만 둔다.
    🚫 여섯 장은 뺐다. 거절할 거리를 여섯 번 읽히는 것보다
    부탁 하나를 또렷하게 두는 쪽이 낫다 */
@@ -210,14 +215,25 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 
 <section class="before">
   <div class="wrap">
-    <div class="sec-label">누가 오는가</div>
-    <h2>이 청소년이 책방 문을 열기까지</h2>
-    <div class="jny">
-      <div class="jn"><b>매일</b><span>읽은 쪽을 사진으로 남겼습니다. 하루도 대신해 줄 수 없는 일입니다.</span></div>
-      <div class="jn"><b>그때마다</b><span>곁에 선 어른 한 명이 그 기록에 한 줄씩 답을 달았습니다.</span></div>
-      <div class="jn"><b>250점</b><span>그만큼 모여야 책 한 권이 됩니다. 오늘이 그날입니다.</span></div>
-    </div>
+    <div class="sec-label">한끗독서란</div>
+    <h2>청소년이 매일 읽은 기록이<br>책 한 권이 됩니다</h2>
     <p class="sec-lead">
+      비영리단체 <b>유스보이스</b>가 운영합니다.
+      책값은 후원금으로 마련한 <b>도서기금</b>에서 나가고, 청소년은 한 푼도 내지 않습니다.
+    </p>
+    <div class="jny">
+      <div class="jn"><b>① 루틴</b><span>청소년 여덟 명 안팎이 한 모임을 이뤄 <b>15~30일</b> 동안 매일 책을 읽습니다.
+        곁에는 「끗짱」이라 부르는 어른 한 명이 있습니다.</span></div>
+      <div class="jn"><b>② 인증</b><span>읽고 있는 자리를 사진으로 남기면 그날 <b>10점</b>이 쌓입니다.
+        끗짱은 그 기록에 하루도 빠짐없이 한 줄씩 답을 답니다.</span></div>
+      <div class="jn"><b>③ 교환권</b><span><b>250점</b>이 모이면 교환권 한 장이 나옵니다.
+        그 한 장을 들고 사장님 책방을 찾아갑니다.</span></div>
+    </div>
+    <div class="links">
+      <a href="app.html" target="_blank" rel="noopener">청소년이 쓰는 앱 둘러보기 →</a>
+      <a href="index.html" target="_blank" rel="noopener">한끗독서 홈 →</a>
+    </div>
+    <p class="sec-lead" style="margin-top:22px">
       혼자 책을 사본 적 없는 청소년이 많습니다.
       사장님 앞에 선 그 한 번이 <b>처음</b>인 경우가 대부분입니다.
     </p>
