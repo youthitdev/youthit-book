@@ -121,6 +121,13 @@ tr:hover td { background:#fcfcfd; }
 @media (max-width:1020px) { .vq-grid > .vq:nth-child(2) { border-top:1px solid var(--line); } }
 /* 좁아지면 단추가 아래로 내려간다 — 이름이 눌려 줄어드는 것보다 낫다 */
 .vq-b { flex-wrap:wrap; justify-content:flex-end; }
+/* 【폰에서 이름이 세로로 쪼개졌다】 .vq-b 가 flex:none 이고 단추마다
+   white-space:nowrap 이라, 단추가 넷이 되자 글 쪽이 한 글자 폭까지 눌렸다.
+   좁은 화면에서는 나란히 세우기를 포기하고 위아래로 쌓는다 */
+@media (max-width:760px) {
+  .vq { flex-direction:column; gap:10px; }
+  .vq-b { justify-content:flex-start; width:100%; }
+}
 .vq-t { flex:1; min-width:0; }
 .vq-t b { font-size:14px; }
 .vq-t > span { margin-left:7px; font-size:12px; }
@@ -956,7 +963,7 @@ function viewVerify() {
       <b>승인하면 서류 파일은 바로 지워져요.</b> 확인했다는 사실과 방법만 남아요.</div></div>
   </div>
   ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
-    <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 왼쪽 칸 맨 위에 있어요</div>
+    <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 「아직 확인 전」 맨 위에 있어요</div>
   </div>` : ''}
   <div style="padding:14px 20px 20px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임 · 지역 · 이메일 · 번호로 찾기"
