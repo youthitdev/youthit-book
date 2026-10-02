@@ -69,31 +69,24 @@ h2+.sec-lead{margin-top:14px}
 .step .key{display:inline-block;margin-top:11px;font-size:12.5px;font-weight:700;color:var(--green-d);
   background:var(--green-l);border-radius:9px;padding:7px 13px}
 
-/* 안 하셔도 되는 일 */
+/* 다정함 — 어두운 띠 하나에 이 문장만 둔다.
+   🚫 여섯 장은 뺐다. 거절할 거리를 여섯 번 읽히는 것보다
+   부탁 하나를 또렷하게 두는 쪽이 낫다 */
 .nots{background:#14161a;color:#fff}
-.nots .sec-label{color:#a8d94a}
-.nots h2{color:#fff}
-.nots .sec-lead{color:rgba(255,255,255,.66)}
-.not-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin-top:30px}
-@media(max-width:560px){.not-grid{grid-template-columns:1fr}}
-.not{background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12);border-radius:15px;
-  padding:17px 18px;display:flex;gap:12px;align-items:flex-start}
-.not i{font-style:normal;font-size:17px;line-height:1.3;flex-shrink:0}
-.not b{display:block;font-size:14.5px;font-weight:700}
-.not span{display:block;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:4px;line-height:1.7}
+.ask{max-width:560px;margin:0 auto;text-align:center}
+.ask .ask-h{font-size:38px;line-height:1}
+.ask .ask-l{margin-top:16px;font-size:12.5px;font-weight:700;letter-spacing:1.3px;color:var(--green)}
+.ask b{display:block;margin-top:12px;font-size:clamp(21px,4.2vw,29px);font-weight:800;
+  letter-spacing:-1px;color:#fff;line-height:1.45}
+.ask p{margin-top:17px;font-size:14.5px;line-height:1.95;color:rgba(255,255,255,.7)}
+.ask p+p{margin-top:12px}
+.ask em{font-style:normal;font-weight:700;color:#F3C87E}
+@media(max-width:560px){.ask br{display:none}}   /* 좁은 화면에선 줄을 손으로 끊지 않는다 */
 
-/* 그 대신 한 가지 — 🚫 를 늘어놓은 뒤라야 부탁 하나가 무겁게 들린다 */
-.ask{margin-top:26px;background:linear-gradient(180deg,rgba(168,217,74,.15),rgba(168,217,74,.05));
-  border:1px solid rgba(168,217,74,.34);border-radius:18px;padding:28px 24px;text-align:center}
-@media(max-width:560px){.ask{padding:24px 18px}
-  .ask br{display:none}}   /* 좁은 화면에선 줄을 손으로 끊지 않는다 */
-.ask .ask-h{font-size:30px;line-height:1;margin-bottom:12px}
-.ask .ask-l{font-size:12.5px;font-weight:700;letter-spacing:.2px;color:#a8d94a}
-.ask b{display:block;margin-top:11px;font-size:clamp(19px,3.8vw,25px);font-weight:800;
-  letter-spacing:-.9px;color:#fff;line-height:1.5}
-.ask p{margin-top:14px;font-size:13.5px;line-height:1.9;color:rgba(255,255,255,.72)}
-.ask p+p{margin-top:10px}
-.ask em{font-style:normal;font-weight:700;color:#cfe98c}
+/* 「없는 것」은 띠 하나로 줄였다 */
+.nope{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
+.nope span{font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);
+  border:1px solid var(--line);border-radius:99px;padding:8px 14px}
 
 /* 돈 */
 .money{background:var(--green-l)}
@@ -203,21 +196,9 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 
 <section class="nots">
   <div class="wrap">
-    <div class="sec-label">안 하셔도 되는 일</div>
-    <h2>이런 건 없습니다</h2>
-    <p class="sec-lead">책방이 바쁜 걸 압니다. 일이 늘어나는 제안은 드리지 않겠습니다.</p>
-    <div class="not-grid">
-      <div class="not"><i>🚫</i><div><b>계약서</b><span>서류를 쓰거나 도장을 찍지 않습니다.</span></div></div>
-      <div class="not"><i>🚫</i><div><b>앱 설치·가입</b><span>새로 뭘 깔거나 계정을 만들지 않습니다.</span></div></div>
-      <div class="not"><i>🚫</i><div><b>할인</b><span>정가 그대로 받으십니다.</span></div></div>
-      <div class="not"><i>🚫</i><div><b>재고 준비</b><span>미리 사두실 책이 없습니다. 있는 책에서 고릅니다.</span></div></div>
-      <div class="not"><i>🚫</i><div><b>선입금</b><span>저희가 돈을 미리 맡기지 않습니다. 묶일 돈이 없습니다.</span></div></div>
-      <div class="not"><i>🚫</i><div><b>청소년 돌봄</b><span>상담도 수업도 맡기지 않습니다.</span></div></div>
-    </div>
-
     <div class="ask">
       <div class="ask-h">💛</div>
-      <div class="ask-l">그 대신, 한 가지만</div>
+      <div class="ask-l">부탁이 하나 있다면</div>
       <b>청소년에게 ‘다정함’을 주시면 됩니다.</b>
       <p>눈을 맞추고 <em>“어서 오세요”</em>, 책을 고르면 <em>“잘 골랐네요”</em>.<br>
          그 한 마디면 충분합니다. 애쓰지 않으셔도 됩니다.</p>
@@ -229,7 +210,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 
 <section class="money">
   <div class="wrap">
-    <div class="sec-label">돈 이야기</div>
+    <div class="sec-label">운영 방식</div>
     <h2>제일 궁금하실 것부터</h2>
     <div class="pay">
       <b>5영업일</b>
@@ -244,7 +225,12 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
     <p class="sec-lead" style="margin-top:20px">
       동네책방이 이런 제안에서 가장 걱정하는 건 계약이 아니라 <b>외상 기간</b>이라고 들었습니다.
       그래서 저희는 입금 속도를 약속으로 걸었습니다.
+      그 밖에 <b>이런 건 없습니다.</b>
     </p>
+    <div class="nope">
+      <span>계약서</span><span>앱 설치·가입</span><span>할인</span>
+      <span>재고 준비</span><span>선입금</span><span>상담·수업</span>
+    </div>
   </div>
 </section>
 
