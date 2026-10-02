@@ -82,6 +82,18 @@ h2+.sec-lead{margin-top:14px}
 .not b{display:block;font-size:14.5px;font-weight:700}
 .not span{display:block;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:4px;line-height:1.7}
 
+/* 그 대신 한 가지 — 🚫 를 늘어놓은 뒤라야 부탁 하나가 무겁게 들린다 */
+.ask{margin-top:26px;background:linear-gradient(180deg,rgba(168,217,74,.15),rgba(168,217,74,.05));
+  border:1px solid rgba(168,217,74,.34);border-radius:18px;padding:28px 24px;text-align:center}
+@media(max-width:560px){.ask{padding:24px 18px}
+  .ask br{display:none}}   /* 좁은 화면에선 줄을 손으로 끊지 않는다 */
+.ask .ask-l{font-size:12.5px;font-weight:700;letter-spacing:.2px;color:#a8d94a}
+.ask b{display:block;margin-top:11px;font-size:clamp(19px,3.8vw,25px);font-weight:800;
+  letter-spacing:-.9px;color:#fff;line-height:1.5}
+.ask p{margin-top:14px;font-size:13.5px;line-height:1.9;color:rgba(255,255,255,.72)}
+.ask p+p{margin-top:10px}
+.ask em{font-style:normal;font-weight:700;color:#cfe98c}
+
 /* 돈 */
 .money{background:var(--green-l)}
 .pay{margin-top:28px;background:var(--card);border:1px solid #dcecc0;border-radius:18px;padding:26px 24px;text-align:center}
@@ -199,7 +211,16 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
       <div class="not"><i>🚫</i><div><b>할인</b><span>정가 그대로 받으십니다.</span></div></div>
       <div class="not"><i>🚫</i><div><b>재고 준비</b><span>미리 사두실 책이 없습니다. 있는 책에서 고릅니다.</span></div></div>
       <div class="not"><i>🚫</i><div><b>선입금</b><span>저희가 돈을 미리 맡기지 않습니다. 묶일 돈이 없습니다.</span></div></div>
-      <div class="not"><i>🚫</i><div><b>아이 돌봄</b><span>상담도 수업도 없습니다. 책만 사 갑니다.</span></div></div>
+      <div class="not"><i>🚫</i><div><b>아이 돌봄</b><span>상담도 수업도 맡기지 않습니다.</span></div></div>
+    </div>
+
+    <div class="ask">
+      <div class="ask-l">그 대신, 한 가지만</div>
+      <b>청소년에게 ‘다정함’을 주시면 됩니다.</b>
+      <p>눈을 맞추고 <em>“어서 오세요”</em>, 책을 고르면 <em>“잘 골랐네요”</em>.<br>
+         그 한 마디면 충분합니다. 애쓰지 않으셔도 됩니다.</p>
+      <p>이 아이들에게 책방 사장님은 집과 학교 밖에서 만나는<br>
+         몇 안 되는 어른입니다. 저희가 책값을 보내는 이유도 거기에 있습니다.</p>
     </div>
   </div>
 </section>
