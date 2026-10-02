@@ -214,6 +214,11 @@ tr:hover td { background:#fcfcfd; }
 /* 신청서 한 장이 화면을 다 먹었다. 넓으면 둘씩 세운다 —
    창이 좁아지면 저절로 한 줄로 돌아간다 */
 .kk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:13px; }
+/* .panel 은 안쪽 여백이 없다. 표는 칸마다 padding 이 있어 괜찮은데
+   격자와 소제목은 흰 테두리에 그대로 들러붙었다 — 제목(.panel-hd)만 20px
+   들어가 있어 소제목이 그보다 왼쪽에 서는 꼴이었다 */
+.panel > .kk-grid { padding:0 20px 20px; }
+.panel > .panel-t { padding-left:20px; padding-right:20px; }
 .kk { background:var(--card); border:1px solid var(--line); border-radius:13px; padding:17px 18px; }
 .kk-grid .kk { margin-bottom:0; }
 .kk-h { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
