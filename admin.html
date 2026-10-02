@@ -2850,6 +2850,13 @@ function switchGroup(g) {
   else renderSummary();
 }
 
+// 알림 배너를 눌러 들어오면 바로 그 탭이어야 한다.
+// 「#kkut 으로 왔는데 청소년 확인이 떠 있다」면 한 번 더 찾아야 한다
+function tabFromHash() {
+  const t = (location.hash || '').replace('#', '');
+  return document.querySelector(`.tab[data-tab="${CSS.escape(t)}"]`) ? t : null;
+}
+
 function switchTab(t) {
   tab = t;
   document.querySelectorAll('.tab').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
@@ -2911,8 +2918,15 @@ async function adminLogout() { await sb.auth.signOut(); location.reload(); }
   document.getElementById('whoami').textContent = email;
   document.getElementById('logoutBtn').style.display = '';
   await loadLive();
-  render();
+  const t = tabFromHash();
+  if (t) switchTab(t); else render();
 })();
+
+// 앱이 열려 있는 채로 다른 알림을 누르면 주소만 바뀐다
+window.addEventListener('hashchange', () => {
+  const t = tabFromHash();
+  if (t && t !== tab) switchTab(t);
+});
 </script>
 </body>
 </html>
