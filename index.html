@@ -564,8 +564,11 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
   } catch (e) { /* 숫자가 없어도 페이지는 그대로 */ }
 })();
 
-// 도너스 결제 주소가 정해지면 여기만 채우면 된다
-const DONATE_URL = '';
+// 도너스 결제 주소. 주기(정기/일시)는 그 화면에서 다시 고를 수 있다.
+// ⚠️ 주소를 받을 때 붙어 오는 `_gl=...` 는 구글 애널리틱스가 그때 그 사람을
+//    따라다니려고 붙인 꼬리표다. 그대로 박아 두면 모든 후원자가 남의 세션
+//    표식을 달고 들어간다. 떼고 쓴다
+const DONATE_URL = 'https://secure.donus.org/youthvoice/pay/step1_direct?dontype=25&period=pledge';
 ['donateBtn', 'donateBtn2'].forEach(id => {
   const b = document.getElementById(id); if (!b) return;
   if (DONATE_URL) { b.href = DONATE_URL; b.target = '_blank'; b.rel = 'noopener'; }
