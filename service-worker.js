@@ -1,7 +1,21 @@
 // 한끗독서 서비스 워커.
 // 있는 이유는 캐시가 아니라 푸시다 — 아이폰은 홈 화면에 추가된 PWA 에만 푸시를 준다.
-const BASE  = '/youthit-book/';
-const CACHE = 'hankkut-book-v3';
+// 주소를 박아 두지 않는다. 등록 범위에서 뽑으면 /youthit-book/ 이든 / 이든
+// 그대로 돈다 — 도메인을 갈아도 이 파일을 안 고쳐도 된다
+const BASE  = new URL(self.registration.scope).pathname;
+const CACHE = 'hankkut-book-v4';
+
+// 알림함(notifications.link)에는 옛 경로가 열여섯 군데 적혀 있다.
+// 주소가 바뀌어도 열리도록 앞머리를 떼고 지금 BASE 에 다시 붙인다
+function here(u) {
+  if (!u) return BASE + 'app.html';
+  try {
+    const p = new URL(u, self.registration.scope);
+    if (p.origin !== self.location.origin) return u;   // 바깥 주소는 건드리지 않는다
+    const rest = p.pathname.replace(/^\/youthit-book\//, '').replace(/^\//, '');
+    return BASE + (rest || 'app.html') + p.search + p.hash;
+  } catch { return BASE + 'app.html'; }
+}
 const ASSETS = [BASE, BASE + 'app.html', BASE + 'manifest.json',
                 BASE + 'icon-192.png', BASE + 'icon-512.png'];
 
@@ -50,7 +64,7 @@ self.addEventListener('push', e => {
       body:  d.body || '',
       icon:  BASE + 'icon-192.png',
       badge: BASE + 'icon-192.png',
-      data:  { url: d.url || BASE + 'app.html' },
+      data:  { url: here(d.url) },
     });
     // 열려 있는 화면은 🔔 목록을 앱 켜질 때 한 번만 읽는다.
     // 알려주지 않으면 배너만 오고 종은 그대로라, 앱을 꺼다 켜야 숫자가 붙는다
@@ -61,12 +75,12 @@ self.addEventListener('push', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  const url = (e.notification.data && e.notification.data.url) || BASE + 'app.html';
+  const url = here(e.notification.data && e.notification.data.url);
   const pick = k => { const m = url.match(new RegExp('[?&]' + k + '=([\\w-]+)')); return m ? m[1] : null; };
   const nav = { tab: pick('tab'), routine: pick('routine') };
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     for (const c of list) {
-      if (c.url.includes('/youthit-book') && 'focus' in c) {
+      if (c.url.startsWith(self.registration.scope) && 'focus' in c) {
         // Client.navigate() 는 아이폰에서 초점만 옮기고 화면은 그대로인 일이 있다.
         // 열려 있으면 페이지에 시켜서 직접 화면을 바꾼다
         if (nav.tab || nav.routine) c.postMessage({ type: 'notif-navigate', ...nav });

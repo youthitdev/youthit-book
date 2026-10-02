@@ -607,6 +607,10 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 // ════════════════════════════════════════════════════════
 // Supabase — 한끗루틴과 같은 프로젝트 (supabase-schema.sql 적용 후 값 입력)
 // ════════════════════════════════════════════════════════
+// 후원자에게 보내는 문자에 들어가는 주소. 문자는 눌러서 들어오는 거라
+// 전체 주소여야 한다. 도메인을 갈면 여기 한 줄만 고친다
+const SITE = 'https://youthitdev.github.io/youthit-book';
+
 const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
 const SB_KEY = 'sb_publishable_T35InghsDImtgdLk7Kksdw_ng1H8P18';
 const LIVE = !!(SB_URL && SB_KEY);
@@ -1134,8 +1138,8 @@ async function nfSubmit() {
     alert('예약했어요. 5분 단위로 확인하니 조금 늦게 나갈 수 있어요.');
   } else {
     const payload = t === 'all'
-      ? { target: 'all', title, body, url: '/youthit-book/app.html' }
-      : { target: 'routine', routine_id: rid, title, body, url: '/youthit-book/app.html?routine=' + rid };
+      ? { target: 'all', title, body, url: 'app.html' }
+      : { target: 'routine', routine_id: rid, title, body, url: 'app.html?routine=' + rid };
     const { data, error } = await sb.functions.invoke('send-push', { body: payload });
     btn.disabled = false; btn.textContent = was;
     if (error) return alert('보내지 못했어요: ' + error.message);
@@ -1361,7 +1365,7 @@ function rpMessage(d) {
   }
 
   L.push('', '무엇에 쓰였는지 여기서 보실 수 있어요.',
-         'https://youthitdev.github.io/youthit-book/#donate',
+         SITE + '/#donate',
          '', '무료수신거부 0808-000-000');
   return L.join('\n');
 }
