@@ -69,6 +69,20 @@ h2+.sec-lead{margin-top:14px}
 .step .key{display:inline-block;margin-top:11px;font-size:12.5px;font-weight:700;color:var(--green-d);
   background:var(--green-l);border-radius:9px;padding:7px 13px}
 
+/* 누가 오는가 — 책방이 두 번째로 궁금해하는 것.
+   활동 설명이 아니라 문 앞에 선 그 청소년의 이력이다.
+   루틴·끗짱·포인트는 우리 쪽 말이라 늘어놓지 않는다 */
+.jny{margin-top:28px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:4px 24px}
+.jn{display:flex;gap:20px;align-items:baseline;padding:20px 0;border-top:1px solid var(--line)}
+.jn:first-child{border-top:0}
+.jn b{flex-shrink:0;width:92px;font-size:17px;font-weight:800;letter-spacing:-.6px;color:var(--green-d)}
+.jn span{font-size:14.5px;color:var(--ink-2);line-height:1.85}
+@media(max-width:560px){
+  .jny{padding:4px 19px}
+  .jn{flex-direction:column;gap:5px;padding:17px 0}
+  .jn b{width:auto;font-size:16px}
+}
+
 /* 다정함 — 어두운 띠 하나에 이 문장만 둔다.
    🚫 여섯 장은 뺐다. 거절할 거리를 여섯 번 읽히는 것보다
    부탁 하나를 또렷하게 두는 쪽이 낫다 */
@@ -193,6 +207,22 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
     </div>
   </section>
 </div>
+
+<section class="before">
+  <div class="wrap">
+    <div class="sec-label">누가 오는가</div>
+    <h2>이 청소년이 책방 문을 열기까지</h2>
+    <div class="jny">
+      <div class="jn"><b>매일</b><span>읽은 쪽을 사진으로 남겼습니다. 하루도 대신해 줄 수 없는 일입니다.</span></div>
+      <div class="jn"><b>그때마다</b><span>곁에 선 어른 한 명이 그 기록에 한 줄씩 답을 달았습니다.</span></div>
+      <div class="jn"><b>250점</b><span>그만큼 모여야 책 한 권이 됩니다. 오늘이 그날입니다.</span></div>
+    </div>
+    <p class="sec-lead">
+      혼자 책을 사본 적 없는 청소년이 많습니다.
+      사장님 앞에 선 그 한 번이 <b>처음</b>인 경우가 대부분입니다.
+    </p>
+  </div>
+</section>
 
 <section class="nots">
   <div class="wrap">
