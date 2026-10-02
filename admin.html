@@ -102,7 +102,6 @@ tr:hover td { background:#fcfcfd; }
 /* 청소년 확인 한 줄 */
 /* 회원 목록도 길어질 자리다. 넓으면 둘씩 세워 스크롤을 반으로 줄인다.
    한 줄에 단추가 셋까지 붙어서 끗짱 신청서보다 폭을 더 준다 */
-.vq-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(470px,1fr)); gap:0 22px; }
 /* 【왜 둘로 가르나】 끝난 사람과 할 사람이 한 덩어리로 섞여 있었다.
    스무 명이 넘어가면 「오늘 누가 남았나」를 눈으로 세야 한다 */
 .vq-two { display:grid; grid-template-columns:1fr 1fr; gap:0 22px; align-items:start; }
@@ -117,8 +116,6 @@ tr:hover td { background:#fcfcfd; }
 .vq { display:flex; align-items:flex-start; gap:12px; padding:12px 0;
   border-top:1px solid var(--line); }
 /* 맨 윗줄은 선을 긋지 않는다. 두 칸일 때는 위 둘 다 */
-.vq-grid > .vq:nth-child(-n+2) { border-top:0; }
-@media (max-width:1020px) { .vq-grid > .vq:nth-child(2) { border-top:1px solid var(--line); } }
 /* 좁아지면 단추가 아래로 내려간다 — 이름이 눌려 줄어드는 것보다 낫다 */
 .vq-b { flex-wrap:wrap; justify-content:flex-end; }
 /* 【폰에서 이름이 세로로 쪼개졌다】 .vq-b 가 flex:none 이고 단추마다
@@ -248,7 +245,7 @@ tr:hover td { background:#fcfcfd; }
 /* 끗짱 승인 */
 /* 신청서 한 장이 화면을 다 먹었다. 넓으면 둘씩 세운다 —
    창이 좁아지면 저절로 한 줄로 돌아간다 */
-.kk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:13px; }
+.kk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(420px,100%),1fr)); gap:13px; }
 /* .panel 은 안쪽 여백이 없다. 표는 칸마다 padding 이 있어 괜찮은데
    격자와 소제목은 흰 테두리에 그대로 들러붙었다 — 제목(.panel-hd)만 20px
    들어가 있어 소제목이 그보다 왼쪽에 서는 꼴이었다 */
@@ -259,7 +256,7 @@ tr:hover td { background:#fcfcfd; }
 .kk-h { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .kk-n { font-size:15.5px; font-weight:700; }
 .kk-m { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
-.kk-g { display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:8px 16px; margin:14px 0; padding:12px 14px; background:var(--bg); border-radius:10px; }
+.kk-g { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(185px,100%),1fr)); gap:8px 16px; margin:14px 0; padding:12px 14px; background:var(--bg); border-radius:10px; }
 .kk-g > div { display:flex; gap:8px; font-size:12.5px; min-width:0; }
 .kk-g b { color:var(--ink-3); font-weight:600; flex-shrink:0; min-width:48px; }
 /* 메일 주소가 길면 옆 칸까지 밀고 들어갔다. 칸 안에서 접히게 둔다 */
