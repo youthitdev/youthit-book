@@ -174,7 +174,8 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .split{display:flex;gap:12px;margin-top:24px}
 @media(max-width:640px){.split{flex-direction:column}}
 .split div{flex:1;background:#fff;border:1px solid #dcecc0;border-radius:14px;padding:18px 20px}
-.split b{display:block;font-size:17px;font-weight:800;letter-spacing:-.5px;margin-bottom:7px}
+.split > div > b{display:block;font-size:17px;font-weight:800;letter-spacing:-.5px;margin-bottom:7px}
+.split span b{display:inline;font-size:inherit;font-weight:800;color:var(--ink);margin:0}
 .split span{font-size:13px;color:var(--ink-2);line-height:1.75}
 .split-note{text-align:center;font-size:13.5px;color:var(--green-d);line-height:1.85;margin-top:18px;font-weight:600}
 
@@ -384,10 +385,10 @@ footer a{color:var(--ink-3)}
       </div>
       <div>
         <b>🌱 습관</b>
-        <span>루틴이 끝나는 날까지 곁을 지키는 <b>습관기금</b>입니다.
+        <span>청소년이 루틴을 끝까지 가도록 곁을 지키는 데 쓰는 <b>습관기금</b>입니다.
           끗짱을 찾아 연결하고, 매일 응원하고, 동네책방과 정산합니다.
-          <i style="display:block;margin-top:9px;font-style:normal;font-size:13px;color:var(--ink-3);">
-            이 돈의 쓰임은 앱이 세지 못하는 몫까지 있어, 연말 사용 보고로 한 번에 정확히 냅니다.</i></span>
+          <i style="display:block;margin-top:9px;font-style:normal;color:var(--ink-3);">
+            앱이 세지 못하는 몫까지 있어, 쓰임은 연말 사용 보고로 한 번에 정확히 냅니다.</i></span>
       </div>
     </div>
     <p class="split-note">
