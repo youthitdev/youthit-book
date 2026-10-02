@@ -516,6 +516,44 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 </div>
 
 <!-- 후원 입력 -->
+<!-- 운영진이 직접 세우는 끗짱. 유스보이스가 섭외한 어른은 신청서를 쓸 일이 없다 -->
+<div class="overlay" id="mkKkutOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">끗짱으로 세우기</div>
+      <div class="modal-d" id="mkWho"></div>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <div class="label">청소년인가요, 어른인가요 <span>*</span></div>
+        <select id="mkAdult">
+          <option value="1">어른 — 루틴만 만들어요. 포인트·교환권·책은 받지 않아요</option>
+          <option value="0">청소년 — 계속 읽고 포인트도 쌓아요</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="label">나이 <span>*</span></div>
+        <input type="number" id="mkAge" min="14" max="100" placeholder="예) 34">
+        <div class="hint" id="mkAgeHint">생년월일이 있으면 채워뒀어요.</div>
+      </div>
+      <div class="field">
+        <div class="label">소속</div>
+        <input type="text" id="mkAff" placeholder="예) 유스보이스 · 없으면 비워두세요">
+      </div>
+      <div class="field">
+        <div class="label">왜 세우시나요 <span>*</span></div>
+        <textarea id="mkWhy" rows="3"
+          placeholder="예) 대표가 직접 섭외한 어른 끗짱이에요. 9월 28일 통화로 확인했어요."></textarea>
+        <div class="hint">끗짱 승인 탭에 그대로 남아요. 나중에 「왜 이 사람인가」를 설명하는 유일한 글이에요.</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('mkKkutOverlay')">취소</button>
+      <button class="btn btn-dark" onclick="submitMakeKkut()">끗짱으로 세우기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="chargeOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -846,8 +884,9 @@ function vqCard(r) {
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 승인</button>` : ''}
       ${st.key === 'approved' ? `
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
-      ${r.can_lead ? `
-        <button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>` : ''}
+      ${r.can_lead
+        ? `<button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
+        : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 세우기</button>`}
     </div>
   </div>`;
 }
@@ -902,6 +941,49 @@ function viewVerify() {
            value="${esc(vqFind)}" oninput="vqSearch(this.value)">
     <div id="vqList">${vqRows()}</div>
   </div>`;
+}
+
+// 운영진이 직접 끗짱을 세운다.
+// 【왜 신청서를 그냥 건너뛰지 않나】 끗짱은 청소년 기록을 다 보는 권한이다.
+//   「누구를, 왜 세웠나」가 안 남으면 나중에 아무도 설명할 수 없다.
+//   그래서 운영진이 대신 적고, 그 글이 끗짱 승인 탭에 그대로 남는다
+let mkKkutId = null;
+
+function openMakeKkut(userId) {
+  const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
+  mkKkutId = userId;
+  document.getElementById('mkWho').textContent =
+    `${r.name}${r.nick && r.nick !== r.name ? `(${r.nick})` : ''} · ${r.region || '지역 없음'}`;
+  document.getElementById('mkAdult').value = r.role === 'adult' ? '1' : '0';
+  document.getElementById('mkAge').value = r.age || '';
+  document.getElementById('mkAgeHint').textContent = r.age
+    ? '생년월일에서 가져왔어요.' : '생년월일이 없어서 비어 있어요. 직접 적어주세요.';
+  document.getElementById('mkAff').value = '';
+  document.getElementById('mkWhy').value = '';
+  document.getElementById('mkKkutOverlay').classList.add('on');
+}
+
+async function submitMakeKkut() {
+  const r = (DB.verify || []).find(x => x.user_id === mkKkutId); if (!r) return;
+  const adult = document.getElementById('mkAdult').value === '1';
+  const age   = parseInt(document.getElementById('mkAge').value || '0', 10);
+  const aff   = document.getElementById('mkAff').value.trim();
+  const why   = document.getElementById('mkWhy').value.trim();
+
+  if (!age || age < 14 || age > 100) return alert('나이를 14~100 사이로 적어주세요.');
+  if (!why) return alert('왜 세우는지 한 줄 적어주세요.\n끗짱 승인 탭에 그대로 남아요.');
+  if (!confirm(`${r.name} 님을 ${adult ? '어른' : '청소년'} 끗짱으로 세울까요?\n\n`
+      + `· 루틴을 만들고 청소년 기록을 볼 수 있게 돼요\n`
+      + (adult ? `· 어른이라 포인트·교환권·책은 받지 않아요\n` : '')
+      + `· 본인에게 알림이 가요`)) return;
+
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.rpc('admin_make_kkut',
+    { p_user: mkKkutId, p_adult: adult, p_age: age, p_affiliation: aff || null, p_why: why });
+  if (error) return alert('세우지 못했어요: ' + error.message);
+
+  closeModal('mkKkutOverlay');
+  await loadLive(); await loadKkutApps(); render();
 }
 
 // 끗짱 자격을 거둔다. 어른은 청소년 확인을 할 대상이 아니라서,
