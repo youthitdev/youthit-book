@@ -98,6 +98,17 @@ tr:hover td { background:#fcfcfd; }
 /* 회원 목록도 길어질 자리다. 넓으면 둘씩 세워 스크롤을 반으로 줄인다.
    한 줄에 단추가 셋까지 붙어서 끗짱 신청서보다 폭을 더 준다 */
 .vq-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(470px,1fr)); gap:0 22px; }
+/* 【왜 둘로 가르나】 끝난 사람과 할 사람이 한 덩어리로 섞여 있었다.
+   스무 명이 넘어가면 「오늘 누가 남았나」를 눈으로 세야 한다 */
+.vq-two { display:grid; grid-template-columns:1fr 1fr; gap:0 22px; align-items:start; }
+@media (max-width:1020px) { .vq-two { grid-template-columns:1fr; gap:26px 0; } }
+.vq-col-h { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700;
+  padding:8px 11px; border-radius:9px; margin-bottom:2px; }
+.vq-col-h b { font-size:13px; }
+.vq-col-h.wait { background:#FFF4D6; color:#7A5417; }
+.vq-col-h.done { background:#EEF3E6; color:#4a6b1f; }
+.vq-col > .vq:first-of-type { border-top:0; }
+.vq-none { padding:22px 0; text-align:center; color:var(--ink-3); font-size:12.5px; }
 .vq { display:flex; align-items:flex-start; gap:12px; padding:12px 0;
   border-top:1px solid var(--line); }
 /* 맨 윗줄은 선을 긋지 않는다. 두 칸일 때는 위 둘 다 */
@@ -850,7 +861,27 @@ function vqRows() {
     || (r.email || '').toLowerCase().includes(q)
     || (r.phone || '').includes(q));
   if (!rows.length) return `<div class="empty">찾는 사람이 없어요.</div>`;
-  return `<div class="vq-grid">${rows.map(vqCard).join('')}</div>`;
+
+  // 어른은 청소년 확인을 할 대상이 아니다. 할 일 쪽에 쌓이면 안 된다
+  const left  = rows.filter(r => r.role !== 'adult' && (r.status || 'none') !== 'approved');
+  const right = rows.filter(r => r.role === 'adult' || (r.status || 'none') === 'approved');
+
+  // 서류를 낸 사람이 맨 위. 그다음이 반려, 아직 안 낸 사람은 아래.
+  // 같은 상태끼리는 새로 가입한 사람이 위로 — 늦게 처리될수록 루틴 신청이 밀린다
+  const ord = { pending:0, rejected:1, none:2 };
+  const newest = (a, b) => String(b.joined_at || '').localeCompare(String(a.joined_at || ''));
+  left.sort((a, b) => (ord[a.status || 'none'] ?? 9) - (ord[b.status || 'none'] ?? 9) || newest(a, b));
+  right.sort(newest);
+
+  const col = (tone, title, list, none) => `<div class="vq-col">
+      <div class="vq-col-h ${tone}">${title} <b>${list.length}</b>명</div>
+      ${list.length ? list.map(vqCard).join('') : `<div class="vq-none">${none}</div>`}
+    </div>`;
+
+  return `<div class="vq-two">
+    ${col('wait', '아직 확인 전', left,  '다 처리했어요 🌱')}
+    ${col('done', '확인 끝',     right, '아직 없어요')}
+  </div>`;
 }
 
 function viewVerify() {
@@ -864,7 +895,7 @@ function viewVerify() {
       <b>승인하면 서류 파일은 바로 지워져요.</b> 확인했다는 사실과 방법만 남아요.</div></div>
   </div>
   ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
-    <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 아래 맨 위에 있어요</div>
+    <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 왼쪽 칸 맨 위에 있어요</div>
   </div>` : ''}
   <div style="padding:14px 20px 20px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임 · 지역 · 이메일 · 번호로 찾기"
