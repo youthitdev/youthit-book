@@ -2236,18 +2236,22 @@ async function browseAsGuest() {
   $('hdr').classList.remove('k');
   $('hdrRole').textContent = '둘러보는 중';
   $('hdrBtn').style.display = '';          // 둘러보는 사람에게는 들어올 문이 필요하다
-  $('hdrBtn').textContent = '로그인';
-  $('hdrBtn').onclick = showAuth;
+  // 「로그인」만 적으면 계정이 없는 사람은 제 자리가 없다고 읽는다
+  $('hdrBtn').textContent = '로그인 · 회원가입';
+  $('hdrBtn').onclick = () => showAuth('login');
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--blue)');
   await loadAll();
   go('home');
 }
 
-function showAuth() {
+// mode 를 주면 그 걸음으로 연다. 「시작하기」는 가입이어야 한다 —
+// 제일 큰 단추를 눌렀는데 로그인 화면이 나오면 거기서 또 길을 찾아야 한다.
+// ⚠️ 단추에 그대로 매달면(onclick = showAuth) 이벤트 객체가 들어온다. 아는 글자만 받는다
+function showAuth(mode) {
   birthBounds($('auBirth'));
   $('authScr').style.display = '';
   $('appScr').style.display = 'none';
-  setMode(authMode);        // 걸음에 맞춰 보일 것을 가린다
+  setMode(mode === 'signup' ? 'signup' : 'login');
   window.scrollTo(0, 0);
 }
 
@@ -3093,7 +3097,7 @@ function viewHome() {
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
-        <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth()">시작하기</button>
+        <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth('signup')">시작하기</button>
       </div>` + recruit;
   }
 
