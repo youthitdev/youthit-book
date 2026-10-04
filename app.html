@@ -175,6 +175,10 @@ input[type=date]:disabled, select:disabled { background-image:none; }
   border-radius:14px; padding:16px 17px; color:#fff; }
 .pick-c:hover { border-color:rgba(255,255,255,.45); }
 .pick-c b { display:block; font-size:16px; font-weight:800; letter-spacing:-.3px; }
+/* 「지금은 어른이 맡는다」를 한눈에. 제목에 붙여야 읽기 전에 걸러진다 */
+.pick-c b em { font-style:normal; font-size:11.5px; font-weight:700; margin-left:7px;
+  vertical-align:2px; padding:3px 8px; border-radius:7px;
+  color:rgba(255,255,255,.72); background:rgba(255,255,255,.15); }
 .pick-c span { display:block; font-size:12.5px; line-height:1.65; margin-top:5px;
   color:rgba(255,255,255,.68); }
 .pick-c i { display:block; font-style:normal; font-size:11.5px; margin-top:7px;
@@ -1142,9 +1146,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <i>혼자 읽기 어려운 날에도 곁에 함께하는 사람이 있어요 · 만 14세부터</i>
       </button>
       <button type="button" class="pick-c" onclick="pickRole('kkut')">
-        <b>💪 끗짱</b>
-        <span>청소년 곁에서 함께 읽으며, 건강한 읽기 습관이 자리 잡도록 도와요.</span>
-        <i>매일 기록에 한 줄씩 답을 달아줍니다 · 운영진 승인 뒤 루틴을 열 수 있어요</i>
+        <b>💪 끗짱 <em>어른</em></b>
+        <span>청소년 곁에서 함께 읽으며, 건강한 읽기 습관이 자리 잡도록 도와요.
+          매일 기록에 한 줄씩 답을 달아줍니다.</span>
+        <i>지금은 성인이 맡고 있어요 · 운영진 승인 뒤 루틴을 열 수 있어요</i>
       </button>
     </div>
   </div>
