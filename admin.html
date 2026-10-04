@@ -109,6 +109,9 @@ tr:hover td { background:#fcfcfd; }
 .vq-col-h { display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700;
   padding:8px 11px; border-radius:9px; margin-bottom:2px; }
 .vq-col-h b { font-size:13px; }
+/* 색만으로 갈리면 햇빛 아래나 색약인 눈에는 두 띠가 같아 보인다 */
+.vq-col-h i { font-style:normal; font-size:13px; line-height:1; }
+.vq-col-h.done i { font-weight:900; }
 .vq-col-h.wait { background:#FFF4D6; color:#7A5417; }
 .vq-col-h.done { background:#EEF3E6; color:#4a6b1f; }
 .vq-col > .vq:first-of-type { border-top:0; }
@@ -959,8 +962,8 @@ function vqRows() {
     </div>`;
 
   return `<div class="vq-two">
-    ${col('wait', '아직 확인 전', left,  '다 처리했어요 🌱')}
-    ${col('done', '확인 끝',     right, '아직 없어요')}
+    ${col('wait', '<i>⏳</i> 아직 확인 전', left,  '다 처리했어요 🌱')}
+    ${col('done', '<i>✓</i> 확인 끝',      right, '아직 없어요')}
   </div>`;
 }
 
