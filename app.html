@@ -1133,17 +1133,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
   <!-- 2걸음: 무엇으로 가입할까 -->
   <div id="rolePick" style="display:none;">
-    <div class="au-step">무엇으로 가입할까요?</div>
+    <div class="au-step">어떤 역할로 함께할까요?</div>
     <div class="pick">
       <button type="button" class="pick-c" onclick="pickRole('youth')">
         <b>🌱 청소년</b>
-        <span>매일 읽고 인증해서 포인트를 모아요. 모이면 동네책방에서 책 한 권과 바꿔요.</span>
-        <i>만 14세부터 · 책을 받으려면 청소년 확인 한 번</i>
+        <span>함께 책을 읽고 인증해서 포인트를 모아요.
+          모이면 동네책방에서 책 한 권과 바꿔요.</span>
+        <i>혼자 읽기 어려운 날에도 곁에 함께하는 사람이 있어요 · 만 14세부터</i>
       </button>
       <button type="button" class="pick-c" onclick="pickRole('kkut')">
         <b>💪 끗짱</b>
-        <span>루틴을 열고 청소년들과 함께 읽어요. 매일 기록에 한 줄씩 답을 달아줍니다.</span>
-        <i>운영진 승인을 받은 뒤에 루틴을 만들 수 있어요</i>
+        <span>청소년 곁에서 함께 읽으며, 건강한 읽기 습관이 자리 잡도록 도와요.</span>
+        <i>매일 기록에 한 줄씩 답을 달아줍니다 · 운영진 승인 뒤 루틴을 열 수 있어요</i>
       </button>
     </div>
   </div>
@@ -1896,8 +1897,8 @@ function setJoinRole(r) {
   joinRole = r;
   const k = r === 'kkut';
   $('roleHint').innerHTML = k
-    ? '<b>💪 끗짱</b>으로 가입해요 · 운영진 확인 뒤에 루틴을 만들 수 있어요'
-    : '<b>🌱 청소년</b>으로 가입해요 · 읽고 인증하고 포인트를 모아요';
+    ? '<b>💪 끗짱</b>으로 함께해요 · 청소년 곁에서 같이 읽어요'
+    : '<b>🌱 청소년</b>으로 함께해요 · 읽고 인증해서 포인트를 모아요';
   // 끗짱에게는 재학 상태 대신 소속을 묻는다
   $('auSchool').style.display = k ? 'none' : '';
   $('auAffil').style.display  = k ? '' : 'none';
