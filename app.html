@@ -162,7 +162,10 @@ input[type=date]:disabled, select:disabled { background-image:none; }
 .auth .swap b { color:#fff; cursor:pointer; text-decoration:underline; }
 /* 가입은 세 걸음으로 간다 — 로그인/회원가입 → 무엇으로 → 정보 적기.
    전에는 똑같이 생긴 탭 줄 둘이 포개져 있어 네 개짜리 한 덩어리로 읽혔다 */
-.au-back { display:flex; align-items:center; gap:7px; align-self:flex-start;
+/* align-self:flex-start 를 쓰면 안 된다 — .auth 가 가운데 정렬이라
+   가로 끝으로 날아간다. 다른 칸들과 같은 360px 기둥 안에 두고,
+   글자만 왼쪽에 붙인다 */
+.au-back { display:flex; align-items:center; gap:7px;
   background:none; border:none; padding:8px 14px 8px 0; margin:0 0 12px -2px; cursor:pointer;
   font-family:inherit; font-size:13.5px; font-weight:700; color:rgba(255,255,255,.8); }
 .au-back:hover { color:#fff; }
