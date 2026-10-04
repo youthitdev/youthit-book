@@ -160,6 +160,26 @@ input[type=date]:disabled, select:disabled { background-image:none; }
 .auth .btn-primary { background:#fff; color:var(--blue); margin-top:6px; }
 .auth .swap { text-align:center; margin-top:18px; font-size:13px; color:rgba(255,255,255,.7); }
 .auth .swap b { color:#fff; cursor:pointer; text-decoration:underline; }
+/* 가입은 세 걸음으로 간다 — 로그인/회원가입 → 무엇으로 → 정보 적기.
+   전에는 똑같이 생긴 탭 줄 둘이 포개져 있어 네 개짜리 한 덩어리로 읽혔다 */
+.au-back { display:flex; align-items:center; gap:7px; align-self:flex-start;
+  background:none; border:none; padding:6px 0; margin-bottom:12px; cursor:pointer;
+  font-family:inherit; font-size:13.5px; font-weight:700; color:rgba(255,255,255,.8); }
+.au-back:hover { color:#fff; }
+.au-step { font-size:13px; color:rgba(255,255,255,.66); margin:-18px 0 16px; }
+.au-step b { color:#fff; }
+/* 둘을 나란히 두어 눌러보지 않고도 견주게 한다 */
+.pick { display:flex; flex-direction:column; gap:10px; }
+.pick-c { display:block; width:100%; text-align:left; cursor:pointer; font-family:inherit;
+  border:1.5px solid rgba(255,255,255,.22); background:rgba(255,255,255,.07);
+  border-radius:14px; padding:16px 17px; color:#fff; }
+.pick-c:hover { border-color:rgba(255,255,255,.45); }
+.pick-c b { display:block; font-size:16px; font-weight:800; letter-spacing:-.3px; }
+.pick-c span { display:block; font-size:12.5px; line-height:1.65; margin-top:5px;
+  color:rgba(255,255,255,.68); }
+.pick-c i { display:block; font-style:normal; font-size:11.5px; margin-top:7px;
+  color:rgba(255,255,255,.5); }
+
 .role-row { display:flex; gap:8px; margin-bottom:10px; }
 .role-btn { flex:1; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.22); background:transparent; color:rgba(255,255,255,.6); font-size:14px; cursor:pointer; }
 .role-btn.on { background:#fff; color:var(--blue); font-weight:700; border-color:#fff; }
@@ -1104,17 +1124,33 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 <div class="auth" id="authScr">
   <h1>매일 한 장,<br>책과 가까워지는 습관</h1>
   <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 포인트가 쌓여요</div>
-  <div class="role-row">
+  <button type="button" class="au-back" id="auBack" style="display:none;" onclick="authBack()">← 뒤로</button>
+
+  <div class="role-row" id="authTabs">
     <button type="button" class="role-btn on" id="segLogin"  onclick="setMode('login')">로그인</button>
     <button type="button" class="role-btn"    id="segSignup" onclick="setMode('signup')">회원가입</button>
   </div>
 
-  <div id="signupOnly" style="display:none;">
-    <div class="role-row">
-      <button type="button" class="role-btn on" id="segYouth" onclick="setJoinRole('youth')">🌱 청소년</button>
-      <button type="button" class="role-btn"    id="segKkut"  onclick="setJoinRole('kkut')">💪 끗짱</button>
+  <!-- 2걸음: 무엇으로 가입할까 -->
+  <div id="rolePick" style="display:none;">
+    <div class="au-step">무엇으로 가입할까요?</div>
+    <div class="pick">
+      <button type="button" class="pick-c" onclick="pickRole('youth')">
+        <b>🌱 청소년</b>
+        <span>매일 읽고 인증해서 포인트를 모아요. 모이면 동네책방에서 책 한 권과 바꿔요.</span>
+        <i>만 14세부터 · 책을 받으려면 청소년 확인 한 번</i>
+      </button>
+      <button type="button" class="pick-c" onclick="pickRole('kkut')">
+        <b>💪 끗짱</b>
+        <span>루틴을 열고 청소년들과 함께 읽어요. 매일 기록에 한 줄씩 답을 달아줍니다.</span>
+        <i>운영진 승인을 받은 뒤에 루틴을 만들 수 있어요</i>
+      </button>
     </div>
-    <div class="au-hint" id="roleHint">읽고 인증하고 포인트를 모아요</div>
+  </div>
+
+  <!-- 3걸음: 정보 적기 -->
+  <div id="signupOnly" style="display:none;">
+    <div class="au-step" id="roleHint"></div>
 
     <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="12" autocomplete="nickname">
     <!-- ⚠️ id 에 'name' 을 넣지 말 것. 암호 관리자들은 id·name 에 name 이
@@ -1142,8 +1178,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <!-- ⚠️ `email` 이 아니라 `username` 이어야 한다. 사파리는 비밀번호와 짝이 될
        아이디 칸을 찾는데, 없으면 직접 골라버린다 — 이름 칸에 저장된
        메일 주소를 밀어넣고 있었다 -->
-  <input type="email" id="auEmail" placeholder="이메일" autocomplete="username">
-  <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+  <div id="authCreds">
+    <input type="email" id="auEmail" placeholder="이메일" autocomplete="username">
+    <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+  </div>
 
   <div id="signupAgree" style="display:none;margin-top:6px;">
     <label class="au-chk"><input type="checkbox" id="agAge">
@@ -1156,7 +1194,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 
   <button class="btn btn-primary" id="auBtn" onclick="submitAuth()">로그인</button>
-  <div class="swap" style="margin-top:22px;"><b onclick="browseAsGuest()">로그인 없이 둘러보기</b></div>
+  <div class="swap" id="authGuest" style="margin-top:22px;"><b onclick="browseAsGuest()">로그인 없이 둘러보기</b></div>
 </div>
 
 <!-- 개인정보 처리방침 -->
@@ -1793,19 +1831,52 @@ function fmtPeriod(s, e) {
 }
 
 // ── 로그인 ─────────────────────────────────────────────
-function setMode(m) {
-  authMode = m;
-  const up = m === 'signup';
-  $('segLogin').classList.toggle('on', !up);
-  $('segSignup').classList.toggle('on', up);
-  $('signupOnly').style.display  = up ? '' : 'none';
-  $('signupAgree').style.display = up ? '' : 'none';
-  if (up && !$('auSido').options.length) { fillSido('auSido'); fillGu('auGu', ''); }
-  $('auBtn').textContent = up ? '가입하기' : '로그인';
+// 가입은 세 걸음이다 — login(탭+로그인 폼) → role(무엇으로) → form(정보 적기).
+// 전에는 한 화면에 똑같이 생긴 탭 줄 둘이 포개져, 위가 「무엇을 할지」고
+// 아래가 「누구로 가입할지」인 게 생김새에 전혀 안 드러났다
+let authStep = 'login';
+
+function paintAuth() {
+  const step = authStep;
+  const on = (id, v) => { const e = $(id); if (e) e.style.display = v ? '' : 'none'; };
+  on('authTabs',   step === 'login');
+  on('auBack',     step !== 'login');
+  on('rolePick',   step === 'role');
+  on('signupOnly', step === 'form');
+  on('signupAgree',step === 'form');
+  on('authCreds',  step !== 'role');     // 역할 고르는 중엔 이메일·비번을 묻지 않는다
+  on('auBtn',      step !== 'role');
+  on('authGuest',  step === 'login');
+  $('auBtn').textContent = step === 'form' ? '가입하기' : '로그인';
   // 아이폰은 비밀번호 칸의 autocomplete 를 보고 저장된 암호를 들이민다.
   // 가입인데 current-password 면 남의 계정 암호를 채워 넣는다
-  $('auPw').setAttribute('autocomplete', up ? 'new-password' : 'current-password');
+  $('auPw').setAttribute('autocomplete', step === 'form' ? 'new-password' : 'current-password');
 }
+
+function setMode(m) {
+  authMode = m;
+  if (m === 'signup') { authStep = 'role'; }
+  else { authStep = 'login'; $('segLogin').classList.add('on'); $('segSignup').classList.remove('on'); }
+  paintAuth();
+}
+
+// 고르고 나서야 칸을 보여준다. 무엇으로 가입하는지 머리에 적어 둔다
+function pickRole(r) {
+  setJoinRole(r);
+  authStep = 'form';
+  if (!$('auSido').options.length) { fillSido('auSido'); fillGu('auGu', ''); }
+  paintAuth();
+  $('auNick').focus();
+}
+
+// 정보 적다가 → 역할 고르기 → 로그인. 한 걸음씩 되돌아간다
+function authBack() {
+  if (authStep === 'form') { authStep = 'role'; }
+  else { authMode = 'login'; authStep = 'login';
+         $('segLogin').classList.add('on'); $('segSignup').classList.remove('on'); }
+  paintAuth();
+}
+
 function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
 
 // 생년월일 칸의 위·아래 끝. 비어 있으면 아이폰 고르개가 **1970년**에서 열려
@@ -1824,11 +1895,9 @@ let joinRole = 'youth';
 function setJoinRole(r) {
   joinRole = r;
   const k = r === 'kkut';
-  $('segYouth').classList.toggle('on', !k);
-  $('segKkut').classList.toggle('on', k);
-  $('roleHint').textContent = k
-    ? '끗짱은 운영진 확인 뒤에 루틴을 만들 수 있어요'
-    : '읽고 인증하고 포인트를 모아요';
+  $('roleHint').innerHTML = k
+    ? '<b>💪 끗짱</b>으로 가입해요 · 운영진 확인 뒤에 루틴을 만들 수 있어요'
+    : '<b>🌱 청소년</b>으로 가입해요 · 읽고 인증하고 포인트를 모아요';
   // 끗짱에게는 재학 상태 대신 소속을 묻는다
   $('auSchool').style.display = k ? 'none' : '';
   $('auAffil').style.display  = k ? '' : 'none';
@@ -2146,7 +2215,7 @@ function showAuth() {
   birthBounds($('auBirth'));
   $('authScr').style.display = '';
   $('appScr').style.display = 'none';
-  setMode(authMode);        // 세그먼트·버튼 글씨를 지금 모드에 맞춘다
+  setMode(authMode);        // 걸음에 맞춰 보일 것을 가린다
   window.scrollTo(0, 0);
 }
 
