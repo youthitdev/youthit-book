@@ -2149,7 +2149,19 @@ function renderKkutGate() {
   }
 
   const rejected = a && a.status === 'rejected';
-  const v = k => esc(a?.[k] ?? '');
+  // 이름은 자동으로 채우면서 나머지를 다시 적게 하는 건 앞뒤가 안 맞는다.
+  // 가입할 때 적은 것으로 미리 채우고, 고칠 수 있게 둔다.
+  // ⚠️ 소속만 가린다 — school_status 는 청소년에게 「재학·학교밖」이 들어 있는
+  //   칸이라, 청소년으로 가입했다가 끗짱을 신청하면 소속 칸에 「재학」이 박힌다
+  const SCHOOL = ['재학', '학교밖', '졸업', '기타'];
+  const pre = {
+    age:         ageOf(me.birth_date) || '',
+    region:      me.region || '',
+    affiliation: SCHOOL.includes(me.school_status) ? '' : (me.school_status || ''),
+    // 01055242993 은 눈으로 못 읽는다. 칸 안내도 010-0000-0000 꼴이다
+    contact:     String(me.phone || '').replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3'),
+  };
+  const v = k => esc(a?.[k] ?? pre[k] ?? '');
   // 【빈 화면의 원인이었다】 `el` 을 선언하지 않고 el.invited 를 읽어
   //   ReferenceError 가 나면서 innerHTML 이 통째로 안 그려졌다.
   //   신청서를 처음 쓰는 화면이라, 끗짱으로 가입한 사람은 아무것도 못 봤다
