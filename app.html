@@ -2150,6 +2150,10 @@ function renderKkutGate() {
 
   const rejected = a && a.status === 'rejected';
   const v = k => esc(a?.[k] ?? '');
+  // 【빈 화면의 원인이었다】 `el` 을 선언하지 않고 el.invited 를 읽어
+  //   ReferenceError 가 나면서 innerHTML 이 통째로 안 그려졌다.
+  //   신청서를 처음 쓰는 화면이라, 끗짱으로 가입한 사람은 아무것도 못 봤다
+  const el = state.kkutElig || { days: 0, invited: true };
 
   $('kkutBody').innerHTML = `
     ${rejected ? `
