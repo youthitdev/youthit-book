@@ -975,6 +975,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   border-radius:8px; padding:5px 9px; white-space:nowrap; }
 .kroll-p.on { color:var(--green-d); background:#F2F7E6; }
 .kroll-p b { color:var(--ink-3); font-weight:600; margin-left:3px; font-size:11px; }
+/* 확인 전인 아이. 나무라는 표시가 아니라 끗짱이 챙기라는 표시다 */
+.kroll-vq { font-style:normal; font-size:10.5px; font-weight:700; margin-left:5px;
+  padding:2px 6px; border-radius:6px; background:#FFF1D6; color:#8A5A16; }
 .kroll-p.on b { color:var(--green-d); }
 /* 홈 카드에서도 같은 칩을 쓴다 */
 .tc-roll { display:flex; flex-wrap:wrap; gap:6px; margin-top:11px; }
@@ -2369,9 +2372,10 @@ async function loadAll() {
   if (ids.length) {
     // 아이들끼리는 닉네임으로 부른다. 실명은 운영진 화면에만 나온다.
     // 예전에 가입한 사람은 닉네임이 없어서 실명으로 떨어진다
-    const { data } = await sb.from('profiles').select('id,name,nick').in('id', ids);
-    state.names = {};
-    (data||[]).forEach(p => state.names[p.id] = p.nick || p.name);
+    const { data } = await sb.from('profiles').select('id,name,nick,verify_status').in('id', ids);
+    state.names = {}; state.vstat = {};
+    (data||[]).forEach(p => { state.names[p.id] = p.nick || p.name;
+                              state.vstat[p.id] = p.verify_status || 'none'; });
   }
 }
 
@@ -3253,7 +3257,10 @@ function kkutCertBlock(mine) {
             // 홈 카드는 셋만 보여주니 10명이 넘으면 대부분에게 콕이 안 닿는다.
             // 한 명씩 챙기는 자리는 여기다
             const ok = !done && !p.self && !routineEnded(r) && r.status !== 'pending';
-            return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}
+            // 확인 전인 아이는 지금 책을 못 받는다. 끗짱이 알아야 챙겨준다
+            const vq = ((p.self ? me.verify_status : (state.vstat || {})[p.user_id]) || 'none') !== 'approved';
+            return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}${
+              vq ? '<i class="kroll-vq" title="청소년 확인 전 — 아직 책을 받을 수 없어요">확인 전</i>' : ''}
               <b>${n}</b>${ok ? `<button class="kroll-poke" ${poked ? 'disabled' : ''}
                 title="${poked ? '오늘은 이미 보냈어요' : '콕 찌르기'}"
                 onclick="poke(${r.id},'${p.user_id}',this)">👉</button>` : ''}</span>`;
@@ -3943,27 +3950,30 @@ async function submitVerify() {
   toast('냈어요. 운영진이 확인하면 알려드릴게요');
 }
 
-// 루틴은 아이들이 자기 사진과 기록을 서로 보는 자리다. 확인된 사람만 들어온다.
-// 끗짱은 소속·나이·지원동기를 받고 통화까지 하고 승인하는데, 정작 그 방에
-// 들어오는 참여자는 아무 확인 없이 들어왔다. 앞뒤가 안 맞았다
-function verifyGate() {
+// 【문을 옮겼다】 2026-10-06. 전에는 확인이 끝나야 루틴에 들어올 수 있었다.
+//   승인이 하루 밀리면 아이는 그 하루를 통째로 기다렸다. 이제 먼저 들어와
+//   읽기 시작하고, 확인은 **책을 받을 때** 필요하다 (migration-82).
+//   그래서 이 칸은 막는 벽이 아니라 미리 일러두는 쪽지다
+function verifyNote() {
   const st = me.verify_status || 'none';
-  if (st === 'pending') return `<div class="card vf pending">
+  if (st === 'approved') return '';
+  if (st === 'pending') return `<div class="card vf pending" style="margin-bottom:12px;">
     <div class="vf-i">🕰️</div>
-    <div class="vf-t"><b>확인이 끝나면 참여할 수 있어요</b>
-      <span>운영진이 보고 있어요. 하루 이틀이면 끝나요.</span></div>
+    <div class="vf-t"><b>청소년 확인을 보고 있어요</b>
+      <span>지금 바로 참여하고 읽을 수 있어요. 책을 받을 때까지만 끝나면 돼요.</span></div>
   </div>`;
-  return `<div class="card vf ${st === 'rejected' ? 'rejected' : 'soon'}">
+  return `<div class="card vf ${st === 'rejected' ? 'rejected' : 'soon'}" style="margin-bottom:12px;">
     <div class="vf-i">🪪</div>
     <div class="vf-t">
-      <b>${st === 'rejected' ? '서류를 다시 내주세요' : '먼저 청소년 확인을 해주세요'}</b>
+      <b>${st === 'rejected' ? '서류를 다시 내주세요' : '책을 받으려면 청소년 확인이 필요해요'}</b>
       <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
-        : '루틴은 서로의 사진과 기록을 보는 자리예요. 그래서 한 번 확인해요.'}</span>
+        : '지금 참여해서 읽는 건 돼요. 포인트가 모이기 전에만 끝내면 됩니다.'}</span>
     </div>
-  </div>
-  <button class="btn btn-primary" style="margin-top:10px;"
-    onclick="goFromOv('ovRoutine', () => openVerify())">청소년 확인하러 가기</button>`;
+    <button class="btn btn-line" style="margin-top:10px;" onclick="openVerify()">확인하러 가기</button>
+  </div>`;
 }
+
+// 전에 쓰던 벽. 아직 부르는 데가 있을 수 있어 쪽지로 넘긴다
 
 // 끗짱이 함께한 날에 유스보이스가 낸 책값.
 // ⚠️ 주어는 반드시 유스보이스다. 「끗짱님이 기부했다」고 쓰면 거짓이 된다 —
@@ -4513,8 +4523,8 @@ function openRoutine(id) {
       : !isYouth() ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
-      : me.verify_status !== 'approved' ? verifyGate()
       : `<div>
+          ${me.verify_status !== 'approved' ? verifyNote() : ''}
           ${isShared(r) ? '' : isOneBook(r)
             ? `<div class="field-label">우리가 읽을 책</div>
                <div class="one-book">
