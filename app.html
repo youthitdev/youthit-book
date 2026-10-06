@@ -2422,7 +2422,9 @@ async function enter() {
   $('appScr').style.display = '';
   const isK = canLead();
   $('hdr').classList.toggle('k', isK);
-  $('hdrRole').textContent = isK ? '끗짱' : '청소년';
+  // 끗짱으로 가입해 놓고 신청서를 「나중에」로 닫은 사람에게 「청소년」은 틀린 말이다.
+  // 아직 끗짱도 아니니 사실대로 적는다 — 승인되면 그때 「끗짱」이 된다
+  $('hdrRole').textContent = isK ? '끗짱' : (kkutPending() ? '끗짱 신청 전' : '청소년');
   $('hdrBtn').style.display = 'none';      // 로그아웃은 MY 맨 아래에 있다
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
   await loadAll();
@@ -2533,6 +2535,9 @@ function ageOf(birth) {
 
 const isYouth = () => !!me && me.role !== 'adult';
 const canLead = () => !!me && !!me.can_lead;
+// 끗짱으로 가입해 놓고 신청서를 아직 안 낸 사람. 끗짱도 청소년도 아닌 중간이다.
+// 신청서를 낸 사람은 승인 전까지 앱에 못 들어오므로 여기까지 오지 않는다
+const kkutPending = () => !!me && !canLead() && me.join_role === 'kkut' && !state.kkutApp;
 
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
 // 이 루틴에서 내가 읽는 책. 한 번에 세 권까지 (병렬독서)
@@ -3315,6 +3320,16 @@ function viewHome() {
     // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
     if (p.left === 0 && mine.some(routineEnded))
       h += `<div class="tc-keep">포인트는 사라지지 않아요. 다음 루틴에서 이어서 채워져요.</div>`;
+  } else if (kkutPending()) {
+    // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
+    // 「루틴을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
+    h += `<div class="card" onclick="openKkutApply()" style="text-align:center;padding:26px 20px;cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
+      <div style="font-size:30px;">📖</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">끗짱 신청서가 기다리고 있어요</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;">
+        운영진 확인을 받으면 직접 루틴을 열고<br>함께 읽을 사람을 모을 수 있어요.</div>
+      <div style="font-size:13px;font-weight:700;color:var(--pink);margin-top:12px;">이어서 쓰기 ›</div>
+    </div>`;
   } else {
     h += `<div class="card" style="text-align:center;padding:26px 20px;">
       <div style="font-size:30px;">📚</div>
