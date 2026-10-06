@@ -941,7 +941,14 @@ function vqCard(r) {
 // 어른은 청소년 확인을 할 대상이 아니다. 「끗짱 승인」에서 보면 된다.
 // ⚠️ 신청서가 없는 어른은 남긴다 — 양쪽에서 사라지면 아무도 못 찾는다
 const inKkutTab = uid => (DB.kkutApps || []).some(a => a.user_id === uid);
-const vqPool = () => (DB.verify || []).filter(r => !(r.role === 'adult' && inKkutTab(r.user_id)));
+// 신청서를 낸 사람은 끗짱 탭에서만 다룬다. 한 사람이 두 탭에 걸쳐 있으면
+// 어느 쪽에서 처리해야 하는지가 매번 헷갈린다.
+// ⚠️ 전에는 `role === 'adult' &&` 가 앞에 붙어 있었는데, 가입은 전부
+//   role='youth' 로 저장되므로(끗짱은 승인을 받아야 되는 자리다) 어른 끗짱이
+//   그대로 청소년 확인에 남았다. 나이가 아니라 신청서 유무로 가른다.
+// 【나중에】 청소년 끗짱(인증 100회 임명 등)이 생기면 그 아이는 책도 받아야 해서
+//   확인이 필요하다. 그때 이 줄을 다시 볼 것 — 지금은 그런 길이 없다
+const vqPool = () => (DB.verify || []).filter(r => !inKkutTab(r.user_id));
 
 function vqRows() {
   const q = vqFind.trim().toLowerCase();
