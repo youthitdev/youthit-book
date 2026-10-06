@@ -230,6 +230,10 @@ header.k .h-title { color:var(--pink); }
 .gate-ico { font-size:34px; line-height:1; margin-bottom:10px; }
 .gate-t { font-size:17px; font-weight:800; margin-bottom:8px; }
 .gate-s { font-size:13px; line-height:1.7; color:var(--ink-2); }
+/* 신청서를 지금 안 써도 된다고 알려주는 문. 제출 단추와 다투지 않게 글자로만 둔다 */
+.kk-later { background:none; border:none; color:var(--ink-3); font-size:13px; font-weight:700;
+            cursor:pointer; padding:6px 2px; display:inline-flex; align-items:center; gap:2px; }
+.kk-later:active { opacity:.55; }
 .gate-why { font-size:12.5px; line-height:1.7; color:var(--ink-2); background:#F5F1EA; border-radius:12px; padding:13px 15px; }
 .gate-why b { display:block; margin-bottom:3px; color:var(--ink); }
 .gate-bar { height:8px; border-radius:99px; background:var(--bg); overflow:hidden; margin:16px 0 9px; }
@@ -2071,6 +2075,9 @@ async function submitAuth() {
     const { data, error } = await sb.auth.signUp({ email, password: pw,
       options: { data: { name, nick, role: 'youth', region, birth_date: birth,
                          phone, school_status: school || null,
+                         // 신청서를 「나중에」로 닫아도 이 값은 남는다. MY 카드가
+                         // 이걸 보고 「이어서 쓰기」를 띄운다 — 없으면 돌아올 길이 없다
+                         join_role: joinRole,
                          marketing_ok: $('agMkt').checked,
                          policy_agreed_at: new Date().toISOString() } } });
     if (error) {
@@ -2135,7 +2142,8 @@ async function loadMe(user) {
   }
   // 이메일은 profiles 에 없고 auth 에만 있다. 내 정보에서 보여주려면 여기서 업어 와야 한다
   return { ...data, email: user.email, phone: priv?.phone || null,
-           birth_date: priv?.birth_date ?? data.birth_date ?? null };
+           birth_date: priv?.birth_date ?? data.birth_date ?? null,
+           join_role: meta.join_role || null };
 }
 
 // ── 끗짱 승인 ──────────────────────────────────────────
@@ -2225,6 +2233,11 @@ function renderKkutGate() {
   const el = state.kkutElig || { days: 0, invited: true };
 
   $('kkutBody').innerHTML = `
+    ${backable() ? `
+      <div style="display:flex;justify-content:flex-end;margin:-4px 0 12px;">
+        <button class="kk-later" onclick="closeKkutGate()">나중에 쓸게요 · 먼저 둘러보기
+          <i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+      </div>` : ''}
     ${rejected ? `
       <div class="gate-card" style="background:#fff5f5;border-color:#ffd9d9;">
         <div class="gate-ico">✉️</div>
@@ -4112,6 +4125,18 @@ function kkutCard() {
   if (!isYouth()) return '';
   const a  = state.kkutApp;
   const el = state.kkutElig;
+
+  // 【돌아올 길】 끗짱으로 가입해 놓고 신청서를 「나중에」로 닫은 사람.
+  //   권유 카드(맨 아래)는 내려둔 상태라, 이게 없으면 MY 에 아무것도 안 뜨고
+  //   그 사람은 영영 신청서로 못 돌아간다. kkutElig 보다 먼저 묻는다 —
+  //   신청서가 없는 사람은 loadKkutApp 이 안 돌아 el 이 비어 있다
+  if (!a && me?.join_role === 'kkut') return `
+    <div class="sec-t">끗짱</div>
+    <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
+      <div style="font-weight:700;">📖 끗짱 신청서가 기다리고 있어요</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">이어서 쓰시면 운영진이 읽어보고 연락드려요</div>
+    </div>`;
+
   if (!el) return '';
 
   if (a && a.status === 'pending') return `
