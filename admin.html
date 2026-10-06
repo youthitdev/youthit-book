@@ -928,8 +928,10 @@ function vqCard(r) {
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 승인</button>` : ''}
       ${st.key === 'approved' ? `
         <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
-      ${r.can_lead
-        ? `<button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
+      ${r.can_lead ? `
+        <button class="vq-quiet" onclick="setAdult('${r.user_id}', ${r.role !== 'adult'})">${
+          r.role === 'adult' ? '청소년으로' : '어른으로'}</button>
+        <button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
         : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 이동</button>`}
     </div>
   </div>`;
@@ -987,6 +989,27 @@ function viewVerify() {
   </div>`;
 }
 
+// 어른인지 청소년인지를 나중에 고친다.
+// 【왜 필요한가】 전에는 끗짱을 세우는 그 순간에만 정해졌고, 잘못 고르면
+//   되돌릴 길이 없었다 — 끗짱이 된 뒤에는 「끗짱 취소」만 남는다.
+// ⚠️ 이 칸이 돈의 문이다. role='youth' 여야 교환권·책이 나간다
+async function setAdult(userId, toAdult) {
+  const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
+  const pt = (DB.points || {})[userId];
+  if (!confirm(`${r.name} 님을 ${toAdult ? '어른' : '청소년'}으로 바꿀까요?\n\n`
+      + (toAdult
+         ? `· 포인트·교환권·책을 받지 않게 돼요\n`
+           + (pt && pt.remain ? `· ⚠️ 지금 교환권 ${pt.remain}장이 남아 있어요. 쓸 수 없게 됩니다\n` : '')
+         : `· 읽고 포인트를 모아 책을 받을 수 있게 돼요\n`
+           + `· 도서기금이 나가는 자리예요. 정말 청소년이 맞는지 확인해 주세요\n`)
+      + `· 끗짱 자격은 그대로예요`)) return;
+
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.rpc('admin_set_adult', { p_user: userId, p_adult: toAdult });
+  if (error) return alert('바꾸지 못했어요: ' + error.message);
+  await loadLive(); render();
+}
+
 // 운영진이 직접 끗짱을 세운다.
 // 【왜 신청서를 그냥 건너뛰지 않나】 끗짱은 청소년 기록을 다 보는 권한이다.
 //   「누구를, 왜 세웠나」가 안 남으면 나중에 아무도 설명할 수 없다.
@@ -998,7 +1021,10 @@ function openMakeKkut(userId) {
   mkKkutId = userId;
   document.getElementById('mkWho').textContent =
     `${r.name}${r.nick && r.nick !== r.name ? `(${r.nick})` : ''} · ${r.region || '지역 없음'}`;
-  document.getElementById('mkAdult').value = r.role === 'adult' ? '1' : '0';
+  // 성인 나이면 「어른」을 기본으로. 43세 앞에 「청소년」이 떠 있으면
+  // 그냥 지나치고, 나중에 청소년 확인 명단에 남아 있는 걸로 발견된다
+  document.getElementById('mkAdult').value =
+    (r.role === 'adult' || (r.age && r.age >= 19)) ? '1' : '0';
   document.getElementById('mkAge').value = r.age || '';
   document.getElementById('mkAgeHint').textContent = r.age
     ? '생년월일에서 가져왔어요.' : '생년월일이 없어서 비어 있어요. 직접 적어주세요.';
