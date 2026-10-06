@@ -2237,7 +2237,7 @@ function renderKkutGate() {
         <div class="gate-t">끗짱으로 함께해 주셔서 감사합니다!</div>
         <div class="gate-s">
           끗짱은 청소년과 함께 책을 읽고, 생각을 나누는 분입니다.<br>
-          청소년과 가까이에서 소통하는 자리인 만큼, 어떤 분인지 알려주세요.
+          청소년과 가까이에서 소통하는 자리인 만큼, 자신을 소개해 주세요.
         </div>
         ${el.invited ? `<div class="gate-num" style="margin-top:12px;">운영진이 모신 끗짱이에요</div>`
           : `<div class="gate-num" style="margin-top:12px;"><b>${el.days}일</b> 읽고 오셨네요</div>`}
@@ -2269,7 +2269,7 @@ function renderKkutGate() {
       <div class="hint">운영진이 확인 연락을 드릴 번호예요. 청소년에게는 안 보여요.</div>
     </div>
     <div style="margin-top:16px;">
-      <div class="field-label">어떤 분인가요 <span class="req">* 필수</span></div>
+      <div class="field-label">나를 소개해 주세요 <span class="req">* 필수</span></div>
       <textarea id="kIntro" rows="5" maxlength="500" placeholder="하는 일, 요즘 읽는 책, 청소년을 만나본 경험이 있다면 그 이야기까지 적어주세요.">${v('intro')}</textarea>
     </div>
     <div style="margin-top:16px;">
@@ -2306,7 +2306,7 @@ async function submitKkutApp() {
   if (!region)  return err('활동 지역을 적어주세요.', 'kRegion');
   if (!aff)     return err('소속을 적어주세요. 없으면 없음이라고 적어도 괜찮아요.', 'kAff');
   if (!contact) return err('연락처를 적어주세요.', 'kContact');
-  if (intro.length  < 20) return err('어떤 분인지 조금만 더 적어주세요. (20자 이상)', 'kIntro');
+  if (intro.length  < 20) return err('소개를 조금만 더 적어주세요. (20자 이상)', 'kIntro');
   if (motive.length < 20) return err('어떤 마음으로 함께하고 싶은지 조금만 더 적어주세요. (20자 이상)', 'kMotive');
 
   const btn = $('kSubmit'); btn.disabled = true; btn.textContent = '보내는 중…';

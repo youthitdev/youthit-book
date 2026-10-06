@@ -1622,7 +1622,7 @@ function openKkut(uid) {
            <div><b>신청일</b><span>${a.applied_at ? fmtDate(a.applied_at) : '—'}</span></div>
            <div><b>만든 루틴</b><span>${rs.length}개</span></div>
          </div>
-         ${a.intro  ? `<div class="kk-q"><b>어떤 분인가요</b><p>${esc(a.intro)}</p></div>` : ''}
+         ${a.intro  ? `<div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>` : ''}
          ${a.motive ? `<div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>` : ''}
          ${a.status === 'rejected' && a.reject_reason
            ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
@@ -2266,7 +2266,7 @@ function viewKkut() {
         <div><b>신청일</b><span>${fmtDate(a.applied_at)}</span></div>
         <div><b>만든 루틴</b><span>${a.routine_count}개</span></div>
       </div>
-      <div class="kk-q"><b>어떤 분인가요</b><p>${esc(a.intro)}</p></div>
+      <div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>
       <div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>
       ${a.status === 'rejected' && a.reject_reason
         ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
