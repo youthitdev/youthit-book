@@ -28,6 +28,16 @@
   /* --blue 는 이제 짙은 잉크 그린이다. 이름만 옛것이 남았다 —
      백 군데 넘게 쓰여서, 이름을 바꾸면 색이 아니라 코드를 고치는 일이 된다 */
   --blue:#1F4E46; --green:#83CA00; --green-d:#4E7A1C; --gold:#E8A33D; --pink:#C2533F;
+  --tint:#EDF2EC;   /* 바닥 탭에서 고른 칸 뒤에 깔리는 옅은 바탕 */
+}
+/* ── 끗짱으로 들어오면 앱 전체가 버건디가 된다 ──────────
+   색을 쓰는 곳을 하나씩 고치지 않고 --blue 자체를 덮어쓴다. 단추·머리글·
+   바닥 탭·댓글 단추·동그란 얼굴까지 열일곱 군데가 한꺼번에 따라온다.
+   ⚠️ 이름은 --blue 지만 내용은 「이 앱의 바탕색」이다 (:root 의 설명 참고) */
+body.kkut {
+  --blue:#6A2234;    /* 짙은 버건디 — 청소년의 잉크 그린과 같은 무게 */
+  --pink:#B43A52;    /* 강조. 벽돌빛(#C2533F)은 버건디 옆에서 주황으로 튄다 */
+  --tint:#F7ECEE;
 }
 /* ── 첫 화면 ─────────────────────────────────────────── */
 .sp { position:fixed; inset:0; z-index:900; display:flex; flex-direction:column;
@@ -222,9 +232,12 @@ header { position:sticky; top:0; z-index:20; background:var(--bg); color:var(--i
 /* 내려가면 카드가 글자에 비쳐 든다. 그때만 선과 흐림을 준다 */
 header.down { border-bottom-color:var(--line); background:rgba(250,247,241,.9);
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
-/* 역할은 색으로 남긴다 — 청소년은 잉크 그린, 끗짱은 벽돌 */
+/* 역할은 색으로 남긴다 — 청소년은 잉크 그린, 끗짱은 버건디.
+   끗짱 화면에서는 --blue 가 이미 버건디라 덧칠할 것이 없다.
+   .k 는 승인 전 게이트(body.kkut 가 아직 안 붙은 화면)에만 쓰인다 */
 .h-title { color:var(--blue); }
 header.k .h-title { color:var(--pink); }
+body.kkut header.k .h-title { color:var(--blue); }
 .h-btn { background:var(--card); border:1px solid var(--line); color:var(--ink-2);
   border-radius:10px; cursor:pointer; font-family:inherit; }
 
@@ -260,7 +273,7 @@ nav { position:fixed; left:0; right:0; max-width:480px; margin:0 auto; z-index:3
   border:1px solid rgba(20,22,26,.06); }
 nav div { flex:1; padding:8px 0 7px; text-align:center; color:var(--ink-3);
   cursor:pointer; font-size:10px; font-weight:700; border-radius:99px; }
-nav div.on { color:var(--blue); background:#EDF2EC; }
+nav div.on { color:var(--blue); background:var(--tint); }
 nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
@@ -2362,6 +2375,7 @@ async function browseAsGuest() {
   $('authScr').style.display = 'none';
   $('appScr').style.display = '';
   $('hdr').classList.remove('k');
+  paintTheme(false);
   $('hdrRole').textContent = '둘러보는 중';
   $('hdrBtn').style.display = '';          // 둘러보는 사람에게는 들어올 문이 필요하다
   // 「로그인」만 적으면 계정이 없는 사람은 제 자리가 없다고 읽는다
@@ -2422,11 +2436,11 @@ async function enter() {
   $('appScr').style.display = '';
   const isK = canLead();
   $('hdr').classList.toggle('k', isK);
+  paintTheme(isK);
   // 끗짱으로 가입해 놓고 신청서를 「나중에」로 닫은 사람에게 「청소년」은 틀린 말이다.
   // 아직 끗짱도 아니니 사실대로 적는다 — 승인되면 그때 「끗짱」이 된다
   $('hdrRole').textContent = isK ? '끗짱' : (kkutPending() ? '끗짱 신청 전' : '청소년');
   $('hdrBtn').style.display = 'none';      // 로그아웃은 MY 맨 아래에 있다
-  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
   await loadAll();
   go('home');
   startNotifPoll();
@@ -2538,6 +2552,18 @@ const canLead = () => !!me && !!me.can_lead;
 // 끗짱으로 가입해 놓고 신청서를 아직 안 낸 사람. 끗짱도 청소년도 아닌 중간이다.
 // 신청서를 낸 사람은 승인 전까지 앱에 못 들어오므로 여기까지 오지 않는다
 const kkutPending = () => !!me && !canLead() && me.join_role === 'kkut' && !state.kkutApp;
+
+// 끗짱이면 앱 전체를 버건디로. 색은 CSS 의 body.kkut 한 덩이에 모여 있고,
+// 여기서는 그 꼬리표만 붙였다 뗀다.
+// 폰 맨 위 시계 줄까지 따라오게 theme-color 도 같이 바꾼다 — 머리글만 버건디고
+// 그 위 띠가 초록이면 앱이 두 동강 나 보인다
+function paintTheme(isK) {
+  document.body.classList.toggle('kkut', !!isK);
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.content = isK ? '#6A2234' : '#1F4E46';
+  // .ov-h 는 열릴 때 JS 가 색을 박아 넣는 자리라 변수만 바꿔선 안 따라온다
+  document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--blue)');
+}
 
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
 // 이 루틴에서 내가 읽는 책. 한 번에 세 권까지 (병렬독서)
@@ -6637,11 +6663,11 @@ function enterDemo(role) {
   $('authScr').style.display = 'none';
   $('appScr').style.display = '';
   $('hdr').classList.toggle('k', isK);
+  paintTheme(isK);
   $('hdrRole').textContent = (isK ? '끗짱' : '청소년') + ' · 데모';
   $('hdrBtn').style.display = '';          // 데모는 빠져나갈 문이 필요하다
   $('hdrBtn').textContent = '나가기';
   $('hdrBtn').onclick = () => { location.href = location.pathname; };
-  document.querySelectorAll('.ov-h').forEach(h => h.style.background = isK ? 'var(--pink)' : 'var(--blue)');
 
   const b = document.createElement('div');
   b.style.cssText = 'background:var(--gold);color:#3a2a0c;font-size:11.5px;font-weight:700;text-align:center;padding:7px 12px;line-height:1.5';
