@@ -34,6 +34,9 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .sum-v small { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:2px; }
 .sum-c.hl { border-color:var(--pink); }
 .sum-c.hl .sum-v { color:var(--pink); }
+.sum-n { font-weight:500; color:var(--ink-3); margin-left:5px; }
+/* 할 일이 없을 때. 숫자 자리라 크기는 맞추되 색과 굵기로 힘을 뺀다 */
+.sum-ok { font-size:14px; font-weight:700; color:var(--ink-3); letter-spacing:0; }
 
 /* 탭 */
 /* 큰 갈래. 탭보다 한 칸 위에 있다는 게 보여야 해서 밑줄로 쓴다 */
@@ -783,17 +786,25 @@ const sponsorOf = id => DB.sponsors.find(s => s.id === id)?.nickname || '-';
 function renderSummary() {
   const p = pool();
   // 보고 있는 갈래의 숫자만 올린다. 운영 화면에서 정산 금액을 봐야 할 일이 없다
-  const card = (label, val, unit, hl) =>
-    `<div class="sum-c ${hl ? 'hl' : ''}"><div class="sum-l">${label}</div>
+  const card = (label, val, unit, hl, note) =>
+    `<div class="sum-c ${hl ? 'hl' : ''}"><div class="sum-l">${label}${
+       note ? `<span class="sum-n">· ${note}</span>` : ''}</div>
        <div class="sum-v num">${val}<small>${unit}</small></div></div>`;
+  // 손댈 게 없을 때는 0 대신 그렇다고 말해 준다. 0 은 「고장인가?」로 읽히고,
+  // 아래 명단의 14·4 와 나란히 놓이면 더 그렇다
+  const todoCard = (label, n, unit, note) => n
+    ? card(label, n, unit, true, note)
+    : `<div class="sum-c"><div class="sum-l">${label}${
+         note ? `<span class="sum-n">· ${note}</span>` : ''}</div>
+         <div class="sum-v sum-ok">다 봤어요 🌱</div></div>`;
   const waitV = vqPool().filter(v => v.status === 'pending').length;   // 어른은 세지 않는다
   const waitK = (DB.kkutApps || []).filter(a => a.status === 'pending').length;
   const waitR = (DB.routines || []).filter(r => r.status === 'pending').length;
 
   document.getElementById('summary').innerHTML = grp === 'ops'
-    ? card('확인 기다림', waitV, '명', waitV)
-      + card('끗짱 신청', waitK, '건', waitK)
-      + card('열어줄 루틴', waitR, '건', waitR)
+    ? todoCard('청소년', waitV, '명', '서류를 낸 사람')
+      + todoCard('끗짱',   waitK, '건', '신청서를 낸 분')
+      + todoCard('루틴',   waitR, '건', '승인을 기다리는')
     : card('책이 된 금액', won(p.spent), '원', false)
       + card('정산 대기', p.pending, '건', p.pending)
       + card('서점 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
