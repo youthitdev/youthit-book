@@ -1288,7 +1288,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <header id="kkutHdr" class="k">
     <div style="display:flex;align-items:center;gap:11px;min-width:0;">
       <button id="kkutBack" onclick="closeKkutGate()" style="display:none;background:none;border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;line-height:1;"><i class="ti ti-arrow-left"></i></button>
-      <span class="h-title">한끗독서</span><span class="h-badge" id="kkutBadge">끗짱</span>
+      <span class="h-title" id="kkutHome" onclick="kkutGoHome()">한끗독서</span><span class="h-badge" id="kkutBadge">끗짱</span>
     </div>
     <button id="kkutOut" onclick="doLogout()" style="background:rgba(255,255,255,.22);border:none;color:#fff;font-size:12px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer;">로그아웃</button>
   </header>
@@ -2111,12 +2111,20 @@ async function loadKkutApp() {
 function openKkutApply() {
   $('kkutBack').style.display = '';
   $('kkutOut').style.display  = 'none';
+  $('kkutHome').style.cursor  = 'pointer';   // 제목을 눌러도 돌아간다
   $('kkutBadge').textContent  = '끗짱 신청';
   $('appScr').style.display   = 'none';
   $('kkutScr').style.display  = '';
   window.scrollTo(0, 0);
   renderKkutGate();
 }
+
+// 【돌아갈 앱이 있을 때만】 이 화면은 두 자리에서 쓴다 —
+//   ① MY·가입 직후에서 열면 뒤에 앱이 깔려 있다 (← 가 보인다)
+//   ② 승인 전 끗짱이 로그인하면 앱을 아예 안 연다. 그때는 돌아갈 데가 없다
+const backable = () => $('kkutBack')?.style.display !== 'none';
+
+function kkutGoHome() { if (backable()) closeKkutGate(); }
 
 function closeKkutGate() {
   $('kkutScr').style.display = 'none';
@@ -2133,7 +2141,7 @@ function renderKkutGate() {
         <div class="gate-ico">🕰️</div>
         <div class="gate-t">신청서를 잘 받았어요</div>
         <div class="gate-s">
-          운영진이 읽어보고 연락드릴게요. 보통 2~3일 걸려요.<br>
+          운영진이 확인 후 연락드릴게요.<br>
           적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드려요.
         </div>
       </div>
@@ -2142,7 +2150,9 @@ function renderKkutGate() {
         끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.
         청소년이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 열어요.
       </div>
-      <div style="text-align:center;margin-top:18px;">
+      ${backable() ? `<button class="btn btn-line" style="margin-top:18px;"
+        onclick="closeKkutGate()">루틴 홈으로 돌아가기</button>` : ''}
+      <div style="text-align:center;margin-top:${backable() ? 14 : 18}px;">
         <b style="font-size:13px;color:var(--ink-3);cursor:pointer;" onclick="reloadKkutGate()">새로고침</b>
       </div>`;
     return;
@@ -2321,6 +2331,7 @@ async function enter() {
       $('appScr').style.display  = 'none';
       $('kkutScr').style.display = '';
       $('kkutBack').style.display = 'none';   // 돌아갈 앱이 없다
+      $('kkutHome').style.cursor  = 'default';
       $('kkutOut').style.display  = '';
       $('kkutBadge').textContent  = '끗짱';
       renderKkutGate();
