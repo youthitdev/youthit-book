@@ -200,6 +200,9 @@ input[type=date]:disabled, select:disabled { background-image:none; }
 .au-chk input[type=checkbox] { -webkit-appearance:auto; appearance:auto; width:18px; height:18px;
   flex:none; margin:1px 0 0; padding:0; background:none; border:none; accent-color:var(--green); }
 .au-chk a { color:#fff; text-decoration:underline; }
+/* 전체 동의 — 아래 줄들보다 한 뼘 크게, 선 하나로 갈라 둔다 */
+.au-all { font-size:13.5px; padding-bottom:11px; margin-bottom:11px;
+  border-bottom:1px solid rgba(255,255,255,.22); color:#fff; }
 /* 개인정보 방침 */
 .policy { position:fixed; inset:0; z-index:950; background:rgba(0,0,0,.5); display:none; }
 .policy.on { display:block; }
@@ -1204,12 +1207,14 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 
   <div id="signupAgree" style="display:none;margin-top:6px;">
-    <label class="au-chk"><input type="checkbox" id="agAge">
-      <span>[필수] 만 14세 이상입니다</span></label>
-    <label class="au-chk"><input type="checkbox" id="agPolicy">
+    <!-- 전체 동의는 편의일 뿐이다. 아래 줄들이 그대로 보이고 하나씩 끌 수 있어야
+         필수와 선택을 구분해 받은 것이 된다. 그래서 줄을 숨기거나 잠그지 않는다 -->
+    <label class="au-chk au-all"><input type="checkbox" id="agAll" onchange="agAllPick()">
+      <span><b>전체 동의</b> <span style="opacity:.7;">(선택 항목 포함)</span></span></label>
+    <label class="au-chk"><input type="checkbox" id="agPolicy" onchange="agSync()">
       <span>[필수] 개인정보 수집 및 이용 동의 <a href="javascript:void(0)"
         onclick="event.preventDefault();event.stopPropagation();openPolicy()">자세히</a></span></label>
-    <label class="au-chk"><input type="checkbox" id="agMkt">
+    <label class="au-chk"><input type="checkbox" id="agMkt" onchange="agSync()">
       <span>[선택] 소식·행사 안내 받기</span></label>
   </div>
 
@@ -1860,6 +1865,20 @@ function fmtPeriod(s, e) {
 // 아래가 「누구로 가입할지」인 게 생김새에 전혀 안 드러났다
 let authStep = 'login';
 
+// ── 전체 동의 ──────────────────────────────────────────
+// 「전체 동의」는 아래 줄들을 대신하지 않는다. 켜고 끄는 손만 덜어줄 뿐이고,
+// 실제로 저장되는 값은 끝까지 각 줄의 체크다. 그래서 아래를 하나라도 끄면
+// 전체 동의도 같이 풀린다 — 켜져 있는데 실제론 아닌 상태가 생기면 안 된다
+const AG_ROWS = ['agPolicy', 'agMkt'];
+
+function agAllPick() {
+  const v = $('agAll').checked;
+  AG_ROWS.forEach(id => { const e = $(id); if (e) e.checked = v; });
+}
+function agSync() {
+  const all = $('agAll');
+  if (all) all.checked = AG_ROWS.every(id => $(id)?.checked);
+}
 function paintAuth() {
   const step = authStep;
   const on = (id, v) => { const e = $(id); if (e) e.style.display = v ? '' : 'none'; };
@@ -2069,7 +2088,6 @@ async function submitAuth() {
     if (!gu)   return stop('사는 곳의 시·군·구를 골라주세요.', 'auGu');
     if (!school) return stop(joinRole === 'kkut' ? '소속을 적어주세요.' : '재학 상태를 골라주세요.',
                              joinRole === 'kkut' ? 'auAffil' : 'auSchool');
-    if (!$('agAge').checked)    return stop('만 14세 이상인지 확인해주세요.', 'agAge');
     if (!$('agPolicy').checked) return stop('개인정보 수집 및 이용에 동의해주세요.', 'agPolicy');
     const region = joinRegion(sido, gu);
     const { data, error } = await sb.auth.signUp({ email, password: pw,
