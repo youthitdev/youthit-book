@@ -1171,7 +1171,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <input type="text" id="auReal" placeholder="이름 (실명)" maxlength="20"
            autocomplete="name" autocorrect="off" spellcheck="false">
     <div class="au-hint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
-    <input type="date" id="auBirth" required>
+    <div class="au-row" id="auBirth">
+      <select id="auBirthY" class="ph" onchange="birthPick('au')"></select>
+      <select id="auBirthM" class="ph" onchange="birthPick('au')"></select>
+      <select id="auBirthD" class="ph" onchange="birthPick('au')"></select>
+    </div>
     <div class="au-hint" id="auBirthHint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
     <input type="tel" id="auPhone" placeholder="휴대폰번호 ('-' 없이)" maxlength="13" inputmode="numeric" autocomplete="tel">
     <div class="au-row">
@@ -1705,7 +1709,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div id="pfBirthWrap">
       <div class="field-label">생년월일 <span class="req" id="pfBirthReq">* 필수</span></div>
-      <input type="date" id="pfBirth" onchange="checkProfile()" required>
+      <div class="au-row" id="pfBirth">
+        <select id="pfBirthY" onchange="birthPick('pf'); checkProfile();"></select>
+        <select id="pfBirthM" onchange="birthPick('pf'); checkProfile();"></select>
+        <select id="pfBirthD" onchange="birthPick('pf'); checkProfile();"></select>
+      </div>
       <div class="hint" id="pfBirthHint">만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b></div>
     </div>
     <label class="card" style="display:flex;align-items:center;gap:11px;cursor:pointer;">
@@ -1922,18 +1930,57 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
 // 끗짱은 어른이라 위 끝만 있다
 const YOUTH_MIN_AGE = 14, YOUTH_MAX_AGE = 24;
 
-function birthBounds(el, role) {
-  if (!el) return;
-  const ymd = n => { const d = new Date(); d.setFullYear(d.getFullYear() - n);
-                     return d.toISOString().slice(0, 10); };
-  el.max = ymd(YOUTH_MIN_AGE);
-  // 만 25세가 되는 날의 다음날까지가 「만 24세」다. 하루를 더해야 생일 당일이 산다
-  if ((role || joinRole) === 'youth') {
-    const d = new Date(); d.setFullYear(d.getFullYear() - (YOUTH_MAX_AGE + 1)); d.setDate(d.getDate() + 1);
-    el.min = d.toISOString().slice(0, 10);
-  } else {
-    el.min = '1920-01-01';
-  }
+// ── 생년월일: 연·월·일 고르개 셋 ────────────────────────
+// 【왜 input[type=date] 를 버렸나】 아이폰 달력은 머리글을 누르면 연·월 바퀴만
+//   남아 「일」이 사라진 것처럼 보인다. 기기마다 생김새도 다르다.
+//   가입 화면에서 한 번 막히면 그대로 나가 버리는 자리라, 어디서나 같은
+//   드롭다운 셋으로 바꿨다. 바로 밑의 시·도/시·군·구와도 같은 모양이다.
+const pad2 = n => String(n).padStart(2, '0');
+const daysIn = (y, m) => (!y || !m) ? 31 : new Date(y, m, 0).getDate();
+
+// 고른 세 칸을 'YYYY-MM-DD' 로. 하나라도 비면 빈 글자
+function birthValue(pre) {
+  const y = $(pre + 'BirthY')?.value, m = $(pre + 'BirthM')?.value, d = $(pre + 'BirthD')?.value;
+  return (y && m && d) ? `${y}-${pad2(m)}-${pad2(d)}` : '';
+}
+
+// 월을 바꾸면 날 수가 달라진다. 2월 31일을 고를 수 있으면 안 된다
+function birthPick(pre) {
+  const ys = $(pre + 'BirthY'), ms = $(pre + 'BirthM'), ds = $(pre + 'BirthD');
+  if (!ys || !ms || !ds) return;
+  const max = daysIn(+ys.value, +ms.value);
+  const keep = ds.value;
+  ds.innerHTML = `<option value="">일</option>`
+    + Array.from({ length: max }, (_, i) => i + 1)
+        .map(d => `<option value="${d}"${String(d) === keep ? ' selected' : ''}>${d}일</option>`).join('');
+  if (keep && +keep > max) ds.value = '';     // 31일 고르고 2월로 바꾼 경우
+  [ys, ms, ds].forEach(el => el.classList.toggle('ph', !el.value));
+}
+
+// role 이 'youth' 면 연도 목록이 만 14~24세로 좁아진다.
+// ⚠️ 해 단위라 한 해는 넉넉하게 연다 — 생일 전후로 만 나이가 갈리기 때문이다.
+//    정확한 선은 제출할 때 ageOf 가 다시 본다
+function birthBounds(el, role, picked) {
+  const pre = el && el.id === 'pfBirth' ? 'pf' : 'au';
+  const ys = $(pre + 'BirthY'), ms = $(pre + 'BirthM');
+  if (!ys || !ms) return;
+  const now = new Date().getFullYear();
+  const from = (role || joinRole) === 'youth' ? now - (YOUTH_MAX_AGE + 1) : now - 100;
+  const to   = now - YOUTH_MIN_AGE;
+  const [py, pm, pd] = String(picked || '').split('-');
+
+  ys.innerHTML = `<option value="">연도</option>`
+    + Array.from({ length: to - from + 1 }, (_, i) => to - i)
+        .map(y => `<option value="${y}"${String(y) === py ? ' selected' : ''}>${y}년</option>`).join('');
+  ms.innerHTML = `<option value="">월</option>`
+    + Array.from({ length: 12 }, (_, i) => i + 1)
+        .map(m => `<option value="${m}"${+pm === m ? ' selected' : ''}>${m}월</option>`).join('');
+  const ds = $(pre + 'BirthD');
+  ds.innerHTML = `<option value="">일</option>`;
+  ds.value = '';
+  birthPick(pre);
+  if (pd) { ds.value = String(+pd); }
+  [ys, ms, ds].forEach(e => e.classList.toggle('ph', !e.value));
 }
 
 // 끗짱은 운영진이 열어 준다. 여기서 고르는 건 「끗짱으로 신청하겠다」는 뜻이고,
@@ -2003,8 +2050,8 @@ async function submitAuth() {
     const school = joinRole === 'kkut' ? $('auAffil').value.trim() : $('auSchool').value;
     if (!nick) return stop('닉네임을 입력해주세요.', 'auNick');
     if (!name) return stop('이름을 입력해주세요.', 'auReal');
-    const birth = $('auBirth').value;
-    if (!birth) return stop('생년월일을 골라주세요.', 'auBirth');
+    const birth = birthValue('au');
+    if (!birth) return stop('생년월일을 골라주세요.', 'auBirthY');
     // 만 14세 미만은 법정대리인 동의가 있어야 개인정보를 받을 수 있다.
     // 동의서를 받아 관리하는 것 자체가 부담이라 14세부터 쓰게 한다
     if (ageOf(birth) < YOUTH_MIN_AGE)
@@ -4460,20 +4507,19 @@ function openProfile() {
   // 전에는 저장하면 칸이 통째로 사라져, 뭐를 저장했는지도 못 보고
   // 「고장 난 것」처럼 보였다. 남겨두되 잠금을 걸고 이유를 적는다
   const bLock = !!me.birth_date;
-  $('pfBirth').value = me.birth_date || '';
-  $('pfBirth').disabled = bLock;
+  birthBounds($('pfBirth'), isYouth() ? 'youth' : 'kkut', me.birth_date || '');
+  ['pfBirthY', 'pfBirthM', 'pfBirthD'].forEach(id => $(id).disabled = bLock);
   $('pfBirthReq').style.display = bLock ? 'none' : '';
   $('pfBirthHint').innerHTML = bLock
     ? '한 번 적으면 못 바꿔요. 바로잡아야 하면 운영진에게 말해주세요.'
     : '만 14세부터 함께할 수 있어요. <b>한 번 적으면 못 바꿔요.</b>';
-  birthBounds($('pfBirth'), isYouth() ? 'youth' : 'kkut');
   $('pfEmail').value = me.email || '';
   $('pfPhone').value = me.phone || '';   // 로그인할 때 이미 붙여 왔다
   checkProfile(); openOv('ovProfile');
 }
 
 function checkProfile() {
-  const needBirth = !me.birth_date && !$('pfBirth').value;
+  const needBirth = !me.birth_date && !birthValue('pf');
   $('pfSubmit').disabled = !$('pfNick').value.trim() || !$('pfName').value.trim()
     || !$('pfSido').value || !$('pfGu').value || needBirth;
 }
@@ -4493,7 +4539,7 @@ async function saveProfile() {
                 marketing_ok: $('pfMkt').checked };
   const priv = { id: me.id, phone: phone || null };
   if (!me.birth_date) {
-    const b = $('pfBirth').value;
+    const b = birthValue('pf');
     if (!b) return toast('생년월일을 골라주세요');
     if (ageOf(b) < YOUTH_MIN_AGE) return toast(`한끗독서는 만 ${YOUTH_MIN_AGE}세부터 함께할 수 있어요`);
     if (isYouth() && ageOf(b) > YOUTH_MAX_AGE)
