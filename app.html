@@ -4544,21 +4544,25 @@ function viewMy() {
   const books = [...new Set(state.certs.filter(c => c.user_id === me.id && c.book_title).map(c => c.book_title))];
   // 어른 끗짱은 본인 인증이 0 이다. 0 만 셋 늘어놓으면 아무것도 안 한 사람처럼 보인다
   const joined = myRoutines().filter(r => r.led_by !== me.id).length;
-  const who = [canLead() ? '끗짱' : '', isYouth() ? '청소년' : '어른',
+  // 끗짱으로 가입해 놓고 신청서를 아직 안 낸 사람. 저장된 역할은 청소년이지만
+  // 머리 배지는 「끗짱 신청 전」이다. 여기서 「청소년」이라고 하면 둘이 어긋난다
+  const waiting = kkutPending();
+  const who = [canLead() ? '끗짱' : '', waiting ? '끗짱 신청 전' : (isYouth() ? '청소년' : '어른'),
                me.school_status || '', me.region || ''].filter(Boolean).join(' · ');
   return `<div class="card">
       <div class="pf">
         <div class="f-av">${esc(myName()[0])}</div>
         <div class="pf-in">
-          <div class="pf-n">${esc(myName())}${verifyBadge()}</div>
+          <div class="pf-n">${esc(myName())}${waiting ? '' : verifyBadge()}</div>
           <div class="pf-m">${esc(who)}</div>
         </div>
         <button class="pf-ed" onclick="openProfile()">수정</button>
       </div>
-      ${verifyLine()}
+      ${waiting ? '' : verifyLine()}
     </div>
-    ${levelCard()}
-    ${isYouth() ? balanceBlock() : ''}
+    ${waiting ? kkutCard() : ''}
+    ${waiting ? '' : levelCard()}
+    ${(isYouth() && !waiting) ? balanceBlock() : ''}
     ${noRoutineBlock()}
     ${creditBlock()}
     ${kkutStatBlock()}
@@ -4570,7 +4574,7 @@ function viewMy() {
     ${calBlock()}
     ${myBooksBlock()}
     ${pastBlock()}
-    ${kkutCard()}
+    ${waiting ? '' : kkutCard()}
     ${statsStrip()}
     ${menuBlock()}`;
 }
