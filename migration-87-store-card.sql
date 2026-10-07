@@ -18,7 +18,9 @@ BEGIN
   IF v_store IS NULL THEN RAISE EXCEPTION '주소가 올바르지 않아요'; END IF;
 
   RETURN QUERY
-  SELECT b.name, b.region, c.code, b.phone
+  -- ⚠️ bookstore_codes.code 는 text 가 아니라 character(4) 다. 그대로 돌려주면
+  --    42804 로 터진다 (2026-10-07에 당했다). 캐스팅은 여기서 한 번만 한다
+  SELECT b.name, b.region, btrim(c.code)::text, b.phone
     FROM bookstores b
     LEFT JOIN bookstore_codes c ON c.bookstore_id = b.id
    WHERE b.id = v_store;
