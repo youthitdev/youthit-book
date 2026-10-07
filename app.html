@@ -325,7 +325,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .c-active { background:#EAF3DE; color:#3B6D11; }
 
 /* 읽는 책 고르기 */
-/* 「책 받았어요」의 책방 확인. 번호는 아이가 아니라 책방이 누른다 */
+/* 책방에서 꺼낼 한마디. 말을 거는 일이 제일 어렵다 */
+.buy-say { background:#F7FBF0; border:1px solid #DCEBC4; border-radius:14px;
+  padding:15px 16px; margin-bottom:16px; }
+.buy-say-h { font-size:12px; color:var(--green-d); font-weight:700; margin-bottom:8px; }
+.buy-say-q { font-size:16px; font-weight:800; line-height:1.55; letter-spacing:-.3px; }
+.buy-say-s { font-size:12px; color:var(--ink-3); margin-top:8px; line-height:1.6; }
+
+/* 「책 골랐어요」의 책방 확인. 번호는 아이가 아니라 책방이 누른다 */
 /* 리워드 안내. 들어가기 전에 「무엇을 받고, 언제 받나」가 한자리에 모여야 한다 */
 .rw-box { background:#f7fbf0; border:1px solid #D8E9BC; border-radius:13px;
   padding:13px 15px; margin-top:16px; }
@@ -1503,12 +1510,22 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
-<!-- 책 받았어요 -->
+<!-- 책 골랐어요 -->
+<!-- 【「받았어요」가 아니다 · 2026-10-07 사용자】 이 단추를 눌러야 사장님이
+     번호를 누르고, 그때 책이 건네진다. 누르는 순간 아이가 한 일은 「골랐다」뿐이다 -->
 <div class="ov" id="ovBuy">
   <div class="ov-h"><button onclick="closeOv('ovBuy')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">책 받았어요</div><div class="t" id="ovBuyTitle"></div></div></div>
+    <div><div class="s">책 골랐어요</div><div class="t" id="ovBuyTitle"></div></div></div>
   <div class="ov-b">
     <div id="buyBal"></div>
+    <!-- 【무슨 말을 할지 적어 준다 · 2026-10-07 사용자】 여기서 제일 어려운 건
+         포인트도 번호도 아니고 **모르는 어른에게 말 거는 일**이다. 통째로 읽으면
+         되는 한 문장을 주면 그 턱이 낮아진다 -->
+    <div class="buy-say">
+      <div class="buy-say-h">💬 책방 사장님께 이렇게 말해요</div>
+      <div class="buy-say-q">“유스보이스 한끗독서로<br>책 교환하려고 합니다”</div>
+      <div class="buy-say-s">그대로 읽으셔도 돼요. 사장님도 한끗독서를 알고 계세요.</div>
+    </div>
     <div id="buyCodeWrap">
       <div class="field-label">책방 확인 <span class="req">* 필수</span></div>
       <div class="buy-hand">📱 <b>책방 사장님께 폰을 건네주세요</b><span>네 자리를 눌러주시면 돼요</span></div>
@@ -3590,7 +3607,7 @@ function balanceBlock() {
             ${p.left > 0 ? (me.verify_status !== 'approved'
               ? `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`
               : buyRoutine()
-                ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">책 받았어요</button>`
+                ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">책 골랐어요</button>`
                 : '') : ''}
           </div>
           ${p.left > 0 && me.verify_status === 'approved' && !buyRoutine() && meetPending()
