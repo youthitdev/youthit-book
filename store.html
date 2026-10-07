@@ -59,11 +59,12 @@ header span{ font-size:13px; color:var(--ink-3); }
 .c-done{ background:#EEF1F4; color:#4A5560; }
 
 label{ display:block; font-size:13.5px; font-weight:700; margin:16px 0 6px; }
-input[type=number], input[type=text], textarea{
+select, input[type=number], input[type=text], textarea{
   width:100%; font-family:inherit; font-size:17px; color:var(--ink);
   background:#fff; border:1px solid var(--line); border-radius:12px;
   padding:14px 15px; outline:none; }
-input:focus, textarea:focus{ border-color:var(--amber); }
+input:focus, textarea:focus, select:focus{ border-color:var(--amber); }
+.logout{ font-size:12.5px; color:var(--ink-3); text-decoration:underline; cursor:pointer; flex:none; padding:2px 0; }
 .file{ display:block; width:100%; text-align:center; font-family:inherit;
   font-size:15px; font-weight:700; color:var(--ink-2); background:#fff;
   border:1px dashed #D6CEBF; border-radius:12px; padding:16px; cursor:pointer; }
@@ -121,8 +122,17 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
   ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 const won = n => Number(n || 0).toLocaleString('ko-KR');
 
-// 주소에 실려 온 열쇠. 이게 이 화면의 전부다
-const KEY = new URLSearchParams(location.search).get('k') || '';
+// 열쇠는 둘 중 하나에서 온다 — 주소(?k=)나, 이 폰이 기억해 둔 것(로그인 뒤).
+// 【주소를 잃어도 상관없게】 안내문에 적힌 책방 이름 + 네 자리로 다시 들어오면
+// 열쇠를 되찾는다 (migration-91). 유스보이스는 전화로 상시 응대하기 어렵다
+const KEY_SAVE = 'hankkut-store-key', NAME_SAVE = 'hankkut-store-name';
+const ls = {
+  get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+  del: k => { try { localStorage.removeItem(k); } catch (e) {} },
+};
+const URL_KEY = new URLSearchParams(location.search).get('k') || '';
+let KEY = URL_KEY || ls.get(KEY_SAVE);
 
 let rows = [], picked = null, receipt = null, photo = null, store = null;
 
@@ -145,8 +155,7 @@ function when(iso) {
 
 async function load() {
   if (TOKEN) return loadRedeem(savedCode());
-  if (!KEY) return fail('주소가 올바르지 않아요',
-    '운영진이 보내드린 주소를 그대로 열어주세요. 주소 끝이 잘리면 안 열립니다.');
+  if (!KEY) return showLogin('');
   $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
   const [card, list] = await Promise.all([
     sb.rpc('store_card',    { p_key: KEY }),
@@ -157,11 +166,72 @@ async function load() {
   // 【무슨 일인지 보이게 둔다】 전에는 어떤 오류든 「주소가 올바르지 않아요」로
   //   덮어서, 열쇠가 틀린 건지 함수가 없는 건지 알 수가 없었다.
   //   사장님께는 작은 회색 글씨라 거슬리지 않고, 막혔을 때 전화로 읽어주시면 된다
-  if (error) return fail('주소가 올바르지 않아요',
-    '운영진이 보내드린 주소를 그대로 열어주세요. 바뀌었다면 새 주소를 받아주세요.',
-    error.message || error.code || '');
+  if (error) {
+    // 열쇠가 틀린 것(재발급됐거나 주소가 잘림)이면 폰이 기억한 것도 버리고 다시 들어오게 한다.
+    // 인터넷이 끊긴 것 같은 다른 오류에는 열쇠를 지우지 않는다
+    if (/주소가 올바르지 않아요/.test(error.message || '')) {
+      ls.del(KEY_SAVE); ls.del(NAME_SAVE); KEY = '';
+      return showLogin(URL_KEY
+        ? '이 주소는 더 쓸 수 없어요. 책방 이름과 확인 번호로 들어와 주세요.'
+        : '다시 들어와 주세요.');
+    }
+    return fail('불러오지 못했어요', '잠시 뒤 다시 열어주세요.', error.message || error.code || '');
+  }
+  // 들어왔다. 이 폰이 기억해 두면 다음부터는 주소가 없어도 열린다
+  ls.set(KEY_SAVE, KEY);
+  if (store && store.name) ls.set(NAME_SAVE, store.name);
   rows = data || [];
   paint();
+}
+
+// ── 책방 로그인 (migration-91) ─────────────────────────
+async function showLogin(msg) {
+  $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
+  const { data, error } = await sb.rpc('store_names');
+  if (error) return fail('책방 목록을 불러오지 못했어요', '잠시 뒤 다시 열어주세요.', error.message || '');
+  const opts = (data || []).map(b =>
+    `<option value="${b.id}">${esc(b.name)}${b.region ? ` (${esc(b.region)})` : ''}</option>`).join('');
+  $('app').innerHTML = `
+    <div class="card">
+      <div class="store-n">책방 로그인</div>
+      <div class="store-s" style="margin-top:6px;">이미 함께하는 책방이에요. 이름을 고르고
+        <b>안내문에 적힌 확인 번호 네 자리</b>를 넣어주세요.</div>
+      <label>책방</label>
+      <select id="lgStore"><option value="">책방을 골라주세요</option>${opts}</select>
+      <label>확인 번호</label>
+      <input type="text" id="lgCode" inputmode="numeric" maxlength="4" placeholder="● ● ● ●"
+             autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"
+             style="text-align:center;letter-spacing:12px;font-size:26px;font-weight:800;">
+      <button class="btn btn-go" id="lgGo" onclick="doLogin()">들어가기</button>
+      <div id="lgMsg">${msg ? `<div class="msg m-bad">${esc(msg)}</div>` : ''}</div>
+    </div>
+    <div class="hint" style="text-align:center;margin-top:6px;">
+      아직 함께하지 않는 책방이라면 <a href="store-invite.html" style="color:var(--amber-d);">섭외 안내</a>를 봐주세요.</div>`;
+}
+
+const lgMsg = t => { $('lgMsg').innerHTML = `<div class="msg m-bad">${esc(t)}</div>`; };
+
+async function doLogin() {
+  const id   = parseInt($('lgStore').value, 10);
+  const code = $('lgCode').value.replace(/[^0-9]/g, '');
+  if (!id)             return lgMsg('책방을 골라주세요.');
+  if (code.length !== 4) return lgMsg('확인 번호 네 자리를 넣어주세요.');
+  // Enter 로 들어오면 event.target 이 단추가 아니라 입력칸이다. id 로 잡는다
+  const btn = $('lgGo'); btn.disabled = true; btn.textContent = '확인 중…';
+  const { data, error } = await sb.rpc('store_login', { p_store_id: id, p_code: code });
+  btn.disabled = false; btn.textContent = '들어가기';
+  if (error)             return lgMsg(error.message || '들어가지 못했어요.');
+  if (!data || !data.ok) return lgMsg((data && data.message) || '들어가지 못했어요.');
+  KEY = data.key;
+  ls.set(KEY_SAVE, KEY); ls.set(NAME_SAVE, data.name); saveCode(code);
+  load();
+}
+
+function logout() {
+  ls.del(KEY_SAVE); ls.del(NAME_SAVE); ls.del(CODE_SAVE);
+  KEY = '';
+  history.replaceState(null, '', location.pathname);   // 주소의 ?k= 도 걷는다
+  showLogin('');
 }
 
 function fail(t, s, detail) {
@@ -177,8 +247,13 @@ function paint() {
 
   $('app').innerHTML = `
     ${store ? `<div class="card">
-      <div class="store-n">${esc(store.name)}</div>
-      <div class="store-s">${store.region ? esc(store.region) + ' · ' : ''}한끗독서 파트너 책방</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div>
+          <div class="store-n">${esc(store.name)}</div>
+          <div class="store-s">${store.region ? esc(store.region) + ' · ' : ''}한끗독서 파트너 책방</div>
+        </div>
+        <a class="logout" onclick="logout()">로그아웃</a>
+      </div>
       ${store.code ? `<div class="code-mini">우리 책방 확인 번호 <b>${esc(store.code)}</b>
         <span>QR을 찍으면 한 번 물어봐요. 넣으시면 이 폰이 기억해요</span></div>` : ''}
     </div>` : ''}
@@ -261,11 +336,24 @@ async function loadRedeem(code) {
   $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
   const { data, error } = await sb.rpc('redeem_qr_lookup', { p_token: TOKEN, p_code: code });
   if (error) return askCode(error.message || '다시 해주세요');
-  const r = Array.isArray(data) ? data[0] : data;
-  if (!r) return askCode('쪽지를 찾지 못했어요');
+  if (!data || !data.ok) {
+    const m = (data && data.message) || '쪽지를 찾지 못했어요';
+    // 번호 때문이면 다시 묻고, 쪽지 때문이면(시간이 지났다 등) 번호칸을 보여 줘 봐야 소용없다
+    return /번호/.test(m) ? askCode(m) : fail('이 쪽지는 쓸 수 없어요', m);
+  }
   saveCode(code);
-  look = r; picked = 'qr'; receipt = null; photo = null;
+  look = data; picked = 'qr'; receipt = null; photo = null;
+  rememberStore(look.bookstore_id, code);
   paintRedeem();
+}
+
+// 「나중에」를 눌러도 돌아올 길이 있어야 한다. 이 폰이 이 책방의 청구 화면을
+// 기억하게 한다. 실패해도 교환에는 영향이 없다
+function rememberStore(id, code) {
+  if (!id) return;
+  sb.rpc('store_login', { p_store_id: id, p_code: code }).then(({ data }) => {
+    if (data && data.ok) { ls.set(KEY_SAVE, data.key); ls.set(NAME_SAVE, data.name); }
+  });
 }
 
 function askCode(msg) {
@@ -348,20 +436,27 @@ async function up(blob, tag) {
   return path;
 }
 
+// QR 로 들어온 뒤 우리 책방 화면으로. 주소(?r=)를 걷어서 열면 폰이 기억한 열쇠로 열린다
+function goList() { location.href = location.pathname; }
+
 // 사진만 받고 금액은 뒤로 미룬다. 사진이 없어도 막지 않는다 —
 // 막으면 바쁜 사장님은 그냥 창을 닫는다
 async function hold() {
   const btn = event.target; btn.disabled = true; btn.textContent = '보내는 중…';
   try {
     const ph = await up(photo, 'photo');
-    const { error } = await sb.rpc('redeem_qr_hold',
+    const { data: res, error } = await sb.rpc('redeem_qr_hold',
       { p_token: TOKEN, p_code: savedCode(), p_photo: ph });
     if (error) throw new Error(error.message);
+    if (res && res.ok === false) throw new Error(res.message || '보내지 못했어요');
     $('app').innerHTML = `
       <div class="msg m-ok" style="font-size:16px;padding:20px;">
         교환을 받아 두었습니다.<br>금액과 영수증은 한가하실 때 올려주세요.</div>
-      <div class="card"><div class="hint">우리 책방 주소를 열면 <b>「아직 안 보냈어요」</b>로
-        남아 있어요. 거기서 금액을 올리시면 됩니다.</div></div>`;
+      <div class="card">
+        <div class="hint">금액과 영수증은 <b>우리 책방 화면</b>에 <b>「아직 안 보냈어요」</b>로
+          남아 있어요. 한가하실 때 거기서 올리시면 됩니다.</div>
+        <button class="btn btn-go" onclick="goList()">나중에 올릴 화면 열기</button>
+      </div>`;
     window.scrollTo(0, 0);
   } catch (err) {
     btn.disabled = false; btn.textContent = '사진만 찍고 나중에';
@@ -376,10 +471,11 @@ async function send() {
     const ph = await up(photo,   'photo');
     const common = { p_amount: parseInt($('amt').value, 10), p_receipt: rc, p_photo: ph,
                      p_note: $('note').value.trim() || null };
-    const { error } = TOKEN
+    const { data: res, error } = TOKEN
       ? await sb.rpc('redeem_qr_confirm', { p_token: TOKEN, p_code: savedCode(), ...common })
       : await sb.rpc('store_submit',      { p_key: KEY, p_purchase_id: picked, ...common });
     if (error) throw new Error(error.message);
+    if (res && res.ok === false) throw new Error(res.message || '보내지 못했어요');
     picked = null; receipt = null; photo = null;
 
     if (TOKEN) {
@@ -387,7 +483,8 @@ async function send() {
       $('app').innerHTML = `
         <div class="msg m-ok" style="font-size:16px;padding:20px;">
           교환이 끝났습니다. 확인하고 책값을 보내드릴게요.<br>고맙습니다 🙏</div>
-        <div class="card"><div class="hint">이 창은 닫으셔도 됩니다.</div></div>`;
+        <div class="card"><div class="hint">이 창은 닫으셔도 됩니다.</div>
+          <button class="btn btn-line" onclick="goList()">우리 책방 화면 보기</button></div>`;
       window.scrollTo(0, 0);
       return;
     }

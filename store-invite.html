@@ -43,6 +43,17 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdro
   background:#eef7dd;border-radius:8px;padding:4px 9px;letter-spacing:0}
 .hd a{font-size:13px;font-weight:700;text-decoration:none;padding:9px 15px;border-radius:11px;
   background:var(--green);color:#3A2A0C;white-space:nowrap}
+.hd-r{display:flex;align-items:center;gap:8px}
+/* 로그인은 신청하기와 다투지 않게 글자로만 둔다 */
+.hd .hd-login{background:none;color:var(--ink-2);padding:9px 8px;font-weight:600}
+/* 로그인한 폰의 띠. 청구 화면으로 바로 간다 */
+.mine{background:#FFF6E3;border-top:1px solid #F0DFBF;padding:9px 22px;font-size:13px;
+  display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.mine[hidden]{display:none}
+.mine b{font-weight:800}
+.mine span{color:var(--ink-2)}
+.mine a{font-size:12.5px;font-weight:800;text-decoration:none;color:#3A2A0C;background:var(--green);
+  padding:6px 12px;border-radius:9px;margin-left:6px}
 
 .hero{padding:64px 0 48px}
 .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;color:var(--green-d);background:var(--green-l);
@@ -173,7 +184,16 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 <header>
   <div class="hd">
     <div class="logo">한끗<span>독서</span><i>서점</i></div>
-    <a href="#apply">신청하기</a>
+    <div class="hd-r">
+      <!-- 【이미 함께하는 책방의 입구 · 2026-10-07 사용자】 이 페이지는 아직 함께하지 않는
+           책방을 설득하는 글이다. 로그인한 폰에서만 아래 띠가 바뀐다 -->
+      <a href="store.html" class="hd-login" id="hdLogin">책방 로그인</a>
+      <a href="#apply">신청하기</a>
+    </div>
+  </div>
+  <div class="mine" id="mine" hidden>
+    <b id="mineName"></b><span> 사장님</span>
+    <a href="store.html">청구 화면 열기</a>
   </div>
 </header>
 
@@ -427,6 +447,20 @@ const CONTACT  = '유스보이스 033-000-0000';  // 화면에 보일 연락처
       <div class="num"><b>${n(s.books_titles)}<small>권</small></b><span>읽고 있는 책</span></div>`;
     document.getElementById('nums-sec').style.display = '';
   } catch (e) { /* 숫자가 없어도 페이지는 그대로 보여야 한다 */ }
+})();
+</script>
+<script>
+// store.html 에서 로그인하면 그 폰에 열쇠와 이름이 남는다 (같은 출처라 여기서도 보인다).
+// 읽기만 한다 — 열쇠 자체는 이 페이지에서 쓰지 않고 store.html 이 쓴다
+(function () {
+  try {
+    var name = localStorage.getItem('hankkut-store-name');
+    var key  = localStorage.getItem('hankkut-store-key');
+    if (!name || !key) return;
+    document.getElementById('mineName').textContent = name;
+    document.getElementById('mine').hidden = false;
+    document.getElementById('hdLogin').style.display = 'none';
+  } catch (e) {}
 })();
 </script>
 </body>
