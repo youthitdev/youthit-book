@@ -50,6 +50,8 @@ header span{ font-size:13px; color:var(--ink-3); }
 .row.on{ border-color:var(--amber); box-shadow:0 0 0 2px #F6E3C1 inset; }
 .row-t{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
 .row-who{ font-size:17px; font-weight:800; }
+/* 만 나이. 눈앞의 아이와 맞춰 보는 용도라 이름보다 작고 옅게 */
+.age{ font-size:13px; font-weight:600; color:var(--ink-3); margin-left:3px; }
 .row-when{ font-size:12.5px; color:var(--ink-3); flex:none; }
 .row-book{ font-size:13.5px; color:var(--ink-2); margin-top:3px; }
 .chip{ display:inline-block; font-size:12px; font-weight:700; border-radius:99px;
@@ -286,7 +288,7 @@ function card(r) {
             :               `<span class="chip c-wait">아직 안 보냈어요</span>`;
   return `<div class="row${picked === r.id ? ' on' : ''}">
     <div class="row-t">
-      <div class="row-who">${esc(r.who)}</div>
+      <div class="row-who">${esc(r.who)}${r.kid_age != null ? ` <span class="age">만 ${r.kid_age}세</span>` : ''}</div>
       <div class="row-when">${when(r.came_at)}</div>
     </div>
     ${r.code_ok === false ? `<div class="row-book">📱 청소년이 앱에서 직접 기록한 건이에요 · 책을 건넨 분이 맞는지 확인해 주세요</div>` : ''}
@@ -377,7 +379,7 @@ function paintRedeem() {
   $('app').innerHTML = `
     <div class="card">
       <div class="store-s">${esc(look.bookstore)}</div>
-      <div class="store-n" style="margin-top:2px;">${esc(look.who)}</div>
+      <div class="store-n" style="margin-top:2px;">${esc(look.who)}${look.age != null ? ` <span class="age" style="font-size:15px;">만 ${look.age}세</span>` : ''}</div>
       <div class="store-s" style="margin-top:4px;">${esc(look.routine)}</div>
       <div class="code-mini" style="margin-top:12px;">남은 시간 <b style="font-size:17px;letter-spacing:0;">${m}분 ${sec}초</b>
         <span>지나면 청소년에게 다시 띄워달라고 해주세요</span></div>
