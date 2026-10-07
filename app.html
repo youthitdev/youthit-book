@@ -3651,7 +3651,10 @@ function openOneCert(id) {
 function balanceBlock() {
   if (!myRoutines().length) return '';
   const p = myPoints();
-  const pend = state.purchases.some(x => x.user_id === me.id && x.status === 'pending');
+  // 【정산이 끝나지 않아도 아이는 새 교환을 할 수 있다 · 2026-10-07 사용자】
+  //   전에는 정산 대기(pending)가 있으면 교환 단추를 숨겼다. 아이에게 교환은 끝난 일이고
+  //   정산은 유스보이스 안쪽 사정이다. 교환권은 구매가 생기는 순간 이미 줄어 있으니
+  //   (used = pending+settled) 남은 교환권이 있으면 쓸 수 있어야 한다. (migration-93)
   // 사장님이 QR 로 확정한 건. 교환은 끝났고 아이 사진만 비어 있다 (migration-88·89)
   const noPhoto = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
     && !x.proof_photo_url && x.store_submitted_at);
@@ -3664,12 +3667,6 @@ function balanceBlock() {
     ? `<div class="bal-got" onclick="openReview('book', ${noReview.id})">
          <b>📖 다 읽으면 후기를 남겨요</b>
          <span>후기 쓰고 +${RV_PB()}P ›</span></div>` : '';
-  // 【「정산하는 중」을 아이에게 말하지 않는다 · 2026-10-07 사용자】
-  //   아이에게 교환은 이미 끝났다. 정산은 유스보이스 안쪽 사정이고, 걸어 두면
-  //   「내가 뭘 잘못했나」로 읽힌다. 교환권이 있는데 정산 대기 때문에 교환 단추가
-  //   숨는 경우에만, 왜 안 보이는지를 한 줄로 말한다
-  const blockedNote = (pend && p.left > 0)
-    ? `<div class="bal-pend">지난 교환이 정리되면 다음 교환을 할 수 있어요.</div>` : '';
   const cap = won(state.settings.voucher_max_amount || 20000);
   const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
   const mile = p.next_milestone
@@ -3698,20 +3695,18 @@ function balanceBlock() {
         ? `<div class="bal-got" onclick="openGotPhoto(${noPhoto.id})">
              <b>📚 책을 받았어요!</b>
              <span>받은 책을 한 장 남겨주세요 ›</span></div>`
-        : pend
-        ? `${rvBtn}${blockedNote}`
-        : `<div class="bal-btns">
-            <button class="btn-line" onclick="go('store')">책방 찾기</button>
-            ${p.left > 0 ? (me.verify_status !== 'approved'
-              ? `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`
-              : buyRoutine()
-                ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">책 골랐어요</button>`
-                : '') : ''}
-          </div>
-          ${p.left > 0 && me.verify_status === 'approved' && !buyRoutine() && meetPending()
-            ? `<div class="bal-pend" style="background:#FBF3E4;color:#8A5A16;">
-                 🤝 공유회에 다녀오면 책을 받을 수 있어요</div>` : ''}
-          ${rvBtn}`}
+        : rvBtn}
+      <div class="bal-btns">
+        <button class="btn-line" onclick="go('store')">책방 찾기</button>
+        ${p.left > 0 ? (me.verify_status !== 'approved'
+          ? `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`
+          : buyRoutine()
+            ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">책 골랐어요</button>`
+            : '') : ''}
+      </div>
+      ${p.left > 0 && me.verify_status === 'approved' && !buyRoutine() && meetPending()
+        ? `<div class="bal-pend" style="background:#FBF3E4;color:#8A5A16;">
+             🤝 공유회에 다녀오면 책을 받을 수 있어요</div>` : ''}
     </div>`;
 }
 
