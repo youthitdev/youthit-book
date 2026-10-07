@@ -175,7 +175,7 @@ function card(r) {
       <div class="row-who">${esc(r.who)}</div>
       <div class="row-when">${when(r.came_at)}</div>
     </div>
-    ${r.book_title ? `<div class="row-book">📖 ${esc(r.book_title)}</div>` : ''}
+    ${r.code_ok === false ? `<div class="row-book">⚠️ 그 자리에서 번호를 못 누른 건이에요</div>` : ''}
     ${tag}
     ${(!r.submitted && !r.settled)
       ? (picked === r.id ? form() : `<button class="btn btn-go" onclick="pick(${r.id})">이 청소년 건 올리기</button>`)
