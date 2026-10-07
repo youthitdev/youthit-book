@@ -2451,6 +2451,7 @@ function viewStores() {
       <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">비활성</span>'}</td>
       <td class="right" style="white-space:nowrap;">
         <button class="btn btn-line" onclick="storeLink(${s.id}, this)">책방 주소</button>
+        <button class="btn btn-line" onclick="storeGuide(${s.id})">안내문</button>
         <button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
@@ -2633,6 +2634,14 @@ async function storeLink(id, btn) {
   try { await navigator.clipboard.writeText(url); btn.textContent = '복사했어요'; }
   catch (e) { prompt('이 주소를 사장님께 보내주세요', url); return; }
   setTimeout(() => { btn.textContent = '책방 주소'; }, 1600);
+}
+
+// 사장님께 드릴 종이 한 장. 확인 번호와 QR 이 그 책방 것으로 박혀 나온다
+async function storeGuide(id) {
+  if (!LIVE) { alert('데모 모드에서는 안내문이 없어요.'); return; }
+  const { data, error } = await sb.rpc('store_key', { p_bookstore_id: id });
+  if (error) { alert('안내문을 열지 못했어요: ' + error.message); return; }
+  window.open(SITE + '/store-guide.html?k=' + data, '_blank', 'noopener');
 }
 
 // 사진이 세 장이다. 이름을 헷갈리면 엉뚱한 걸 보고 공개하게 된다.
