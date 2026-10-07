@@ -6166,7 +6166,13 @@ function viewStores() {
       <i class="ti ti-chevron-right"></i>
     </button>` + storeInviteLink(null);
 
-  if (!near.length) return head + storeInviteLink(mine) + more;
+  // 섭외 카드를 내린 동안에도 「왜 비어 있나」는 말해 준다.
+  // 아무 말 없이 빈 화면이면 고장으로 읽힌다
+  if (!near.length) return head + `
+    <div class="store-ask">
+      <b>${esc(mine)}에는 아직 함께하는 책방이 없어요</b>
+      <span>다른 지역 책방은 아래에서 볼 수 있어요.</span>
+    </div>` + more + storeInviteLink(mine);
 
   // 같은 동네와 같은 시·도를 한 덩어리로 묶으면 정직하지 않다.
   // 성동구 아이에게 강서구는 지하철 한 시간이다. 계단으로 나눠 보여준다
@@ -6207,6 +6213,13 @@ function openAllStores() {
 }
 
 function storeInviteLink(emptyRegion) {
+  // ⏸ 【내려둠 · 2026-10-07 사용자】 책방 섭외 링크(store-invite.html)의
+  //   구글폼 주소와 공개 연락처가 아직 비어 있다. 사장님이 눌러 들어가도
+  //   신청할 데가 없는 화면이라, 그 둘이 채워질 때까지 접는다.
+  //   ⚠️ **되살리려면 이 return 한 줄만 지우면 된다.** 아래 카드와
+  //   shareInvite()·openInvite() 는 그대로 살려 뒀다
+  return '';
+
   return `<div class="store-invite">
     <b>${emptyRegion
       ? `${esc(emptyRegion)}에는 아직 함께하는 책방이 없어요`
