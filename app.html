@@ -3655,6 +3655,21 @@ function balanceBlock() {
   // 사장님이 QR 로 확정한 건. 교환은 끝났고 아이 사진만 비어 있다 (migration-88·89)
   const noPhoto = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
     && !x.proof_photo_url && x.store_submitted_at);
+  // 사진까지 남긴 뒤에 아이가 할 다음 일 — 받은 책 후기. 후기는 받은 날에도 쓸 수 있게
+  // 열려 있다(읽기 전에 한 줄만 써도 +30P). 책방 일곱 곳과 아이들이 적은 지금은
+  // 막는 장치가 오히려 번거로워 그대로 둔다 (2026-10-07 사용자와 정함)
+  const noReview = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
+    && x.proof_photo_url && !myBookReview(x.id));
+  const rvBtn = noReview
+    ? `<div class="bal-got" onclick="openReview('book', ${noReview.id})">
+         <b>📖 다 읽으면 후기를 남겨요</b>
+         <span>후기 쓰고 +${RV_PB()}P ›</span></div>` : '';
+  // 【「정산하는 중」을 아이에게 말하지 않는다 · 2026-10-07 사용자】
+  //   아이에게 교환은 이미 끝났다. 정산은 유스보이스 안쪽 사정이고, 걸어 두면
+  //   「내가 뭘 잘못했나」로 읽힌다. 교환권이 있는데 정산 대기 때문에 교환 단추가
+  //   숨는 경우에만, 왜 안 보이는지를 한 줄로 말한다
+  const blockedNote = (pend && p.left > 0)
+    ? `<div class="bal-pend">지난 교환이 정리되면 다음 교환을 할 수 있어요.</div>` : '';
   const cap = won(state.settings.voucher_max_amount || 20000);
   const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
   const mile = p.next_milestone
@@ -3684,7 +3699,7 @@ function balanceBlock() {
              <b>📚 책을 받았어요!</b>
              <span>받은 책을 한 장 남겨주세요 ›</span></div>`
         : pend
-        ? `<div class="bal-pend">📗 받은 책을 확인하고 있어요.</div>`
+        ? `${rvBtn}${blockedNote}`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="go('store')">책방 찾기</button>
             ${p.left > 0 ? (me.verify_status !== 'approved'
@@ -3695,7 +3710,8 @@ function balanceBlock() {
           </div>
           ${p.left > 0 && me.verify_status === 'approved' && !buyRoutine() && meetPending()
             ? `<div class="bal-pend" style="background:#FBF3E4;color:#8A5A16;">
-                 🤝 공유회에 다녀오면 책을 받을 수 있어요</div>` : ''}`}
+                 🤝 공유회에 다녀오면 책을 받을 수 있어요</div>` : ''}
+          ${rvBtn}`}
     </div>`;
 }
 
