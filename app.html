@@ -19,6 +19,8 @@
 <meta name="apple-mobile-web-app-title" content="한끗독서">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- QR 은 브라우저 안에서 그린다. 바깥 서비스에 보내면 그 쪽지가 새어 나간다 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -325,6 +327,24 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .c-active { background:#EAF3DE; color:#3B6D11; }
 
 /* 읽는 책 고르기 */
+/* 책을 받고 나서 사진을 남기라는 자리. 축하와 할 일이 한 칸에 있다 */
+.bal-got { margin-top:13px; background:#fff; border:1px solid #DCEBC4; border-radius:12px;
+  padding:13px 15px; cursor:pointer; }
+.bal-got b { display:block; font-size:14.5px; }
+.bal-got span { display:block; font-size:12.5px; color:var(--green-d); font-weight:700; margin-top:3px; }
+
+/* 사장님께 보여주는 쪽지. 가게가 밝아도 읽히게 흰 바탕에 크게 */
+.qr-card { margin-top:14px; background:#fff; border:1px solid var(--line);
+  border-radius:16px; padding:18px; text-align:center; }
+.qr-t { font-size:15px; font-weight:800; }
+.qr-s { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+.qr-img { display:flex; justify-content:center; margin:14px 0 10px; }
+.qr-img img, .qr-img canvas { display:block; }
+.qr-left { font-size:13px; font-weight:700; color:var(--green-d); }
+.qr-left.out { color:var(--pink); }
+.qr-done { font-size:12.5px; color:var(--ink-3); line-height:1.6; margin-top:12px;
+  border-top:1px solid var(--line); padding-top:11px; }
+
 /* 책방에서 꺼낼 한마디. 말을 거는 일이 제일 어렵다 */
 .buy-say { background:#F7FBF0; border:1px solid #DCEBC4; border-radius:14px;
   padding:15px 16px; margin-bottom:16px; }
@@ -1510,11 +1530,36 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
+<!-- 책을 받고 나서 남기는 한 장 (migration-89) -->
+<div class="ov" id="ovGot">
+  <div class="ov-h"><button onclick="closeOv('ovGot')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">책을 받았어요</div><div class="t">받은 책 한 장</div></div></div>
+  <div class="ov-b">
+    <div style="background:#F2EEE6;border-radius:12px;padding:13px 15px;">
+      <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
+      <div style="font-size:13.5px;line-height:1.6;">이 사진은 나를 응원하는 어른들에게도 보여요.<br>그래서 얼굴은 안 나오게, 책이 잘 보이게 찍어주세요.<br>책을 들어올리면 돼요.</div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">책 사진 <span class="req">* 필수</span></div>
+      <div id="gotPrev" style="margin-bottom:8px;"></div>
+      <button class="btn btn-line" onclick="document.getElementById('gotInput').click()">사진 고르기</button>
+      <input type="file" id="gotInput" accept="image/*" style="display:none;" onchange="pickGotPhoto(event)">
+      <div class="hint">기록 피드에는 올라가지 않아요. 운영진이 먼저 확인해요.</div>
+    </div>
+    <label style="display:flex;gap:10px;align-items:flex-start;background:#f7fbf0;border-radius:12px;padding:13px 15px;cursor:pointer;margin-top:16px;">
+      <input type="checkbox" id="gotShare" checked style="margin-top:3px;width:17px;height:17px;flex:none;">
+      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>나를 응원하는 어른들</b>에게 보여줄게요
+        <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">원하지 않으면 꺼주세요. 운영진이 한 번 더 확인하고, 얼굴이 나왔으면 올리지 않아요.</span></span>
+    </label>
+    <button class="btn btn-primary" id="gotSubmit" disabled onclick="submitGot()" style="margin-top:18px;">남기기</button>
+  </div>
+</div>
+
 <!-- 책 골랐어요 -->
 <!-- 【「받았어요」가 아니다 · 2026-10-07 사용자】 이 단추를 눌러야 사장님이
      번호를 누르고, 그때 책이 건네진다. 누르는 순간 아이가 한 일은 「골랐다」뿐이다 -->
 <div class="ov" id="ovBuy">
-  <div class="ov-h"><button onclick="closeOv('ovBuy')"><i class="ti ti-arrow-left"></i></button>
+  <div class="ov-h"><button onclick="closeBuy()"><i class="ti ti-arrow-left"></i></button>
     <div><div class="s">책 골랐어요</div><div class="t" id="ovBuyTitle"></div></div></div>
   <div class="ov-b">
     <div id="buyBal"></div>
@@ -1526,6 +1571,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="buy-say-q">“유스보이스 한끗독서로<br>책 교환하려고 합니다”</div>
       <div class="buy-say-s">그대로 읽으셔도 돼요. 사장님도 한끗독서를 알고 계세요.</div>
     </div>
+    <!-- 【QR 로 간다 · migration-88】 사장님이 아이 폰에 숫자를 누르는 대신,
+         아이 폰의 쪽지를 사장님이 카메라로 찍는다. 그러면 사장님 폰에 그 건이
+         바로 열린다. 네 자리는 없어진 게 아니라 **사장님 제 폰으로** 옮겨갔다 -->
+    <div id="buyQrWrap">
+      <div class="field-label">어느 책방인가요 <span class="req">* 필수</span></div>
+      <select id="qrStore" onchange="qrPick()"></select>
+      <div id="qrBox"></div>
+      <button class="btn btn-primary" id="qrGo" disabled onclick="qrIssue()" style="margin-top:14px;">책방에 보여줄 QR 띄우기</button>
+      <button type="button" class="buy-skip" style="margin-top:10px;" onclick="buyOldWay()">사장님이 번호를 눌러주실래요</button>
+    </div>
+
+    <div id="buyLegacy" style="display:none;">
     <div id="buyCodeWrap">
       <div class="field-label">책방 확인 <span class="req">* 필수</span></div>
       <div class="buy-hand">📱 <b>책방 사장님께 폰을 건네주세요</b><span>네 자리를 눌러주시면 돼요</span></div>
@@ -1566,6 +1623,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">원하지 않으면 꺼주세요. 운영진이 한 번 더 확인하고, 얼굴이 나왔으면 올리지 않아요.</span></span>
     </label>
     <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
+    <button type="button" class="buy-skip" style="margin-top:10px;" onclick="buyQrWay()">QR 로 다시 할래요</button>
+    </div>
   </div>
 </div>
 
@@ -3576,6 +3635,9 @@ function balanceBlock() {
   if (!myRoutines().length) return '';
   const p = myPoints();
   const pend = state.purchases.some(x => x.user_id === me.id && x.status === 'pending');
+  // 사장님이 QR 로 확정한 건. 교환은 끝났고 아이 사진만 비어 있다 (migration-88·89)
+  const noPhoto = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
+    && !x.proof_photo_url && x.store_submitted_at);
   const cap = won(state.settings.voucher_max_amount || 20000);
   const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
   const mile = p.next_milestone
@@ -3600,7 +3662,11 @@ function balanceBlock() {
 
       <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
 
-      ${pend
+      ${noPhoto
+        ? `<div class="bal-got" onclick="openGotPhoto(${noPhoto.id})">
+             <b>📚 책을 받았어요!</b>
+             <span>받은 책을 한 장 남겨주세요 ›</span></div>`
+        : pend
         ? `<div class="bal-pend">📗 받은 책을 확인하고 있어요.</div>`
         : `<div class="bal-btns">
             <button class="btn-line" onclick="go('store')">책방 찾기</button>
@@ -6321,6 +6387,9 @@ function openStoreInfo(id) {
 
 function closeSheet(id) { hideLayer(id || 'shStore'); }
 
+// 교환 창을 닫으면 띄워 둔 쪽지도 접는다. 안 그러면 다른 책방에서 못 띄운다
+function closeBuy() { qrClear(); closeOv('ovBuy'); }
+
 // ── 책 받았어요 ────────────────────────────────────────
 // 아이는 돈을 내지 않는다. 서점 외상으로 받아오고, 책값은 유스보이스가 서점에 보낸다
 let buyRid = null, buyPhoto = null;
@@ -6337,8 +6406,110 @@ function openBuy(rid) {
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
   // 공개는 기본 켜짐이다. 창을 다시 열 때도 켜진 채로 둔다 (HTML 의 checked 와 같아야 한다)
   $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = ''; $('buyShare').checked = true;
+  $('qrStore').innerHTML = $('buyStore').innerHTML;
   buyUseCode();
+  buyQrWay();
   checkBuy(); openOv('ovBuy');
+}
+
+// ── 책을 받고 나서 남기는 한 장 (migration-89) ─────────
+// 사장님이 확정하는 순간 교환은 끝난다. 아이는 가게를 나와서 찍으면 된다 —
+// 사장님 앞에 서서 사진을 찍느라 어색해하지 않아도 된다
+let gotId = null, gotPhoto = null;
+
+function openGotPhoto(id) {
+  gotId = id; gotPhoto = null;
+  $('gotPrev').innerHTML = ''; $('gotInput').value = '';
+  $('gotShare').checked = true; $('gotSubmit').disabled = true;
+  openOv('ovGot');
+}
+
+async function pickGotPhoto(e) {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    gotPhoto = await resize(f, 1280, .82, true);
+    $('gotPrev').innerHTML = `<img src="${gotPhoto}" style="width:100%;border-radius:12px;display:block;">`;
+    $('gotSubmit').disabled = false;
+  } catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+}
+
+async function submitGot() {
+  if (!gotPhoto) return;
+  const btn = $('gotSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
+  try {
+    const path = `${me.id}/got_${Date.now()}.jpg`;
+    const { error: up } = await sb.storage.from('cert-photos')
+      .upload(path, toBlob(gotPhoto), { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (up) throw new Error(up.message);
+    const url = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.rpc('redeem_add_photo',
+      { p_purchase_id: gotId, p_proof: url, p_public: $('gotShare').checked });
+    if (error) throw new Error(error.message);
+    closeOv('ovGot');
+    await loadAll(); render();
+    toast('남겼어요. 고마워요 🌱');
+  } catch (err) {
+    btn.disabled = false; btn.textContent = '남기기';
+    toast(err.message || '올리지 못했어요');
+  }
+}
+
+// ── QR 로 교환하기 (migration-88) ──────────────────────
+// 아이가 띄우고, 사장님이 카메라로 찍는다. 15분 지나면 저절로 접힌다
+let qrTok = null, qrTimer = null;
+
+function buyQrWay() {
+  $('buyQrWrap').style.display = ''; $('buyLegacy').style.display = 'none';
+  qrClear(); $('qrStore').value = ''; qrPick();
+}
+function buyOldWay() {
+  qrClear();
+  $('buyQrWrap').style.display = 'none'; $('buyLegacy').style.display = '';
+  buyUseCode();
+}
+function qrPick() { $('qrGo').disabled = !$('qrStore').value; }
+
+function qrClear() {
+  if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+  // 띄워 둔 쪽지를 접는다. 안 접으면 다른 책방에서 다시 띄울 수가 없다
+  if (qrTok) { sb.rpc('redeem_qr_cancel', { p_token: qrTok }); qrTok = null; }
+  $('qrBox').innerHTML = '';
+}
+
+async function qrIssue() {
+  const sid = parseInt($('qrStore').value, 10); if (!sid) return;
+  const btn = $('qrGo'); btn.disabled = true; btn.textContent = '띄우는 중…';
+  const { data, error } = await sb.rpc('redeem_qr_issue',
+    { p_routine_id: buyRid, p_store_id: sid });
+  btn.disabled = false; btn.textContent = '책방에 보여줄 QR 띄우기';
+  if (error) return toast(error.message || '띄우지 못했어요');
+
+  qrTok = data.token;
+  const url = new URL('store.html', location.href).href + '?r=' + qrTok;
+  $('qrBox').innerHTML = `
+    <div class="qr-card">
+      <div class="qr-t">사장님께 이 화면을 보여주세요</div>
+      <div class="qr-s">카메라로 찍으시면 바로 열려요</div>
+      <div class="qr-img" id="qrImg"></div>
+      <div class="qr-left" id="qrLeft"></div>
+      <div class="qr-done">사장님이 확인을 마치면 알림이 와요.<br>그때 받은 책을 한 장 남겨주세요.</div>
+    </div>`;
+  new QRCode($('qrImg'), { text: url, width: 208, height: 208,
+    colorDark: '#1C1A17', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+
+  const until = new Date(data.expires_at).getTime();
+  const tick = () => {
+    const left = Math.max(0, Math.round((until - Date.now()) / 1000));
+    const el = $('qrLeft'); if (!el) return;
+    if (!left) {
+      clearInterval(qrTimer); qrTimer = null; qrTok = null;
+      el.textContent = '시간이 지났어요. 다시 띄워주세요';
+      el.classList.add('out');
+      return;
+    }
+    el.textContent = `${Math.floor(left/60)}분 ${String(left%60).padStart(2,'0')}초 뒤에 사라져요`;
+  };
+  tick(); qrTimer = setInterval(tick, 1000);
 }
 
 // 번호로 할지, 목록에서 고를지. 기본은 번호다
