@@ -6486,6 +6486,14 @@ function qrClear() {
   $('qrBox').innerHTML = '';
 }
 
+// 【닫고 바로 열면 안 된다】 closeBuy() 뒤에 openGotPhoto() 를 부르면, 뒤늦게 도는
+//   history.back() 이 방금 연 사진 화면까지 걷어내 MY 로 떨어졌다
+//   (2026-10-07 사용자). 이 앱이 이미 겪고 만들어 둔 「바꿔 끼우기」(goFromOv)로 간다.
+//   쪽지는 이미 끝났으니(done) 접을 것도 없다 — qrClear 를 부르지 않는다
+function gotFromBuy(pid) {
+  goFromOv('ovBuy', () => openGotPhoto(pid));
+}
+
 // 사장님이 확인을 마쳤다. 축하부터 하고, 할 일은 그다음에
 async function qrGotIt(pid) {
   $('qrBox').innerHTML = `
@@ -6494,7 +6502,7 @@ async function qrGotIt(pid) {
       <div class="qr-t">책을 받았어요!</div>
       <div class="qr-s" style="margin-top:5px;">이제 한 장만 남겨주세요</div>
       <button class="btn btn-primary" style="margin-top:16px;"
-        onclick="closeBuy(); openGotPhoto(${pid});">받은 책 남기기</button>
+        onclick="gotFromBuy(${pid})">받은 책 남기기</button>
     </div>`;
   $('qrGo').style.display = 'none';
   await loadAll();
