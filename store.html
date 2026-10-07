@@ -118,6 +118,16 @@ const KEY = new URLSearchParams(location.search).get('k') || '';
 
 let rows = [], picked = null, receipt = null, photo = null, store = null;
 
+// ── QR 로 들어온 길 (migration-88) ─────────────────────
+// 아이 폰의 QR 을 카메라로 찍으면 여기로 온다. 그 건 하나만 열린다.
+// 네 자리는 **사장님 제 폰에** 넣는다 — 이게 「이 책방이 맞다」는 증거다.
+// 한 번 넣으면 이 폰이 기억하므로, 다음부터는 바로 금액 칸으로 간다
+const TOKEN = new URLSearchParams(location.search).get('r') || '';
+const CODE_SAVE = 'hankkut-store-code';
+const savedCode = () => { try { return localStorage.getItem(CODE_SAVE) || ''; } catch (e) { return ''; } };
+const saveCode  = c => { try { localStorage.setItem(CODE_SAVE, c); } catch (e) {} };
+let look = null;
+
 // 「10월 7일 오후 3시」. 사장님이 기억을 더듬는 기준은 날짜와 시각이다
 function when(iso) {
   const d = new Date(iso);
@@ -126,6 +136,7 @@ function when(iso) {
 }
 
 async function load() {
+  if (TOKEN) return loadRedeem(savedCode());
   if (!KEY) return fail('주소가 올바르지 않아요',
     '운영진이 보내드린 주소를 그대로 열어주세요. 주소 끝이 잘리면 안 열립니다.');
   $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
@@ -224,8 +235,49 @@ function form() {
     <input type="text" id="note" maxlength="80" placeholder="예) 품절이라 다른 책으로 드렸어요">
 
     <button class="btn btn-go" id="go" disabled onclick="send()">유스보이스에 보내기</button>
-    <button class="btn btn-line" onclick="pick(null)">그만두기</button>
+    <button class="btn btn-line" onclick="${TOKEN ? 'location.reload()' : 'pick(null)'}">그만두기</button>
     <div id="msg"></div>`;
+}
+
+// ── 스캔해서 들어온 한 건 ──────────────────────────────
+async function loadRedeem(code) {
+  if (!code) return askCode('');
+  $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
+  const { data, error } = await sb.rpc('redeem_qr_lookup', { p_token: TOKEN, p_code: code });
+  if (error) return askCode(error.message || '다시 해주세요');
+  const r = Array.isArray(data) ? data[0] : data;
+  if (!r) return askCode('쪽지를 찾지 못했어요');
+  saveCode(code);
+  look = r; picked = 'qr'; receipt = null; photo = null;
+  paintRedeem();
+}
+
+function askCode(msg) {
+  $('app').innerHTML = `
+    <div class="card">
+      <div class="store-n">확인 번호를 넣어주세요</div>
+      <div class="store-s" style="margin-top:6px;">
+        안내문에 적힌 <b>우리 책방 네 자리</b>예요. 이 폰이 기억하니 다음부터는 안 물어봅니다.</div>
+      <input type="text" id="code" inputmode="numeric" maxlength="4"
+             placeholder="● ● ● ●" autocomplete="off"
+             style="margin-top:14px;text-align:center;letter-spacing:12px;font-size:26px;font-weight:800;">
+      <button class="btn btn-go" onclick="loadRedeem(document.getElementById('code').value.replace(/[^0-9]/g,''))">확인</button>
+      ${msg ? `<div class="msg m-bad">${esc(msg)}</div>` : ''}
+    </div>`;
+  $('code').focus();
+}
+
+function paintRedeem() {
+  const m = Math.floor(look.left_sec / 60), sec = look.left_sec % 60;
+  $('app').innerHTML = `
+    <div class="card">
+      <div class="store-s">${esc(look.bookstore)}</div>
+      <div class="store-n" style="margin-top:2px;">${esc(look.who)}</div>
+      <div class="store-s" style="margin-top:4px;">${esc(look.routine)}</div>
+      <div class="code-mini" style="margin-top:12px;">남은 시간 <b style="font-size:17px;letter-spacing:0;">${m}분 ${sec}초</b>
+        <span>지나면 청소년에게 다시 띄워달라고 해주세요</span></div>
+    </div>
+    <div class="row on">${form()}</div>`;
 }
 
 function pick(id) {
@@ -273,7 +325,7 @@ function show(cls, t) { $('msg').innerHTML = `<div class="msg ${cls}">${esc(t)}<
 
 async function up(blob, tag) {
   if (!blob) return null;
-  const path = `${picked}/${tag}_${Date.now()}.jpg`;
+  const path = `${TOKEN ? 't' + TOKEN.slice(0, 8) : picked}/${tag}_${Date.now()}.jpg`;
   const { error } = await sb.storage.from('store-proofs')
     .upload(path, blob, { contentType: 'image/jpeg' });
   if (error) throw new Error('사진을 올리지 못했어요: ' + error.message);
@@ -285,14 +337,23 @@ async function send() {
   try {
     const rc = await up(receipt, 'receipt');
     const ph = await up(photo,   'photo');
-    const { error } = await sb.rpc('store_submit', {
-      p_key: KEY, p_purchase_id: picked,
-      p_amount: parseInt($('amt').value, 10),
-      p_receipt: rc, p_photo: ph,
-      p_note: $('note').value.trim() || null,
-    });
+    const common = { p_amount: parseInt($('amt').value, 10), p_receipt: rc, p_photo: ph,
+                     p_note: $('note').value.trim() || null };
+    const { error } = TOKEN
+      ? await sb.rpc('redeem_qr_confirm', { p_token: TOKEN, p_code: savedCode(), ...common })
+      : await sb.rpc('store_submit',      { p_key: KEY, p_purchase_id: picked, ...common });
     if (error) throw new Error(error.message);
     picked = null; receipt = null; photo = null;
+
+    if (TOKEN) {
+      // 쪽지는 한 번 쓰면 끝이다. 목록으로 돌아갈 데가 없으니 여기서 맺는다
+      $('app').innerHTML = `
+        <div class="msg m-ok" style="font-size:16px;padding:20px;">
+          교환이 끝났습니다. 확인하고 책값을 보내드릴게요.<br>고맙습니다 🙏</div>
+        <div class="card"><div class="hint">이 창은 닫으셔도 됩니다.</div></div>`;
+      window.scrollTo(0, 0);
+      return;
+    }
     await load();
     window.scrollTo(0, 0);
     $('app').insertAdjacentHTML('afterbegin',
