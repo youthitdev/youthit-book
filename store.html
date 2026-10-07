@@ -291,7 +291,7 @@ function card(r) {
     ${r.code_ok === false ? `<div class="row-book">📱 청소년이 앱에서 직접 기록한 건이에요 · 책을 건넨 분이 맞는지 확인해 주세요</div>` : ''}
     ${tag}
     ${(!r.submitted && !r.settled)
-      ? (picked === r.id ? form() : `<button class="btn btn-go" onclick="pick(${r.id})">이 청소년 건 올리기</button>`)
+      ? (picked === r.id ? form() : `<button class="btn btn-go" onclick="pick(${r.id})">금액·영수증 올리기</button>`)
       : ''}
   </div>`;
 }
