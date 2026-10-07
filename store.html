@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>한끗독서 · 책방</title>
+<meta name="theme-color" content="#E8A33D">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="logo-book-partner.svg">
+<link rel="apple-touch-icon" href="icon-partner-apple.png">
+<meta name="apple-mobile-web-app-title" content="한끗독서 · 책방">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{ color-scheme:light;
+  --ink:#1C1A17; --ink-2:#5D574E; --ink-3:#9A948A;
+  --paper:#FAF7F1; --card:#fff; --line:#E9E3D8;
+  /* 섭외 페이지와 같은 호박색. 사장님이 보는 화면은 한 벌로 읽혀야 한다 */
+  --amber:#E8A33D; --amber-d:#B8770F; --amber-l:#FBF3E3;
+  --ok:#1F6F3F; --bad:#C2533F;
+}
+body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--paper); color:var(--ink); line-height:1.65;
+  word-break:keep-all; overflow-wrap:break-word; -webkit-font-smoothing:antialiased;
+  /* 사장님 연배를 생각해 기본 글자를 앱보다 한 뼘 키운다 */
+  font-size:16px; }
+.wrap{ max-width:520px; margin:0 auto; padding:0 18px 56px; }
+
+header{ padding:20px 0 14px; display:flex; align-items:center; gap:10px; }
+header b{ font-size:19px; letter-spacing:-.4px; }
+header span{ font-size:13px; color:var(--ink-3); }
+
+.card{ background:var(--card); border:1px solid var(--line); border-radius:16px;
+  padding:18px; margin-bottom:14px; }
+.store-n{ font-size:22px; font-weight:800; letter-spacing:-.5px; }
+.store-s{ font-size:13.5px; color:var(--ink-3); margin-top:3px; }
+
+.sec{ font-size:15px; font-weight:800; margin:24px 0 10px; }
+.hint{ font-size:13px; color:var(--ink-3); line-height:1.6; }
+
+/* 온 건 한 줄 */
+.row{ background:var(--card); border:1px solid var(--line); border-radius:14px;
+  padding:16px; margin-bottom:10px; }
+.row.on{ border-color:var(--amber); box-shadow:0 0 0 2px #F6E3C1 inset; }
+.row-t{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.row-who{ font-size:17px; font-weight:800; }
+.row-when{ font-size:12.5px; color:var(--ink-3); flex:none; }
+.row-book{ font-size:13.5px; color:var(--ink-2); margin-top:3px; }
+.chip{ display:inline-block; font-size:12px; font-weight:700; border-radius:99px;
+  padding:3px 10px; margin-top:9px; }
+.c-wait{ background:#FFF5E2; color:var(--amber-d); }
+.c-sent{ background:#EAF4EC; color:var(--ok); }
+.c-done{ background:#EEF1F4; color:#4A5560; }
+
+label{ display:block; font-size:13.5px; font-weight:700; margin:16px 0 6px; }
+input[type=number], input[type=text], textarea{
+  width:100%; font-family:inherit; font-size:17px; color:var(--ink);
+  background:#fff; border:1px solid var(--line); border-radius:12px;
+  padding:14px 15px; outline:none; }
+input:focus, textarea:focus{ border-color:var(--amber); }
+.file{ display:block; width:100%; text-align:center; font-family:inherit;
+  font-size:15px; font-weight:700; color:var(--ink-2); background:#fff;
+  border:1px dashed #D6CEBF; border-radius:12px; padding:16px; cursor:pointer; }
+.file.on{ border-style:solid; border-color:var(--ok); color:var(--ok); }
+.file input{ display:none; }
+.prev{ width:100%; border-radius:12px; margin-top:8px; display:block; }
+
+.btn{ display:block; width:100%; font-family:inherit; font-size:17px; font-weight:800;
+  border:none; border-radius:14px; padding:17px; cursor:pointer; margin-top:20px; }
+.btn-go{ background:var(--amber); color:#fff; }
+.btn-go:disabled{ background:#E6E0D4; color:#A9A295; cursor:default; }
+.btn-line{ background:#fff; border:1px solid var(--line); color:var(--ink-2);
+  font-size:15px; padding:14px; }
+
+.msg{ font-size:14px; border-radius:12px; padding:14px 15px; margin-top:14px; line-height:1.6; }
+.m-bad{ background:#FDF0EE; color:#8E3527; }
+.m-ok{ background:#EAF4EC; color:var(--ok); }
+
+.guide{ background:var(--amber-l); border:1px solid #F0DFBF; border-radius:14px;
+  padding:16px; font-size:14px; line-height:1.75; }
+.guide > b{ display:block; margin-bottom:6px; }   /* 문장 속 <b> 까지 끊기면 안 된다 */
+.guide ol{ margin:0; padding-left:19px; }
+.guide li{ margin:4px 0; }
+
+footer{ margin-top:34px; font-size:12.5px; color:var(--ink-3); line-height:1.7; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <b>한끗독서</b><span>책방</span>
+  </header>
+  <div id="app"></div>
+  <footer>
+    유스보이스 · 한끗독서<br>
+    막히시면 운영진에게 전화 주세요.
+  </footer>
+</div>
+
+<script>
+const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
+const SB_KEY = 'sb_publishable_T35InghsDImtgdLk7Kksdw_ng1H8P18';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+const $  = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const won = n => Number(n || 0).toLocaleString('ko-KR');
+
+// 주소에 실려 온 열쇠. 이게 이 화면의 전부다
+const KEY = new URLSearchParams(location.search).get('k') || '';
+
+let rows = [], picked = null, receipt = null, photo = null;
+
+// 「10월 7일 오후 3시」. 사장님이 기억을 더듬는 기준은 날짜와 시각이다
+function when(iso) {
+  const d = new Date(iso);
+  const h = d.getHours();
+  return `${d.getMonth()+1}월 ${d.getDate()}일 ${h < 12 ? '오전' : '오후'} ${h % 12 || 12}시`;
+}
+
+async function load() {
+  if (!KEY) return fail('주소가 올바르지 않아요',
+    '운영진이 보내드린 주소를 그대로 열어주세요. 주소 끝이 잘리면 안 열립니다.');
+  $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
+  const { data, error } = await sb.rpc('store_pending', { p_key: KEY });
+  if (error) return fail('주소가 올바르지 않아요',
+    '운영진이 보내드린 주소를 그대로 열어주세요. 바뀌었다면 새 주소를 받아주세요.');
+  rows = data || [];
+  paint();
+}
+
+function fail(t, s) {
+  $('app').innerHTML = `<div class="card"><div class="store-n">${esc(t)}</div>
+    <div class="store-s" style="margin-top:8px;">${esc(s)}</div></div>`;
+}
+
+function paint() {
+  const wait = rows.filter(r => !r.submitted && !r.settled);
+  const rest = rows.filter(r =>  r.submitted ||  r.settled);
+
+  $('app').innerHTML = `
+    <div class="guide">
+      <b>📚 이렇게 해주세요</b>
+      <ol>
+        <li>청소년이 고른 책을 <b>그냥 드리면</b> 됩니다. 돈은 받지 않습니다.</li>
+        <li>청소년 폰에 <b>확인 번호 네 자리</b>를 눌러주세요.</li>
+        <li>아래에서 그 청소년을 찾아 <b>금액·영수증·사진</b>을 올려주세요.</li>
+        <li>유스보이스가 확인하고 <b>책값을 보내드립니다.</b></li>
+      </ol>
+    </div>
+
+    <div class="sec">청구할 건 ${wait.length ? `<span style="color:var(--amber-d);">${wait.length}</span>` : ''}</div>
+    ${wait.length
+      ? wait.map(card).join('')
+      : `<div class="card"><div class="hint">지금은 청구할 건이 없어요.<br>
+           청소년이 다녀가면 여기에 나타납니다.</div></div>`}
+
+    ${rest.length ? `<div class="sec">지난 건</div>${rest.map(card).join('')}` : ''}
+  `;
+}
+
+function card(r) {
+  const tag = r.settled   ? `<span class="chip c-done">책값을 보냈어요</span>`
+            : r.submitted ? `<span class="chip c-sent">보냈어요 · ${won(r.store_amount)}원</span>`
+            :               `<span class="chip c-wait">아직 안 보냈어요</span>`;
+  return `<div class="row${picked === r.id ? ' on' : ''}">
+    <div class="row-t">
+      <div class="row-who">${esc(r.who)}</div>
+      <div class="row-when">${when(r.came_at)}</div>
+    </div>
+    ${r.book_title ? `<div class="row-book">📖 ${esc(r.book_title)}</div>` : ''}
+    ${tag}
+    ${(!r.submitted && !r.settled)
+      ? (picked === r.id ? form() : `<button class="btn btn-go" onclick="pick(${r.id})">이 청소년 건 올리기</button>`)
+      : ''}
+  </div>`;
+}
+
+function form() {
+  return `
+    <label>책값 (원)</label>
+    <input type="number" id="amt" inputmode="numeric" placeholder="16500" oninput="check()">
+    <div class="hint" style="margin-top:6px;">영수증에 찍힌 금액을 그대로 적어주세요.</div>
+
+    <label>영수증 사진</label>
+    <label class="file" id="rcLab">사진 고르기
+      <input type="file" accept="image/*" onchange="pickFile(event,'receipt')"></label>
+    <div id="rcPrev"></div>
+
+    <label>책을 건넨 사진</label>
+    <label class="file" id="phLab">사진 고르기
+      <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
+    <div id="phPrev"></div>
+    <div class="hint" style="margin-top:6px;">
+      <b>청소년 얼굴이 나오지 않게</b>, 책이 잘 보이게 찍어주세요.<br>
+      올리신 뒤에는 사장님 폰에서 지워주셔도 됩니다.</div>
+
+    <label>남길 말 <span style="font-weight:500;color:var(--ink-3);">(없으면 비워두세요)</span></label>
+    <input type="text" id="note" maxlength="80" placeholder="예) 품절이라 다른 책으로 드렸어요">
+
+    <button class="btn btn-go" id="go" disabled onclick="send()">유스보이스에 보내기</button>
+    <button class="btn btn-line" onclick="pick(null)">그만두기</button>
+    <div id="msg"></div>`;
+}
+
+function pick(id) {
+  picked = id; receipt = null; photo = null;
+  paint();
+  if (id) document.querySelector('.row.on')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+// 폰 사진은 4MB 를 넘는다. 올리기 전에 줄인다 — 책방 와이파이가 느릴 수 있다
+function shrink(file, max = 1600, q = .82) {
+  return new Promise((ok, no) => {
+    const img = new Image(), fr = new FileReader();
+    fr.onload = () => { img.src = fr.result; };
+    fr.onerror = () => no(new Error('사진을 읽지 못했어요'));
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => b ? ok(b) : no(new Error('사진을 줄이지 못했어요')), 'image/jpeg', q);
+    };
+    img.onerror = () => no(new Error('사진을 읽지 못했어요'));
+    fr.readAsDataURL(file);
+  });
+}
+
+async function pickFile(e, which) {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const blob = await shrink(f);
+    const url  = URL.createObjectURL(blob);
+    if (which === 'receipt') { receipt = blob; $('rcPrev').innerHTML = `<img class="prev" src="${url}">`; $('rcLab').classList.add('on'); $('rcLab').firstChild.nodeValue = '다시 고르기 '; }
+    else                     { photo   = blob; $('phPrev').innerHTML = `<img class="prev" src="${url}">`; $('phLab').classList.add('on'); $('phLab').firstChild.nodeValue = '다시 고르기 '; }
+  } catch (err) { show('m-bad', err.message || '사진을 불러오지 못했어요'); }
+  check();
+}
+
+// 금액과 영수증은 있어야 한다. 책 사진은 깜빡할 수 있으니 막지 않는다 —
+// 막아 두면 사장님이 그 자리에서 포기한다
+function check() {
+  $('go').disabled = !(Number($('amt').value) > 0 && receipt);
+}
+
+function show(cls, t) { $('msg').innerHTML = `<div class="msg ${cls}">${esc(t)}</div>`; }
+
+async function up(blob, tag) {
+  if (!blob) return null;
+  const path = `${picked}/${tag}_${Date.now()}.jpg`;
+  const { error } = await sb.storage.from('store-proofs')
+    .upload(path, blob, { contentType: 'image/jpeg' });
+  if (error) throw new Error('사진을 올리지 못했어요: ' + error.message);
+  return path;
+}
+
+async function send() {
+  const btn = $('go'); btn.disabled = true; btn.textContent = '보내는 중…';
+  try {
+    const rc = await up(receipt, 'receipt');
+    const ph = await up(photo,   'photo');
+    const { error } = await sb.rpc('store_submit', {
+      p_key: KEY, p_purchase_id: picked,
+      p_amount: parseInt($('amt').value, 10),
+      p_receipt: rc, p_photo: ph,
+      p_note: $('note').value.trim() || null,
+    });
+    if (error) throw new Error(error.message);
+    picked = null; receipt = null; photo = null;
+    await load();
+    window.scrollTo(0, 0);
+    $('app').insertAdjacentHTML('afterbegin',
+      `<div class="msg m-ok">보냈습니다. 확인하고 책값을 보내드릴게요. 고맙습니다 🙏</div>`);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = '유스보이스에 보내기';
+    show('m-bad', err.message || '보내지 못했어요. 잠시 뒤 다시 해주세요.');
+  }
+}
+
+load();
+</script>
+</body>
+</html>

@@ -2435,7 +2435,8 @@ function viewStores() {
   <div class="panel-hd">
     <div><div class="panel-t">파트너 서점</div>
     <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.<br>
-      <b>확인 번호</b>는 책방이 그 자리에서 아이 폰에 누르는 네 자리예요. 청소년에게는 안 보입니다.</div></div>
+      <b>확인 번호</b>는 책방이 그 자리에서 아이 폰에 누르는 네 자리예요. 청소년에게는 안 보입니다.<br>
+      <b>책방 주소</b>는 사장님이 금액·영수증을 올리는 화면이에요. 한 번 보내드리면 즐겨찾기 해두시면 됩니다.</div></div>
     <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
@@ -2448,7 +2449,9 @@ function viewStores() {
       <td class="muted">${esc(s.hours) || '-'}${s.closed_days ? `<div>${esc(s.closed_days)}</div>` : ''}</td>
       <td class="num">${(DB.purchaseCounts || {})[s.id] || 0}건</td>
       <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">비활성</span>'}</td>
-      <td class="right"><button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
+      <td class="right" style="white-space:nowrap;">
+        <button class="btn btn-line" onclick="storeLink(${s.id}, this)">책방 주소</button>
+        <button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
 }
@@ -2592,7 +2595,8 @@ function viewPending() {
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
     <div class="panel-d">교환권으로 책을 받아온 건이에요. 서점이 보낸 영수증과 금액을 확인해 확정하세요.<br>
-      <b>번호 없이</b>로 적힌 건은 책방이 그 자리에서 번호를 못 눌렀다는 뜻이에요. 영수증과 한 번 더 맞춰보세요.</div></div>
+      <b>번호 없이</b>로 적힌 건은 책방이 그 자리에서 번호를 못 눌렀다는 뜻이에요. 영수증과 한 번 더 맞춰보세요.<br>
+      <b>청구 ○○원</b>은 책방이 직접 올린 금액이에요. 영수증을 보고 확정하세요 — <b>그대로 확정되지 않습니다.</b></div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
@@ -2603,9 +2607,32 @@ function viewPending() {
         ${g.code_ok ? '' : '<span class="chip c-wait">번호 없이</span>'}</div></td>
       <td class="num">${fmtDate(g.created_at)}</td>
       <td>${sharePhotoCell(g)}</td>
-      <td class="right"><button class="btn btn-pink" onclick="openSettle(${g.id})">금액 입력</button></td>
+      <td class="right" style="white-space:nowrap;">${storeClaimCell(g)}
+        <button class="btn btn-pink" onclick="openSettle(${g.id})">금액 입력</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">정산 대기 중인 건이 없어요.</div>`}`;
+}
+
+// 책방이 올린 청구. 금액은 **제안**이고 확정은 운영진이 한다 (migration-85)
+function storeClaimCell(g) {
+  if (!g.store_submitted_at) return `<span class="chip c-wait">책방 대기</span> `;
+  return `<span class="chip c-act">청구 ${won(g.store_amount)}원</span>
+    ${g.store_receipt_path ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_receipt_path)}','영수증')">영수증</button>` : ''}
+    ${g.store_photo_path   ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_photo_path)}','사진')">건넨 사진</button>` : ''}
+    ${g.store_note ? `<div class="muted" style="margin-top:4px;">“${esc(g.store_note)}”</div>` : ''} `;
+}
+const viewStoreFile = (p, what) => openSigned('store-proofs', p, what);
+
+// 사장님께 보낼 주소. 열쇠는 표에 그냥 두지 않고 부를 때 만들어 온다
+async function storeLink(id, btn) {
+  if (!LIVE) { alert('데모 모드에서는 주소가 없어요.'); return; }
+  const { data, error } = await sb.rpc('store_key', { p_bookstore_id: id });
+  if (error) { alert('주소를 만들지 못했어요: ' + error.message); return; }
+  const url = SITE + '/store.html?k=' + data;
+  // 복사부터 한다. 사장님께 보내는 게 목적이지 들여다보는 게 아니다
+  try { await navigator.clipboard.writeText(url); btn.textContent = '복사했어요'; }
+  catch (e) { prompt('이 주소를 사장님께 보내주세요', url); return; }
+  setTimeout(() => { btn.textContent = '책방 주소'; }, 1600);
 }
 
 // 사진이 세 장이다. 이름을 헷갈리면 엉뚱한 걸 보고 공개하게 된다.
@@ -2832,9 +2859,13 @@ function openSettle(id) {
   const g = DB.purchases.find(x => x.id === id);
   document.getElementById('settleTarget').innerHTML =
     `<div><b>${esc(g.name)}</b> · ${esc(g.routine)}</div>
-     <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 구매</div>`;
+     <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 구매</div>
+     ${g.store_submitted_at ? `<div style="margin-top:6px;color:var(--pink);font-weight:700;">
+        책방이 <b>${won(g.store_amount)}원</b>을 청구했어요 — 영수증과 맞춰보세요
+        ${g.store_note ? `<div class="muted" style="font-weight:500;">“${esc(g.store_note)}”</div>` : ''}</div>` : ''}`;
   document.getElementById('capHint').textContent = won(voucherCap());
-  document.getElementById('settleAmount').value = '';
+  // 책방이 올린 금액을 미리 채운다. 확정은 여전히 사람이 누른다
+  document.getElementById('settleAmount').value = g.store_amount || '';
   document.getElementById('settleNote').value = '';
   document.getElementById('settleReceipt').value = '';
   renderPreview();
@@ -3003,6 +3034,11 @@ async function loadLive() {
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
     code_ok: !!p.code_ok,
     receipt: p.receipt_url || null,
+    // 책방이 직접 올린 것 (migration-85). 금액은 제안이고 확정은 amount 다
+    store_amount: p.store_amount ?? null, store_note: p.store_note || null,
+    store_receipt_path: p.store_receipt_path || null,
+    store_photo_path:   p.store_photo_path   || null,
+    store_submitted_at: p.store_submitted_at || null,
     allocs: p.consumption_allocations || [],
   }));
 
