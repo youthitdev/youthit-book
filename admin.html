@@ -78,6 +78,13 @@ tr:hover td { background:#fcfcfd; }
 .thumb { width:40px; height:40px; border-radius:8px; background:#ececed; display:flex; align-items:center; justify-content:center; font-size:9.5px; color:var(--ink-3); font-weight:600; }
 .chip { display:inline-block; font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
 .c-wait { background:#fff4e5; color:#a86400; }
+.c-warn { background:#FDEBE7; color:#B3402B; }
+/* 청구가 오래 안 오는 책방 요약 */
+.od { margin:16px 20px 0; border:1px solid #F0C9BF; background:#FFF7F5; border-radius:12px; padding:14px 16px; }
+.od-t { font-size:13.5px; font-weight:800; color:#B3402B; }
+.od-s { font-size:12.5px; color:var(--ink-2); margin:3px 0 8px; }
+.od-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0;
+  border-top:1px solid #F6DDD6; font-size:13.5px; }
 .c-done { background:#f2f9e5; color:#4E7A1C; }
 .c-void { background:#f0efed; color:#8a8378; }
 /* 취소된 정산. 지우지 않고 남긴다 — 명세는 「왜 이 숫자가 됐나」를 설명해야 한다 */
@@ -648,6 +655,9 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 // 후원자에게 보내는 문자에 들어가는 주소. 문자는 눌러서 들어오는 거라
 // 전체 주소여야 한다. 도메인을 갈면 여기 한 줄만 고친다
 const SITE = 'https://book.youthvoice.or.kr';
+// 사장님이 청구를 안 올린 채 이만큼 지나면 눈에 띄게 한다 (2026-10-07).
+// 그동안 정산 대기가 풀리지 않아 아이가 새 교환을 못 하는 일이 생길 수 있다
+const CLAIM_WARN_DAYS = 14;
 
 const SB_URL = 'https://qvpahwvihvkasrznboaa.supabase.co';
 const SB_KEY = 'sb_publishable_T35InghsDImtgdLk7Kksdw_ng1H8P18';
@@ -812,7 +822,8 @@ function renderSummary() {
       + todoCard('끗짱',   waitK, '건', '신청서를 낸 분')
       + todoCard('루틴',   waitR, '건', '승인을 기다리는')
     : card('책이 된 금액', won(p.spent), '원', false)
-      + card('정산 대기', p.pending, '건', p.pending)
+      + card('정산 대기', p.pending, '건', p.pending,
+             (n => n ? `⚠️ ${CLAIM_WARN_DAYS}일↑ ${n}건` : '')((DB.purchases || []).filter(overdue).length))
       + card('서점 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
   // 손대야 하는 건(todo)은 분홍 표시로, 그냥 개수는 회색 숫자로.
   // 할 일이 0 이면 아무것도 안 그린다 — 0 을 띄워두면 1 이 안 보인다
@@ -2599,6 +2610,7 @@ function viewPending() {
       <b>QR 없이</b>로 적힌 건은 QR이 안 돼서 청소년이 앱에서 직접 기록한 건이에요. 책방이 올린 금액·영수증과 맞는지 확인하세요.<br>
       <b>청구 ○○원</b>은 책방이 직접 올린 금액이에요. 영수증을 보고 확정하세요 — <b>그대로 확정되지 않습니다.</b></div></div>
   </div>
+  ${overdueBanner(rows)}
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
@@ -2614,9 +2626,64 @@ function viewPending() {
   </table></div>` : `<div class="empty">정산 대기 중인 건이 없어요.</div>`}`;
 }
 
+// ── 청구가 안 오는 건 ──────────────────────────────────
+function daysAgo(iso) { return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400e3)); }
+const noClaim = g => g.status === 'pending' && !g.store_submitted_at;
+function overdue(g) { return noClaim(g) && daysAgo(g.created_at) >= CLAIM_WARN_DAYS; }
+
+// 책방에 보낼 글. 전화 응대가 어려워 메일·카카오톡 채널로 보낸다.
+// ⚠️ 책방의 비밀 주소는 넣지 않는다 — 메일은 전달되기 쉽다. 로그인 화면 주소만 적는다.
+// 이름은 닉네임을 쓴다(없으면 이름). 사장님 화면에 보이는 것과 같은 기준이다
+let CLAIM_MSGS = [];
+function claimMessage(store, list) {
+  const day = iso => { const d = new Date(iso); return `${d.getMonth() + 1}월 ${d.getDate()}일`; };
+  return [
+    '안녕하세요, 유스보이스 한끗독서입니다.',
+    `${store}에서 청소년에게 책을 건네 주신 아래 건의 책값 청구가 아직 올라오지 않았어요.`,
+    '',
+    ...list.map(g => `· ${day(g.created_at)} ${g.nick || g.name}`),
+    '',
+    '한가하실 때 아래에서 「책방 로그인」으로 들어가 금액과 영수증을 올려주세요.',
+    SITE + '/store-invite.html',
+    '',
+    '막히시면 답장으로 알려주세요.',
+  ].join('\n');
+}
+
+function overdueBanner(rows) {
+  const late = rows.filter(overdue);
+  CLAIM_MSGS = [];
+  if (!late.length) return '';
+  const by = {};
+  late.forEach(g => (by[g.bookstore] = by[g.bookstore] || []).push(g));
+  const lines = Object.keys(by).map(name => {
+    CLAIM_MSGS.push(claimMessage(name, by[name]));
+    return `<div class="od-row"><span><b>${esc(name)}</b> ${by[name].length}건</span>
+      <button class="btn btn-line" onclick="copyClaimMsg(this, ${CLAIM_MSGS.length - 1})">연락 문구 복사</button></div>`;
+  }).join('');
+  return `<div class="od">
+    <div class="od-t">⚠️ ${CLAIM_WARN_DAYS}일 넘게 청구가 없어요 · ${late.length}건</div>
+    <div class="od-s">책방에 메일이나 카카오톡 채널로 알려주세요. 아이는 이 건이 정리되기 전까지 새 교환을 못 할 수 있어요.</div>
+    ${lines}</div>`;
+}
+
+async function copyClaimMsg(btn, i) {
+  const text = CLAIM_MSGS[i] || '';
+  try {
+    await navigator.clipboard.writeText(text);
+    const was = btn.textContent; btn.textContent = '복사했어요';
+    setTimeout(() => { btn.textContent = was; }, 1600);
+  } catch (e) { prompt('이 글을 책방에 보내주세요', text); }
+}
+
 // 책방이 올린 청구. 금액은 **제안**이고 확정은 운영진이 한다 (migration-85)
 function storeClaimCell(g) {
-  if (!g.store_submitted_at) return `<span class="chip c-wait">책방 대기</span> `;
+  if (!g.store_submitted_at) {
+    const d = daysAgo(g.created_at);
+    return d >= CLAIM_WARN_DAYS
+      ? `<span class="chip c-warn">⚠️ 책방 청구 없음 ${d}일째</span> `
+      : `<span class="chip c-wait">책방 청구 대기${d ? ` ${d}일째` : ''}</span> `;
+  }
   return `<span class="chip c-act">청구 ${won(g.store_amount)}원</span>
     ${g.store_receipt_path ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_receipt_path)}','영수증')">영수증</button>` : ''}
     ${g.store_photo_path   ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_photo_path)}','사진')">건넨 사진</button>` : ''}
@@ -3029,15 +3096,16 @@ async function loadLive() {
   DB.quotes = quotes.data || [];
 
   const purchaseUserIds = [...new Set((purchases.data || []).map(p => p.user_id))];
-  const nameByUserId = {};
+  const nameByUserId = {}, nickByUserId = {};
   if (purchaseUserIds.length) {
-    const { data: profs } = await sb.from('profiles').select('id, name').in('id', purchaseUserIds);
-    (profs || []).forEach(pr => nameByUserId[pr.id] = pr.name);
+    const { data: profs } = await sb.from('profiles').select('id, name, nick').in('id', purchaseUserIds);
+    (profs || []).forEach(pr => { nameByUserId[pr.id] = pr.name; nickByUserId[pr.id] = pr.nick; });
   }
 
   DB.purchases = (purchases.data || []).map(p => ({
     id: p.id, user_id: p.user_id, routine_id: p.routine_id,
-    name: nameByUserId[p.user_id] || '(탈퇴 또는 프로필 없음)', routine: p.routines?.title || '-',
+    name: nameByUserId[p.user_id] || '(탈퇴 또는 프로필 없음)', nick: nickByUserId[p.user_id] || '',
+    routine: p.routines?.title || '-',
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, paid_at: p.paid_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,

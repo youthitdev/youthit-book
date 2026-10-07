@@ -289,7 +289,7 @@ function paint() {
 function card(r) {
   const tag = r.settled   ? `<span class="chip c-done">책값을 보냈어요</span>`
             : r.submitted ? `<span class="chip c-sent">보냈어요 · ${won(r.store_amount)}원</span>`
-            :               `<span class="chip c-wait">아직 안 보냈어요</span>`;
+            :               `<span class="chip c-wait">아직 안 보냈어요${(d => d >= 1 ? ` · ${d}일째` : '')(Math.floor((Date.now() - new Date(r.came_at).getTime()) / 86400e3))}</span>`;
   return `<div class="row${picked === r.id ? ' on' : ''}">
     <div class="row-t">
       <div class="row-who">${esc(r.who)}${r.kid_age != null ? ` <span class="age">만 ${r.kid_age}세</span>` : ''}</div>
