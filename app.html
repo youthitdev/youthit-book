@@ -6411,12 +6411,14 @@ async function submitBuy() {
 }
 
 // 책이 도착한 순간에만 후원 이야기를 꺼낸다. 평소 화면에는 두지 않는다
+//
+// 【숫자를 빼다 · 2026-10-07 사용자】 전에는 후원자 수(dokseo_pool_status 의
+//   sponsors_count)를 넣었다. 그런데 그 숫자는 **관리자가 손으로 입력한 후원**
+//   만 센다 — 도너스 연동이 아직 없어서, 실제 후원자가 쉰 명이어도 입력이
+//   밀리면 열 명으로 나간다. 아이가 책을 받는 순간에 **틀린 숫자**를 보여주느니
+//   말하지 않는 편이 낫다. 입력을 챙겨야만 사는 숫자를 화면에 걸어 두지 않는다.
 async function showCheer() {
-  let n = 0;
-  try { const { data } = await sb.rpc('dokseo_pool_status'); n = (data && data.sponsors_count) || 0; } catch (e) {}
-  $('cheerMsg').innerHTML = n > 0
-    ? `이 책, 나를 응원하는<br>어른 ${n}명이 함께 보냈어요`
-    : `이 책, 나를 응원하는<br>어른들이 함께 보냈어요`;
+  $('cheerMsg').innerHTML = `이 책, 나를 응원하는<br>어른들이 함께 보냈어요`;
   openOv('ovCheer');
 }
 
