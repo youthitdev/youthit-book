@@ -28,35 +28,42 @@ body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 
 h1{ font-size:24px; letter-spacing:-.6px; }
 .sub{ font-size:13.5px; color:var(--ink-3); margin-top:4px; }
-.store{ font-size:31px; font-weight:800; letter-spacing:-.9px; margin-top:16px; }
+.store{ font-size:28px; font-weight:800; letter-spacing:-.9px; margin-top:10px; }
 .store small{ font-size:15px; font-weight:600; color:var(--ink-3); margin-left:8px; }
 
-.code{ display:flex; align-items:center; gap:18px; margin:18px 0 22px;
-  background:var(--amber-l); border:1.5px solid #F0DCB6; border-radius:16px; padding:18px 22px; }
+.code{ display:flex; align-items:center; gap:18px; margin:12px 0 14px;
+  background:var(--amber-l); border:1.5px solid #F0DCB6; border-radius:16px; padding:14px 20px; }
 .code-l{ font-size:13.5px; font-weight:700; color:var(--amber-d); }
-.code-n{ font-size:46px; font-weight:800; letter-spacing:10px; line-height:1.1; }
+.code-n{ font-size:40px; font-weight:800; letter-spacing:10px; line-height:1.1; }
 .code-s{ font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 
-h2{ font-size:16px; margin:22px 0 10px; }
+h2{ font-size:16px; margin:14px 0 8px; }
 ol{ padding-left:0; list-style:none; counter-reset:s; }
-ol li{ counter-increment:s; position:relative; padding:0 0 0 38px; margin-bottom:13px;
-  font-size:15px; line-height:1.65; }
+ol li{ counter-increment:s; position:relative; padding:0 0 0 38px; margin-bottom:8px;
+  font-size:14.5px; line-height:1.6; }
 ol li::before{ content:counter(s); position:absolute; left:0; top:1px;
   width:26px; height:26px; border-radius:50%; background:var(--amber); color:#fff;
   font-size:14px; font-weight:800; display:flex; align-items:center; justify-content:center; }
 ol li b{ font-weight:800; }
 
 .qr{ display:flex; gap:20px; align-items:center; border:1px solid var(--line);
-  border-radius:16px; padding:18px; margin-top:6px; }
+  border-radius:16px; padding:14px 18px; margin-top:2px; }
 .qr-box{ flex:none; }
 .qr-t{ font-size:15px; font-weight:800; }
 .qr-s{ font-size:13px; color:var(--ink-2); margin-top:6px; line-height:1.6; }
 .qr-u{ font-size:10.5px; color:var(--ink-3); margin-top:8px; word-break:break-all; }
 
-.note{ margin-top:20px; border-top:1px solid var(--line); padding-top:16px;
-  font-size:13.5px; color:var(--ink-2); line-height:1.8; }
+.note{ margin-top:14px; border-top:1px solid var(--line); padding-top:12px;
+  font-size:13px; color:var(--ink-2); line-height:1.7; }
 .note b{ color:var(--ink); }
-footer{ margin-top:20px; font-size:12px; color:var(--ink-3); }
+.ask{ display:flex; justify-content:space-between; align-items:center; gap:16px;
+  margin-top:12px; border:1px solid var(--line); border-radius:14px; padding:12px 18px; }
+.ask-t{ font-size:13.5px; font-weight:800; margin-bottom:4px; }
+.ask-s{ font-size:13px; color:var(--ink-2); line-height:1.75; }
+.ask-s span{ color:var(--ink-3); font-size:12px; }
+.ask a{ color:inherit; text-decoration:none; }
+#qr2 img, #qr2 canvas{ display:block; }
+footer{ margin-top:10px; font-size:12px; color:var(--ink-3); }
 
 @media print{
   body{ background:#fff; }
@@ -156,13 +163,27 @@ function paint(s) {
       · <b>QR이 안 될 때</b>는 청소년이 앱에서 직접 기록합니다. 그 건이 우리 책방 화면에
         <b>「아직 안 보냈어요」</b>로 올라오니, 금액·영수증을 올려주세요.
         <b>영수증으로 맞춰봅니다.</b><br>
-      · 확인 번호가 새어 나간 것 같으면 운영진에게 말씀해 주세요. <b>바로 바꿔드립니다.</b>
+      · 확인 번호가 새어 나간 것 같으면 아래 메일이나 카카오톡 채널로 알려주세요. <b>확인하는 대로 바꿔드립니다.</b>
+    </div>
+
+    <div class="ask">
+      <div class="ask-b">
+        <div class="ask-t">막히실 때</div>
+        <div class="ask-s">메일 <a href="mailto:yv@youthvoice.or.kr"><b>yv@youthvoice.or.kr</b></a><br>
+          카카오톡 채널 <a href="http://pf.kakao.com/_kTGuxj"><b>pf.kakao.com/_kTGuxj</b></a><br>
+          <span>바로 답하지 못할 수 있어요. 확인하는 대로 연락드릴게요.</span></div>
+      </div>
+      <div id="qr2"></div>
     </div>
 
     <footer>유스보이스 · 한끗독서 &nbsp;|&nbsp; book.youthvoice.or.kr
       ${s.phone ? ` &nbsp;|&nbsp; 책방 ${esc(s.phone)}` : ''}</footer>`;
 
   new QRCode($('qr'), { text: LINK, width: 132, height: 132,
+    colorDark: '#1C1A17', colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M });
+  // 카카오톡 채널. 종이에서는 링크를 못 누르니 QR 로도 둔다 (이 주소는 비밀이 아니다)
+  new QRCode($('qr2'), { text: 'http://pf.kakao.com/_kTGuxj', width: 72, height: 72,
     colorDark: '#1C1A17', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M });
 }
