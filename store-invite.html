@@ -188,7 +188,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
       <!-- 【이미 함께하는 책방의 입구 · 2026-10-07 사용자】 이 페이지는 아직 함께하지 않는
            책방을 설득하는 글이다. 로그인한 폰에서만 아래 띠가 바뀐다 -->
       <a href="store.html" class="hd-login" id="hdLogin">책방 로그인</a>
-      <a href="#apply">신청하기</a>
+      <a href="#apply" id="applyBtn0">신청하기</a>
     </div>
   </div>
   <div class="mine" id="mine" hidden>
@@ -384,7 +384,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
       </p>
       <a class="btn" id="applyBtn" href="#" target="_blank" rel="noopener">신청서 작성하기</a>
       <div class="contact">
-        전화나 문자가 편하시면 그렇게 주셔도 됩니다.<br>
+        메일이나 카카오톡 채널로 남겨주셔도 됩니다.<br>
         <b id="contactLine">유스보이스</b>
       </div>
     </div>
@@ -406,25 +406,33 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 </footer>
 
 <script>
-// ⚠️ 여기 두 줄만 채우면 됩니다 -------------------------------------
-const FORM_URL = '';                       // 구글폼 주소
-const CONTACT  = '유스보이스 033-000-0000';  // 화면에 보일 연락처
+// ⚠️ 여기 한 줄만 채우면 됩니다 -------------------------------------
+const FORM_URL = '';                       // 구글폼 주소 — 「신청하기」 세 곳이 모두 여기로 간다
 // -------------------------------------------------------------------
+// 【전화번호를 적지 않는다 · 2026-10-07 사용자】 유스보이스는 전화로 상시 응대하기 어렵다.
+//   전에는 자리표시자 「033-000-0000」이 그대로 공개돼 있었다
+const CONTACT_MAIL  = 'yv@youthvoice.or.kr';
+const CONTACT_KAKAO = 'http://pf.kakao.com/_kTGuxj';
 
-(function () {
-  // 구글폼 주소가 없으면 버튼이 엉뚱한 데로 가지 않도록 막는다
-  const btns = [document.getElementById('applyBtn'), document.getElementById('applyBtn2')];
-  if (FORM_URL) {
-    btns.forEach(b => b.href = FORM_URL);
+function wireApply(url) {
+  // 머리·본문·아래 띠 — 「신청하기」가 세 곳이다. 하나라도 빠지면 거기서 길이 끊긴다
+  const btns = ['applyBtn0', 'applyBtn', 'applyBtn2'].map(id => document.getElementById(id));
+  if (url) {
+    btns.forEach(b => { b.href = url; b.target = '_blank'; b.rel = 'noopener'; b.onclick = null; });
   } else {
-    btns.forEach(b => {
+    // 주소가 없으면 버튼이 엉뚱한 데로 가지 않도록 막는다. 머리의 것은 원래대로 아래로 스크롤
+    btns.slice(1).forEach(b => {
       b.href = 'javascript:void(0)';
       b.removeAttribute('target');
-      b.onclick = () => alert('신청서 주소가 아직 연결되지 않았습니다.\n연락처로 문의해 주세요.');
+      b.onclick = () => alert('신청서 주소가 아직 연결되지 않았습니다.\n메일이나 카카오톡 채널로 문의해 주세요.');
     });
   }
-  document.getElementById('contactLine').textContent = CONTACT;
-})();
+}
+wireApply(FORM_URL);
+
+document.getElementById('contactLine').innerHTML =
+  '<a href="mailto:' + CONTACT_MAIL + '">' + CONTACT_MAIL + '</a> · ' +
+  '<a href="' + CONTACT_KAKAO + '" target="_blank" rel="noopener">카카오톡 채널</a>';
 
 // 지금까지 숫자. 아직 적을 때는 아예 띄우지 않는다 — 1명 · 1권은 오히려 불안하게 보인다
 (async function () {
