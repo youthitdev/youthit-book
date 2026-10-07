@@ -373,7 +373,13 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
+    <!-- ⏸ 【내려둠 · 2026-10-07 사용자】 후원은 **도너스에서만** 관리하고 앱에는
+         넣지 않기로 했다. 입력하지 않을 표를 열어 두면 늘 비어 있고, 거기서
+         나오는 「남은 도서기금」이 영영 마이너스로 보인다.
+         ⚠️ 되살리려면 이 주석만 풀면 된다. viewCharges()·openCharge()·
+            submitCharge() 는 그대로 살려 뒀다
     <button class="tab" data-tab="charges" onclick="switchTab('charges')">후원 내역<i id="cntCharges"></i></button>
+    -->
   </div>
 
   <div class="panel" id="panel"></div>
@@ -1357,11 +1363,10 @@ function viewReport() {
     ${num(d.readers, '명', '읽은 청소년')}
     ${num(d.certs, '건', '인증')}
     ${num(d.books, '권', '전해진 책')}
-    ${num(d.donated, '원', '이 달 후원금')}
     ${num(d.new_readers, '명', '처음 인증한 사람')}
     ${num(d.joins, '건', '루틴 참여')}
     ${num(d.book_spent, '원', '책값')}
-    ${num(d.pool?.remaining, '원', '남은 도서기금')}
+    <!-- ⏸ 후원을 앱에 넣지 않으므로 늘 0 이다 (2026-10-07) -->
   </div>
 
   ${RP.credit && RP.credit.amount ? `<div class="rp-warn" style="background:#FFF4F8;border-color:#EDC6BC;color:#8A0040;">
