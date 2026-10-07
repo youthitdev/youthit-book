@@ -1546,6 +1546,15 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <input type="file" id="gotInput" accept="image/*" style="display:none;" onchange="pickGotPhoto(event)">
       <div class="hint">기록 피드에는 올라가지 않아요. 운영진이 먼저 확인해요.</div>
     </div>
+    <div style="margin-top:16px;">
+      <!-- 【「후기」가 아니다 · 2026-10-07 사용자와 정함】 받은 그 자리에서는
+           아직 안 읽었다. 「어땠어?」를 물으면 쓸 말이 없다. 「왜 골랐어요?」는
+           그날 가장 쓰기 쉬운 말이고, 다 읽고 쓰는 책인증후기(+30P)는 그대로 남는다 -->
+      <div class="field-label">왜 이 책을 골랐어요? <span class="opt">선택</span></div>
+      <textarea id="gotReason" rows="3" maxlength="200"
+        placeholder="표지가 예뻐서, 제목이 마음에 들어서, 전부터 읽고 싶어서…"></textarea>
+      <div class="hint">다 읽고 나면 후기를 따로 쓸 수 있어요. 지금은 한 줄이면 충분해요.</div>
+    </div>
     <label style="display:flex;gap:10px;align-items:flex-start;background:#f7fbf0;border-radius:12px;padding:13px 15px;cursor:pointer;margin-top:16px;">
       <input type="checkbox" id="gotShare" checked style="margin-top:3px;width:17px;height:17px;flex:none;">
       <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>나를 응원하는 어른들</b>에게 보여줄게요
@@ -6419,7 +6428,7 @@ let gotId = null, gotPhoto = null;
 
 function openGotPhoto(id) {
   gotId = id; gotPhoto = null;
-  $('gotPrev').innerHTML = ''; $('gotInput').value = '';
+  $('gotPrev').innerHTML = ''; $('gotInput').value = ''; $('gotReason').value = '';
   $('gotShare').checked = true; $('gotSubmit').disabled = true;
   openOv('ovGot');
 }
@@ -6443,7 +6452,8 @@ async function submitGot() {
     if (up) throw new Error(up.message);
     const url = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
     const { error } = await sb.rpc('redeem_add_photo',
-      { p_purchase_id: gotId, p_proof: url, p_public: $('gotShare').checked });
+      { p_purchase_id: gotId, p_proof: url, p_public: $('gotShare').checked,
+        p_reason: $('gotReason').value.trim() || null });
     if (error) throw new Error(error.message);
     closeOv('ovGot');
     await loadAll(); render();
@@ -6476,9 +6486,23 @@ function qrClear() {
   $('qrBox').innerHTML = '';
 }
 
+// 사장님이 확인을 마쳤다. 축하부터 하고, 할 일은 그다음에
+async function qrGotIt(pid) {
+  $('qrBox').innerHTML = `
+    <div class="qr-card" style="border-color:#DCEBC4;background:#F7FBF0;">
+      <div style="font-size:34px;line-height:1;margin-bottom:8px;">📚</div>
+      <div class="qr-t">책을 받았어요!</div>
+      <div class="qr-s" style="margin-top:5px;">이제 한 장만 남겨주세요</div>
+      <button class="btn btn-primary" style="margin-top:16px;"
+        onclick="closeBuy(); openGotPhoto(${pid});">받은 책 남기기</button>
+    </div>`;
+  $('qrGo').style.display = 'none';
+  await loadAll();
+}
+
 async function qrIssue() {
   const sid = parseInt($('qrStore').value, 10); if (!sid) return;
-  const btn = $('qrGo'); btn.disabled = true; btn.textContent = '띄우는 중…';
+  const btn = $('qrGo'); btn.style.display = ''; btn.disabled = true; btn.textContent = '띄우는 중…';
   const { data, error } = await sb.rpc('redeem_qr_issue',
     { p_routine_id: buyRid, p_store_id: sid });
   btn.disabled = false; btn.textContent = '책방에 보여줄 QR 띄우기';
@@ -6496,6 +6520,21 @@ async function qrIssue() {
     </div>`;
   new QRCode($('qrImg'), { text: url, width: 208, height: 208,
     colorDark: '#1C1A17', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+
+  // 【스스로 지켜본다】 사장님이 누르는 순간 아이 화면이 바뀌어야 한다.
+  //   알림만 보내고 새로고침을 시키면, 아이는 가게 앞에서 폰을 들고 서 있게 된다.
+  //   redemptions 는 본인 줄만 읽히므로(RLS) 따로 함수를 두지 않는다
+  let watch = setInterval(async () => {
+    if (!qrTok) { clearInterval(watch); return; }
+    const { data: d } = await sb.from('redemptions')
+      .select('status, purchase_id').eq('token', qrTok).maybeSingle();
+    if (d && d.status === 'done') {
+      clearInterval(watch);
+      if (qrTimer) { clearInterval(qrTimer); qrTimer = null; }
+      qrTok = null;                       // 이미 끝났으니 접지 않는다
+      await qrGotIt(d.purchase_id);
+    }
+  }, 3000);
 
   const until = new Date(data.expires_at).getTime();
   const tick = () => {

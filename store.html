@@ -85,6 +85,11 @@ input:focus, textarea:focus{ border-color:var(--amber); }
 .guide{ background:var(--amber-l); border:1px solid #F0DFBF; border-radius:14px;
   padding:16px; font-size:14px; line-height:1.75; }
 .guide > b{ display:block; margin-bottom:6px; }   /* 문장 속 <b> 까지 끊기면 안 된다 */
+
+/* 「나중에」 길. 본 단추와 다투지 않게 한 칸 내려 회색 바탕에 둔다 */
+.later{ margin-top:18px; background:#F6F2EA; border-radius:14px; padding:15px 16px; }
+.later-t{ font-size:14px; font-weight:800; }
+.later-s{ font-size:13px; color:var(--ink-2); line-height:1.65; margin-top:5px; }
 .guide ol{ margin:0; padding-left:19px; }
 .guide li{ margin:4px 0; }
 
@@ -234,8 +239,15 @@ function form() {
     <label>남길 말 <span style="font-weight:500;color:var(--ink-3);">(없으면 비워두세요)</span></label>
     <input type="text" id="note" maxlength="80" placeholder="예) 품절이라 다른 책으로 드렸어요">
 
-    <button class="btn btn-go" id="go" disabled onclick="send()">유스보이스에 보내기</button>
-    <button class="btn btn-line" onclick="${TOKEN ? 'location.reload()' : 'pick(null)'}">그만두기</button>
+    <button class="btn btn-go" id="go" disabled onclick="send()">${TOKEN ? '지금 다 올릴게요' : '유스보이스에 보내기'}</button>
+    ${TOKEN ? `
+      <div class="later">
+        <div class="later-t">바쁘시면 금액은 나중에</div>
+        <div class="later-s">영수증과 금액은 한가할 때 올리셔도 돼요.<br>
+          <b>사진만 지금 한 장</b> 부탁드려요 — 청소년이 가고 나면 못 찍어요.</div>
+        <button class="btn btn-line" style="margin-top:12px;" onclick="hold()">사진만 찍고 나중에</button>
+      </div>` : `
+      <button class="btn btn-line" onclick="pick(null)">그만두기</button>`}
     <div id="msg"></div>`;
 }
 
@@ -330,6 +342,27 @@ async function up(blob, tag) {
     .upload(path, blob, { contentType: 'image/jpeg' });
   if (error) throw new Error('사진을 올리지 못했어요: ' + error.message);
   return path;
+}
+
+// 사진만 받고 금액은 뒤로 미룬다. 사진이 없어도 막지 않는다 —
+// 막으면 바쁜 사장님은 그냥 창을 닫는다
+async function hold() {
+  const btn = event.target; btn.disabled = true; btn.textContent = '보내는 중…';
+  try {
+    const ph = await up(photo, 'photo');
+    const { error } = await sb.rpc('redeem_qr_hold',
+      { p_token: TOKEN, p_code: savedCode(), p_photo: ph });
+    if (error) throw new Error(error.message);
+    $('app').innerHTML = `
+      <div class="msg m-ok" style="font-size:16px;padding:20px;">
+        교환을 받아 두었습니다.<br>금액과 영수증은 한가하실 때 올려주세요.</div>
+      <div class="card"><div class="hint">우리 책방 주소를 열면 <b>「아직 안 보냈어요」</b>로
+        남아 있어요. 거기서 금액을 올리시면 됩니다.</div></div>`;
+    window.scrollTo(0, 0);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = '사진만 찍고 나중에';
+    show('m-bad', err.message || '보내지 못했어요');
+  }
 }
 
 async function send() {
