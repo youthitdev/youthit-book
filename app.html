@@ -1588,7 +1588,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <select id="qrStore" onchange="qrPick()"></select>
       <div id="qrBox"></div>
       <button class="btn btn-primary" id="qrGo" disabled onclick="qrIssue()" style="margin-top:14px;">책방에 보여줄 QR 띄우기</button>
+      <!-- ⏸ 【내려둠 · 2026-10-07 사용자】 「사장님이 번호를 눌러주실래요」.
+           QR 한 길로 간다. 되살리려면 아래 단추의 주석만 풀면 된다 —
+           buyOldWay()·redeem_voucher(네 자리)·옛 입력칸은 그대로 살려 뒀다
       <button type="button" class="buy-skip" style="margin-top:10px;" onclick="buyOldWay()">사장님이 번호를 눌러주실래요</button>
+      -->
     </div>
 
     <div id="buyLegacy" style="display:none;">
@@ -6403,13 +6407,18 @@ function closeBuy() { qrClear(); closeOv('ovBuy'); }
 // 아이는 돈을 내지 않는다. 서점 외상으로 받아오고, 책값은 유스보이스가 서점에 보낸다
 let buyRid = null, buyPhoto = null;
 
+// 교환 창 맨 위의 「쓸 수 있는 교환권 N장」. 교환이 끝난 뒤에도 다시 그려야 한다
+function paintBuyBal() {
+  $('buyBal').innerHTML = `<div style="background:#f7fbf0;border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--green-d);line-height:1.6;">
+      쓸 수 있는 교환권 <b style="font-size:16px;">${myPoints().left}장</b><br>
+      <span style="font-size:12px;">${won(state.settings.voucher_max_amount || 20000)}원 이하 책 한 권과 바꿀 수 있어요. 돈은 내지 않아요.</span></div>`;
+}
+
 function openBuy(rid) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
   buyRid = rid; buyPhoto = null;
   $('ovBuyTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
-  $('buyBal').innerHTML = `<div style="background:#f7fbf0;border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--green-d);line-height:1.6;">
-      쓸 수 있는 교환권 <b style="font-size:16px;">${myPoints().left}장</b><br>
-      <span style="font-size:12px;">${won(state.settings.voucher_max_amount || 20000)}원 이하 책 한 권과 바꿀 수 있어요. 돈은 내지 않아요.</span></div>`;
+  paintBuyBal();
   $('buyStore').innerHTML = `<option value="">책방을 골라주세요</option>` +
     state.stores.filter(s=>s.active).map(s =>
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
@@ -6505,7 +6514,12 @@ async function qrGotIt(pid) {
         onclick="gotFromBuy(${pid})">받은 책 남기기</button>
     </div>`;
   $('qrGo').style.display = 'none';
+  // 【loadAll 은 숫자만 받아온다. 화면은 다시 안 그린다】 render() 를 빼먹어서
+  //   MY·홈에 교환권 1장이 그대로 남아 있었다 (2026-10-07 사용자).
+  //   위 축하 카드는 먼저 보여 주고, 숫자는 뒤에서 갱신한다
   await loadAll();
+  paintBuyBal();
+  render();
 }
 
 async function qrIssue() {
