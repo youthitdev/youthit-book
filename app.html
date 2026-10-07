@@ -1532,7 +1532,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
            기본으로 두면 사실상 책 사진이 되고, 그래야 기본 공개가 성립한다.
            ⚠️ 「얼굴을 가려라」만 있으면 왜인지 모른 채 시키는 말이 된다.
               누가 보는지를 **먼저** 알려줘야 지시가 아니라 사정 설명이 된다 -->
-      <div style="font-size:13.5px;line-height:1.6;">이 사진은 너를 응원하는 어른들에게도 보여요.<br>그래서 얼굴은 안 나오게, 책이 잘 보이게 찍어주세요.<br>책을 들어올리면 돼요.</div>
+      <div style="font-size:13.5px;line-height:1.6;">이 사진은 나를 응원하는 어른들에게도 보여요.<br>그래서 얼굴은 안 나오게, 책이 잘 보이게 찍어주세요.<br>책을 들어올리면 돼요.</div>
     </div>
     <div>
       <div class="field-label">책 사진 <span class="req">* 필수</span></div>
@@ -1545,7 +1545,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <!-- 기본 켜짐. 얼굴 없이 찍는 걸 전제로 한 사진이라 공개가 기본이다.
            ⚠️ **끄는 길은 반드시 남긴다.** 끌 수 있어야 그게 동의다 -->
       <input type="checkbox" id="buyShare" checked style="margin-top:3px;width:17px;height:17px;flex:none;">
-      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>너를 응원하는 어른들</b>에게 보여줄게요
+      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>나를 응원하는 어른들</b>에게 보여줄게요
         <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">원하지 않으면 꺼주세요. 운영진이 한 번 더 확인하고, 얼굴이 나왔으면 올리지 않아요.</span></span>
     </label>
     <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
@@ -6415,8 +6415,8 @@ async function showCheer() {
   let n = 0;
   try { const { data } = await sb.rpc('dokseo_pool_status'); n = (data && data.sponsors_count) || 0; } catch (e) {}
   $('cheerMsg').innerHTML = n > 0
-    ? `이 책, 너를 응원하는<br>어른 ${n}명이 함께 보냈어요`
-    : `이 책, 너를 응원하는<br>어른들이 함께 보냈어요`;
+    ? `이 책, 나를 응원하는<br>어른 ${n}명이 함께 보냈어요`
+    : `이 책, 나를 응원하는<br>어른들이 함께 보냈어요`;
   openOv('ovCheer');
 }
 
