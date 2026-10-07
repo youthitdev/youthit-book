@@ -514,12 +514,17 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
     const cell = (v, u, label) =>
       `<div class="pool-item"><div class="pool-num">${v}<small>${u}</small></div>
        <div class="pool-label">${label}</div></div>`;
+    // ⏸ 【내려둠 · 2026-10-07 사용자】 「응원 어른 ○명」·「모인 후원금 ○만원」을 뺀다.
+    //   후원은 **도너스에서만** 관리하고 앱에 넣지 않기로 했다. 그 둘은 앱에 입력된
+    //   후원(charges)을 세므로 영영 0 이고, 숫자가 늘 틀린 채로 걸려 있게 된다.
+    //   ⚠️ 되살리려면 아래 두 줄의 주석만 풀면 된다 — 함수는 그대로다
+    // if (pool && pool.sponsors_count >= 5) cells.push(cell(pool.sponsors_count, '명', '응원 어른'));
+    // if (pool && pool.total_donated >= 500000)
+    //   cells.push(cell(won(Math.round(pool.total_donated / 10000)), '만원', '모인 후원금'));
     const cells = [];
-    if (pool && pool.sponsors_count >= 5)   cells.push(cell(pool.sponsors_count, '명', '응원 어른'));
     cells.push(cell(won(st.cert_total || 0), '일', '쌓인 독서'));
+    // 「전해진 책」은 구매 기록에서 센다. 후원과 무관하므로 그대로 둔다
     if (pool && pool.books_bought)          cells.push(cell(pool.books_bought, '권', '전해진 책'));
-    if (pool && pool.total_donated >= 500000)
-      cells.push(cell(won(Math.round(pool.total_donated / 10000)), '만원', '모인 후원금'));
     const grid = document.getElementById('poolGrid');
     grid.className = 'pool' + (cells.length <= 2 ? ' two' : '');
     grid.innerHTML = cells.join('');
