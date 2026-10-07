@@ -34,6 +34,12 @@ header span{ font-size:13px; color:var(--ink-3); }
   padding:18px; margin-bottom:14px; }
 .store-n{ font-size:22px; font-weight:800; letter-spacing:-.5px; }
 .store-s{ font-size:13.5px; color:var(--ink-3); margin-top:3px; }
+/* 사장님이 네 자리를 잊으시는 일이 잦다. 청구 화면에도 적어 둔다 —
+   이 화면은 사장님 폰에서만 열리므로 청소년에게 보이지 않는다 */
+.code-mini{ margin-top:12px; background:var(--amber-l); border:1px solid #F0DFBF;
+  border-radius:11px; padding:10px 13px; font-size:13.5px; color:var(--amber-d); }
+.code-mini b{ font-size:21px; letter-spacing:5px; margin-left:4px; vertical-align:-1px; }
+.code-mini span{ display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
 
 .sec{ font-size:15px; font-weight:800; margin:24px 0 10px; }
 .hint{ font-size:13px; color:var(--ink-3); line-height:1.6; }
@@ -110,7 +116,7 @@ const won = n => Number(n || 0).toLocaleString('ko-KR');
 // 주소에 실려 온 열쇠. 이게 이 화면의 전부다
 const KEY = new URLSearchParams(location.search).get('k') || '';
 
-let rows = [], picked = null, receipt = null, photo = null;
+let rows = [], picked = null, receipt = null, photo = null, store = null;
 
 // 「10월 7일 오후 3시」. 사장님이 기억을 더듬는 기준은 날짜와 시각이다
 function when(iso) {
@@ -123,7 +129,12 @@ async function load() {
   if (!KEY) return fail('주소가 올바르지 않아요',
     '운영진이 보내드린 주소를 그대로 열어주세요. 주소 끝이 잘리면 안 열립니다.');
   $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
-  const { data, error } = await sb.rpc('store_pending', { p_key: KEY });
+  const [card, list] = await Promise.all([
+    sb.rpc('store_card',    { p_key: KEY }),
+    sb.rpc('store_pending', { p_key: KEY }),
+  ]);
+  store = (Array.isArray(card.data) ? card.data[0] : card.data) || null;
+  const { data, error } = list;
   // 【무슨 일인지 보이게 둔다】 전에는 어떤 오류든 「주소가 올바르지 않아요」로
   //   덮어서, 열쇠가 틀린 건지 함수가 없는 건지 알 수가 없었다.
   //   사장님께는 작은 회색 글씨라 거슬리지 않고, 막혔을 때 전화로 읽어주시면 된다
@@ -146,6 +157,13 @@ function paint() {
   const rest = rows.filter(r =>  r.submitted ||  r.settled);
 
   $('app').innerHTML = `
+    ${store ? `<div class="card">
+      <div class="store-n">${esc(store.name)}</div>
+      <div class="store-s">${store.region ? esc(store.region) + ' · ' : ''}한끗독서 파트너 책방</div>
+      ${store.code ? `<div class="code-mini">우리 책방 확인 번호 <b>${esc(store.code)}</b>
+        <span>청소년 폰에 눌러주세요</span></div>` : ''}
+    </div>` : ''}
+
     <div class="guide">
       <b>📚 이렇게 해주세요</b>
       <ol>
