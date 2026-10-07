@@ -1588,11 +1588,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <select id="qrStore" onchange="qrPick()"></select>
       <div id="qrBox"></div>
       <button class="btn btn-primary" id="qrGo" disabled onclick="qrIssue()" style="margin-top:14px;">책방에 보여줄 QR 띄우기</button>
-      <!-- ⏸ 【내려둠 · 2026-10-07 사용자】 「사장님이 번호를 눌러주실래요」.
-           QR 한 길로 간다. 되살리려면 아래 단추의 주석만 풀면 된다 —
-           buyOldWay()·redeem_voucher(네 자리)·옛 입력칸은 그대로 살려 뒀다
-      <button type="button" class="buy-skip" style="margin-top:10px;" onclick="buyOldWay()">사장님이 번호를 눌러주실래요</button>
-      -->
+      <!-- 【QR 이 안 되는 날의 길 · 2026-10-07 사용자와 정함】
+           유스보이스가 전화로 상시 응대하기 어려워서 「전화 주세요」는 답이 아니다.
+           아이가 **혼자** 기록하고, 사장님이 나중에 금액·영수증을 청구한다.
+           돈은 사장님 청구 없이는 나가지 않으므로, 아이가 지어내도 후원금은 안 샌다
+           (잃는 건 아이 본인의 교환권뿐). 처음엔 「사장님이 번호를 눌러주실래요」였는데
+           사장님이 아이 폰을 만지는 어색함이 있어 「QR이 안 돼요」로 글을 바꿨다 -->
+      <button type="button" class="buy-skip" style="margin-top:14px;font-size:12.5px;opacity:.8;" onclick="buyOldWay()">QR이 안 돼요</button>
     </div>
 
     <div id="buyLegacy" style="display:none;">
@@ -1607,8 +1609,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div id="buyPickWrap" style="display:none;">
       <div class="field-label">어느 책방에서 받았나요? <span class="req">* 필수</span></div>
       <select id="buyStore" onchange="checkBuy()"></select>
-      <div class="hint">번호 없이 기록하면 운영진이 영수증과 한 번 맞춰봐요.
-        <button type="button" class="buy-skip" style="margin-top:6px;" onclick="buyUseCode()">번호로 다시 할래요</button></div>
+      <div class="hint">QR이 안 돼서 직접 기록해요. <b>책을 받은 다음에</b> 눌러주세요 — 교환권이 바로 쓰여요.<br>
+        사장님이 금액과 영수증을 올리시면 운영진이 맞춰봐요.
+        <button type="button" class="buy-skip" style="margin-top:6px;" onclick="buyQrWay()">QR로 다시 할래요</button></div>
     </div>
     <div style="background:#F2EEE6;border-radius:12px;padding:13px 15px;">
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
@@ -1636,7 +1639,6 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">원하지 않으면 꺼주세요. 운영진이 한 번 더 확인하고, 얼굴이 나왔으면 올리지 않아요.</span></span>
     </label>
     <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
-    <button type="button" class="buy-skip" style="margin-top:10px;" onclick="buyQrWay()">QR 로 다시 할래요</button>
     </div>
   </div>
 </div>
@@ -6482,9 +6484,12 @@ function buyQrWay() {
   qrClear(); $('qrStore').value = ''; qrPick();
 }
 function buyOldWay() {
+  const sid = $('qrStore').value;          // 방금 고른 책방을 그대로 이어 준다
   qrClear();
   $('buyQrWrap').style.display = 'none'; $('buyLegacy').style.display = '';
-  buyUseCode();
+  buyNoCode();                              // 번호 칸이 아니라 책방 고르기부터
+  if (sid) $('buyStore').value = sid;
+  checkBuy();
 }
 function qrPick() { $('qrGo').disabled = !$('qrStore').value; }
 

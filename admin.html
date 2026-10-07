@@ -2435,7 +2435,7 @@ function viewStores() {
   <div class="panel-hd">
     <div><div class="panel-t">파트너 서점</div>
     <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.<br>
-      <b>확인 번호</b>는 책방이 그 자리에서 아이 폰에 누르는 네 자리예요. 청소년에게는 안 보입니다.<br>
+      <b>확인 번호</b>는 사장님이 QR을 찍은 뒤 <b>제 폰에</b> 한 번 넣는 네 자리예요. 청소년에게는 안 보입니다.<br>
       <b>책방 주소</b>는 사장님이 금액·영수증을 올리는 화면이에요. 한 번 보내드리면 즐겨찾기 해두시면 됩니다.</div></div>
     <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
   </div>
@@ -2596,7 +2596,7 @@ function viewPending() {
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
     <div class="panel-d">교환권으로 책을 받아온 건이에요. 서점이 보낸 영수증과 금액을 확인해 확정하세요.<br>
-      <b>번호 없이</b>로 적힌 건은 책방이 그 자리에서 번호를 못 눌렀다는 뜻이에요. 영수증과 한 번 더 맞춰보세요.<br>
+      <b>QR 없이</b>로 적힌 건은 QR이 안 돼서 청소년이 앱에서 직접 기록한 건이에요. 책방이 올린 금액·영수증과 맞는지 확인하세요.<br>
       <b>청구 ○○원</b>은 책방이 직접 올린 금액이에요. 영수증을 보고 확정하세요 — <b>그대로 확정되지 않습니다.</b></div></div>
   </div>
   ${rows.length ? `<div class="tbl"><table>
@@ -2605,7 +2605,7 @@ function viewPending() {
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b></td>
       <td>${esc(g.routine)}<div class="muted">${esc(g.bookstore)}
-        ${g.code_ok ? '' : '<span class="chip c-wait">번호 없이</span>'}</div></td>
+        ${g.code_ok ? '' : '<span class="chip c-wait">QR 없이</span>'}</div></td>
       <td class="num">${fmtDate(g.created_at)}</td>
       <td>${sharePhotoCell(g)}</td>
       <td class="right" style="white-space:nowrap;">${storeClaimCell(g)}
