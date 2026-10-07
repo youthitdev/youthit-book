@@ -1250,9 +1250,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         독서 인증(사진·문장·쪽수) 저장, 같은 루틴 안에서의 인증 열람·응원<br>
       · 포인트와 교환권: 인증으로 쌓인 포인트를 도서 교환권으로 바꾸고,
         파트너 동네책방에서 책으로 바꾼 뒤 책방에 정산하는 일<br>
-      · 후원자 보고(선택): 회원이 그때그때 동의한 사진·문장에 한해, 후원금이
-        어떻게 쓰였는지 알리는 보고에 싣는 일. 동의는 사진 한 장마다 따로 받고,
-        얼굴이 나온 사진은 올리지 않습니다. 운영진에게 말하면 언제든 내립니다<br>
+      · 후원자 보고: 책을 교환한 기록 사진을 후원금이 어떻게 쓰였는지 알리는
+        보고에 싣는 일. 이 사진은 <b>얼굴이 나오지 않게 찍도록 안내</b>하고 있으며,
+        올릴지 여부는 <b>사진 한 장마다 회원이 끄고 켤 수 있습니다</b>(기본 켜짐).
+        얼굴이 나온 사진은 운영진이 확인해 올리지 않습니다. 운영진에게 말하면
+        언제든 내립니다<br>
       · 알림 발송: 루틴 리마인더, 승인·반려 안내, 후기 기한 안내(푸시 알림)<br>
       · 고객 지원: 문의 처리, 공지 전달<br>
       · 마케팅 및 광고에의 활용(선택): 새 루틴·행사 안내</p>
@@ -1523,26 +1525,28 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div style="background:#F2EEE6;border-radius:12px;padding:13px 15px;">
       <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
-      <!-- 【얼굴 이야기를 여기서 꺼내지 않는다 · 2026-10-07 사용자】
-           이 사진은 기본이 비공개다(바로 아래 「운영진만 확인해요」). 아무도 안 보는
-           사진인데 얼굴부터 가리라고 하면 「네 얼굴은 위험하다」, 「조심하는 건 네 몫이다」로
-           읽힌다. 책 받은 날 제일 먼저 들을 말이 그것이면 안 된다.
-           얼굴은 **공개를 고르는 칸**에서만 말한다 (아래 buyShareBox) -->
-      <div style="font-size:13.5px;line-height:1.6;">받은 책이 잘 보이게 한 장 찍어주세요.<br>책 표지가 나오면 돼요.</div>
+      <!-- 【이유를 먼저, 부탁을 나중 · 2026-10-07 사용자】
+           이 사진은 **기본이 공개**다. 후원자에게 「책이 아이에게 실제로 갔다」를
+           보이는 자리라 그렇게 설계했다.
+           공개할 것은 **그 사실**이지 아이 얼굴이 아니다. 얼굴 없이 찍는 걸
+           기본으로 두면 사실상 책 사진이 되고, 그래야 기본 공개가 성립한다.
+           ⚠️ 「얼굴을 가려라」만 있으면 왜인지 모른 채 시키는 말이 된다.
+              누가 보는지를 **먼저** 알려줘야 지시가 아니라 사정 설명이 된다 -->
+      <div style="font-size:13.5px;line-height:1.6;">이 사진은 너를 응원하는 어른들에게도 보여요.<br>그래서 얼굴은 안 나오게, 책이 잘 보이게 찍어주세요.<br>책을 들어올리면 돼요.</div>
     </div>
     <div>
       <div class="field-label">책 사진 <span class="req">* 필수</span></div>
       <div id="buyPhPrev" style="margin-bottom:8px;"></div>
       <button class="btn btn-line" onclick="document.getElementById('buyPhInput').click()">사진 고르기</button>
       <input type="file" id="buyPhInput" accept="image/*" style="display:none;" onchange="pickBuyPhoto(event)">
-      <div class="hint">운영진만 확인해요. 기록 피드에는 올라가지 않아요.</div>
+      <div class="hint">기록 피드에는 올라가지 않아요. 운영진이 먼저 확인해요.</div>
     </div>
     <label id="buyShareBox" style="display:flex;gap:10px;align-items:flex-start;background:#f7fbf0;border-radius:12px;padding:13px 15px;cursor:pointer;">
-      <input type="checkbox" id="buyShare" style="margin-top:3px;width:17px;height:17px;flex:none;">
-      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>너를 응원하는 어른들</b>에게 보여줘도 괜찮아요
-        <!-- 「얼굴이 안 나온 사진만」은 아이가 알아서 고르라는 말로 읽힌다.
-             거르는 쪽이 우리라는 게 문장에 드러나야 한다 -->
-        <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">얼굴이 나왔다면 올리지 않아요. 운영진이 한 번 더 확인해요. 안 해도 괜찮아요.</span></span>
+      <!-- 기본 켜짐. 얼굴 없이 찍는 걸 전제로 한 사진이라 공개가 기본이다.
+           ⚠️ **끄는 길은 반드시 남긴다.** 끌 수 있어야 그게 동의다 -->
+      <input type="checkbox" id="buyShare" checked style="margin-top:3px;width:17px;height:17px;flex:none;">
+      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>너를 응원하는 어른들</b>에게 보여줄게요
+        <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">원하지 않으면 꺼주세요. 운영진이 한 번 더 확인하고, 얼굴이 나왔으면 올리지 않아요.</span></span>
     </label>
     <button class="btn btn-primary" id="buySubmit" disabled onclick="submitBuy()">기록하기</button>
   </div>
@@ -6314,7 +6318,8 @@ function openBuy(rid) {
   $('buyStore').innerHTML = `<option value="">책방을 골라주세요</option>` +
     state.stores.filter(s=>s.active).map(s =>
       `<option value="${s.id}">${esc(s.name)}${s.region?` (${esc(s.region)})`:''}</option>`).join('');
-  $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = ''; $('buyShare').checked = false;
+  // 공개는 기본 켜짐이다. 창을 다시 열 때도 켜진 채로 둔다 (HTML 의 checked 와 같아야 한다)
+  $('buyPhPrev').innerHTML = ''; $('buyPhInput').value = ''; $('buyShare').checked = true;
   buyUseCode();
   checkBuy(); openOv('ovBuy');
 }
