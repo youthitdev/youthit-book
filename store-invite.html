@@ -126,9 +126,9 @@ h2+.sec-lead{margin-top:14px}
 .pay{margin-top:28px;background:var(--card);border:1px solid #dcecc0;border-radius:18px;padding:26px 24px;text-align:center}
 .pay b{display:block;font-size:clamp(26px,5vw,34px);font-weight:800;letter-spacing:-1.2px;color:var(--green-d)}
 .pay span{display:block;font-size:14px;color:var(--ink-2);margin-top:10px;line-height:1.8}
-.flow{margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+.flow{margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
   border:1px solid var(--line);border-radius:16px;overflow:hidden}
-@media(max-width:560px){.flow{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.flow{grid-template-columns:repeat(2,1fr)}.fl:last-child:nth-child(odd){grid-column:1/-1}}
 .fl{background:var(--card);padding:18px 10px;text-align:center}
 .fl i{font-style:normal;font-size:20px;display:block;margin-bottom:7px}
 .fl b{display:block;font-size:13px;font-weight:700}
@@ -227,8 +227,9 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
         <div>
           <h3>책을 그냥 주시면 됩니다</h3>
           <p>청소년에게 돈을 받지 않습니다. 책값은 저희가 보내드립니다.
-             청소년이 폰을 내밀면 <b>책방 번호 네 자리</b>를 눌러주세요 — 그게 확인입니다.
-             그리고 <b>영수증만 한 장 끊어</b> 사진으로 보내주세요. 문자나 카톡이면 충분합니다.</p>
+             청소년이 폰에 띄운 <b>QR을 사장님 폰 카메라로 찍어주세요</b> — 그게 확인입니다.
+             처음 한 번만 책방 번호 네 자리를 넣으시면 그 폰이 기억합니다.
+             이어서 <b>금액과 영수증 사진</b>을 올려주세요. 바쁘시면 나중에 올리셔도 됩니다.</p>
           <p style="margin-top:8px;">책을 받은 청소년이 올린 <b>교환 인증 사진은 한끗독서 회원에게 공개</b>되며,
              <b>책방 이름이 함께 표시</b>됩니다.</p>
         </div>
@@ -292,11 +293,12 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
     <h2>제일 궁금하실 것부터</h2>
     <div class="pay">
       <b>5영업일</b>
-      <span>청소년이 다녀가고 영수증을 받은 날부터 세어,<br>영업일 기준 닷새 안에 계좌로 보내드립니다.</span>
+      <span>금액과 영수증을 올려주신 날부터 세어,<br>영업일 기준 닷새 안에 계좌로 보내드립니다.</span>
     </div>
     <div class="flow">
       <div class="fl"><i>📖</i><b>청소년이 고름</b><span>2만원 이하 한 권</span></div>
-      <div class="fl"><i>🧾</i><b>영수증 사진</b><span>문자·카톡으로</span></div>
+      <div class="fl"><i>📱</i><b>QR 찍기</b><span>청소년 폰의 QR을 카메라로</span></div>
+      <div class="fl"><i>🧾</i><b>금액·영수증</b><span>책방 화면에 올리기</span></div>
       <div class="fl"><i>✅</i><b>확인</b><span>운영진이 대조</span></div>
       <div class="fl"><i>💸</i><b>입금</b><span>5영업일 안에</span></div>
     </div>
@@ -319,15 +321,31 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
     <div class="qa">
       <details>
         <summary>청소년이 정말 참여자인지 어떻게 아나요?</summary>
-        <p>청소년이 앱 화면의 교환권을 보여드리고, 그 자리에서 <b>책방 번호 네 자리</b>를
-           사장님이 직접 눌러주십니다. 번호는 책방마다 다르고 청소년에게는 알려주지 않습니다.
-           번호를 누르는 순간 「이 청소년에게 책을 줬다」가 저희 쪽에 남습니다.
-           헷갈리시면 그 자리에서 전화 주셔도 됩니다.</p>
+        <p>청소년이 앱에서 만든 <b>QR</b>을 사장님 폰 카메라로 찍으시면 됩니다.
+           QR은 청소년 한 명의 교환권 한 장에 묶여 있고, <b>15분 안에 한 번만</b> 쓸 수 있습니다.
+           처음 한 번 <b>책방 번호 네 자리</b>를 넣으시면 그 폰이 기억합니다.
+           번호는 책방마다 다르고 청소년에게는 알려주지 않습니다.
+           확인을 누르는 순간 「이 청소년에게 책을 줬다」가 저희 쪽에 남습니다.
+           헷갈리시면 메일이나 카카오톡 채널로 물어봐 주세요.</p>
       </details>
       <details>
-        <summary>번호를 모르거나, 제가 자리에 없으면요?</summary>
-        <p>괜찮습니다. 청소년이 「책방이 번호를 못 눌렀어요」를 누르고 책방 이름을 고르면 됩니다.
-           저희가 영수증과 한 번 더 맞춰봅니다. <b>책을 못 받는 일은 없습니다.</b></p>
+        <summary>그 자리에서 금액과 영수증까지 올리기 어려우면요?</summary>
+        <p>괜찮습니다. QR을 찍은 뒤 <b>「사진만 찍고 나중에」</b>를 누르세요.
+           금액과 영수증은 나중에 책방 화면의 「청구할 건」에서 올려주시면 됩니다.
+           다만 <b>책을 건넨 사진은 청소년이 있을 때</b> 찍어두세요. 가고 나면 찍을 수 없습니다.</p>
+      </details>
+      <details>
+        <summary>청구는 어디서 하나요?</summary>
+        <p>이 페이지 위쪽 <b>「책방 로그인」</b>에 책방 이름과 확인 번호를 넣으시면
+           우리 책방 화면이 열립니다. 청구할 건이 모여 있고, 금액과 영수증을 올리는 곳도 여기입니다.
+           다른 책방 내역은 보이지 않습니다.
+           청구가 오래 없는 건은 저희가 먼저 연락드립니다.</p>
+      </details>
+      <details>
+        <summary>QR이 안 되거나, 제가 자리에 없으면요?</summary>
+        <p>괜찮습니다. 청소년이 앱에서 <b>「QR이 안 돼요」</b>를 누르고 책방 이름을 고르면 직접 기록합니다.
+           그 건이 책방 화면 「청구할 건」에 올라오니 금액과 영수증만 올려주세요.
+           저희가 영수증으로 맞춰봅니다. <b>책을 못 받는 일은 없습니다.</b></p>
       </details>
       <details>
         <summary>2만원이 넘는 책을 고르면요?</summary>
