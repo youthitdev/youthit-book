@@ -230,13 +230,8 @@ footer a{color:var(--ink-3)}
   <div class="wrap">
     <div class="sec-label">지금까지</div>
     <h2>함께 만든 것</h2>
-    <p class="sec-lead">후원해주신 분들과 청소년들이 함께 쌓은 기록이에요.</p>
+    <p class="sec-lead">청소년과 끗짱이 지금까지 함께 쌓은 기록이에요.</p>
     <div class="pool" id="poolGrid"></div>
-
-    <div style="margin-top:34px">
-      <div class="card" id="feedCard" style="padding:0"></div>
-      <div id="readingStats"></div>
-    </div>
   </div>
 </section>
 
@@ -485,9 +480,10 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
       headers: { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_limit: 18 }),
     });
-    if (!r.ok) return;
+    // ⚠️ return 이 아니라 throw 다. 여기서 return 하면 아래 「지금까지」·사진·문장 구역까지 통째로 안 그려진다
+    if (!r.ok) throw 0;
     const books = await r.json();
-    if (!Array.isArray(books) || !books.length) return;
+    if (!Array.isArray(books) || !books.length) throw 0;
     document.getElementById('shelf').innerHTML = books.map(b =>
       `<span>${esc(b.book_title)}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('');
     document.getElementById('shelfSec').style.display = '';
@@ -501,63 +497,33 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
       body: JSON.stringify(body || {}),
     }).then(r => r.ok ? r.json() : null);
 
-    const [st, pool, feed, quotes, photos] = await Promise.all([
-      call('dokseo_reading_stats'), call('dokseo_pool_status'),
-      call('dokseo_activity_feed', { p_days: 10 }),
+    const [tot, quotes, photos] = await Promise.all([
+      call('dokseo_public_totals'),
       call('dokseo_public_quotes', { p_limit: 6 }),
       call('dokseo_book_photos',  { p_limit: 6 }),
     ]);
-    if (!st || !st.students_total) return;
 
     const won = v => Number(v || 0).toLocaleString('ko-KR');
     const day = d => String(d || '').slice(5).replace('-', '.');
 
-    // ⚠️ 작은 숫자는 숨긴다. "응원 어른 1명 · 모인 후원금 10만원" 은
-    //    처음 온 사람에게 "아직 아무도 안 하는구나" 로 읽힌다.
-    //    아이들이 한 일(쌓인 독서 · 전해진 책)은 적어도 초라하지 않다
+    // 【누적 네 칸 · 2026-10-08 사용자】 「오늘 N명」과 하루 막대는 서비스가 막 시작한 때엔 1 이 가장 크게
+    //   보여서 뺐다. 참여 청소년 · 끗짱 · 인증 · 읽은 책을 쌓인 대로 보인다.
+    // ⚠️ 숫자가 작을 땐 통째로 숨긴다. 「청소년 1명 · 끗짱 1명」은 처음 온 사람에게 「아직 아무도 안 하는구나」로
+    //    읽힌다. 위쪽 「240명이 해냈습니다」가 이미 신뢰를 준다. 청소년이 이 수를 넘으면 저절로 켜진다.
+    //    (시험용 계정도 세어지니, 열기 전에 정리한다)
+    const SHOW_FROM_YOUTH = 10;
     const cell = (v, u, label) =>
-      `<div class="pool-item"><div class="pool-num">${v}<small>${u}</small></div>
+      `<div class="pool-item"><div class="pool-num">${won(v)}<small>${u}</small></div>
        <div class="pool-label">${label}</div></div>`;
-    // ⏸ 【내려둠 · 2026-10-07 사용자】 「응원 어른 ○명」·「모인 후원금 ○만원」을 뺀다.
-    //   후원은 **도너스에서만** 관리하고 앱에 넣지 않기로 했다. 그 둘은 앱에 입력된
-    //   후원(charges)을 세므로 영영 0 이고, 숫자가 늘 틀린 채로 걸려 있게 된다.
-    //   ⚠️ 되살리려면 아래 두 줄의 주석만 풀면 된다 — 함수는 그대로다
-    // if (pool && pool.sponsors_count >= 5) cells.push(cell(pool.sponsors_count, '명', '응원 어른'));
-    // if (pool && pool.total_donated >= 500000)
-    //   cells.push(cell(won(Math.round(pool.total_donated / 10000)), '만원', '모인 후원금'));
-    const cells = [];
-    cells.push(cell(won(st.cert_total || 0), '일', '쌓인 독서'));
-    // 「전해진 책」은 구매 기록에서 센다. 후원과 무관하므로 그대로 둔다
-    if (pool && pool.books_bought)          cells.push(cell(pool.books_bought, '권', '전해진 책'));
-    const grid = document.getElementById('poolGrid');
-    grid.className = 'pool' + (cells.length <= 2 ? ' two' : '');
-    grid.innerHTML = cells.join('');
-
-    if (Array.isArray(feed) && feed.length) {
-      const today = feed[0];
-      const max = Math.max(...feed.map(d => d.cert_count), 1);
-      const cols = [...feed].reverse();
-      document.getElementById('feedCard').innerHTML = `
-        <div class="today">
-          <div class="today-big">오늘 <span>${today.student_count}명</span>이 책을 읽었어요</div>
-          <div class="today-sub">인증 ${today.cert_count}건 ·
-            최근 10일 동안 ${feed.reduce((a, d) => a + d.cert_count, 0)}건</div>
-          <div class="chart">${cols.map((d, i) =>
-            `<div class="chart-col ${i === cols.length - 1 ? 'on' : ''}">
-               <i style="height:${Math.round(d.cert_count / max * 100)}%"></i></div>`).join('')}</div>
-          <div class="chart-x">${cols.map(d => `<span>${d.day.slice(8)}</span>`).join('')}</div>
-        </div>`;
-    } else {
-      document.getElementById('feedCard').style.display = 'none';
+    if (tot && tot.youth >= SHOW_FROM_YOUTH) {
+      document.getElementById('poolGrid').innerHTML = [
+        cell(tot.youth, '명', '참여 청소년'),
+        cell(tot.kkut,  '명', '끗짱'),
+        cell(tot.certs, '번', '인증'),
+        cell(tot.books, '권', '읽은 책'),
+      ].join('');
+      document.getElementById('nowSec').style.display = '';
     }
-
-    document.getElementById('readingStats').innerHTML = `
-      <div class="rstat">
-        <div><b>${won(st.pages_read)}<small>쪽</small></b><span>함께 읽은 쪽수</span></div>
-        <div><b>${st.books_titles || 0}<small>권</small></b><span>읽은 책 종류</span></div>
-        <div><b>${won(st.cert_total)}<small>번</small></b><span>누적 인증</span></div>
-      </div>`;
-    document.getElementById('nowSec').style.display = '';
 
     if (Array.isArray(photos) && photos.length) {
       document.getElementById('photos').innerHTML = photos.map(x =>
