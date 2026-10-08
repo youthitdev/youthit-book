@@ -481,7 +481,17 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .kbk .kbk-l { display:flex; flex-wrap:wrap; gap:6px; }
 .kbk .kbk-l em { font-style:normal; font-size:12.5px; font-weight:600; background:var(--bg); border:1px solid var(--line);
   border-radius:99px; padding:5px 11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.kbk .kbk-l em i { font-style:normal; color:var(--green-d); font-weight:800; margin-left:5px; }
+.kbk .kbk-l button { font:inherit; font-size:12.5px; font-weight:600; background:var(--bg); border:1px solid var(--line);
+  border-radius:99px; padding:5px 11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  color:var(--ink); cursor:pointer; }
+.kbk .kbk-l button:active { opacity:.6; }
+/* 책을 누르면 — 읽는 아이마다 직접 찍은 책 사진과 닉네임 */
+.kb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:14px 12px; padding:6px 2px 8px; }
+.kb-r { text-align:center; min-width:0; }
+.kb-c { width:100%; aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#eeeae2; display:flex;
+  align-items:center; justify-content:center; font-size:30px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+.kb-c img { width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in; }
+.kb-r b { display:block; font-size:13px; font-weight:700; margin-top:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-nb em { display:block; font-style:normal; font-size:11px; font-weight:600; color:var(--ink-3); }
 .tc-nb b { display:block; font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* 청소년 확인 */
@@ -1832,6 +1842,20 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <button class="sheet-x" onclick="closeSheet('shBooks')" aria-label="닫기">✕</button>
     </div>
     <div id="shBooksBody"></div>
+  </div>
+</div>
+
+<div class="sheet" id="shKidBook" onclick="if(event.target===this)closeSheet('shKidBook')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t" id="kbTitle"></div>
+        <div class="sheet-s">이 책을 읽는 친구들</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shKidBook')" aria-label="닫기">✕</button>
+    </div>
+    <div id="kbBody"></div>
   </div>
 </div>
 
@@ -3448,27 +3472,43 @@ function todayCard(r) {
 // 띄어쓰기·문장부호만 다른 제목은 한 권으로 묶는다. 끗짱 본인의 인증은 뺀다 (「아이들」이 읽는 책이다)
 function kidsBooks(rid) {
   const by = new Map();
-  const add = (uid, title, when) => {
+  const add = (uid, title, when, photo, found) => {
     const t = (title || '').trim(); if (!t || uid === me.id) return;
     const k = loose(t);
-    const cur = by.get(k) || { title: t, users: new Set(), last: '' };
-    cur.users.add(uid);
+    const cur = by.get(k) || { title: t, readers: new Map(), found: null, last: '' };
+    const rd = cur.readers.get(uid) || { photo: null };
+    if (photo && !rd.photo) rd.photo = photo;          // 아이가 직접 찍어 올린 책 사진
+    cur.readers.set(uid, rd);
+    if (found && !cur.found) cur.found = found;        // 검색해서 고른 표지 (직접 찍은 사진이 없을 때만 쓴다)
     if (String(when || '') > cur.last) { cur.last = String(when || ''); cur.title = t; }
     by.set(k, cur);
   };
   // 인증에 쓴 책, 참여할 때 고른 책, 병렬독서로 더한 책 — 아직 인증을 안 한 아이의 책도 보여야 한다
   certsOf(rid).forEach(c => add(c.user_id, c.book_title, c.created_at));
   (state.parts || []).filter(x => x.routine_id === rid && x.status === 'approved')
-    .forEach(x => add(x.user_id, x.book_title, x.joined_at));
-  (state.rbooks || []).filter(x => x.routine_id === rid).forEach(x => add(x.user_id, x.title, x.created_at));
-  return [...by.values()].sort((a, b) => b.users.size - a.users.size || b.last.localeCompare(a.last));
+    .forEach(x => add(x.user_id, x.book_title, x.joined_at, x.book_photo_url));
+  (state.rbooks || []).filter(x => x.routine_id === rid)
+    .forEach(x => add(x.user_id, x.title, x.created_at, x.cover_url, x.found_cover_url));
+  return [...by.values()].sort((a, b) => b.readers.size - a.readers.size || b.last.localeCompare(a.last));
 }
+let kidBookList = [];
 function kidsBooksHtml(rid) {
-  const list = kidsBooks(rid); if (!list.length) return '';
+  const list = kidBookList = kidsBooks(rid); if (!list.length) return '';
   const SHOW = 8;
-  return `<div class="kbk"><span>📖 읽는 책</span><div class="kbk-l">${list.slice(0, SHOW).map(b =>
-    `<em title="${esc(b.title)}">${esc(b.title)}</em>`).join('')}${
+  return `<div class="kbk"><span>📖 읽는 책</span><div class="kbk-l">${list.slice(0, SHOW).map((b, i) =>
+    `<button type="button" title="${esc(b.title)}" onclick="openKidBook(${i})">${esc(b.title)}</button>`).join('')}${
     list.length > SHOW ? `<em>+${list.length - SHOW}권</em>` : ''}</div></div>`;
+}
+// 책을 누르면: 읽는 아이마다 그 아이가 찍은 책 사진과 닉네임
+function openKidBook(i) {
+  const b = kidBookList[i]; if (!b) return;
+  $('kbTitle').textContent = b.title;
+  $('kbBody').innerHTML = `<div class="kb-grid">${[...b.readers].map(([uid, rd]) => {
+    const url = rd.photo || b.found;
+    return `<div class="kb-r"><div class="kb-c">${url ? `<img src="${esc(url)}" alt="" loading="lazy"
+      onerror="this.parentNode.textContent='📖'">` : '📖'}</div><b>${esc(nameOf(uid))}</b></div>`;
+  }).join('')}</div>`;
+  showLayer('shKidBook');
 }
 
 // 끗짱이 지금 읽는 책. 가장 최근에 내가 인증한 책이 먼저고(중간에 책을 바꿔 읽을 수 있다),
@@ -3867,6 +3907,8 @@ function openPhoto(urls, i) {
 }
 function closePhoto() { closeOv('ovPhoto'); }
 document.addEventListener('click', e => {
+  const kb = e.target.closest && e.target.closest('.kb-c img');
+  if (kb) return openPhoto([kb.getAttribute('src')], 0);
   const img = e.target.closest && e.target.closest('.f-photos img'); if (!img) return;
   const all = [...img.closest('.f-photos').querySelectorAll('img')];
   openPhoto(all.map(x => x.getAttribute('src')), all.indexOf(img));
