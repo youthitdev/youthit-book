@@ -3927,7 +3927,7 @@ function certGrid(all) {
   const cs   = certOnlyMine ? mine : all;
 
   const head = `<div class="cg-head">
-    <span>우리 기록 <b>${all.length}</b></span>
+    <span>우리 인증 <b>${all.length}</b></span>
     ${mine.length ? `<div class="seg">
       <button class="${certOnlyMine ? '' : 'on'}" onclick="setCertMine(false)">전체</button>
       <button class="${certOnlyMine ? 'on' : ''}" onclick="setCertMine(true)">내 기록 ${mine.length}</button>
@@ -4105,7 +4105,7 @@ function routineFeed(r) {
   if (!(p && p.status === 'approved') && r.led_by !== me.id) return '';
   // 인증글을 여기 줄줄이 늘어놓지 않는다 — 루틴 소개를 보러 온 화면이다. 기록은 인증 탭에서 보고 댓글도 거기서 단다
   const n = state.certs.filter(c => c.routine_id === r.id).length;
-  return `<div class="sec-t">우리 루틴 기록${n ? ` <span class="sec-n">${n}</span>` : ''}</div>` + (n
+  return `<div class="sec-t">우리 인증${n ? ` <span class="sec-n">${n}</span>` : ''}</div>` + (n
     ? `<button class="btn btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;"
         onclick="closeOv('ovRoutine');go('cert', ${r.id})">우리 인증 보기<i class="ti ti-arrow-right" style="font-size:17px;"></i></button>`
     : `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`);
