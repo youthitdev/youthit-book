@@ -3780,15 +3780,10 @@ function balanceBlock() {
   // 사장님이 QR 로 확정한 건. 교환은 끝났고 아이 사진만 비어 있다 (migration-88·89)
   const noPhoto = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
     && !x.proof_photo_url && x.store_submitted_at);
-  // 사진까지 남긴 뒤에 아이가 할 다음 일 — 받은 책 후기. 후기는 받은 날에도 쓸 수 있게
-  // 열려 있다(읽기 전에 한 줄만 써도 +30P). 책방 일곱 곳과 아이들이 적은 지금은
-  // 막는 장치가 오히려 번거로워 그대로 둔다 (2026-10-07 사용자와 정함)
-  const noReview = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
-    && x.proof_photo_url && !myBookReview(x.id));
-  const rvBtn = noReview
-    ? `<div class="bal-got" onclick="openReview('book', ${noReview.id})">
-         <b>📖 다 읽으면 후기를 남겨요</b>
-         <span>후기 쓰고 +${RV_PB()}P ›</span></div>` : '';
+  // 【책 후기는 닫았다 · 2026-10-08 사용자】 후기는 루틴 후기와 책 교환 인증(사진 + 고른 이유)
+  //   둘이면 된다. 같은 책에 글을 두 번 쓰게 하지 않는다. 이미 쓰인 책 후기는 지우지 않고
+  //   후기 탭에서만 가린다 (관리자 월간 보고서가 읽는다). 되살리려면 이 자리에 rvBtn 을 다시 둔다
+  const rvBtn = '';
   const cap = won(state.settings.voucher_max_amount || 20000);
   const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
   const mile = p.next_milestone
@@ -4105,10 +4100,7 @@ function reviewTodos() {
     out.push({ kind:'routine', id:r.id, title:r.title, emoji:r.emoji || '📚',
                days: routineDay(r)?.total || 0, left });
   });
-  state.purchases
-    .filter(b => b.user_id === me.id && b.status !== 'void' && !myBookReview(b.id))
-    .forEach(b => out.push({ kind:'book', id:b.id,
-      title: state.routines.find(r => r.id === b.routine_id)?.title || '', emoji:'📗' }));
+  // 책 후기는 닫았다 (2026-10-08). 책을 받은 기록은 책 교환 인증으로 남는다
   return out;
 }
 
@@ -4133,7 +4125,8 @@ function reviewCard(v) {
 
 function viewFeed() {
   const todo = reviewTodos();
-  const list = state.reviews;
+  // 이미 쓰인 책 후기는 지우지 않고 여기서만 가린다
+  const list = state.reviews.filter(v => v.kind !== 'book');
 
   const todoHtml = todo.length ? `
     <div class="sec-t" style="margin-top:0;">✍️ 쓸 수 있는 후기</div>
