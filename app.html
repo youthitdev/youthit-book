@@ -2682,6 +2682,22 @@ function renderKkutGate() {
       <div class="field-label">어떤 마음으로 함께하고 싶으신가요 <span class="req">* 필수</span></div>
       <textarea id="kMotive" rows="5" maxlength="500" placeholder="왜 끗짱을 하고 싶은지, 청소년과 어떻게 지내고 싶은지 적어주세요.">${v('motive')}</textarea>
     </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">청소년과 함께한 경험이 있나요 <span class="req">* 필수</span></div>
+      <textarea id="kExp" rows="3" maxlength="300" placeholder="학교·독서모임·봉사·학원 등 어디서 어떻게 함께했는지 짧게 적어주세요.">${v('experience')}</textarea>
+      <div class="hint">없으면 '없음'이라고 적어도 괜찮아요.</div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="field-label">추천해 준 분이나 활동을 볼 수 있는 곳 <span class="opt">선택</span></div>
+      <input type="text" id="kRef" maxlength="200" value="${v('referrer')}" placeholder="블로그·SNS·단체 주소, 또는 추천해 준 분의 이름">
+    </div>
+    <div style="margin-top:18px;">
+      <div class="field-label">청소년 보호 약속 <span class="req">* 필수</span></div>
+      <label class="au-chk" style="color:var(--ink);"><input type="checkbox" id="kPl1">
+        <span>끗짱은 내 아이만이 아니라 <b>한 루틴의 여러 청소년과 함께하는 역할</b>이라는 것을 이해했어요.</span></label>
+      <label class="au-chk" style="color:var(--ink);"><input type="checkbox" id="kPl2">
+        <span>청소년에게 <b>개인적으로 연락하거나 사진·정보를 따로 요구하지 않을게요.</b> 불편한 일이 생기면 운영진에게 바로 알릴게요.</span></label>
+    </div>
 
     <div class="gate-why" style="margin-top:18px;">
       <b>적어주신 내용은 운영진만 봐요.</b>
@@ -2750,12 +2766,19 @@ async function submitKkutApp() {
   if (kws.length < 3) return err('나를 나타내는 키워드를 서로 다르게 세 가지 적어주세요.', 'kKw' + kws.length);
   if (intro.length  < 20) return err('소개를 조금만 더 적어주세요. (20자 이상)', 'kIntro');
   if (motive.length < 20) return err('어떤 마음으로 함께하고 싶은지 조금만 더 적어주세요. (20자 이상)', 'kMotive');
+  const experience = $('kExp').value.trim(), referrer = $('kRef').value.trim();
+  if (!experience) return err('청소년과 함께한 경험을 적어주세요. 없으면 「없음」이라고 적어도 괜찮아요.', 'kExp');
+  if (!$('kPl1').checked || !$('kPl2').checked) return err('청소년 보호 약속 두 가지에 모두 체크해 주세요.', 'kPl1');
 
   const btn = $('kSubmit'); btn.disabled = true; btn.textContent = '보내는 중…';
   const row = { user_id: me.id, age, region, affiliation: aff, contact, intro, motive };
   // status·applied_at 은 보내지 않는다. 서버 트리거가 정한다
-  const { error } = await sb.from('kkut_applications')
-    .upsert(row, { onConflict: 'user_id' });
+  // 새 칸(경험·추천·약속)은 마이그레이션 103 뒤에 있다. 아직이면 칸 이름이 없다는 오류가 오는데,
+  // 그때는 새 칸 없이 다시 보내 신청이 막히지 않게 한다
+  let { error } = await sb.from('kkut_applications')
+    .upsert({ ...row, experience, referrer: referrer || null, pledge_at: new Date().toISOString() }, { onConflict: 'user_id' });
+  if (error && /experience|referrer|pledge_at|column/i.test(error.message || ''))
+    ({ error } = await sb.from('kkut_applications').upsert(row, { onConflict: 'user_id' }));
 
   if (error) {
     btn.disabled = false; btn.textContent = '신청서 보내기';

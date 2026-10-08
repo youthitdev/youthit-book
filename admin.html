@@ -1696,6 +1696,7 @@ function openKkut(uid) {
          <div class="kk-q"><b>키워드</b><p>${kwHtml(a)}</p></div>
          ${a.intro  ? `<div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>` : ''}
          ${a.motive ? `<div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>` : ''}
+         ${kkExtra(a)}
          ${a.status === 'rejected' && a.reject_reason
            ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
        </div>
@@ -2446,6 +2447,7 @@ function viewKkut() {
         <p>${kwHtml(a)}</p></div>
       <div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>
       <div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>
+      ${kkExtra(a)}
       ${a.status === 'rejected' && a.reject_reason
         ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
       <div class="kk-a">
@@ -2538,6 +2540,14 @@ async function loadKkutApps() {
 }
 
 // 키워드 한 줄. 안 적었으면 그렇다고 말한다 — 빈 칸은 「깜빡 빠졌나」로 읽힌다
+// 신청서에 더한 질문 (migration-103). 옛 신청서는 비어 있어 「이전 신청서」라고 밝힌다
+function kkExtra(a) {
+  if (!a.pledge_at && !a.experience)
+    return `<div class="kk-q"><b>추가 질문</b><p class="muted">이전에 낸 신청서예요. 경험·보호 약속 질문이 없었어요.</p></div>`;
+  return `<div class="kk-q"><b>청소년과 함께한 경험</b><p>${esc(a.experience || '—')}</p></div>
+    ${a.referrer ? `<div class="kk-q"><b>추천·활동 링크</b><p>${esc(a.referrer)}</p></div>` : ''}
+    <div class="kk-q"><b>청소년 보호 약속</b><p>${a.pledge_at ? `✓ 동의함 · ${fmtDate(a.pledge_at)}` : '동의하지 않음'}</p></div>`;
+}
 const kwHtml = a => (a.keywords && a.keywords.length)
   ? a.keywords.map(k => `<span class="chip c-act">#${esc(k)}</span>`).join(' ')
   : `<span class="muted">아직 적지 않았어요</span>`;
