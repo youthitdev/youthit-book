@@ -273,7 +273,7 @@ footer a{color:var(--ink-3)}
 
 <header>
   <div class="hd">
-    <div class="logo">한끗<span>독서</span></div>
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'});if(location.hash)history.replaceState(null,'',location.pathname+location.search)" style="cursor:pointer" title="맨 위로">한끗<span>독서</span></div>
     <div class="hd-btns">
       <a class="hd-ghost" href="app.html">참여하기</a>
       <a class="hd-cta" href="#donate">후원하기</a>

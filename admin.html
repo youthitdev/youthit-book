@@ -375,7 +375,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
 <header>
   <div class="hd">
-    <div class="logo">한끗독서<b>관리자</b></div>
+    <div class="logo" style="cursor:pointer" title="첫 화면으로" onclick="switchTab('verify');window.scrollTo({top:0,behavior:'smooth'})">한끗독서<b>관리자</b></div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
       <!-- 후원 입력은 「정산 → 후원 내역」에 같은 단추가 있다. 달에 한 번 쓰는

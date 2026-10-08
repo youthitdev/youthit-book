@@ -184,7 +184,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
 
 <header>
   <div class="hd">
-    <div class="logo">한끗<span>독서</span><i>책방</i></div>
+    <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'});if(location.hash)history.replaceState(null,'',location.pathname+location.search)" style="cursor:pointer" title="맨 위로">한끗<span>독서</span><i>책방</i></div>
     <div class="hd-r">
       <!-- 【이미 함께하는 책방의 입구 · 2026-10-07 사용자】 이 페이지는 아직 함께하지 않는
            책방을 설득하는 글이다. 로그인한 폰에서만 아래 띠가 바뀐다 -->
