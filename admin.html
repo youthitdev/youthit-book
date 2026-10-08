@@ -1068,7 +1068,7 @@ async function setAdult(userId, toAdult) {
          ? `· 포인트·교환권·책을 받지 않게 돼요\n`
            + (pt && pt.remain ? `· ⚠️ 지금 교환권 ${pt.remain}장이 남아 있어요. 쓸 수 없게 됩니다\n` : '')
          : `· 읽고 포인트를 모아 책을 받을 수 있게 돼요\n`
-           + `· 도서기금이 나가는 자리예요. 정말 청소년이 맞는지 확인해 주세요\n`)
+           + `· 책이 나가는 자리예요. 정말 청소년이 맞는지 확인해 주세요\n`)
       + `· 끗짱 자격은 그대로예요`)) return;
 
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
@@ -3102,21 +3102,16 @@ function renderPreview() {
   if (!amt) { box.innerHTML = ''; btn.disabled = false; return; }
 
   if (amt > voucherCap()) {
-    box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘어요. 초과분은 후원금에서 나갈 수 없어요.</div>`;
+    box.innerHTML = `<div class="warn">교환권 한도 ${won(voucherCap())}원을 넘어요. 한도를 넘는 금액은 정산할 수 없어요.</div>`;
     btn.disabled = true; return;
   }
-  // 잔액이 모자라도 막지 않는다. 책방에 보낼 돈을 장부 때문에 못 보내는
-  // 일은 없어야 한다. 대신 눈에 띄게 알린다
-  const left = fundLeft();
+  // 【기금 잔액 미리보기를 걷었다 · 2026-10-08 사용자】 후원은 도너스에서만 관리하고 앱에 입력하지 않으니
+  //   「도서기금 남은 금액」은 늘 0 에서 마이너스로만 보였다. 정산은 한도(위)만 지키고, 보낼 금액만 보인다
   btn.disabled = false;
   box.innerHTML = `<div class="preview">
     <div class="preview-t">정산하면</div>
-    <div class="preview-row"><span>도서기금 남은 금액</span>
-      <span class="num">${won(left)}원 → ${won(left - amt)}원</span></div>
-    ${left - amt < 0 ? `<div class="preview-row out">
-      <span style="color:#8E3527;font-weight:700;">기금에 적힌 것보다 ${won(amt - left)}원 더 나가요.
-        정산은 되지만 후원 입력을 맞춰 두는 게 좋아요</span><span></span></div>` : ''}
-    <div class="preview-row out"><span>후원 건별로 나누지 않아요. 기금은 책뿐 아니라 창작지원·북페어에도 쓰여요</span><span></span></div>
+    <div class="preview-row"><span>책방에 보낼 금액</span>
+      <span class="num">${won(amt)}원</span></div>
   </div>`;
 }
 
