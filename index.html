@@ -177,6 +177,16 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .step .key{display:inline-block;margin-top:12px;font-size:12.5px;font-weight:700;color:var(--green-d);
   background:var(--green-l);border-radius:9px;padding:7px 13px}
 
+/* 데스크톱에서는 세 단계를 한 줄에 나란히. 번호가 위, 설명이 아래, 한 줄 요약은 바닥에 맞춘다 */
+@media(min-width:721px){
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .step{flex-direction:column;gap:16px;padding:24px 20px}
+  .step > div:last-child{display:flex;flex-direction:column;flex:1}
+  .step .where{display:block;margin:5px 0 0}
+  .step p{margin-bottom:16px}
+  .step .key{margin-top:auto;align-self:flex-start}
+}
+
 /* 성과 */
 /* 히어로 아래 '지금' 한 줄 */
 .live{display:inline-block;margin-top:22px;background:var(--green-l);border:1px solid #dcecc0;
