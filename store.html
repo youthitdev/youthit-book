@@ -27,9 +27,10 @@ body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .wrap{ max-width:520px; margin:0 auto; padding:0 18px 56px; }
 
 header{ padding:20px 0 14px; display:flex; align-items:center; gap:10px; }
-header b{ font-size:19px; letter-spacing:-.4px; }
-header span{ font-size:13px; color:var(--ink-3); }
-header .home{ display:flex; align-items:center; gap:10px; color:inherit; text-decoration:none; }
+header b{ font-size:17px; font-weight:800; letter-spacing:-.4px; }
+header b em{ font-style:normal; color:var(--amber-d); }
+header span{ font-size:12px; font-weight:600; color:var(--ink-3); margin-left:7px; }
+header .home{ display:flex; align-items:baseline; color:inherit; text-decoration:none; }
 header .home:active{ opacity:.6; }
 
 .card{ background:var(--card); border:1px solid var(--line); border-radius:16px;
@@ -107,7 +108,7 @@ footer{ margin-top:34px; font-size:12.5px; color:var(--ink-3); line-height:1.7; 
   <header>
     <!-- 【머리를 누르면 우리 책방 화면으로 · 2026-10-07 사용자】 어디서든 돌아올 길이 있어야 한다.
          특히 QR 로 들어온 화면(금액 입력 중)에는 다른 길이 하나도 없었다 -->
-    <a class="home" href="store.html" onclick="goHome(event)"><b>한끗독서</b><span>책방</span></a>
+    <a class="home" href="store.html" onclick="goHome(event)"><b>한끗<em>독서</em></b><span>책방</span></a>
   </header>
   <div id="app"></div>
   <footer>

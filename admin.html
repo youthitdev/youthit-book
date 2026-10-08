@@ -21,8 +21,9 @@ body { font-family:-apple-system, BlinkMacSystemFont,'Segoe UI',sans-serif; back
 .wrap { max-width:1080px; margin:0 auto; padding:0 20px 70px; }
 header { background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20; }
 .hd { max-width:1080px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
-.logo { font-size:16px; font-weight:800; letter-spacing:-0.4px; }
-.logo b { color:var(--pink); }
+.logo { font-size:17px; font-weight:800; letter-spacing:-0.4px; }
+/* 앱·책방 화면과 같은 모양의 이름표: 작은 회색 글씨 */
+.logo b { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:7px; letter-spacing:0; }
 .demo-flag { background:#E8A33D; color:#3a2a0c; font-size:11.5px; font-weight:700; text-align:center; padding:7px; }
 
 /* 요약 */
@@ -359,7 +360,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 <div id="gate" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:60;
   align-items:center;justify-content:center;padding:24px;">
   <div style="width:100%;max-width:340px;">
-    <div class="logo" style="text-align:center;margin-bottom:6px;">한끗독서 <b>관리자</b></div>
+    <div class="logo" style="text-align:center;margin-bottom:6px;">한끗독서<b>관리자</b></div>
     <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:22px;">운영진만 들어올 수 있어요</div>
     <div id="gateErr" style="display:none;background:#fff0f4;color:#c2185b;border-radius:10px;
       padding:11px 14px;font-size:13px;margin-bottom:12px;line-height:1.6;"></div>
@@ -374,7 +375,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
 <header>
   <div class="hd">
-    <div class="logo">한끗독서 <b>관리자</b></div>
+    <div class="logo">한끗독서<b>관리자</b></div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
       <!-- 후원 입력은 「정산 → 후원 내역」에 같은 단추가 있다. 달에 한 번 쓰는
