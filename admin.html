@@ -154,6 +154,12 @@ tr:hover td { background:#fcfcfd; }
 .vq-c button:hover { background:#E9E3D8; color:var(--ink); }
 .vq-when { font-size:11px; color:#A79F92; margin-top:5px; }
 .vq-cold { color:#A8432F; font-weight:700; }
+/* 프로필 사진 */
+.av-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
+.av-c { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 12px; text-align:center; }
+.av-c img { width:96px; height:96px; border-radius:50%; object-fit:cover; display:block; margin:0 auto 10px; background:#eee; }
+.av-c b { display:block; font-size:14px; font-weight:800; }
+.av-c span { display:block; font-size:12px; color:var(--ink-3); margin:2px 0 10px; }
 /* 알림 보내기 */
 .nf-f { margin-bottom:14px; }
 .nf-f label { display:block; font-size:12.5px; font-weight:700; margin-bottom:6px; }
@@ -401,6 +407,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
+    <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필 사진<i id="cntPhotos"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
@@ -697,6 +704,7 @@ const fmtDate = d => d ? d.slice(0,10).replace(/-/g,'.') : '-';
 
 // ── 데모 데이터 (LIVE 전환 시 Supabase 조회로 대체) ─────
 let DB = {
+  avatars: [],
   settings: { book_fund_rate: 0.3, voucher_max_amount: 20000 },
   sponsors: [
     { id:'s1', nickname:'책읽는고래', email:'whale@example.com' },
@@ -869,6 +877,7 @@ function renderSummary() {
   setCnt('cntStores',   (DB.bookstores || []).length, false);
   setCnt('cntQuotes',   (DB.quotes || []).filter(q => q.quote_public).length, false);
   setCnt('cntNotify',   (DB.scheduled || []).filter(n => !n.sent_at).length, false);
+  setCnt('cntPhotos',   (DB.avatars || []).length, false);
 }
 
 function renderPanel() {
@@ -881,6 +890,7 @@ function renderPanel() {
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   if (tab === 'verify')   return el.innerHTML = viewVerify();
   if (tab === 'notify')   return el.innerHTML = viewNotify();
+  if (tab === 'photos')   return el.innerHTML = viewPhotos();
   if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
 }
@@ -2534,6 +2544,38 @@ const kwHtml = a => (a.keywords && a.keywords.length)
 
 // 후원자 화면에 내보낼 문장 고르기.
 // 아이가 문장 대신 개인적인 이야기를 적었을 수 있어 자동 노출하지 않는다
+// ── 프로필 사진 ────────────────────────────────────────────
+// 청소년이 올린 얼굴 사진이다. 부적절하면 여기서 내린다 — 내리면 이름 첫 글자 동그라미로 돌아가고,
+// 본인은 내 정보에서 다시 올릴 수 있다. 사진 파일도 함께 지운다
+function viewPhotos() {
+  const rows = DB.avatars || [];
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">프로필 사진</div>
+    <div class="panel-d">회원이 올린 사진이에요. 같은 루틴 친구들에게 보여요. 부적절하면 <b>내리기</b>를 눌러 주세요 —
+      이름 첫 글자 동그라미로 돌아가고, 사진 파일도 지워져요.</div></div>
+  </div>
+  ${rows.length ? `<div class="av-grid">${rows.map(u => `<div class="av-c">
+      <a href="${esc(u.avatar_url)}" target="_blank" rel="noopener"><img src="${esc(u.avatar_url)}" alt="" loading="lazy"></a>
+      <b>${esc(u.nick || u.name || '이름 없음')}</b>
+      <span>${u.can_lead ? '끗짱' : (u.role === 'adult' ? '어른' : '청소년')}${u.nick && u.name && u.nick !== u.name ? ` · ${esc(u.name)}` : ''}</span>
+      <button class="btn btn-line" onclick="takeDownAvatar('${u.id}')">사진 내리기</button>
+    </div>`).join('')}</div>`
+    : `<div class="empty">아직 프로필 사진을 올린 회원이 없어요.</div>`}`;
+}
+async function takeDownAvatar(id) {
+  const u = (DB.avatars || []).find(x => x.id === id); if (!u) return;
+  if (!confirm(`「${u.nick || u.name || '이 회원'}」 님의 프로필 사진을 내릴까요?\n이름 첫 글자 동그라미로 돌아가요. 사진 파일도 지워져요.`)) return;
+  if (LIVE) {
+    const { error } = await sb.from('profiles').update({ avatar_url: null }).eq('id', id);
+    if (error) return alert('내리지 못했어요: ' + error.message);
+    const path = (u.avatar_url || '').split('/avatars/')[1];
+    if (path) await sb.storage.from('avatars').remove([path]);   // 실패해도 사진 주소는 이미 끊겼다
+  }
+  DB.avatars = DB.avatars.filter(x => x.id !== id);
+  render();
+}
+
 function viewQuotes() {
   const rows = DB.quotes || [];
   const on = rows.filter(q => q.quote_public).length;
@@ -3294,6 +3336,11 @@ async function loadLive() {
   const sn = await sb.from('scheduled_notifications').select('*')
                      .order('send_at', { ascending: false }).limit(50);
   DB.scheduled = sn.data || [];
+
+  // 프로필 사진을 올린 사람들 (migration-102). 칸이 아직 없으면 오류가 오니 빈 목록으로 둔다
+  const av = await sb.from('profiles').select('id,name,nick,role,can_lead,avatar_url')
+                     .not('avatar_url', 'is', null).order('name');
+  DB.avatars = av.error ? [] : (av.data || []);
 }
 
 // 둘 다 비공개 버킷이라 볼 때마다 짧은 서명 URL 을 새로 발급받는다
@@ -3307,7 +3354,7 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'report'],
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'photos', 'report'],
                  money: ['pending', 'settled', 'stores', 'charges'] };
 const groupOf = t => GROUPS.money.includes(t) ? 'money' : 'ops';
 let grp = 'ops';
