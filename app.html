@@ -3643,6 +3643,9 @@ function kidsBooks(rid, withMe) {
   };
   // 인증에 쓴 책, 참여할 때 고른 책, 병렬독서로 더한 책 — 아직 인증을 안 한 아이의 책도 보여야 한다
   certsOf(rid).forEach(c => add(c.user_id, c.book_title, c.created_at));
+  // 끗짱은 참여자가 아니라 책 표지가 루틴에 달려 있다. 인증에 쓴 제목과 같은 책이면 그 표지를 잇는다
+  const lr = state.routines.find(x => x.id === rid);
+  if (lr && lr.led_by && (lr.kkut_book_title || '').trim()) add(lr.led_by, lr.kkut_book_title, lr.created_at, lr.kkut_book_url);
   (state.parts || []).filter(x => x.routine_id === rid && x.status === 'approved')
     .forEach(x => add(x.user_id, x.book_title, x.joined_at, x.book_photo_url));
   (state.rbooks || []).filter(x => x.routine_id === rid)
