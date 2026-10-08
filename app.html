@@ -4481,9 +4481,14 @@ function myBooks() {
   // 표지 사진은 참여할 때 올린 것에만 있다
   state.parts.filter(x => x.user_id === me.id)
     .forEach(x => add(x.book_title, x.book_photo_url, x.joined_at));
-  // 중간에 책을 바꿨으면 인증에만 남아 있다 (사진은 없다)
+  // 끗짱은 참여 기록이 없다. 루틴을 열 때 고른 책이 곧 읽는 책이다
+  state.routines.filter(r => r.led_by === me.id && r.kkut_book_title)
+    .forEach(r => add(r.kkut_book_title, r.kkut_book_url, r.created_at));
+  // 중간에 책을 바꿨으면 인증에만 남아 있다. 「+ 다른 책」으로 올린 표지가 있으면 그걸 쓴다
+  const rbCover = t => (state.rbooks || []).find(b => b.user_id === me.id
+    && b.cover_url && (b.title || '').trim() === (t || '').trim())?.cover_url || null;
   state.certs.filter(x => x.user_id === me.id)
-    .forEach(x => add(x.book_title, null, x.created_at));
+    .forEach(x => add(x.book_title, rbCover(x.book_title), x.created_at));
   return [...m.values()].sort((a, b) => String(b.last).localeCompare(String(a.last)));
 }
 
