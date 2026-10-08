@@ -2833,8 +2833,12 @@ const booksOf   = rid => {
   // 목록의 첫 줄로 보여준다 (표에 쓰는 건 아니고 보이기만 한다 — 빼는 단추도 없다)
   const r = state.routines.find(x => x.id === rid);
   const kt = r && r.led_by === me.id && !isShared(r) ? (r.kkut_book_title || '').trim() : '';
-  if (kt && !rows.some(b => loose(b.title) === loose(kt)))
-    return [{ id: null, routine_id: rid, user_id: me.id, title: kt, cover_url: r.kkut_book_url || null, virtual: true }, ...rows];
+  if (kt && !rows.some(b => loose(b.title) === loose(kt))) {
+    // 이미 인증에 쓴 제목이 있으면 그 철자를 따른다. 띄어쓰기만 달라도 「오늘 아직 안 올린 책」으로 잘못 세지 않게
+    const used = certsOf(rid).find(c => c.user_id === me.id && loose(c.book_title) === loose(kt));
+    return [{ id: null, routine_id: rid, user_id: me.id, title: used ? used.book_title : kt,
+              cover_url: r.kkut_book_url || null, virtual: true }, ...rows];
+  }
   return rows;
 };
 // 인증 탭에서 '내 기록만' 걸어둔 상태. 탭을 옮겨도 남는다
@@ -3126,7 +3130,7 @@ const doneToday = rid => myCerts(rid)
 const leftToday = rid => {
   const done = doneToday(rid);
   const books = booksOf(rid);
-  return books.length ? books.filter(b => !done.includes(b.title)) : [];
+  return books.length ? books.filter(b => !done.some(t => loose(t) === loose(b.title))) : [];
 };
 // 등록한 책을 오늘 다 올렸나 (등록한 책이 없으면 하루 한 번으로 본다)
 const allDoneToday = rid => booksOf(rid).length
@@ -5968,7 +5972,7 @@ function drawBookChips() {
 
   const done = doneToday(certRid);
   let h = books.map(b => {
-    const ok = done.includes(b.title) && b.title !== now;   // 오늘 이미 올린 책
+    const ok = done.some(t => loose(t) === loose(b.title)) && loose(b.title) !== loose(now);   // 오늘 이미 올린 책
     return `<button type="button" class="bk-chip${b.title === now ? ' on' : ''}${ok ? ' did' : ''}"
       ${ok ? 'disabled title="오늘은 이 책을 이미 올렸어요"' : ''}
       onclick="useBook('${esc(b.title).replace(/'/g, "\\'")}')">
