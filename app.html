@@ -476,6 +476,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   display:flex; align-items:center; justify-content:center; font-size:15px; box-shadow:0 1px 4px rgba(0,0,0,.14); }
 .tc-nb .nb-c img { width:100%; height:100%; object-fit:cover; display:block; }
 .tc-nb .nb-t { min-width:0; }
+.kbk { border-top:1px solid var(--line); margin-top:11px; padding-top:10px; }
+.kbk > span { display:block; font-size:12px; font-weight:700; color:var(--ink-3); margin-bottom:7px; }
+.kbk .kbk-l { display:flex; flex-wrap:wrap; gap:6px; }
+.kbk .kbk-l em { font-style:normal; font-size:12.5px; font-weight:600; background:var(--bg); border:1px solid var(--line);
+  border-radius:99px; padding:5px 11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kbk .kbk-l em i { font-style:normal; color:var(--green-d); font-weight:800; margin-left:5px; }
 .tc-nb em { display:block; font-style:normal; font-size:11px; font-weight:600; color:var(--ink-3); }
 .tc-nb b { display:block; font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 /* 청소년 확인 */
@@ -3436,6 +3442,28 @@ function todayCard(r) {
 }
 
 // 끗짱에게는 '오늘 인증하기' 가 없다. 대신 아이들이 몇 명 했는지가 궁금하다
+// 아이들이 읽는 책 — 이 루틴의 인증에 나온 책 제목을 읽는 아이 수와 함께 모은다.
+// 띄어쓰기·문장부호만 다른 제목은 한 권으로 묶는다. 끗짱 본인의 인증은 뺀다 (「아이들」이 읽는 책이다)
+function kidsBooks(rid) {
+  const by = new Map();
+  certsOf(rid).forEach(c => {
+    const t = (c.book_title || '').trim(); if (!t || c.user_id === me.id) return;
+    const k = loose(t);
+    const cur = by.get(k) || { title: t, users: new Set(), last: '' };
+    cur.users.add(c.user_id);
+    if (String(c.created_at || '') > cur.last) { cur.last = String(c.created_at || ''); cur.title = t; }
+    by.set(k, cur);
+  });
+  return [...by.values()].sort((a, b) => b.users.size - a.users.size || b.last.localeCompare(a.last));
+}
+function kidsBooksHtml(rid) {
+  const list = kidsBooks(rid); if (!list.length) return '';
+  const SHOW = 8;
+  return `<div class="kbk"><span>📖 아이들이 읽는 책</span><div class="kbk-l">${list.slice(0, SHOW).map(b =>
+    `<em title="${esc(b.title)}">${esc(b.title)}<i>${b.users.size}명</i></em>`).join('')}${
+    list.length > SHOW ? `<em>+${list.length - SHOW}권</em>` : ''}</div></div>`;
+}
+
 // 끗짱이 지금 읽는 책. 가장 최근에 내가 인증한 책이 먼저고(중간에 책을 바꿔 읽을 수 있다),
 // 인증한 적이 없으면 루틴을 만들 때 고른 책이다. 함께 읽는 글(책 없음)은 없다
 function kkutNowBook(r) {
@@ -3730,6 +3758,7 @@ function kkutCertBlock(mine) {
           }).join('')}
         </div>
         ${rollLine(r, yet)}
+        ${kidsBooksHtml(r.id)}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
       ${meetRoll(r)}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
