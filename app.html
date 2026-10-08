@@ -470,6 +470,16 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .tc-t:active { opacity:.6; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
+/* 오늘 인증한 친구들 — 동그라미가 겹쳐 놓이고, 누르면 인증 탭 */
+.tc-who { display:flex; align-items:center; gap:10px; margin-top:12px; padding:9px 2px 2px; border-top:1px solid var(--line); cursor:pointer; }
+.tc-who .tw-row { display:flex; flex:none; }
+.tc-who .tw-d { width:30px; height:30px; border-radius:50%; border:2px solid #fff; display:flex; align-items:center; justify-content:center;
+  color:#fff; font-style:normal; font-size:12.5px; font-weight:800; margin-left:-8px; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.tc-who .tw-d:first-child { margin-left:0; }
+.tc-who .tw-more { background:#d8d2c6; color:var(--ink-2); font-size:11px; }
+.tc-who .tw-t { flex:1; min-width:0; font-size:13px; color:var(--ink-2); }
+.tc-who .tw-t b { color:var(--blue); font-weight:800; }
+.tc-who > i.ti { font-size:17px; color:var(--ink-3); flex:none; }
 /* 끗짱 홈 카드의 「지금 읽는 책」 한 줄 */
 .tc-nb { display:flex; align-items:center; gap:10px; margin-top:11px; }
 .tc-nb .nb-c { width:30px; aspect-ratio:3/4; border-radius:4px; overflow:hidden; background:#eeeae2; flex:none;
@@ -3528,14 +3538,24 @@ function todayCard(r) {
   if (!books.length && part?.book_title)
     books = [{ title: part.book_title, cover_url: part.book_photo_url }];
 
-  const shelf = books.length
-    ? `<div class="tc-shelf">${books.map(b => `
-        <div class="tc-bt" onclick="event.stopPropagation();openCert(${r.id}, '${esc(b.title).replace(/'/g, "\\'")}')">
-          <div class="tc-bt-i">${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : '📖'}</div>
-          <span>${esc(b.title)}</span>
-          ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : ''}
-        </div>`).join('')}</div>`
-    : '';
+  // 【홈에서는 책 대신 사람이 보인다 · 2026-10-08 사용자】 읽는 책은 인증 탭에서 본다.
+  //   여기서는 오늘 인증한 친구들이 동그라미로 보이고, 누르면 인증 탭으로 간다 —
+  //   전에는 오늘 인증을 마쳐야만 「인증 보기」 단추가 나와서, 아직 안 한 아이는 인증 구경을 하러 갈 길이 없었다.
+  //   프로필 사진은 아직 없어 이름 첫 글자를 동그라미에 담는다
+  const whoToday = [...new Set(certsOf(r.id).filter(c => c.cert_date === todayKST()).map(c => c.user_id))]
+    .sort((a, b) => (b === me.id) - (a === me.id));
+  const TINT = ['#1F4E46', '#B8770F', '#6A2234', '#3A5E8C', '#7B5EA7', '#C2533F'];
+  const dot = uid => {
+    const nm = uid === me.id ? '나' : (nameOf(uid) || '?');
+    const sum = [...String(uid)].reduce((n, ch) => n + ch.charCodeAt(0), 0);
+    return `<i class="tw-d" style="background:${TINT[sum % TINT.length]}" title="${esc(nm)}">${esc(nm[0])}</i>`;
+  };
+  const SHOWW = 5;
+  const shelf = d?.notYet ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
+      ${whoToday.length ? `<span class="tw-row">${whoToday.slice(0, SHOWW).map(dot).join('')}${
+          whoToday.length > SHOWW ? `<i class="tw-d tw-more">+${whoToday.length - SHOWW}</i>` : ''}</span>` : ''}
+      <span class="tw-t">${whoToday.length ? `오늘 <b>${whoToday.length}명</b>이 인증했어요` : '오늘 첫 인증을 기다려요'}</span>
+      <i class="ti ti-chevron-right"></i></div>`;
 
   return `<div class="tcard">
     <div class="tc-b">
@@ -3551,8 +3571,7 @@ function todayCard(r) {
       </div>
       <div class="tc-day">${routineLine(r, d)}</div>
       ${d && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
-      ${d?.notYet ? '' : shelf}
-      ${d?.notYet ? '' : kidsBooksHtml(r.id, true)}
+      ${shelf}
       ${action}
     </div>
   </div>`;
