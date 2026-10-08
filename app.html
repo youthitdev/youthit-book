@@ -477,6 +477,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .tc-nb .nb-c img { width:100%; height:100%; object-fit:cover; display:block; }
 .tc-nb .nb-t { min-width:0; }
 .kbk { border-top:1px solid var(--line); margin-top:11px; padding-top:10px; }
+.pn { display:flex; align-items:center; gap:12px; background:var(--tint); border:1px solid var(--line);
+  border-radius:14px; padding:12px 14px; margin-bottom:14px; }
+.pn-t { flex:1; min-width:0; }
+.pn-t b { display:block; font-size:14px; font-weight:800; letter-spacing:-.3px; color:var(--blue); }
+.pn-t span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.55; margin-top:2px; }
+.pn-b { display:flex; flex-direction:column; gap:5px; align-items:stretch; flex:none; }
+.pn-go { border:0; background:var(--blue); color:#fff; border-radius:10px; padding:8px 14px; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+.pn-x { border:0; background:none; color:var(--ink-3); font:inherit; font-size:12px; cursor:pointer; padding:2px; }
 .kbk-go { width:100%; display:flex; align-items:center; gap:10px; text-align:left; font:inherit; cursor:pointer;
   background:var(--tint, #F2F7E6); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--blue) 14%, transparent); color:var(--blue);
   border-radius:13px; padding:12px 14px; transition:transform .15s ease, background .15s ease; }
@@ -1190,6 +1198,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .ov-h button { background:none; border:none; color:#fff; font-size:21px; cursor:pointer; padding:0; line-height:1; }
 .ov-h .t { font-size:16px; font-weight:700; }
 .ov-h .s { font-size:11px; opacity:.78; }
+.ov-h .ov-set { margin-left:auto; display:flex; align-items:center; gap:5px; font-size:12.5px; font-weight:700;
+  background:rgba(255,255,255,.18); border-radius:99px; padding:7px 12px; }
+.ov-h .ov-set i { font-size:15px; }
 .ov-b { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:18px 18px calc(28px + env(safe-area-inset-bottom)); overscroll-behavior:contain; }
 .ov-b > div:not(:last-child) { margin-bottom:16px; }
@@ -1833,6 +1844,20 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
+<div class="sheet" id="shPushAsk" onclick="if(event.target===this)closeSheet('shPushAsk')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">첫 인증, 잘했어요 🌱</div>
+        <div class="sheet-s" id="paSub">내일도 이어갈 수 있게 알림을 켜 둘까요?</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shPushAsk')" aria-label="닫기">✕</button>
+    </div>
+    <div id="paBody"></div>
+  </div>
+</div>
+
 <div class="sheet" id="shBooks" onclick="if(event.target===this)closeSheet('shBooks')">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -1892,7 +1917,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 <!-- 알림함. 푸시를 못 받거나 놓쳐도 여기엔 남는다 -->
 <div class="ov" id="ovNotif">
   <div class="ov-h"><button onclick="closeOv('ovNotif')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">알림</div><div class="t">받은 소식</div></div></div>
+    <div><div class="s">알림</div><div class="t">받은 소식</div></div>
+    <button class="ov-set" onclick="openPush()"><i class="ti ti-bell-cog"></i>알림 설정</button></div>
   <div class="ov-b" id="ovNotifBody"></div>
 </div>
 
@@ -2958,6 +2984,58 @@ async function enablePush() {
   render(); paintPushCard(); toast('알림을 켰어요');
 }
 
+// ── 알림을 켜라고 권한다 ────────────────────────────────
+// 알림이 이 프로그램의 장치다 — 매일 인증을 떠올려 주는 것이 곧 습관이다.
+// 그런데 끈 사람보다 **아직 안 켠 사람**이 훨씬 많다. 홈 맨 위에 한 장 카드로 매일 권하고(「나중에」는 오늘 하루만 접는다),
+// 첫 인증을 마친 직후에는 창으로 한 번만 묻는다 (마음이 가장 열려 있을 때다)
+const NUDGE_KEY = 'hankkut-push-nudge-day', ASK_KEY = 'hankkut-push-ask';
+function hidePushNudge() {
+  try { localStorage.setItem(NUDGE_KEY, todayKST()); } catch (e) {}
+  const el = $('pushNudge'); if (el) el.innerHTML = '';
+}
+async function paintPushNudge() {
+  const el = $('pushNudge'); if (!el || isGuest() || !me) return;
+  try { if (localStorage.getItem(NUDGE_KEY) === todayKST()) return; } catch (e) {}
+  const st = await pushState();
+  const box = $('pushNudge'); if (!box) return;
+  const k = canLead();
+  const later = '<button class="pn-x" onclick="hidePushNudge()">나중에</button>';
+  box.innerHTML = {
+    'off': `<div class="pn"><div class="pn-t"><b>🔔 알림을 켜 두세요</b>
+        <span>${k ? '아이들이 신청하거나 인증하면 바로 알려드려요.' : '오늘 인증과 후기 기한을 놓치지 않게 알려드려요.'}</span></div>
+        <div class="pn-b"><button class="pn-go" onclick="enablePush()">켜기</button>${later}</div></div>`,
+    'needs-install': `<div class="pn"><div class="pn-t"><b>📲 홈 화면에 추가해 주세요</b>
+        <span>아이폰은 홈 화면에 추가해야 알림을 받을 수 있어요.</span></div>
+        <div class="pn-b"><button class="pn-go" onclick="openPush()">방법 보기</button>${later}</div></div>`,
+    'blocked': `<div class="pn"><div class="pn-t"><b>🔕 알림이 막혀 있어요</b>
+        <span>브라우저 설정에서 풀어 주면 다시 받을 수 있어요.</span></div>
+        <div class="pn-b"><button class="pn-go" onclick="openPush()">방법 보기</button>${later}</div></div>`,
+  }[st] || '';
+}
+
+// 첫 인증을 마친 직후, 한 번만
+async function maybeAskPush() {
+  try {
+    if (DEMO || isGuest() || !me) return;
+    if (localStorage.getItem(ASK_KEY)) return;
+    if (state.certs.filter(c => c.user_id === me.id).length !== 1) return;
+    const st = await pushState();
+    if (st !== 'off' && st !== 'needs-install') return;
+    localStorage.setItem(ASK_KEY, '1');
+    setTimeout(() => {
+      $('paSub').textContent = st === 'off' ? '내일도 이어갈 수 있게 알림을 켜 둘까요?' : '알림을 받으려면 홈 화면에 추가해 주세요.';
+      $('paBody').innerHTML = st === 'off'
+        ? `<button class="btn btn-primary" onclick="askEnablePush()">알림 켜기</button>
+           <button class="btn btn-line" style="margin-top:8px;" onclick="closeSheet('shPushAsk')">나중에</button>`
+        : `<div class="hint" style="margin:0 0 12px;line-height:1.75;">사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> →
+             <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>
+           <button class="btn btn-line" onclick="closeSheet('shPushAsk')">알겠어요</button>`;
+      showLayer('shPushAsk');
+    }, 2600);   // 도장이 찍히고 나서
+  } catch (e) {}
+}
+async function askEnablePush() { closeSheet('shPushAsk'); await enablePush(); }
+
 // 「오후 8시」보다 「저녁 8시」가 먼저 읽힌다. 12시는 「오후 12시」가 아니라 「낮 12시」다
 const hhmmKo = v => {
   const [h, m] = String(v || '20:00').split(':').map(Number);
@@ -3254,7 +3332,7 @@ function render() {
   paintBell();
   // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
   if (isGuest() && tab !== 'home' && tab !== 'store') { b.innerHTML = guestWall(); return; }
-  if (tab === 'home') b.innerHTML = viewHome();
+  if (tab === 'home') { b.innerHTML = '<div id="pushNudge"></div>' + viewHome(); paintPushNudge(); }
   else if (tab === 'cert') b.innerHTML = viewCert();
   else if (tab === 'feed') b.innerHTML = viewFeed();
   else if (tab === 'store') b.innerHTML = viewStores();
@@ -6560,6 +6638,7 @@ async function submitCert() {
   const r1 = state.routines.find(x => x.id === certRid);
   showStamp(routineDay(r1)?.n, r1?.points_per_cert);
   cheerLevel();
+  maybeAskPush();
 }
 
 // ── 책방 ───────────────────────────────────────────────
