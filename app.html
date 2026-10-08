@@ -1838,7 +1838,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">알림</div>
-        <div class="sheet-s">매일 한 장을 떠올려 주고, 후기 기한·공유회·책 교환 소식을 알려드려요. 끝까지 완주하는 가장 쉬운 방법이에요.</div>
+        <div class="sheet-s">매일 한 장을 떠올려 주고, 후기 기한·공유회·책 교환 소식, 운영진이 보내는 이벤트와 공지를 알려드려요. 끝까지 완주하는 가장 쉬운 방법이에요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shPush')" aria-label="닫기">✕</button>
     </div>
@@ -3004,7 +3004,7 @@ async function paintPushNudge() {
   const later = '<button class="pn-x" onclick="hidePushNudge()">나중에</button>';
   box.innerHTML = {
     'off': `<div class="pn"><div class="pn-t"><b>🔔 알림을 켜면 완주가 쉬워져요</b>
-        <span>${k ? '새 친구가 들어오면 바로 알려드리고, 오늘 인증도 챙겨 드려요.' : '매일 한 장을 떠올려 주고, 후기 기한과 공유회 소식도 알려드려요.'}</span></div>
+        <span>${k ? '새 친구가 들어오면 바로 알려드리고, 오늘 인증과 이벤트 소식도 챙겨 드려요.' : '매일 한 장을 떠올려 주고, 후기 기한·공유회·이벤트 소식도 알려드려요.'}</span></div>
         <div class="pn-b"><button class="pn-go" onclick="enablePush()">켜기</button>${later}</div></div>`,
     'needs-install': `<div class="pn"><div class="pn-t"><b>📲 홈 화면에 추가해 주세요</b>
         <span>아이폰은 홈 화면에 추가해야 알림을 받을 수 있어요.</span></div>
@@ -3028,8 +3028,8 @@ async function maybeAskPush() {
       const k = canLead();
       $('paSub').textContent = st === 'off' ? '알림이 있으면 내일도 한 장을 잊지 않아요. 루틴을 끝까지 완주하는 가장 쉬운 방법이에요.' : '알림을 받으려면 홈 화면에 추가해 주세요.';
       $('paBody').innerHTML = st === 'off'
-        ? `<ul class="pa-l">${(k ? ['새 친구가 들어올 때', '루틴이 열렸을 때', '오늘 인증을 깜빡하지 않게']
-                                : ['오늘 인증을 깜빡하지 않게', '후기 기한과 공유회 소식', '책을 받는 날 소식']).map(t => `<li>${t}</li>`).join('')}</ul>
+        ? `<ul class="pa-l">${(k ? ['새 친구가 들어올 때', '오늘 인증을 깜빡하지 않게', '운영진의 이벤트와 공지']
+                                : ['오늘 인증을 깜빡하지 않게', '후기 기한과 공유회 소식', '책 받는 날과 이벤트 소식']).map(t => `<li>${t}</li>`).join('')}</ul>
            <button class="btn btn-primary" onclick="askEnablePush()">알림 켜기</button>
            <button class="btn btn-line" style="margin-top:8px;" onclick="closeSheet('shPushAsk')">나중에</button>`
         : `<div class="hint" style="margin:0 0 12px;line-height:1.75;">사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> →
