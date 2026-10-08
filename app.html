@@ -4479,8 +4479,11 @@ function myBooks() {
     m.set(k, cur);
   };
   // 표지 사진은 참여할 때 올린 것에만 있다
+  // 검색에서 고른 표지가 있으면 그걸 먼저 보인다. 없으면 찍어 올린 사진
+  const foundOf = t => (state.rbooks || []).find(b => b.user_id === me.id
+    && b.found_cover_url && (b.title || '').trim() === (t || '').trim())?.found_cover_url || null;
   state.parts.filter(x => x.user_id === me.id)
-    .forEach(x => add(x.book_title, x.book_photo_url, x.joined_at));
+    .forEach(x => add(x.book_title, foundOf(x.book_title) || x.book_photo_url, x.joined_at));
   // 끗짱은 참여 기록이 없다. 루틴을 열 때 고른 책이 곧 읽는 책이다
   state.routines.filter(r => r.led_by === me.id && r.kkut_book_title)
     .forEach(r => add(r.kkut_book_title, r.kkut_book_url, r.created_at));
@@ -4488,7 +4491,7 @@ function myBooks() {
   const rbCover = t => (state.rbooks || []).find(b => b.user_id === me.id
     && b.cover_url && (b.title || '').trim() === (t || '').trim())?.cover_url || null;
   state.certs.filter(x => x.user_id === me.id)
-    .forEach(x => add(x.book_title, rbCover(x.book_title), x.created_at));
+    .forEach(x => add(x.book_title, foundOf(x.book_title) || rbCover(x.book_title), x.created_at));
   return [...m.values()].sort((a, b) => String(b.last).localeCompare(String(a.last)));
 }
 
@@ -5089,11 +5092,11 @@ async function apply(rid) {
   if (error) return toast('참여하지 못했어요: ' + error.message);
   // 첫 권을 '읽는 책' 목록에 올려둔다. 인증할 때 칩으로 바로 고를 수 있게
   // cover_url 은 아이가 찍은 사진 그대로. 검색에서 온 건 서지정보뿐이다
-  if (!noBook) await sb.from('routine_books').insert({ routine_id: rid, user_id: me.id, title,
+  if (!noBook) await insertBook({ routine_id: rid, user_id: me.id, title,
     cover_url: bookUrl,
     ...(one ? { isbn: r0?.kkut_book_isbn || null, authors: r0?.kkut_book_authors || null,
                 publisher: r0?.kkut_book_publisher || null }
-            : bookMeta('applyBookTitle')) });
+            : { ...bookMeta('applyBookTitle'), ...foundCoverMeta('applyBookTitle') }) });
   delete bookPick['applyBookTitle'];
   applyBook = null;
   // 신청하며 「갈 수 있다」고 했으니 공유회 확인도 눌러둔 셈이다.
@@ -5204,6 +5207,21 @@ function bookMeta(inputId) {
   const b = bookPick[inputId];
   if (!b) return {};
   return { isbn: b.isbn || null, authors: b.authors || null, publisher: b.publisher || null };
+}
+
+// 검색에서 고른 표지. 마이그레이션 95 가 아직이면 이 칸 없이 다시 저장한다 —
+// 표지 하나 때문에 책이 통째로 안 담기면 안 된다
+const foundCoverMeta = inputId => {
+  const t = bookPick[inputId]?.thumbnail;
+  return t ? { found_cover_url: t } : {};
+};
+async function insertBook(row) {
+  let { error } = await sb.from('routine_books').insert(row);
+  if (error && 'found_cover_url' in row) {
+    const { found_cover_url, ...rest } = row;
+    ({ error } = await sb.from('routine_books').insert(rest));
+  }
+  return { error };
 }
 
 // ── 공유회 장소 찾기 ───────────────────────────────────
@@ -5799,8 +5817,8 @@ async function addBook() {
       .upload(p, toBlob(sbCover), { contentType:'image/jpeg', cacheControl: '31536000' });
     if (!error) cover = sb.storage.from('cert-photos').getPublicUrl(p).data.publicUrl;
   }
-  const { error } = await sb.from('routine_books')
-    .insert({ routine_id: sbRid, user_id: me.id, title, cover_url: cover, ...bookMeta('sbTitle') });
+  const { error } = await insertBook({ routine_id: sbRid, user_id: me.id, title, cover_url: cover,
+    ...bookMeta('sbTitle'), ...foundCoverMeta('sbTitle') });
   btn.disabled = false; btn.textContent = '책 더하기';
   if (error) return toast(error.message);
 
