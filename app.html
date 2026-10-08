@@ -273,7 +273,6 @@ body.kkut header.k .h-title { color:var(--blue); }
 .body { padding:18px; }
 .ex-c { padding:0; overflow:hidden; }
 .ex-c img { width:100%; max-height:480px; object-fit:cover; display:block; background:#eeeae2; }
-.pr-h { font-size:12.5px; color:var(--ink-3); margin:14px 2px 9px; line-height:1.6; }
 .ex-g { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
 .ex-t { position:relative; padding:0; border:0; border-radius:14px; overflow:hidden; aspect-ratio:1/1;
   background:#eeeae2; cursor:pointer; }
@@ -4124,24 +4123,6 @@ function reviewCard(v) {
   </div>`;
 }
 
-// 한끗루틴에서 독서 루틴을 운영하며 받은 후기. 이 서비스의 계정에 묶지 않고 출처를 밝혀 보인다 —
-// 지금 계정 이름으로 올리면 그 아이들이 쓴 글처럼 읽힌다 (2026-10-08 사용자가 옮겨 준 글, 고치지 않는다)
-const PAST_REVIEWS = [
-  '평소라면 무의미하게 보냈을 15일인데, 문학 작품과 함께하니 마음의 양식이 쌓이는 기분이었어요. 루틴이 없었다면 느끼지 못했을 새로움이 너무 좋아서 앞으로도 더 열심히 참여하고 싶어요!',
-  '공부하려고 억지로 읽는 책에서 벗어난 느낌이에요. 내 말에 공감해 주고 서로 생각을 나눌 수 있는 사람들이 있다는 게 얼마나 큰 힘이 되는지 몰래 깨달았습니다. 혼자였다면 절대 몰랐을 것 같아요!',
-  '독서 모임처럼 소통하는 게 이렇게 즐거운 줄 몰랐어요. 끗짱님의 글을 보며 궁금증도 풀리고, 친구들과 이야기 나누며 제가 생각지 못한 부분을 배울 수 있어서 너무 좋았어요.',
-  '평소라면 절대 고르지 않았을 책들을 읽어보는 게 정말 유익했어요. 사람들과 이야기 나누다 보니 어느새 글을 읽는 습관까지 만들어졌네요.',
-];
-
-function pastReviewsHtml() {
-  return `<div class="pr-h">한끗루틴에서 독서 루틴을 함께한 청소년들의 후기예요</div>` +
-    PAST_REVIEWS.map(t => `<div class="card" style="padding:15px 16px;">
-      <span class="chip c-active">이전 루틴 후기</span>
-      <div style="font-size:14.5px;line-height:1.8;margin-top:10px;white-space:pre-wrap;">${esc(t)}</div>
-      <div style="font-size:11.5px;color:var(--ink-3);margin-top:9px;">함께한 청소년 · 한끗루틴 독서 루틴</div>
-    </div>`).join('');
-}
-
 function viewFeed() {
   const todo = reviewTodos();
   // 이미 쓰인 책 후기는 지우지 않고 여기서만 가린다
@@ -4166,8 +4147,7 @@ function viewFeed() {
 
   const listHtml = `<div class="sec-t">📝 루틴 후기</div>` + (list.length
     ? list.map(reviewCard).join('')
-    : `<div class="empty">아직 이 서비스에서 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`)
-    + pastReviewsHtml();
+    : `<div class="empty">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
 
   const quotes = state.certs.filter(c => c.quote && c.quote.trim()).slice(0, 30);
   const quoteHtml = `<div class="sec-t">💬 함께 나누고 싶은 문장</div>` + (quotes.length
