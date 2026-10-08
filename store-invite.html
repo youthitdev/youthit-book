@@ -181,6 +181,35 @@ h2+.sec-lead{margin-top:14px}
 .bar a{flex-shrink:0;padding:13px 22px;font-size:14.5px;border-radius:12px;box-shadow:none}
 
 footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;color:var(--ink-3);line-height:1.8}
+
+/* ── 움직임 ─────────────────────────────────────────────────
+   랜딩(index.html)과 같은 결이다: 스크롤하면 떠오르고, 숫자가 올라오고, 카드가 살짝 뜬다.
+   html.fx 는 아래 스크립트가 켠 뒤에만 붙는다 — 스크립트가 죽거나 「움직임 줄이기」를 쓰는 사람에겐
+   모든 것이 처음부터 보인다. 움직이는 건 opacity·translate 뿐이라 레이아웃이 밀리지 않는다.
+   ⚠️ 이 페이지의 .bar 는 아래 고정 버튼이다 (랜딩의 막대그래프가 아니다) — 떠오르게 하지 않는다 */
+html.fx .rv{opacity:0;translate:0 22px;
+  transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms),translate .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms),
+    scale .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms),transform .25s ease,box-shadow .25s ease}
+html.fx .rv.pop{scale:.94;translate:0 12px}
+html.fx .rv.in{opacity:1;translate:0 0;scale:1}
+header{transition:box-shadow .3s ease}
+header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
+.ask-h{display:inline-block;animation:heartBeat 2.8s ease-in-out infinite}
+@keyframes heartBeat{0%,60%,100%{scale:1}70%{scale:1.18}80%{scale:1}90%{scale:1.12}}
+html.fx .bar{animation:barUp .7s cubic-bezier(.2,.7,.2,1) .5s both}
+@keyframes barUp{from{translate:0 100%}to{translate:0 0}}
+@media (hover:hover){
+  .step,.fl,.store{transition:transform .25s ease,box-shadow .25s ease}
+  .step:hover,.fl:hover,.store:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(40,50,10,.10)}
+  .btn{transition:transform .2s ease,box-shadow .2s ease}
+  .btn:hover{transform:translateY(-2px)}
+  .logo:hover{opacity:.78}
+}
+@media (prefers-reduced-motion:reduce){
+  .ask-h{animation:none}
+  html.fx .bar{animation:none}
+  *{scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
@@ -507,6 +536,86 @@ document.getElementById('contactLine').innerHTML =
       document.getElementById('hdLogin').style.display = '';
     };
   } catch (e) {}
+})();
+</script>
+<script>
+// 움직임. 어떤 이유로든 실패하면 fx 를 걷어 모든 것이 그냥 보이게 한다
+(function () {
+  var root = document.documentElement;
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+    root.classList.add('fx');
+
+    var hdr = document.querySelector('header');
+    function onScroll() { if (hdr) hdr.classList.toggle('scrolled', window.scrollY > 8); }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+    // 숫자 올라오기. 「1,234」「12권」 앞의 숫자 하나를 0 에서 올린다. 끝값은 늘 정확히 맞춘다
+    function countUp(el) {
+      var node = Array.prototype.find.call(el.childNodes, function (n) { return n.nodeType === 3 && /\d/.test(n.nodeValue); });
+      if (!node) return;
+      var m = node.nodeValue.match(/[\d,]*\.?\d+/); if (!m) return;
+      var raw = m[0], target = parseFloat(raw.replace(/,/g, ''));
+      var dec = (raw.split('.')[1] || '').length, comma = raw.indexOf(',') >= 0;
+      var pre = node.nodeValue.slice(0, m.index), suf = node.nodeValue.slice(m.index + raw.length);
+      var fmt = function (v) {
+        var t = comma ? Number(v.toFixed(dec)).toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec }) : v.toFixed(dec);
+        return pre + t + suf;
+      };
+      var t0 = performance.now(), dur = 1100;
+      (function tick(now) {
+        var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        node.nodeValue = p < 1 ? fmt(target * e) : fmt(target);
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+    }
+
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var el = e.target; io.unobserve(el);
+        el.classList.add('in');
+        if (el.hasAttribute('data-count') && document.visibilityState === 'visible') countUp(el);
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -6% 0px' });
+
+    function tag(el, delay, extra) {
+      if (!el || el.dataset.fx || el.closest('header,.bar')) return;
+      el.dataset.fx = '1';
+      el.classList.add('rv'); if (extra) el.classList.add(extra);
+      if (delay) el.style.setProperty('--d', delay + 'ms');
+      io.observe(el);
+    }
+    function kids(sel, step, extra) {
+      document.querySelectorAll(sel).forEach(function (g) {
+        Array.prototype.forEach.call(g.children, function (c, i) { tag(c, Math.min(i, 6) * step, extra); });
+      });
+    }
+    function scan() {
+      // 히어로는 순서대로 떠오른다
+      document.querySelectorAll('.hero > *').forEach(function (el, i) { tag(el, i * 110); });
+      // 제목류
+      document.querySelectorAll('.sec-label, .wrap h2, .sec-lead, .links, .pay, .ask > *, .contact, .apply .btn')
+        .forEach(function (el) { if (!el.closest('.hero')) tag(el, 0); });
+      // 묶음의 자식은 차례로
+      kids('.steps', 110);
+      kids('.jny', 100);
+      kids('.flow', 90, 'pop');
+      kids('.stores', 70, 'pop');
+      kids('.qa', 55);
+      kids('.nums', 100, 'pop');
+      kids('.nope', 70, 'pop');
+      // 숫자 칸의 큰 글씨
+      document.querySelectorAll('.num b').forEach(function (n) {
+        if (n.dataset.fx) return; n.dataset.fx = '1'; n.setAttribute('data-count', ''); io.observe(n);
+      });
+    }
+    scan();
+    // 뒤늦게 그려지는 숫자 칸도 같은 옷을 입힌다
+    var timer;
+    new MutationObserver(function () { clearTimeout(timer); timer = setTimeout(scan, 80); })
+      .observe(document.body, { childList: true, subtree: true });
+  } catch (e) { root.classList.remove('fx'); }
 })();
 </script>
 </body>
