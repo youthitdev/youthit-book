@@ -199,13 +199,44 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .flow-i p{font-size:12.5px;color:var(--ink-2);line-height:1.7}
 .flow-i i{position:absolute;right:-14px;top:50%;transform:translateY(-50%);font-style:normal;color:#bcd894;font-size:18px;z-index:1}
 @media(max-width:720px){.flow-i i{right:50%;top:auto;bottom:-15px;transform:translateX(50%) rotate(90deg)}}
-.split{display:flex;gap:12px;margin-top:24px}
-@media(max-width:640px){.split{flex-direction:column}}
-.split div{flex:1;background:#fff;border:1px solid #dcecc0;border-radius:14px;padding:18px 20px}
-.split > div > b{display:block;font-size:17px;font-weight:800;letter-spacing:-.5px;margin-bottom:7px}
-.split span b{display:inline;font-size:inherit;font-weight:800;color:var(--ink);margin:0}
-.split span{font-size:13px;color:var(--ink-2);line-height:1.75}
-.split-note{text-align:center;font-size:13.5px;color:var(--green-d);line-height:1.85;margin-top:18px;font-weight:600}
+/* 후원이 하는 일 — 한 문장과 그림. 책 + 읽는 습관 / 매월 리포트 */
+.gift{margin-top:30px;text-align:center}
+.gift-h{font-size:21px;font-weight:800;letter-spacing:-.7px;line-height:1.55}
+.gift-h b{color:var(--green-d)}
+.gift-pair{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:22px}
+.gift-i{flex:0 1 230px;background:#fff;border:1px solid #dcecc0;border-radius:18px;padding:22px 16px 20px}
+.gift-ic{width:72px;height:72px;border-radius:22px;margin:0 auto 12px;background:var(--green-l);
+  display:flex;align-items:center;justify-content:center;font-size:38px}
+.gift-i b{display:block;font-size:16px;font-weight:800;letter-spacing:-.4px}
+.gift-i span{display:block;font-size:12.5px;color:var(--ink-2);line-height:1.65;margin-top:5px}
+.gift-plus{font-size:26px;font-weight:800;color:#a9c97a}
+@media(max-width:560px){.gift-pair{gap:6px}.gift-i{flex:1 1 0;padding:18px 8px 16px;min-width:0}
+  .gift-ic{width:60px;height:60px;font-size:32px;border-radius:18px}.gift-i span{font-size:12px}
+  .gift-plus{font-size:20px}.gift-h{font-size:19px}}
+
+.report{display:flex;align-items:center;gap:34px;margin-top:38px;background:#fff;border:1px solid #dcecc0;
+  border-radius:20px;padding:30px 32px}
+.report-t{flex:1}
+.report-t em{font-style:normal;font-size:12px;font-weight:800;color:var(--green-d);letter-spacing:.4px}
+.report-t h3{font-size:19px;font-weight:800;letter-spacing:-.6px;line-height:1.5;margin:6px 0 10px}
+.report-t p{font-size:13.5px;color:var(--ink-2);line-height:1.8}
+.report-t ul{list-style:none;margin:14px 0 0;padding:0;font-size:13px;color:var(--ink-2);line-height:2}
+.report-t li::before{content:"✓";color:var(--green-d);font-weight:800;margin-right:8px}
+/* 리포트 한 장. 숫자는 일부러 넣지 않는다 — 어떤 모양으로 받는지만 보인다 */
+.paper{flex:0 0 250px;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 16px 18px;
+  box-shadow:0 12px 28px rgba(60,80,20,.13);transform:rotate(2deg);position:relative}
+.paper-tag{position:absolute;top:-10px;right:14px;background:var(--green-d);color:#fff;font-size:10.5px;
+  font-weight:800;padding:3px 9px;border-radius:99px}
+.paper-h{font-size:13px;font-weight:800;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:10px}
+.paper-h small{display:block;font-size:10.5px;font-weight:600;color:var(--ink-3);margin-top:1px}
+.paper-r{display:flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;margin-top:9px}
+.paper-r i{flex:1;height:7px;border-radius:4px;background:#e4eccf}
+.paper-r i.s{flex:none;width:34px}
+.paper-q{margin-top:12px;background:var(--green-l);border:1px solid #dcecc0;border-radius:11px;padding:9px 11px;
+  font-size:11px;line-height:1.65;color:var(--ink)}
+@media(max-width:720px){.report{flex-direction:column;padding:26px 22px;gap:28px}
+  .report-t{text-align:center}.report-t ul{display:inline-block;text-align:left}
+  .paper{flex-basis:auto;width:min(270px,100%)}}
 
 /* 서점 */
 .stores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:32px}
@@ -402,21 +433,36 @@ footer a{color:var(--ink-3)}
       <div class="flow-i"><b>정산</b><p>영수증으로 확인된 금액만 책값으로 나갑니다</p></div>
     </div>
 
-    <div class="split">
-      <div>
-        <b>📚 책</b>
-        <span>청소년이 동네책방에서 직접 고르는 책값입니다. 영수증으로 확인된 금액만 나갑니다.</span>
-      </div>
-      <div>
-        <b>🌱 습관</b>
-        <span>청소년이 루틴을 끝까지 가도록 <b>곁을 지키는 데</b> 쓰입니다.
-          끗짱을 찾아 연결하고, 매일 응원하고, 동네책방과 정산합니다.</span>
+    <div class="gift">
+      <div class="gift-h">후원금으로 청소년에게<br><b>책</b>과 <b>읽는 습관</b>을 선물합니다.</div>
+      <div class="gift-pair">
+        <div class="gift-i"><div class="gift-ic">📚</div><b>책</b>
+          <span>동네책방에서 청소년이<br>직접 고른 한 권</span></div>
+        <div class="gift-plus">+</div>
+        <div class="gift-i"><div class="gift-ic">🌱</div><b>읽는 습관</b>
+          <span>끗짱과 친구들이<br>매일 곁에서 함께</span></div>
       </div>
     </div>
-    <p class="split-note">
-      책만 쥐여준다고 습관이 생기지는 않습니다.<br>
-      매일 읽도록 곁에서 함께하는 일까지가 후원이 하는 일입니다.
-    </p>
+
+    <div class="report">
+      <div class="report-t">
+        <em>후원자에게</em>
+        <h3>매월 한끗독서 리포트를<br>받아볼 수 있습니다</h3>
+        <p>후원이 어디로 가서 어떤 읽기가 되었는지, 한 달에 한 번 보내드립니다.</p>
+        <ul>
+          <li>아이들이 읽은 책</li>
+          <li>책을 고른 동네책방</li>
+          <li>아이들의 후기와 옮겨 적은 문장</li>
+        </ul>
+      </div>
+      <div class="paper" aria-hidden="true">
+        <span class="paper-tag">리포트 예시</span>
+        <div class="paper-h">한끗독서 월간 리포트<small>이달에 쌓인 기록</small></div>
+        <div class="paper-r">📖 읽은 책<i></i><i class="s"></i></div>
+        <div class="paper-r">🏪 책방<i></i><i class="s"></i></div>
+        <div class="paper-q">“평소라면 절대 고르지 않았을 책들을 읽어보는 게 정말 유익했어요.”</div>
+      </div>
+    </div>
 
     <div id="photosBlock" style="display:none;margin-top:38px">
       <div class="sec-label">책이 도착한 날</div>
