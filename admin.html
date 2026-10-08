@@ -314,6 +314,25 @@ select { -webkit-appearance:none; appearance:none; padding-right:40px;
   padding-right:28px; background-position:right 9px center; background-size:15px; }
 input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink-3); }
 .hint { font-size:11.5px; color:var(--ink-3); margin-top:5px; }
+/* 책 검색 후보 (앱의 .bk-find 와 같은 모양). 표지가 있어야 같은 제목의 여러 판본을 가른다 */
+.bk-find { border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:7px;
+  background:var(--card); max-height:326px; overflow-y:auto; overscroll-behavior:contain; }
+.bk-find button { display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  border:0; background:none; padding:9px 12px; cursor:pointer; border-top:1px solid var(--line); font-family:inherit; }
+.bk-find button:first-child { border-top:0; }
+.bk-find button:hover { background:var(--bg); }
+.bk-find i.bk-c { flex:none; width:38px; height:54px; border-radius:4px; overflow:hidden; background:var(--bg);
+  border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-style:normal; }
+.bk-find i.bk-c img { width:100%; height:100%; object-fit:cover; }
+.bk-find div { min-width:0; }
+.bk-find b { display:block; font-size:13.5px; font-weight:700; line-height:1.35; }
+.bk-find span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.bk-find .bk-wait { padding:10px 13px; font-size:12.5px; color:var(--ink-3); }
+.bk-none { padding:10px 13px; font-size:12.5px; line-height:1.6; color:var(--ink-3);
+  border:1px dashed var(--line); border-radius:12px; margin-top:9px; }
+.bk-none b { color:var(--ink-2); }
+.bk-got { margin-top:7px; font-size:12.5px; color:#4E7A1C; font-weight:700; }
 .target { background:#fafafa; border-radius:12px; padding:13px 15px; margin-bottom:18px; font-size:13px; }
 .target b { font-weight:700; }
 .target div + div { margin-top:3px; color:var(--ink-2); font-size:12.5px; }
@@ -2006,8 +2025,11 @@ function openRoutineEdit(id) {
     <div class="field">
       <div class="label">${r.kind === 'one_book' ? '함께 읽을 책' : '끗짱이 읽는 책'}</div>
       <input type="text" id="reBook" maxlength="60" value="${v(r.kkut_book_title)}"
-             placeholder="제목">
-      <div class="hint">표지 사진은 여기서 못 바꿔요. 끗짱이 앱에서 고릅니다.</div>
+             placeholder="책 제목을 검색하면 찾아드려요" autocomplete="off" oninput="reBookFind()">
+      <div id="reBookFind"></div>
+      <div id="reBookGot"></div>
+      <div class="hint">표지 사진은 여기서 못 바꿔요. 끗짱이 앱에서 고릅니다.
+        검색에 없는 책은 적으신 제목 그대로 저장돼요.</div>
     </div>
 
     <div class="field">
@@ -2056,7 +2078,69 @@ function openRoutineEdit(id) {
     </div>`;
   reCover = null; reCoverUrl = r.cover_url || null;
   reCoverDraw();
+  // 저장된 서지를 그대로 이어 받는다. 제목을 안 건드리면 서지도 그대로 남고,
+  // 제목을 고치면 아래 reBookFind 가 연결을 푼다
+  reBookPick = (r.kkut_book_title && (r.kkut_book_isbn || r.kkut_book_authors || r.kkut_book_publisher))
+    ? { title: r.kkut_book_title, isbn: r.kkut_book_isbn, authors: r.kkut_book_authors, publisher: r.kkut_book_publisher }
+    : null;
+  drawReBookGot();
   document.getElementById('routineEditOverlay').classList.add('on');
+}
+
+// ── 끗짱 책 검색 ───────────────────────────────────────
+// 앱의 끗짱 루틴 만들기와 같은 검색(book-search)이다. 관리자 화면에는 글자 칸뿐이었다.
+// 검색이 죽어도 칸은 그대로 되고, 검색에 없는 책(독립출판·절판·교재)은 적은 제목대로 저장한다
+let reBookPick = null, reBookFound = [], reBookT = null, reBookSeq = 0;
+const bkLoose = t => String(t || '').toLowerCase().replace(/[\s\u2018\u2019\u201c\u201d'"(),.\-\u2013\u2014:;!?\u300c\u300d\u300e\u300f]/g, '');
+const bkSub   = b => [b.authors, b.publisher, b.year].filter(Boolean).join(' · ');
+
+function drawReBookGot() {
+  const got = document.getElementById('reBookGot'); if (!got) return;
+  got.innerHTML = reBookPick && bkSub(reBookPick)
+    ? `<div class="bk-got">✓ ${esc(bkSub(reBookPick))}</div>` : '';
+}
+
+function reBookFind() {
+  clearTimeout(reBookT);
+  const q = document.getElementById('reBook').value.trim();
+  // 다시 치면 고른 책과의 연결이 풀린다. 제목만 바꾸고 ISBN 을 두면 딴 책에 남의 ISBN 이 붙는다
+  if (reBookPick && bkLoose(reBookPick.title) !== bkLoose(q)) reBookPick = null;
+  drawReBookGot();
+  const box = document.getElementById('reBookFind');
+  if (q.length < 2 || reBookPick || !LIVE) { box.innerHTML = ''; return; }
+  reBookT = setTimeout(() => runReBookFind(q), 350);
+}
+
+async function runReBookFind(q) {
+  const box = document.getElementById('reBookFind'); if (!box) return;
+  const seq = ++reBookSeq;
+  box.innerHTML = `<div class="bk-find"><div class="bk-wait">찾는 중…</div></div>`;
+  let books = [];
+  try {
+    const { data, error } = await sb.functions.invoke('book-search', { body: { q } });
+    if (!error) books = data?.books || [];
+  } catch (e) { /* 검색이 죽어도 입력은 그대로 된다 */ }
+
+  // 그새 더 쳐서 다른 검색이 떠났거나, 칸이 비었거나, 이미 고른 뒤면 무시
+  if (seq !== reBookSeq || document.getElementById('reBook')?.value.trim() !== q || reBookPick) return;
+  if (!books.length) {
+    box.innerHTML = `<div class="bk-none">검색에 없는 책이에요. <b>적으신 제목 그대로</b> 저장돼요.</div>`;
+    return;
+  }
+  reBookFound = books;
+  box.innerHTML = `<div class="bk-find">${books.map((b, i) => `
+    <button type="button" onclick="reBookUse(${i})">
+      <i class="bk-c">${b.thumbnail ? `<img src="${esc(b.thumbnail)}" loading="lazy" alt="">` : '📖'}</i>
+      <div><b>${esc(b.title)}</b>${bkSub(b) ? `<span>${esc(bkSub(b))}</span>` : ''}</div>
+    </button>`).join('')}</div>`;
+}
+
+function reBookUse(i) {
+  const b = reBookFound[i]; if (!b) return;
+  document.getElementById('reBook').value = b.title.slice(0, 60);
+  reBookPick = b;
+  document.getElementById('reBookFind').innerHTML = '';
+  drawReBookGot();
 }
 
 // 고른 게 있으면 그걸, 없으면 이미 걸린 주소를, 둘 다 없으면 「고르기」를 그린다
@@ -2137,7 +2221,12 @@ async function saveRoutineEdit() {
     emoji: g('reEmoji').value.trim() || '📚',
     max_people: parseInt(g('rePeople').value || '8', 10),
     start_date: s0, end_date: e0,
-    kkut_book_title: g('reBook').value.trim() || null,
+    // 제목을 지웠으면 서지도 비운다. 고른 책과 제목이 어긋나면(reBookFind 가 이미 푼다) 서지도 없다.
+    // 전에는 제목만 저장해서, 제목을 고치면 옛 책의 저자·ISBN 이 그대로 남았다
+    kkut_book_title:     g('reBook').value.trim() || null,
+    kkut_book_isbn:      (g('reBook').value.trim() && reBookPick?.isbn)      || null,
+    kkut_book_authors:   (g('reBook').value.trim() && reBookPick?.authors)   || null,
+    kkut_book_publisher: (g('reBook').value.trim() && reBookPick?.publisher) || null,
     quote_required: g('reQuote').checked,
     camera_only: g('reCamera').checked,
     meetup_required: meet,
