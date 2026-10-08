@@ -178,11 +178,17 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .live p{font-size:14px;line-height:1.6;color:var(--ink-2)}
 .live b{color:var(--green-d);font-weight:800;font-size:16px;letter-spacing:-.2px}
 @media(max-width:640px){.live{border-radius:16px;padding:12px 18px}.live p{font-size:13.5px}}
-.voices{display:grid;gap:12px;margin-top:32px}
-.voice{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--green);
-  border-radius:4px 16px 16px 4px;padding:20px 22px}
-.voice p{font-size:14.5px;line-height:1.8;color:var(--ink)}
-.voice cite{display:block;font-style:normal;font-size:12px;color:var(--ink-3);margin-top:10px}
+/* 후기 — 한 줄에 둘, 말풍선. 아래에 말한 사람이 붙는다 */
+.voices{display:grid;grid-template-columns:repeat(2,1fr);gap:22px 16px;margin-top:32px;align-items:start}
+.voice{position:relative}
+.voice p{position:relative;background:var(--green-l);border:1px solid #dcecc0;border-radius:18px;
+  padding:16px 18px;font-size:14px;line-height:1.75;color:var(--ink)}
+/* 말풍선 꼬리. 모서리를 돌린 네모의 두 변만 보이게 한다 */
+.voice p::after{content:"";position:absolute;left:26px;bottom:-8px;width:14px;height:14px;
+  background:var(--green-l);border-right:1px solid #dcecc0;border-bottom:1px solid #dcecc0;
+  transform:rotate(45deg);border-bottom-right-radius:3px}
+.voice cite{display:block;font-style:normal;font-size:12px;font-weight:700;color:var(--ink-3);margin:13px 0 0 22px}
+@media(max-width:640px){.voices{grid-template-columns:1fr;gap:20px}}
 
 /* 후원 */
 .donate{background:var(--green-l);border-top:1px solid #e4f0cf;border-bottom:1px solid #e4f0cf}
