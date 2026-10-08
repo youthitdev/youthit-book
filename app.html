@@ -3579,7 +3579,7 @@ function todayCard(r) {
     .sort((a, b) => (b === me.id) - (a === me.id));
   const TINT = ['#1F4E46', '#B8770F', '#6A2234', '#3A5E8C', '#7B5EA7', '#C2533F'];
   const dot = uid => {
-    const nm = uid === me.id ? '나' : (nameOf(uid) || '?');
+    const nm = (uid === me.id ? myName() : nameOf(uid)) || '?';   // 사진이 없으면 닉네임 첫 글자 — 어디서나 같다
     const sum = [...String(uid)].reduce((n, ch) => n + ch.charCodeAt(0), 0);
     const av = avatarOf(uid);
     return av ? `<i class="tw-d" title="${esc(nm)}" style="background:#eee center/cover url('${esc(av)}')"></i>`
