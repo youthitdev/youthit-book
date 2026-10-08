@@ -132,10 +132,31 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
   border-radius:16px;padding:20px 24px;font-size:14px;color:var(--ink-2);line-height:1.85;text-align:center}
 .finding b{color:var(--green-d)}
 
-.shelf { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:34px; }
-.shelf span { background:var(--card); border:1px solid var(--line); border-radius:99px;
-  padding:10px 17px; font-size:14px; font-weight:700; display:inline-flex; align-items:center; gap:8px; }
-.shelf i { font-style:normal; font-size:12px; font-weight:700; color:var(--green-d); }
+/* 지금 읽는 책 — 표지가 가로로 흐른다. 많지 않으면 흐르지 않고 가운데에 모인다 */
+.reel { margin-top:34px; overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
+          mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); }
+.reel-track { display:flex; width:max-content; animation:reel var(--dur,40s) linear infinite; }
+.reel:hover .reel-track { animation-play-state:paused; }
+.reel-half { display:flex; gap:18px; padding-right:18px; }
+@keyframes reel { to { transform:translateX(-50%); } }
+.reel.still { -webkit-mask-image:none; mask-image:none; }
+.reel.still .reel-track { width:auto; justify-content:center; animation:none; }
+.reel.still .reel-half { flex-wrap:wrap; justify-content:center; padding-right:0; }
+.bk { width:116px; flex:none; text-align:center; }
+.bk-c { width:116px; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#eeeae2;
+  display:flex; align-items:center; justify-content:center; font-size:30px;
+  box-shadow:0 3px 10px rgba(0,0,0,.14); }
+.bk-c img { width:100%; height:100%; object-fit:cover; display:block; }
+.bk-t { font-size:12.5px; font-weight:700; line-height:1.4; margin-top:9px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.bk-n { font-size:11.5px; font-weight:700; color:var(--green-d); margin-top:2px; }
+@media (prefers-reduced-motion:reduce) {
+  .reel { -webkit-mask-image:none; mask-image:none; }
+  .reel-track { width:auto; justify-content:center; animation:none; }
+  .reel-half { flex-wrap:wrap; justify-content:center; padding-right:0; }
+  .reel-half[aria-hidden] { display:none; }
+}
 
 /* 해법 3단계 */
 .steps{margin-top:36px;display:flex;flex-direction:column;gap:12px}
@@ -233,6 +254,16 @@ footer a{color:var(--ink-3)}
     <p class="sec-lead">청소년과 끗짱이 지금까지 함께 쌓은 기록이에요.</p>
     <div class="pool" id="poolGrid"></div>
   </div>
+</section>
+
+<!-- 지금 읽히는 책 : 데이터가 없으면 통째로 숨는다. 「함께 만든 것」 바로 아래에서 가로로 흐른다 -->
+<section id="shelfSec" style="display:none;overflow:hidden">
+  <div class="wrap">
+    <div class="sec-label">지금 읽히는 책</div>
+    <h2>청소년들이<br>읽고 있는 책</h2>
+    <p class="sec-lead">아이들이 동네책방에서 직접 고른 책입니다.</p>
+  </div>
+  <div class="reel" id="shelf"></div>
 </section>
 
 <!-- 문제 -->
@@ -351,16 +382,6 @@ footer a{color:var(--ink-3)}
         <cite>참여 청소년</cite>
       </div>
     </div>
-  </div>
-</section>
-
-<!-- 지금 읽히는 책 : 데이터가 없으면 통째로 숨는다 -->
-<section id="shelfSec" style="display:none">
-  <div class="wrap">
-    <div class="sec-label">지금 읽히는 책</div>
-    <h2>청소년들이<br>읽고 있는 책</h2>
-    <p class="sec-lead">아이들이 동네책방에서 직접 고른 책입니다.</p>
-    <div class="shelf" id="shelf"></div>
   </div>
 </section>
 
@@ -484,8 +505,28 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
     if (!r.ok) throw 0;
     const books = await r.json();
     if (!Array.isArray(books) || !books.length) throw 0;
-    document.getElementById('shelf').innerHTML = books.map(b =>
-      `<span>${esc(b.book_title)}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('');
+    // 표지는 검색해서 고른 책에만 있다. 없으면 책 모양 자리만 둔다
+    const item = b => `<div class="bk">
+        <div class="bk-c">${b.cover_url
+          ? `<img src="${esc(b.cover_url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">`
+          : '📖'}</div>
+        <div class="bk-t">${esc(b.book_title)}</div>
+        ${b.readers > 1 ? `<div class="bk-n">${b.readers}명</div>` : ''}
+      </div>`;
+    const reel = document.getElementById('shelf');
+    if (books.length <= 4) {
+      // 몇 권 안 되면 흐르게 하지 않는다. 두 권이 빙빙 도는 건 어색하다
+      reel.classList.add('still');
+      reel.innerHTML = `<div class="reel-track"><div class="reel-half">${books.map(item).join('')}</div></div>`;
+    } else {
+      // 한 바퀴가 화면보다 길게 같은 줄을 두 번 이어 붙인다. 끝에서 처음으로 끊김 없이 돈다
+      let half = books.slice();
+      while (half.length < 8) half = half.concat(books);
+      const one = half.map(item).join('');
+      reel.style.setProperty('--dur', Math.max(24, half.length * 4) + 's');
+      reel.innerHTML = `<div class="reel-track"><div class="reel-half">${one}</div>
+        <div class="reel-half" aria-hidden="true">${one}</div></div>`;
+    }
     document.getElementById('shelfSec').style.display = '';
   } catch (e) { /* 랜딩은 DB가 죽어도 그대로 보여야 한다 */ }
 
