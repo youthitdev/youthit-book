@@ -1341,7 +1341,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div id="signupOnly" style="display:none;">
     <div class="au-step" id="roleHint"></div>
 
-    <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="12" autocomplete="nickname">
+    <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="8" autocomplete="nickname">
     <!-- ⚠️ id 에 'name' 을 넣지 말 것. 암호 관리자들은 id·name 에 name 이
          들어가면 아이디 칸으로 보고 저장된 메일 주소를 밀어넣는다.
          auNick 은 멀쩡했고 auName 만 당했다 -->
@@ -2015,7 +2015,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div>
       <div class="field-label">닉네임 <span class="req">* 필수</span></div>
-      <input type="text" id="pfNick" maxlength="12" oninput="checkProfile()">
+      <input type="text" id="pfNick" maxlength="8" oninput="checkProfile()">
       <div class="hint">다른 사람에게는 이 이름으로 보여요.</div>
     </div>
     <div>
