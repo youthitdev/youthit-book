@@ -56,7 +56,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdro
 .mine a{font-size:12.5px;font-weight:800;text-decoration:none;color:#3A2A0C;background:var(--green);
   padding:6px 12px;border-radius:9px;margin-left:6px}
 
-.hero{padding:64px 0 48px}
+.hero{padding:64px 0 36px}
+/* 소개 문구 바로 아래 첫 구역은 제목이 없어서 위 여백을 거의 걷는다 */
+.hero + section{padding-top:6px}
+@media(max-width:640px){.hero + section{padding-top:4px}}
 .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;color:var(--green-d);background:var(--green-l);
   border:1px solid #dcecc0;padding:7px 15px;border-radius:99px}
 .hero h1{font-size:clamp(27px,5.8vw,40px);line-height:1.34;font-weight:800;letter-spacing:-1.4px;margin-top:20px}
