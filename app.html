@@ -483,6 +483,8 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .pn-t b { display:block; font-size:14px; font-weight:800; letter-spacing:-.3px; color:var(--blue); }
 .pn-t span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.55; margin-top:2px; }
 .pn-b { display:flex; flex-direction:column; gap:5px; align-items:stretch; flex:none; }
+.pa-l { list-style:none; margin:2px 0 14px; padding:0; font-size:14px; line-height:2; color:var(--ink-2); }
+.pa-l li::before { content:"✓"; color:var(--blue); font-weight:800; margin-right:9px; }
 .pn-go { border:0; background:var(--blue); color:#fff; border-radius:10px; padding:8px 14px; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
 .pn-x { border:0; background:none; color:var(--ink-3); font:inherit; font-size:12px; cursor:pointer; padding:2px; }
 .kbk-go { width:100%; display:flex; align-items:center; gap:10px; text-align:left; font:inherit; cursor:pointer;
@@ -1836,7 +1838,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">알림</div>
-        <div class="sheet-s">루틴 승인, 후기 기한, 오늘 인증을 알려드려요.</div>
+        <div class="sheet-s">매일 한 장을 떠올려 주고, 후기 기한·공유회·책 교환 소식을 알려드려요. 끝까지 완주하는 가장 쉬운 방법이에요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shPush')" aria-label="닫기">✕</button>
     </div>
@@ -3001,8 +3003,8 @@ async function paintPushNudge() {
   const k = canLead();
   const later = '<button class="pn-x" onclick="hidePushNudge()">나중에</button>';
   box.innerHTML = {
-    'off': `<div class="pn"><div class="pn-t"><b>🔔 알림을 켜 두세요</b>
-        <span>${k ? '아이들이 신청하거나 인증하면 바로 알려드려요.' : '오늘 인증과 후기 기한을 놓치지 않게 알려드려요.'}</span></div>
+    'off': `<div class="pn"><div class="pn-t"><b>🔔 알림을 켜면 완주가 쉬워져요</b>
+        <span>${k ? '새 친구가 들어오면 바로 알려드리고, 오늘 인증도 챙겨 드려요.' : '매일 한 장을 떠올려 주고, 후기 기한과 공유회 소식도 알려드려요.'}</span></div>
         <div class="pn-b"><button class="pn-go" onclick="enablePush()">켜기</button>${later}</div></div>`,
     'needs-install': `<div class="pn"><div class="pn-t"><b>📲 홈 화면에 추가해 주세요</b>
         <span>아이폰은 홈 화면에 추가해야 알림을 받을 수 있어요.</span></div>
@@ -3023,9 +3025,12 @@ async function maybeAskPush() {
     if (st !== 'off' && st !== 'needs-install') return;
     localStorage.setItem(ASK_KEY, '1');
     setTimeout(() => {
-      $('paSub').textContent = st === 'off' ? '내일도 이어갈 수 있게 알림을 켜 둘까요?' : '알림을 받으려면 홈 화면에 추가해 주세요.';
+      const k = canLead();
+      $('paSub').textContent = st === 'off' ? '알림이 있으면 내일도 한 장을 잊지 않아요. 루틴을 끝까지 완주하는 가장 쉬운 방법이에요.' : '알림을 받으려면 홈 화면에 추가해 주세요.';
       $('paBody').innerHTML = st === 'off'
-        ? `<button class="btn btn-primary" onclick="askEnablePush()">알림 켜기</button>
+        ? `<ul class="pa-l">${(k ? ['새 친구가 들어올 때', '루틴이 열렸을 때', '오늘 인증을 깜빡하지 않게']
+                                : ['오늘 인증을 깜빡하지 않게', '후기 기한과 공유회 소식', '책을 받는 날 소식']).map(t => `<li>${t}</li>`).join('')}</ul>
+           <button class="btn btn-primary" onclick="askEnablePush()">알림 켜기</button>
            <button class="btn btn-line" style="margin-top:8px;" onclick="closeSheet('shPushAsk')">나중에</button>`
         : `<div class="hint" style="margin:0 0 12px;line-height:1.75;">사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> →
              <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>
