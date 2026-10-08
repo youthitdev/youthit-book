@@ -477,14 +477,13 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .tc-nb .nb-c img { width:100%; height:100%; object-fit:cover; display:block; }
 .tc-nb .nb-t { min-width:0; }
 .kbk { border-top:1px solid var(--line); margin-top:11px; padding-top:10px; }
-.kbk > span { display:block; font-size:12px; font-weight:700; color:var(--ink-3); margin-bottom:7px; }
-.kbk .kbk-l { display:flex; flex-wrap:wrap; gap:6px; }
-.kbk .kbk-l em { font-style:normal; font-size:12.5px; font-weight:600; background:var(--bg); border:1px solid var(--line);
-  border-radius:99px; padding:5px 11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.kbk .kbk-l button { font:inherit; font-size:12.5px; font-weight:600; background:var(--bg); border:1px solid var(--line);
-  border-radius:99px; padding:5px 11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  color:var(--ink); cursor:pointer; }
-.kbk .kbk-l button:active { opacity:.6; }
+.kbk-go { width:100%; display:flex; align-items:center; gap:10px; text-align:left; font:inherit; cursor:pointer;
+  background:var(--tint, #F2F7E6); border:1px solid var(--line); border:1px solid color-mix(in srgb, var(--blue) 14%, transparent); color:var(--blue);
+  border-radius:13px; padding:12px 14px; transition:transform .15s ease, background .15s ease; }
+.kbk-go:active { transform:scale(.985); }
+.kbk-go .kbk-e { font-size:18px; flex:none; line-height:1; }
+.kbk-go b { flex:1; min-width:0; font-size:14px; font-weight:800; letter-spacing:-.3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kbk-go i { flex:none; font-size:17px; opacity:.7; }
 /* 책을 누르면 — 읽는 아이마다 직접 찍은 책 사진과 닉네임 */
 .kb-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px 10px; padding:6px 2px 8px; }
 .kb-r small { display:block; font-size:11.5px; color:var(--ink-3); line-height:1.4; margin-top:2px;
@@ -3498,10 +3497,10 @@ function kidsBooks(rid) {
 let kidBookList = [], kidBookRid = null;
 function kidsBooksHtml(rid) {
   const list = kidBookList = kidsBooks(rid); kidBookRid = rid; if (!list.length) return '';
-  const SHOW = 8;
-  return `<div class="kbk"><span class="kbk-h" onclick="openAllKidBooks()">📖 읽는 책 <i>›</i></span><div class="kbk-l">${list.slice(0, SHOW).map((b, i) =>
-    `<button type="button" title="${esc(b.title)}" onclick="openKidBook(${i})">${esc(b.title)}</button>`).join('')}${
-    list.length > SHOW ? `<em>+${list.length - SHOW}권</em>` : ''}</div></div>`;
+  const r = state.routines.find(x => x.id === rid);
+  // 책 이름은 여기 늘어놓지 않는다 — 누르면 책 사진과 닉네임이 한 번에 열린다
+  return `<div class="kbk"><button type="button" class="kbk-go" onclick="openAllKidBooks()">
+    <span class="kbk-e">📖</span><b>${esc(r ? r.title : '')} 루틴에서 읽는 책</b><i class="ti ti-chevron-right"></i></button></div>`;
 }
 // 「읽는 책」을 누르면: 이 루틴에서 읽는 모든 책을 아이별로, 한 줄에 셋씩 (책 사진 + 닉네임 + 책 이름)
 function openAllKidBooks() {
@@ -3514,19 +3513,6 @@ function openAllKidBooks() {
       <b>${esc(nameOf(t.uid))}</b><small>${esc(t.title)}</small></div>`).join('')}</div>`;
   showLayer('shKidBook');
 }
-// 책 하나를 누르면: 읽는 아이마다 그 아이가 찍은 책 사진과 닉네임
-function openKidBook(i) {
-  const b = kidBookList[i]; if (!b) return;
-  $('kbTitle').textContent = b.title;
-  $('kbSub').textContent = '이 책을 읽는 친구들';
-  $('kbBody').innerHTML = `<div class="kb-grid">${[...b.readers].map(([uid, rd]) => {
-    const url = rd.photo || b.found;
-    return `<div class="kb-r"><div class="kb-c">${url ? `<img src="${esc(url)}" alt="" loading="lazy"
-      onerror="this.parentNode.textContent='📖'">` : '📖'}</div><b>${esc(nameOf(uid))}</b></div>`;
-  }).join('')}</div>`;
-  showLayer('shKidBook');
-}
-
 // 끗짱이 지금 읽는 책. 가장 최근에 내가 인증한 책이 먼저고(중간에 책을 바꿔 읽을 수 있다),
 // 인증한 적이 없으면 루틴을 만들 때 고른 책이다. 함께 읽는 글(책 없음)은 없다
 function kkutNowBook(r) {
