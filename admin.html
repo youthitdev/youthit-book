@@ -2910,6 +2910,21 @@ async function togglePhoto(id, next) {
   render();
 }
 
+// 입금일은 매월 15일과 말일이다. 토·일이면 다음 월요일로 민다. 공휴일은 모르니 눈으로 한 번 본다
+function nextPayday() {
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const days = [];
+  for (let m = 0; m < 3; m++) {
+    const y = now.getFullYear(), mo = now.getMonth() + m;
+    [new Date(y, mo, 15), new Date(y, mo + 1, 0)].forEach(d => {
+      while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+      days.push(d);
+    });
+  }
+  const d = days.filter(x => x >= now).sort((a, b) => a - b)[0];
+  return `${d.getMonth() + 1}월 ${d.getDate()}일(${'일월화수목금토'[d.getDay()]})`;
+}
+
 function viewSettled() {
   // 취소된 건도 같이 보여 준다. 숨기면 「왜 이 숫자가 됐나」를 설명할 수 없다
   const rows = DB.purchases.filter(g => g.status === 'settled' || g.status === 'void')
@@ -2923,8 +2938,8 @@ function viewSettled() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">서점 입금</div>
-    <div class="panel-d">청소년은 돈 없이 책을 가져가요. 책값은 유스보이스가 서점에 보내요 — 다녀간 뒤 5영업일 안에.<br>
-      정산을 마친 뒤에도 사진 공개는 여기서 할 수 있어요.</div></div>
+    <div class="panel-d">청소년은 돈 없이 책을 가져가요. 책값은 유스보이스가 서점에 보내요 — 매월 15일과 말일에, 그 전날까지 올라온 청구를 모아서.<br>
+      <b>다음 입금일 ${nextPayday()}</b> · 정산을 마친 뒤에도 사진 공개는 여기서 할 수 있어요.</div></div>
   </div>
 
   ${wait.length ? `<div class="preview" style="margin-bottom:14px;">
