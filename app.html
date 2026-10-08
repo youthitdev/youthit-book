@@ -2811,9 +2811,17 @@ const pageOf = (rid, title) => {
                          .map(c => c.page_end);
   return ns.length ? Math.max(...ns) : 0;
 };
-const booksOf   = rid => me
-  ? (state.rbooks || []).filter(b => b.routine_id === rid && b.user_id === me.id)
-  : [];
+const booksOf   = rid => {
+  if (!me) return [];
+  const rows = (state.rbooks || []).filter(b => b.routine_id === rid && b.user_id === me.id);
+  // 끗짱은 참여자가 아니라 책 목록에 줄이 없다. 루틴을 만들 때 고른 책은 이미 읽고 있는 책이니
+  // 목록의 첫 줄로 보여준다 (표에 쓰는 건 아니고 보이기만 한다 — 빼는 단추도 없다)
+  const r = state.routines.find(x => x.id === rid);
+  const kt = r && r.led_by === me.id && !isShared(r) ? (r.kkut_book_title || '').trim() : '';
+  if (kt && !rows.some(b => loose(b.title) === loose(kt)))
+    return [{ id: null, routine_id: rid, user_id: me.id, title: kt, cover_url: r.kkut_book_url || null, virtual: true }, ...rows];
+  return rows;
+};
 // 인증 탭에서 '내 기록만' 걸어둔 상태. 탭을 옮겨도 남는다
 let certOnlyMine = false;
 function setCertMine(v) { certOnlyMine = v; render(); }
@@ -5817,8 +5825,8 @@ function drawBookSheet() {
       <div class="sb-i">${b.cover_url ? `<img src="${esc(b.cover_url)}" alt="">` : '📖'}</div>
       <div class="sb-t"><b>${esc(b.title)}</b>
         <span>${pageOf(sbRid, b.title) ? `${won(pageOf(sbRid, b.title))}쪽까지 읽었어요` : '아직 인증 전'}</span></div>
-      <button class="sb-x" aria-label="목록에서 빼기" title="목록에서 빼기"
-        onclick="dropBook('${esc(b.title).replace(/'/g, "\\'")}')">−</button>
+      ${b.virtual ? '' : `<button class="sb-x" aria-label="목록에서 빼기" title="목록에서 빼기"
+        onclick="dropBook('${esc(b.title).replace(/'/g, "\\'")}')">−</button>`}
     </div>`).join('') || '<div class="empty" style="padding:18px;">아직 등록한 책이 없어요.</div>';
 
   // 끝난 루틴에 책을 더할 일은 없다. 잘못 넣은 걸 빼는 길만 남긴다
