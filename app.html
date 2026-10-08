@@ -834,6 +834,15 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .f-act { width:32px; height:32px; background:none; border:none; border-radius:50%;
   font-size:15px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .f-act:active { background:#F2EEE6; }
+.pf-photo { display:flex; align-items:center; gap:16px; }
+.pf-photo .f-av { width:76px; height:76px; font-size:28px; margin:0; }
+.pf-photo-t { flex:1; min-width:0; }
+.pf-photo-t b { display:block; font-size:15px; font-weight:800; }
+.pf-photo-t span { display:block; font-size:12px; color:var(--ink-3); line-height:1.55; margin:3px 0 9px; }
+.pf-pick { border:0; background:var(--blue); color:#fff; border-radius:10px; padding:8px 14px; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+.pf-del { border:0; background:none; color:var(--ink-3); font:inherit; font-size:12.5px; text-decoration:underline; cursor:pointer; margin-left:8px; }
+.f-av.has-img { background:#eee; overflow:hidden; }
+.f-av img { width:100%; height:100%; object-fit:cover; display:block; border-radius:50%; }
 .f-av { width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; flex-shrink:0; }
 .f-name { font-size:13.5px; font-weight:700; }
 .f-time { font-size:11.5px; color:var(--ink-3); }
@@ -1384,7 +1393,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <b style="display:inline;">확인이 끝나면 파일은 지웁니다.</b> 확인했다는 사실과 날짜만 남습니다.<br>
       · 이용 과정에서 생기는 것: 루틴 참여 신청 각오, 독서 인증 사진·문장·읽은 쪽수, 후기,
         푸시 알림을 보내기 위한 브라우저 구독 정보(endpoint 및 암호화 키)<br>
-      · 선택: 마케팅 수신에 동의한 회원의 이메일 주소 및 푸시 구독 정보<br>
+      · 선택: 프로필 사진(올린 경우, 같은 루틴 회원과 운영진에게만 보이며 언제든 바꾸거나 지울 수 있습니다),
+        마케팅 수신에 동의한 회원의 이메일 주소 및 푸시 구독 정보<br>
       · 자동으로 쌓이는 것: 서비스 이용 기록, 접속 로그</p>
     <p><b>4. 후원자에게 알리는 범위</b>
       서비스는 후원금으로 책을 삽니다. 후원자에게 매달 보내는 보고서와 소개 페이지에는
@@ -1943,6 +1953,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="ov-h"><button onclick="closeOv('ovProfile')"><i class="ti ti-arrow-left"></i></button>
     <div><div class="s">MY</div><div class="t">내 정보</div></div></div>
   <div class="ov-b">
+    <div class="pf-photo">
+      <div id="pfAv"></div>
+      <div class="pf-photo-t">
+        <b>프로필 사진</b>
+        <span>같은 루틴 친구들에게 이 사진이 보여요. 없으면 이름 첫 글자가 보여요.</span>
+        <div>
+          <button type="button" class="pf-pick" onclick="document.getElementById('pfAvInput').click()">사진 고르기</button>
+          <button type="button" class="pf-del" id="pfAvDel" onclick="removeAvatar()">지우기</button>
+        </div>
+      </div>
+      <input type="file" id="pfAvInput" accept="image/*" style="display:none;" onchange="pickAvatar(event)">
+    </div>
     <div>
       <div class="field-label">닉네임 <span class="req">* 필수</span></div>
       <input type="text" id="pfNick" maxlength="12" oninput="checkProfile()">
@@ -2848,10 +2870,13 @@ async function loadAll() {
   if (ids.length) {
     // 아이들끼리는 닉네임으로 부른다. 실명은 운영진 화면에만 나온다.
     // 예전에 가입한 사람은 닉네임이 없어서 실명으로 떨어진다
-    const { data } = await sb.from('profiles').select('id,name,nick,verify_status').in('id', ids);
-    state.names = {}; state.vstat = {};
+    let { data, error } = await sb.from('profiles').select('id,name,nick,verify_status,avatar_url').in('id', ids);
+    // avatar_url 칸은 마이그레이션 102 뒤에 생긴다. 아직이면 사진 없이 이름만 읽는다
+    if (error) ({ data } = await sb.from('profiles').select('id,name,nick,verify_status').in('id', ids));
+    state.names = {}; state.vstat = {}; state.avatars = {};
     (data||[]).forEach(p => { state.names[p.id] = p.nick || p.name;
-                              state.vstat[p.id] = p.verify_status || 'none'; });
+                              state.vstat[p.id] = p.verify_status || 'none';
+                              if (p.avatar_url) state.avatars[p.id] = p.avatar_url; });
   }
 }
 
@@ -2923,6 +2948,14 @@ let certOnlyMine = false;
 function setCertMine(v) { certOnlyMine = v; render(); }
 const myCerts   = rid => me ? certsOf(rid).filter(c => c.user_id === me.id) : [];
 const nameOf    = uid => state.names[uid] || '익명';
+// 프로필 사진. 사진이 없으면 이름 첫 글자 동그라미다
+const avatarOf  = uid => (me && uid === me.id ? me.avatar_url : (state.avatars || {})[uid]) || null;
+function avatarHtml(uid, extraCls) {
+  const u = avatarOf(uid);
+  const nm = uid === (me && me.id) ? myName() : nameOf(uid);
+  return u ? `<div class="f-av has-img ${extraCls || ''}"><img src="${esc(u)}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-img');this.parentNode.textContent='${esc((nm || '?')[0])}'"></div>`
+           : `<div class="f-av ${extraCls || ''}">${esc((nm || '?')[0])}</div>`;
+}
 // 끗짱. 같은 루틴이 아니어도 읽히는 길(routine_leads)을 먼저 본다. 「익명」은 아무 말도 아니다
 const leadOf    = uid => (state.leads && state.leads[uid]) || null;
 const leadName  = uid => leadOf(uid)?.nick || state.names[uid] || '';
@@ -3548,7 +3581,9 @@ function todayCard(r) {
   const dot = uid => {
     const nm = uid === me.id ? '나' : (nameOf(uid) || '?');
     const sum = [...String(uid)].reduce((n, ch) => n + ch.charCodeAt(0), 0);
-    return `<i class="tw-d" style="background:${TINT[sum % TINT.length]}" title="${esc(nm)}">${esc(nm[0])}</i>`;
+    const av = avatarOf(uid);
+    return av ? `<i class="tw-d" title="${esc(nm)}" style="background:#eee center/cover url('${esc(av)}')"></i>`
+              : `<i class="tw-d" style="background:${TINT[sum % TINT.length]}" title="${esc(nm)}">${esc(nm[0])}</i>`;
   };
   const SHOWW = 5;
   const shelf = d?.notYet ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
@@ -4138,7 +4173,7 @@ function certCard(c) {
   const cms = state.comments.filter(x => x.cert_id === c.id);
   return `<div class="f-card">
     <div class="f-head">
-      <div class="f-av">${esc(nameOf(c.user_id)[0]||'?')}</div>
+      ${avatarHtml(c.user_id)}
       <div style="flex:1;min-width:0;"><div class="f-name">${esc(nameOf(c.user_id))}</div><div class="f-time">${timeAgo(c.created_at)}</div></div>
       ${me && c.user_id === me.id ? `<div style="display:flex;gap:4px;flex-shrink:0;">
         <button class="f-act" title="공유" aria-label="공유" onclick="shareCert(${c.id})">📤</button>
@@ -5091,7 +5126,7 @@ function viewMy() {
                me.school_status || '', me.region || ''].filter(Boolean).join(' · ');
   return `<div class="card">
       <div class="pf">
-        <div class="f-av">${esc(myName()[0])}</div>
+        <div onclick="openProfile()" style="cursor:pointer;">${avatarHtml(me.id)}</div>
         <div class="pf-in">
           <div class="pf-n">${esc(myName())}${waiting ? '' : verifyBadge()}</div>
           <div class="pf-m">${esc(who)}</div>
@@ -5119,8 +5154,66 @@ function viewMy() {
     ${menuBlock()}`;
 }
 
+// ── 프로필 사진 ────────────────────────────────────────
+// 가운데를 기준으로 정사각형으로 잘라 320px 로 줄인다. 얼굴이 크게 나오는 사진이라 용량도 작아야 한다
+function squareCrop(file, size, q) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onerror = () => rej(new Error('파일을 읽지 못했어요'));
+    r.onload = ev => {
+      const img = new Image();
+      img.onerror = () => rej(new Error('사진을 불러오지 못했어요'));
+      img.onload = () => {
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        const cv = document.createElement('canvas'); cv.width = cv.height = size;
+        cv.getContext('2d').drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        res(cv.toDataURL('image/jpeg', q));
+      };
+      img.src = ev.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+function paintAvatarBox() {
+  const box = $('pfAv'); if (!box || !me) return;
+  box.innerHTML = avatarHtml(me.id);
+  $('pfAvDel').style.display = me.avatar_url ? '' : 'none';
+}
+async function pickAvatar(e) {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  try {
+    const url = await squareCrop(f, 320, .86);
+    toast('올리는 중…');
+    const path = `${me.id}/avatar_${Date.now()}.jpg`;
+    const { error: up } = await sb.storage.from('avatars').upload(path, toBlob(url),
+      { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (up) return toast('사진을 올리지 못했어요: ' + up.message);
+    const pub = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl;
+    const prev = me.avatar_url;
+    const { error } = await sb.from('profiles').update({ avatar_url: pub }).eq('id', me.id);
+    if (error) return toast('저장하지 못했어요: ' + error.message);
+    me.avatar_url = pub;
+    // 예전 사진은 치운다. 실패해도 새 사진은 이미 들어갔다
+    const old = prev && prev.split('/avatars/')[1];
+    if (old) sb.storage.from('avatars').remove([old]);
+    paintAvatarBox(); render(); toast('프로필 사진을 바꿨어요');
+  } catch (err) { toast(err.message || '사진을 올리지 못했어요'); }
+}
+async function removeAvatar() {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  if (!me.avatar_url) return;
+  const old = me.avatar_url.split('/avatars/')[1];
+  const { error } = await sb.from('profiles').update({ avatar_url: null }).eq('id', me.id);
+  if (error) return toast('지우지 못했어요: ' + error.message);
+  if (old) sb.storage.from('avatars').remove([old]);
+  me.avatar_url = null; paintAvatarBox(); render(); toast('프로필 사진을 지웠어요');
+}
+
 // ── 내 정보 ────────────────────────────────────────────
 function openProfile() {
+  paintAvatarBox();
   $('pfNick').value = me.nick || me.name || '';
   $('pfName').value = me.name || '';
   const r = splitRegion(me.region);
