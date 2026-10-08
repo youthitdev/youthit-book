@@ -3614,7 +3614,8 @@ function viewCert() {
   // 그새 끝나 목록에서 빠졌으면 조용히 전체로 돌아간다
   const one = (certFocus && [...led, ...join].find(r => r.id === certFocus)) || null;
   // 루틴 이름은 바로 아래 블록 제목에 또 나온다. 띠는 돌아가는 길만 한다
-  const back = one ? `<button class="only-one" onclick="go('cert')">
+  // 루틴이 하나뿐이면 「전체」도 똑같은 화면이라, 눌러도 띠만 사라지고 달라지는 게 없다. 그땐 띠를 두지 않는다
+  const back = (one && led.length + join.length > 1) ? `<button class="only-one" onclick="go('cert')">
       <i class="ti ti-arrow-left"></i>전체 루틴 보기</button>` : '';
   if (one) { led = led.filter(r => r.id === one.id); join = join.filter(r => r.id === one.id); }
 
