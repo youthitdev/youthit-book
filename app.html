@@ -3515,7 +3515,7 @@ function todayCard(r) {
            <button class="btn btn-line" onclick="openCert(${r.id}, '${esc(rest[0].title).replace(/'/g, "\\'")}')">
              「${esc(rest[0].title)}」도 인증하기</button>`
         : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
-           <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 기록 보기</button>`;
+           <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 인증 보기</button>`;
 
   // 루틴 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
   // 두 권 넘게 읽으면(병렬독서) 오른쪽 한 장 대신 막대 아래 한 줄로 내린다 —
@@ -3696,7 +3696,7 @@ function kkutTodayCard(r) {
       ${waiting || d?.notYet ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
       ${!waiting && d?.notYet ? recruitBlock(r) : certAction(r, 'btn-primary', 'margin-bottom:8px;')}
-      <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 기록 보기</button>
+      <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 인증 보기</button>
     </div>
   </div>`;
 }
