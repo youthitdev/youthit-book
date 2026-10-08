@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>한끗독서</title>
+<!-- 링크 미리보기. 정적 호스팅이라 루틴마다 다르게 만들 수는 없다 — 앱 전체용이다 -->
+<meta name="description" content="매일 한 장 읽으면, 동네책방에서 책 한 권을 받아 가요. 같이 읽어요.">
+<meta property="og:title" content="한끗독서">
+<meta property="og:description" content="매일 한 장 읽으면, 동네책방에서 책 한 권을 받아 가요. 같이 읽어요.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://book.youthvoice.or.kr/icon-512.png">
 <meta name="theme-color" content="#1F4E46">
 <!-- 이게 없으면 폰이 다크모드일 때 iOS 가 시간 선택기를 검은 바퀴로 그린다.
      앱은 늘 종이빛이므로 밝은 쪽으로 못 박는다 -->
@@ -674,7 +680,21 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kbook-prev img { width:100%; height:100%; object-fit:cover; display:block; }
 .kbook-prev button { position:absolute; top:5px; right:5px; width:24px; height:24px; border:none;
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:13px; cursor:pointer; }
+/* 루틴 맨 위 대표 사진. 사진이 없어도 빈 화면이 되지 않게 이모지로 채운다 */
+.r-hero { width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; margin-bottom:12px;
+  background:linear-gradient(160deg,var(--tint),#fff); display:flex; align-items:center; justify-content:center; }
+.r-hero img { width:100%; height:100%; object-fit:cover; display:block; }
+.r-hero span { font-size:60px; line-height:1; }
+/* 끗짱 이름과 키워드 */
+.kk-top { display:flex; align-items:center; flex-wrap:wrap; gap:6px 7px; margin-bottom:12px; }
+.kk-nm { font-size:16px; font-weight:800; letter-spacing:-.3px; }
+.kk-kw { font-size:12px; font-weight:700; color:var(--green-d); background:var(--green-l);
+  border:1px solid #D8E9BC; border-radius:99px; padding:3px 10px; }
+.kkut-book.ph { display:flex; align-items:center; justify-content:center; font-size:30px;
+  background:linear-gradient(160deg,#f3efe6,#e9e3d6); }
 .kkut-card { display:flex; gap:13px; align-items:flex-start; }
+.kw-row { display:flex; gap:8px; }
+.kw-row input { flex:1; min-width:0; }
 .kkut-book { width:84px; flex:none; aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#eeeae2; }
 .kkut-book img { width:100%; height:100%; object-fit:cover; display:block; }
 .kkut-note { font-size:12px; color:var(--green-d); font-weight:700; margin-top:9px; }
@@ -1362,7 +1382,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 <!-- 루틴 상세 -->
 <div class="ov" id="ovRoutine">
   <div class="ov-h"><button onclick="closeOv('ovRoutine')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">루틴</div><div class="t" id="ovRTitle"></div></div></div>
+    <div style="flex:1;min-width:0;"><div class="s">루틴</div><div class="t" id="ovRTitle"></div></div>
+    <!-- 【공유하기 · 2026-10-08 사용자】 주소창 링크는 어느 루틴에서도 같다(app.html).
+         루틴마다 다른 링크(?routine=)는 이 단추가 만든다 -->
+    <button onclick="shareRoutine(curRid)" aria-label="이 루틴 공유하기"><i class="ti ti-share-3"></i></button></div>
   <div class="ov-b" id="ovRBody"></div>
 </div>
 
@@ -1840,6 +1863,16 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       </select>
       <input type="text" id="pfAffil" maxlength="30" placeholder="기관·단체·학교 등" style="display:none;">
     </div>
+    <!-- 끗짱만. 신청서에서 적은 키워드를 여기서 고친다 (승인된 신청서는 본인이 못 고치므로 따로 둔다) -->
+    <div id="pfKwWrap" style="display:none;">
+      <div class="field-label">나를 나타내는 키워드 <span class="opt">세 가지</span></div>
+      <div class="kw-row">
+        <input type="text" id="pfKw0" maxlength="12" placeholder="예) 책방지기">
+        <input type="text" id="pfKw1" maxlength="12" placeholder="예) 시집">
+        <input type="text" id="pfKw2" maxlength="12" placeholder="예) 느린 독서">
+      </div>
+      <div class="hint">루틴을 보러 온 청소년에게 이름 옆에 보여요.</div>
+    </div>
     <div id="pfBirthWrap">
       <div class="field-label">생년월일 <span class="req" id="pfBirthReq">* 필수</span></div>
       <div class="au-row" id="pfBirth">
@@ -2298,6 +2331,11 @@ async function loadKkutApp() {
     sb.rpc('kkut_credit_summary'),
   ]);
   state.kkutApp = app.data || null;
+  // 내 키워드 — 마이그레이션 94 전이면 표가 없어 오류가 온다. 그냥 비워 둔다
+  try {
+    const kw = await sb.from('kkut_keywords').select('keywords').maybeSingle();
+    state.myKw = (kw && !kw.error && kw.data?.keywords) || [];
+  } catch (e) { state.myKw = []; }
   const e = Array.isArray(el.data) ? el.data[0] : el.data;
   state.kkutElig = e || { days: 0, need: 0, invited: true, eligible: true };
   state.credit = cr.data || null;
@@ -2424,6 +2462,15 @@ function renderKkutGate() {
       <div class="hint">운영진이 확인 연락을 드릴 번호예요. 청소년에게는 안 보여요.</div>
     </div>
     <div style="margin-top:16px;">
+      <div class="field-label">나를 나타내는 키워드 세 가지 <span class="req">* 필수</span></div>
+      <div class="kw-row">
+        <input type="text" id="kKw0" maxlength="12" value="${esc((state.myKw||[])[0] || '')}" placeholder="예) 책방지기">
+        <input type="text" id="kKw1" maxlength="12" value="${esc((state.myKw||[])[1] || '')}" placeholder="예) 시집">
+        <input type="text" id="kKw2" maxlength="12" value="${esc((state.myKw||[])[2] || '')}" placeholder="예) 느린 독서">
+      </div>
+      <div class="hint">루틴을 보러 온 청소년에게 이름 옆에 보여요. 한 단어씩 짧게 적어주세요. (12자까지)</div>
+    </div>
+    <div style="margin-top:16px;">
       <div class="field-label">나를 소개해 주세요 <span class="req">* 필수</span></div>
       <textarea id="kIntro" rows="5" maxlength="500" placeholder="하는 일, 요즘 읽는 책, 청소년을 만나본 경험이 있다면 그 이야기까지 적어주세요.">${v('intro')}</textarea>
     </div>
@@ -2448,6 +2495,39 @@ async function reloadKkutGate() {
   renderKkutGate();
 }
 
+// 키워드 칸 셋(접두사 + 0·1·2)에서 값을 읽는다. #·공백을 걷고 겹치는 건 뺀다.
+// 앞에서부터 비어 있는 칸을 만나면 거기까지만 센다 — 오류 칸을 짚어 주려고
+function readKeywords(prefix) {
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    const el = $(prefix + i); if (!el) break;
+    const v = el.value.replace(/#/g, '').trim().slice(0, 12).trim();
+    if (!v || out.includes(v)) break;
+    out.push(v);
+  }
+  return out;
+}
+
+// 내 정보용 — 비어 있는 칸은 건너뛰고 있는 것만 모은다 (비워 두면 키워드를 지우는 것)
+function readKeywordsLoose(prefix) {
+  const out = [];
+  for (let i = 0; i < 3; i++) {
+    const v = ($(prefix + i)?.value || '').replace(/#/g, '').trim().slice(0, 12).trim();
+    if (v && !out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
+async function saveKeywords(kws) {
+  if (DEMO) return;
+  try {
+    const { data, error } = await sb.rpc('set_my_keywords', { p_keywords: kws });
+    if (error) return;
+    state.myKw = data || kws;
+    if (me) state.leads[me.id] = { nick: me.nick || me.name, keywords: state.myKw };
+  } catch (e) { /* 키워드가 안 들어가도 신청·저장은 된다 */ }
+}
+
 async function submitKkutApp() {
   const err = (m, id) => { toast(m); badField(id); };
   const age     = parseInt($('kAge').value, 10);
@@ -2461,6 +2541,9 @@ async function submitKkutApp() {
   if (!region)  return err('활동 지역을 적어주세요.', 'kRegion');
   if (!aff)     return err('소속을 적어주세요. 없으면 없음이라고 적어도 괜찮아요.', 'kAff');
   if (!contact) return err('연락처를 적어주세요.', 'kContact');
+  // 키워드는 앞뒤 공백·# 을 걷고 세 가지가 서로 달라야 한다 (서버 clean_keywords 와 같은 기준)
+  const kws = readKeywords('kKw');
+  if (kws.length < 3) return err('나를 나타내는 키워드를 서로 다르게 세 가지 적어주세요.', 'kKw' + kws.length);
   if (intro.length  < 20) return err('소개를 조금만 더 적어주세요. (20자 이상)', 'kIntro');
   if (motive.length < 20) return err('어떤 마음으로 함께하고 싶은지 조금만 더 적어주세요. (20자 이상)', 'kMotive');
 
@@ -2474,6 +2557,9 @@ async function submitKkutApp() {
     btn.disabled = false; btn.textContent = '신청서 보내기';
     return err(error.message || '보내지 못했어요. 잠시 뒤 다시 시도해주세요.');
   }
+  // 키워드는 신청서 표가 아니라 따로 둔다 — 승인된 신청서는 본인이 못 고치는데
+  // 키워드는 나중에도 고칠 수 있어야 한다. 실패해도 신청은 이미 들어갔으니 막지 않는다
+  await saveKeywords(kws);
   await reloadKkutGate();
 }
 
@@ -2557,6 +2643,13 @@ async function enter() {
   startNotifPoll();
   cheerLevel();
 
+  // 링크로 들어와 둘러보다 로그인한 사람은 보던 루틴으로 돌아간다. 끗짱 신청서가 먼저면 그쪽이 먼저다
+  const goR = sessionStorage.getItem('goRoutine');
+  if (goR && !sessionStorage.getItem('goKkutApply')) {
+    sessionStorage.removeItem('goRoutine');
+    openDeepRoutine(Number(goR));
+  }
+
   // 가입할 때 끗짱을 골랐으면 바로 신청서로. 한 번만 보낸다
   if (sessionStorage.getItem('goKkutApply')) {
     sessionStorage.removeItem('goKkutApply');
@@ -2587,8 +2680,13 @@ async function loadAll() {
     sb.rpc('routine_people_count'),
     sb.rpc('dokseo_reading_stats'),
     sb.rpc('dokseo_pool_status'),
+    // 보이는 루틴의 끗짱 — 닉네임과 키워드만. 로그인 전에도 불린다 (migration-94).
+    // 아직 마이그레이션을 안 돌렸으면 오류가 와도 그냥 빈 채로 둔다
+    sb.rpc('routine_leads'),
   ]);
   state.routines = pub[0].data || [];
+  state.leads = {};
+  (pub[6]?.data || []).forEach(x => { state.leads[x.user_id] = { nick: x.nick, keywords: x.keywords || [] }; });
   state.stores   = pub[1].data || [];
   state.settings = pub[2].data || {};
   state.counts   = {};
@@ -2693,6 +2791,9 @@ let certOnlyMine = false;
 function setCertMine(v) { certOnlyMine = v; render(); }
 const myCerts   = rid => me ? certsOf(rid).filter(c => c.user_id === me.id) : [];
 const nameOf    = uid => state.names[uid] || '익명';
+// 끗짱. 같은 루틴이 아니어도 읽히는 길(routine_leads)을 먼저 본다. 「익명」은 아무 말도 아니다
+const leadOf    = uid => (state.leads && state.leads[uid]) || null;
+const leadName  = uid => leadOf(uid)?.nick || state.names[uid] || '';
 
 // ── 푸시 알림 ──────────────────────────────────────────
 // 공개 키다. 숨길 필요가 없다 — 이걸로는 보낼 수 없고, 받을 준비만 할 수 있다
@@ -4718,6 +4819,8 @@ function openProfile() {
   $('pfAffil').style.display  = lead ? '' : 'none';
   if (lead) $('pfAffil').value  = me.school_status || '';
   else      $('pfSchool').value = me.school_status || '';
+  $('pfKwWrap').style.display = lead ? '' : 'none';
+  if (lead) [0, 1, 2].forEach(i => { $('pfKw' + i).value = (state.myKw || [])[i] || ''; });
   $('pfMkt').checked  = !!me.marketing_ok;
   // 생년월일은 비어 있을 때만 받는다. 한 번 적으면 서버가 못 바꾸게 막는다 —
   // 나이를 바꿔가며 우회하는 길을 닫는다.
@@ -4776,17 +4879,24 @@ async function saveProfile() {
   Object.assign(me, row, { phone: priv.phone });
   if (priv.birth_date) me.birth_date = priv.birth_date;
   state.names[me.id] = nick;
+  // 끗짱의 키워드. 비워 두면 지운다. 실패해도 프로필 저장은 이미 끝났다
+  if (canLead()) await saveKeywords(readKeywordsLoose('pfKw'));
   closeOv('ovProfile'); render();
   toast('바꿨어요');
 }
 
 // ── 루틴 상세 ──────────────────────────────────────────
+let curRid = null;   // 지금 열려 있는 루틴. 머리의 공유 단추가 쓴다
 function openRoutine(id) {
   const r = state.routines.find(x => x.id === id); if (!r) return;
+  curRid = id;
   const p = myPart(id), people = peopleOf(id);
   const full = people >= r.max_people;
   $('ovRTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
   $('ovRBody').innerHTML = `
+    <div class="r-hero">${r.cover_url
+      ? `<img src="${esc(r.cover_url)}" alt="" loading="lazy">`
+      : `<span>${r.emoji || '📚'}</span>`}</div>
     <div class="card rinfo">
       <div><span>기간</span><b>${fmtPeriod(r.start_date, r.end_date)}</b></div>
       <div><span>참여</span><b>${people} / ${r.max_people}명</b></div>
@@ -4797,28 +4907,46 @@ function openRoutine(id) {
     </div>
     ${isShared(r) && (p?.status === 'approved' || leadsIt(r))
       ? `<div class="sec-t">함께 읽는 글</div>${postCard(r)}` : ''}
-    ${r.description ? `<div class="sec-t">이 루틴을 이끄는 끗짱${
-        r.led_by ? ` <span class="sec-n" style="color:var(--pink);">${esc(nameOf(r.led_by))}</span>` : ''}</div>
-      <div class="card kkut-card">
-        ${r.kkut_book_url ? `<div class="kkut-book"><img src="${esc(r.kkut_book_url)}" loading="lazy" alt=""></div>` : ''}
-        <div style="min-width:0;">
-          <div style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>
-          ${r.kkut_book_url || r.kkut_book_title
-            ? `<div class="kkut-note">${isOneBook(r) ? '📕 이 책을 다 같이 읽어요' : '📖 저는 이 책을 읽어요'}</div>` : ''}
-          ${r.kkut_book_title ? `<div class="kkut-bt">「${esc(r.kkut_book_title)}」
-            ${r.kkut_book_authors || r.kkut_book_publisher
-              ? `<i>${esc([r.kkut_book_authors, r.kkut_book_publisher].filter(Boolean).join(' · '))}</i>` : ''}
-          </div>` : ''}
+    ${(() => {
+      // 【「익명」이던 자리 · 2026-10-08 사용자】 신청하러 들어온 아이가 제일 궁금한 건 이 사람이 누구냐다.
+      //   이름은 routine_leads 에서 온다(닉네임만). 소속·나이·지역·연락처는 아이에게 보이지 않는다.
+      //   대신 끗짱이 신청서에서 고른 키워드 세 개를 보인다
+      const L = leadOf(r.led_by);
+      const nm = leadName(r.led_by);
+      const hasBook = r.kkut_book_url || r.kkut_book_title;
+      if (!r.led_by && !r.description) return '';
+      const kws = (L?.keywords || []).map(k => `<span class="kk-kw">#${esc(k)}</span>`).join('');
+      return `<div class="sec-t">이 루틴을 이끄는 끗짱</div>
+      <div class="card">
+        ${r.led_by ? `<div class="kk-top"><b class="kk-nm">${esc(nm || '끗짱')}</b>${kws}</div>` : ''}
+        <div class="kkut-card">
+          ${r.kkut_book_url
+            ? `<div class="kkut-book"><img src="${esc(r.kkut_book_url)}" loading="lazy" alt=""></div>`
+            : (hasBook ? `<div class="kkut-book ph">📖</div>` : '')}
+          <div style="min-width:0;">
+            ${r.description ? `<div style="white-space:pre-wrap;line-height:1.7;">${esc(r.description)}</div>` : ''}
+            ${hasBook
+              ? `<div class="kkut-note">${isOneBook(r) ? '📕 이 책을 다 같이 읽어요' : '📖 저는 이 책을 읽어요'}</div>` : ''}
+            ${r.kkut_book_title ? `<div class="kkut-bt">「${esc(r.kkut_book_title)}」
+              ${r.kkut_book_authors || r.kkut_book_publisher
+                ? `<i>${esc([r.kkut_book_authors, r.kkut_book_publisher].filter(Boolean).join(' · '))}</i>` : ''}
+            </div>` : ''}
+          </div>
         </div>
-      </div>` : ''}
+      </div>`;
+    })()}
     ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
     ${(() => {
       const st = storeOf(r); if (!st) return '';
       return `<div class="sec-t">🏠 함께하는 책방</div>
-        <div class="card one-book" onclick="go('store')" style="cursor:pointer;">
+        <!-- 【눌러도 아무 일이 없던 자리 · 2026-10-08 사용자】 전에는 go('store') 였다. 지금 열린 루틴 화면이
+             서점 탭을 덮고 있어서, 뒤에서만 이동하고 눈에는 아무 일도 안 보였다.
+             서점 탭이 쓰는 책방 정보 창(주소·영업시간·길찾기→카카오맵)을 그대로 연다 -->
+        <div class="card one-book" onclick="openStoreInfo(${st.id})" style="cursor:pointer;">
           <div class="ob-i">🏠</div>
-          <div><span>책을 받으러 가는 곳</span><b>${esc(st.name)}</b>
+          <div style="flex:1;"><span>책을 받으러 가는 곳</span><b>${esc(st.name)}</b>
             ${st.region || st.address ? `<i>${esc(st.region || st.address)}</i>` : ''}</div>
+          <i class="ti ti-chevron-right" style="margin:0;color:var(--ink-3);flex:none;"></i>
         </div>`;
     })()}
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
@@ -5895,7 +6023,10 @@ let shareLink = null;
 function shareRoutine(rid) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
   const url  = `${location.origin}${location.pathname}?routine=${rid}`;
-  const text = `${r.emoji || '📚'} ${r.title}\n한끗독서에서 같이 읽어요. 하루 한 장이면 돼요.`;
+  const nm   = leadName(r.led_by);
+  const text = [`${r.emoji || '📚'} ${r.title}`,
+    nm ? `끗짱 ${nm}과 한끗독서에서 같이 읽어요.` : '한끗독서에서 같이 읽어요.',
+    `${fmtPeriod(r.start_date, r.end_date)} · 하루 한 장이면 돼요.`].join('\n');
   shareLink = { title: r.title, text, url };
   $('shShareSub').textContent   = r.title;
   $('shShareUrl').value         = url;
@@ -7012,14 +7143,34 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') refreshNotifs();
 });
 
+// 공유 링크(`app.html?routine=12`)나 알림 링크(`?tab=my`)로 앱이 **새로 열릴 때** 이 값을 읽는다.
+// 전에는 아무 데서도 읽지 않아서 받은 사람은 루틴이 아니라 홈을 봤다.
+// (앱이 이미 열려 있을 때의 알림은 서비스워커가 notif-navigate 로 따로 처리한다)
+function openDeepRoutine(id) {
+  if (!state.routines.find(x => x.id === id)) {
+    return toast('지금은 볼 수 없는 루틴이에요');   // 지워졌거나, 아직 열리지 않았다
+  }
+  openRoutine(id);
+}
+
 (async function init() {
   const q = new URLSearchParams(location.search);
   if (q.get('demo') === '1') { enterDemo(q.get('role') === 'kkutjjang' ? 'kkutjjang' : 'youth'); hideSplash(); return; }
 
+  const deepRoutine = /^\d+$/.test(q.get('routine') || '') ? Number(q.get('routine')) : null;
+  const deepTab = ['home', 'cert', 'feed', 'store', 'my'].includes(q.get('tab')) ? q.get('tab') : null;
+  // 주소에서 걷는다. 안 걷으면 새로고침할 때마다 같은 루틴이 다시 열린다
+  if (deepRoutine || deepTab) history.replaceState(history.state, '', location.pathname);
+
   const { data: { session } } = await sb.auth.getSession();
+  // 로그인 전이라면 가입하고 돌아와도 같은 루틴으로 이어지게 기억해 둔다 (enter 가 꺼내 쓴다)
+  if (!session && deepRoutine) sessionStorage.setItem('goRoutine', String(deepRoutine));
   if (session) await enter();
   else await browseAsGuest();   // 로그인 없이 바로 둘러보기
   hideSplash();
+
+  if (deepRoutine) openDeepRoutine(deepRoutine);
+  else if (deepTab && !isGuest()) go(deepTab);
 })();
 </script>
 </body>
