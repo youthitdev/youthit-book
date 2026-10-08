@@ -486,7 +486,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   color:var(--ink); cursor:pointer; }
 .kbk .kbk-l button:active { opacity:.6; }
 /* 책을 누르면 — 읽는 아이마다 직접 찍은 책 사진과 닉네임 */
-.kb-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:14px 12px; padding:6px 2px 8px; }
+.kb-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px 10px; padding:6px 2px 8px; }
+.kb-r small { display:block; font-size:11.5px; color:var(--ink-3); line-height:1.4; margin-top:2px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.kbk > span.kbk-h { cursor:pointer; }
+.kbk > span.kbk-h i { font-style:normal; font-size:15px; vertical-align:-1px; margin-left:2px; }
 .kb-r { text-align:center; min-width:0; }
 .kb-c { width:100%; aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#eeeae2; display:flex;
   align-items:center; justify-content:center; font-size:30px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
@@ -1851,7 +1855,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t" id="kbTitle"></div>
-        <div class="sheet-s">이 책을 읽는 친구들</div>
+        <div class="sheet-s" id="kbSub">이 책을 읽는 친구들</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shKidBook')" aria-label="닫기">✕</button>
     </div>
@@ -3491,18 +3495,30 @@ function kidsBooks(rid) {
     .forEach(x => add(x.user_id, x.title, x.created_at, x.cover_url, x.found_cover_url));
   return [...by.values()].sort((a, b) => b.readers.size - a.readers.size || b.last.localeCompare(a.last));
 }
-let kidBookList = [];
+let kidBookList = [], kidBookRid = null;
 function kidsBooksHtml(rid) {
-  const list = kidBookList = kidsBooks(rid); if (!list.length) return '';
+  const list = kidBookList = kidsBooks(rid); kidBookRid = rid; if (!list.length) return '';
   const SHOW = 8;
-  return `<div class="kbk"><span>📖 읽는 책</span><div class="kbk-l">${list.slice(0, SHOW).map((b, i) =>
+  return `<div class="kbk"><span class="kbk-h" onclick="openAllKidBooks()">📖 읽는 책 <i>›</i></span><div class="kbk-l">${list.slice(0, SHOW).map((b, i) =>
     `<button type="button" title="${esc(b.title)}" onclick="openKidBook(${i})">${esc(b.title)}</button>`).join('')}${
     list.length > SHOW ? `<em>+${list.length - SHOW}권</em>` : ''}</div></div>`;
 }
-// 책을 누르면: 읽는 아이마다 그 아이가 찍은 책 사진과 닉네임
+// 「읽는 책」을 누르면: 이 루틴에서 읽는 모든 책을 아이별로, 한 줄에 셋씩 (책 사진 + 닉네임 + 책 이름)
+function openAllKidBooks() {
+  const r = state.routines.find(x => x.id === kidBookRid);
+  $('kbTitle').textContent = `${r ? r.title : ''} 루틴에서 읽는 책`;
+  $('kbSub').textContent = '친구들이 직접 고른 책이에요';
+  const tiles = kidBookList.flatMap(b => [...b.readers].map(([uid, rd]) => ({ uid, title: b.title, url: rd.photo || b.found })));
+  $('kbBody').innerHTML = `<div class="kb-grid">${tiles.map(t => `<div class="kb-r">
+      <div class="kb-c">${t.url ? `<img src="${esc(t.url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
+      <b>${esc(nameOf(t.uid))}</b><small>${esc(t.title)}</small></div>`).join('')}</div>`;
+  showLayer('shKidBook');
+}
+// 책 하나를 누르면: 읽는 아이마다 그 아이가 찍은 책 사진과 닉네임
 function openKidBook(i) {
   const b = kidBookList[i]; if (!b) return;
   $('kbTitle').textContent = b.title;
+  $('kbSub').textContent = '이 책을 읽는 친구들';
   $('kbBody').innerHTML = `<div class="kb-grid">${[...b.readers].map(([uid, rd]) => {
     const url = rd.photo || b.found;
     return `<div class="kb-r"><div class="kb-c">${url ? `<img src="${esc(url)}" alt="" loading="lazy"
