@@ -1032,13 +1032,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   font-family:inherit; font-size:12.5px; font-weight:700; padding:8px 13px;
   border-radius:10px; cursor:pointer; }
 
-/* 끗짱 성과 — 네 칸이라 한 줄에 넣으면 숫자가 찌그러진다 */
-.kstat { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line);
-  border-radius:14px; overflow:hidden; }
-.kstat > div { background:var(--card); padding:15px 16px; }
-.kstat b { display:block; font-size:21px; font-weight:800; letter-spacing:-.6px; }
-.kstat span { font-size:11.5px; color:var(--ink-3); }
-.kstat-l { font-size:12.5px; color:var(--ink-2); line-height:1.6; margin-top:10px; }
+/* 끗짱 성과 — 숫자 칸 대신 줄글 */
+.kstat { font-size:15px; line-height:1.8; color:var(--ink); }
+.kstat b { font-weight:800; color:var(--blue); }
+.kstat-s { font-size:13px; color:var(--ink-2); margin-top:6px; line-height:1.7; }
 
 /* 끗짱 출석부. 이름을 세로로 쌓으면 화면을 다 먹어서 칩으로 흘린다 */
 .kroll { display:flex; flex-wrap:wrap; gap:6px; }
@@ -4564,15 +4561,19 @@ function kkutStatBlock() {
   const kbooks = new Set(certs.filter(c => c.book_title).map(c => c.book_title));
   if (!led.length) return '';
 
-  const cell = (n, label) => `<div><b>${won(n)}</b><span>${label}</span></div>`;
+  // 같은 아이가 같은 날 두 권을 인증해도 하루다. 「며칠의 책을 읽었나」를 센다
+  const days = new Set(certs.map(c => c.user_id + '|' + c.cert_date)).size;
+
+  // 숫자 칸 대신 줄글이다 — 숫자만 늘어놓으면 0 이 줄줄이 보여 휑하다
+  const body = kids.size
+    ? `끗짱님과 함께 <b>${won(kids.size)}명</b>의 청소년이
+       <b>${won(days)}일</b>의 책을 읽었어요.
+       <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>,
+       맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`
+    : `맡은 루틴 <b>${won(led.length)}개</b>에 아직 함께한 청소년이 없어요.
+       <div class="kstat-s">첫 친구가 오면 여기에 기록이 쌓여요.</div>`;
   return `<div class="sec-t">함께 쌓은 기록</div>
-    <div class="kstat">
-      ${cell(led.length, '맡은 루틴')}
-      ${cell(kids.size, '함께한 청소년')}
-      ${cell(certs.length, '청소년 인증')}
-      ${cell(kbooks.size, '청소년이 읽은 책')}
-    </div>
-    ${parts.length ? `<div class="kstat-l">${led.length}개 루틴에서 <b>${parts.length}번</b> 함께했어요.</div>` : ''}`;
+    <div class="card kstat">${body}</div>`;
 }
 
 // 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
@@ -4804,7 +4805,7 @@ function viewMy() {
     ${waiting ? '' : levelCard()}
     ${(isYouth() && !waiting) ? balanceBlock() : ''}
     ${noRoutineBlock()}
-    ${creditBlock()}
+    ${/* 읽은 날마다 책값이 간다는 안내는 잠시 내려둔다 (2026-10-08). 다시 쓰려면 creditBlock() */''}
     ${kkutStatBlock()}
     ${(!canLead() || total || joined) ? `<div class="card mstat">
       <div><em>📸</em><b>${total}</b><i>내 인증</i></div>
