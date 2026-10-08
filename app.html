@@ -742,6 +742,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .r-hero img { width:100%; height:100%; object-fit:cover; display:block; }
 .r-hero span { font-size:60px; line-height:1; }
 /* 끗짱 이름과 키워드 */
+.lead-line { display:flex; align-items:center; flex-wrap:wrap; gap:5px 7px; margin:4px 0 7px; cursor:pointer; }
+.lead-line span { font-size:12px; font-weight:800; color:var(--ink-3); }
+.lead-line b { font-size:14px; font-weight:800; letter-spacing:-.3px; }
+.lead-line .kk-kw { font-style:normal; font-size:11.5px; padding:2px 9px; }
 .kk-top { display:flex; align-items:center; flex-wrap:wrap; gap:6px 7px; margin-bottom:12px; }
 .kk-nm { font-size:16px; font-weight:800; letter-spacing:-.3px; }
 .kk-kw { font-size:12px; font-weight:700; color:var(--green-d); background:var(--green-l);
@@ -3979,7 +3983,14 @@ function youthCertBlock(mine) {
     const line = [routineLine(r, d),
                   `인증 ${won(cs.length)}`, `소통 ${won(talk)}`].join(' · ');
 
+    // 이 루틴을 이끄는 끗짱 한 줄 — 닉네임과 키워드. 누르면 루틴 소개로 간다 (내가 끗짱인 루틴에는 없다)
+    const L = r.led_by && r.led_by !== me.id ? leadOf(r.led_by) : null;
+    const nm = r.led_by && r.led_by !== me.id ? leadName(r.led_by) : '';
+    const leadLine = (L || nm) ? `<div class="lead-line" onclick="openRoutine(${r.id})">
+        <span>끗짱</span><b>${esc(nm || '끗짱')}</b>${(L?.keywords || []).map(k => `<i class="kk-kw">#${esc(k)}</i>`).join('')}</div>` : '';
+
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
+      ${leadLine}
       <div class="cline">${line}</div>
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
       ${kidsBooksHtml(r.id, true, true)}
