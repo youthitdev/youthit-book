@@ -491,11 +491,18 @@ footer a{color:var(--ink-3)}
 
 <script>
 // 새로고침하면 맨 위에서 시작한다. 브라우저는 보던 자리를 기억해 되돌려 주는데, 이 페이지는 숫자·책·표지가
-// 뒤늦게 나타나 길이가 바뀌어서 엉뚱한 자리로 가 버린다. #donate 같은 주소 끝 표식이 있으면 그 자리로 둔다
-if (!location.hash) {
-  try { history.scrollRestoration = 'manual'; } catch (e) {}
-  window.scrollTo(0, 0);
-}
+// 뒤늦게 나타나 길이가 바뀌어서 엉뚱한 자리로 가 버린다.
+// 「후원하기」를 누르면 주소 끝에 #donate 가 붙고, 새로고침해도 그 표식이 남아 후원 구역으로 되돌아갔다.
+// 그래서 **새로고침일 때만** 표식을 떼고 맨 위로 간다. 누가 #donate 주소를 눌러 새로 들어온 경우는 그 자리로 둔다
+try {
+  const nav = performance.getEntriesByType('navigation')[0];
+  const reloaded = nav ? nav.type === 'reload' : performance.navigation?.type === 1;
+  if (reloaded || !location.hash) {
+    history.scrollRestoration = 'manual';
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+    window.scrollTo(0, 0);
+  }
+} catch (e) {}
 // 읽히는 책 목록만 가져온다. 실패하거나 비어 있으면 섹션을 띄우지 않는다
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
   ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
