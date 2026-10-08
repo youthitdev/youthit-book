@@ -50,6 +50,8 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdro
 .mine{background:#FFF6E3;border-top:1px solid #F0DFBF;padding:9px 22px;font-size:13px;
   display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .mine[hidden]{display:none}
+.mine .mine-out{margin-left:8px;border:0;background:none;padding:6px 4px;font:inherit;font-size:12.5px;font-weight:700;
+  color:var(--ink-3);text-decoration:underline;cursor:pointer}
 .mine b{font-weight:800}
 .mine span{color:var(--ink-2)}
 .mine a{font-size:12.5px;font-weight:800;text-decoration:none;color:#3A2A0C;background:var(--green);
@@ -194,6 +196,7 @@ footer{border-top:1px solid var(--line);padding:28px 0 36px;font-size:12.5px;col
   <div class="mine" id="mine" hidden>
     <b id="mineName"></b><span> 사장님</span>
     <a href="store.html">청구 화면 열기</a>
+    <button type="button" class="mine-out" id="mineOut">로그아웃</button>
   </div>
 </header>
 
@@ -470,6 +473,15 @@ document.getElementById('contactLine').innerHTML =
     document.getElementById('mineName').textContent = name;
     document.getElementById('mine').hidden = false;
     document.getElementById('hdLogin').style.display = 'none';
+    // 이 폰에서 로그인을 풀어 준다. 책방 화면(store.html)의 로그아웃과 같은 세 칸을 지운다
+    document.getElementById('mineOut').onclick = function () {
+      try {
+        ['hankkut-store-key', 'hankkut-store-name', 'hankkut-store-code']
+          .forEach(function (k) { localStorage.removeItem(k); });
+      } catch (e) {}
+      document.getElementById('mine').hidden = true;
+      document.getElementById('hdLogin').style.display = '';
+    };
   } catch (e) {}
 })();
 </script>
