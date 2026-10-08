@@ -3930,14 +3930,14 @@ function certGrid(all) {
     <span>우리 인증 <b>${all.length}</b></span>
     ${mine.length ? `<div class="seg">
       <button class="${certOnlyMine ? '' : 'on'}" onclick="setCertMine(false)">전체</button>
-      <button class="${certOnlyMine ? 'on' : ''}" onclick="setCertMine(true)">내 기록 ${mine.length}</button>
+      <button class="${certOnlyMine ? 'on' : ''}" onclick="setCertMine(true)">내 인증 ${mine.length}</button>
     </div>` : ''}
   </div>`;
 
   if (!all.length)
     return `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`;
   if (!cs.length)
-    return head + `<div class="empty">아직 내가 남긴 기록이 없어요.</div>`;
+    return head + `<div class="empty">아직 내가 남긴 인증이 없어요.</div>`;
 
   // 격자만 있으면 누가 언제 올렸는지 알 수 없어 댓글로 말을 걸기 어렵다.
   // 사진 아래 한 줄로 이름·날짜·댓글 수를 붙인다
@@ -3948,7 +3948,7 @@ function certGrid(all) {
       <div class="cg">
         ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
                                 : `<div class="cg-no">📖</div>`}
-        ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 기록</i>` : ''}
+        ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 인증</i>` : ''}
       </div>
       <div class="cg-who">${c.user_id === me.id ? '나' : esc(nameOf(c.user_id))}</div>
       <div class="cg-sub">${esc(dayKo(c.cert_date))}${n ? ` · 💬 ${n}` : ''}</div>
