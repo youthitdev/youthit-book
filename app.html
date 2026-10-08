@@ -1137,6 +1137,28 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kroll-yet { font-size:12px; color:var(--ink-3); margin-top:9px;
   padding-top:9px; border-top:1px solid var(--line); line-height:1.6; }
 
+/* 참여자 현황 — 동그란 프로필. 한 아이는 인증하면 색이 살고 ✓, 아직이면 회색 */
+.rm-list { display:flex; flex-wrap:wrap; gap:12px 6px; margin-top:12px; }
+.rm2 { width:58px; text-align:center; cursor:pointer; }
+.rm2-c { position:relative; width:46px; height:46px; border-radius:50%; margin:0 auto;
+  display:flex; align-items:center; justify-content:center; color:#fff; font-size:17px; font-weight:800;
+  background-size:cover; background-position:center; box-shadow:0 1px 3px rgba(0,0,0,.12);
+  transition:filter .2s, opacity .2s; }
+.rm2.off .rm2-c { filter:grayscale(1); opacity:.5; box-shadow:none; }
+.rm2.on .rm2-c { box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--green); }
+.rm2-ck { position:absolute; right:-5px; bottom:-3px; width:19px; height:19px; border-radius:50%;
+  background:var(--green); color:#fff; border:2px solid #fff; font-size:11px; font-weight:800; line-height:15px; }
+.rm2-n { font-size:11.5px; color:var(--ink-2); margin-top:6px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis; }
+.rm2.off .rm2-n { color:var(--ink-3); }
+.rm2-s { font-size:10.5px; color:var(--ink-3); line-height:1.3; margin-top:1px; }
+.rm2-s.amb { color:#8A5A16; font-weight:700; }
+.rm2-poke { display:block; margin:4px auto 0; background:#FAEBE7; border:none; color:var(--pink);
+  font-family:inherit; font-size:11px; font-weight:700; padding:3px 8px; border-radius:99px; cursor:pointer; line-height:1.3; }
+.rm2-poke:disabled { background:var(--bg); color:var(--ink-3); }
+.rm2-sent { display:block; margin-top:4px; font-size:10.5px; font-weight:600; color:var(--ink-3); }
+.rm2.more .rm2-c { background:var(--bg); color:var(--ink-3); font-size:13px; border:1px dashed var(--line); box-shadow:none; }
+
 /* 지난 루틴 한 줄 */
 .pr { display:flex; align-items:center; gap:12px; padding:13px 0; cursor:pointer; }
 .pr + .pr { border-top:1px solid var(--line); }
@@ -3793,19 +3815,11 @@ function kkutTodayCard(r) {
   // 두 화면이 같은 부품을 쓰면 한쪽만 어긋나는 일이 없다
   const live = !waiting && !d?.ended;
   const SHOW = 6;
-  const shelf = ps.length ? `<div class="tc-roll">${ps.slice(0, SHOW).map(p => {
-    const done  = today.some(c => c.user_id === p.user_id);
-    const poked = (state.nudges || []).some(n => n.routine_id === r.id && n.to_id === p.user_id);
-    const ok    = live && !done && !p.self;
-    return `<span class="kroll-p ${done ? 'on' : ''}"
-       onclick="event.stopPropagation();${p.self && !done ? `openCert(${r.id})` : `go('cert', ${r.id})`}">
-      ${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}
-      ${ok ? (poked ? KROLL_SENT : `<button class="kroll-poke"
-        onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉</button>`) : ''}</span>`;
-  }).join('')}${ps.length > SHOW ? (() => {
+  const shelf = ps.length ? `<div class="rm-list">${ps.slice(0, SHOW).map(p => memberItem(r, p, today)).join('')}${ps.length > SHOW ? (() => {
       const rest = ps.slice(SHOW);
       const left = rest.filter(p => !today.some(c => c.user_id === p.user_id)).length;
-      return `<span class="kroll-p more" onclick="event.stopPropagation();go('cert', ${r.id})">+${rest.length}${left ? ` · ${left} 아직` : ''}</span>`;
+      return `<div class="rm2 more" onclick="event.stopPropagation();go('cert', ${r.id})"><div class="rm2-c">+${rest.length}</div>
+        <div class="rm2-n">${left ? `${left}명 아직` : '모두 함'}</div></div>`;
     })() : ''}</div>` : '';
 
   // 기록 보기로 넘어가지 않고도 아이들이 뭘 올렸는지 보인다.
@@ -4004,6 +4018,28 @@ function viewCert() {
              : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`);
 }
 
+// 참여자 한 명 — 동그란 프로필 + 닉네임. 오늘 인증했으면 색이 살고 ✓, 아직이면 회색.
+// 아직인 아이에게는 「👉 콕」이 붙는다 (콕은 하루 한 번 — 서버가 지킨다)
+const RM_TINT = ['#1F4E46', '#B8770F', '#6A2234', '#3A5E8C', '#7B5EA7', '#C2533F'];
+function memberItem(r, p, today, o = {}) {
+  const done  = today.some(c => c.user_id === p.user_id);
+  const nm    = p.self ? '나' : nameOf(p.user_id);
+  const first = ((p.self ? myName() : nameOf(p.user_id)) || '?')[0];
+  const sum   = [...String(p.user_id)].reduce((n, ch) => n + ch.charCodeAt(0), 0);
+  const av    = avatarOf(p.user_id);
+  const live  = !routineEnded(r) && r.status !== 'pending' && !routineDay(r)?.notYet;
+  const poked = (state.nudges || []).some(x => x.routine_id === r.id && x.to_id === p.user_id);
+  const ok    = live && !done && !p.self;
+  const click = o.click || (p.self && !done ? `openCert(${r.id})` : `go('cert', ${r.id})`);
+  return `<div class="rm2 ${done ? 'on' : 'off'}" onclick="event.stopPropagation();${click}">
+    <div class="rm2-c" style="${av ? `background-image:url('${esc(av)}')` : `background:${RM_TINT[sum % RM_TINT.length]}`}">${av ? '' : esc(first)}${done ? '<i class="rm2-ck">✓</i>' : ''}</div>
+    <div class="rm2-n">${esc(nm)}</div>
+    ${o.sub ? `<div class="rm2-s ${o.subCls || ''}">${o.sub}</div>` : ''}
+    ${ok ? (poked ? '<span class="rm2-sent" title="오늘은 이미 보냈어요">✓ 보냄</span>'
+                  : `<button class="rm2-poke" onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉 콕</button>`) : ''}
+  </div>`;
+}
+
 // 끗짱 몫 — 오늘 누가 인증했나
 // 「👉 를 눌러 콕 찌를 수 있어요」가 찌를 사람이 없을 때도 떠 있었다.
 // 화면이 할 수 없는 일을 하라고 하면, 안 되는 게 아니라 고장으로 보인다
@@ -4033,21 +4069,13 @@ function kkutCertBlock(mine) {
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       <div class="cline">${routineLine(r, routineDay(r))} · 오늘 <b>${today.length}</b>/${ps.length}명</div>
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
-        <div class="kroll">
+        <div class="rm-list" style="margin-top:2px;">
           ${ps.map(p => {
-            const done = today.some(c => c.user_id === p.user_id);
-            const n = cs.filter(c => c.user_id === p.user_id).length;
-            const poked = (state.nudges || []).some(x => x.routine_id === r.id && x.to_id === p.user_id);
-            // 홈 카드는 셋만 보여주니 10명이 넘으면 대부분에게 콕이 안 닿는다.
-            // 한 명씩 챙기는 자리는 여기다
-            const ok = !done && !p.self && !routineEnded(r) && r.status !== 'pending';
+            const n  = cs.filter(c => c.user_id === p.user_id).length;
             // 확인 전인 아이는 지금 책을 못 받는다. 끗짱이 알아야 챙겨준다
             const vq = ((p.self ? me.verify_status : (state.vstat || {})[p.user_id]) || 'none') !== 'approved';
-            return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}${
-              vq ? '<i class="kroll-vq" title="청소년 확인 전 — 아직 책을 받을 수 없어요">확인 전</i>' : ''}
-              <b>${n}</b>${ok ? (poked ? KROLL_SENT : `<button class="kroll-poke"
-                title="콕 찌르기"
-                onclick="poke(${r.id},'${p.user_id}',this)">👉</button>`) : ''}</span>`;
+            return memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : '',
+              sub: vq ? '확인 전' : `${n}회`, subCls: vq ? 'amb' : '' });
           }).join('')}
         </div>
         ${rollLine(r, yet)}
@@ -4953,7 +4981,7 @@ function openBooks() {
 }
 
 // 콕 찌르기. 하루 한 번은 서버가 지킨다 — 화면은 눌린 티만 낸다
-const KROLL_SENT = '<span class="kroll-sent" title="오늘은 이미 보냈어요">✓ 보냄</span>';
+const KROLL_SENT = '<span class="rm2-sent" title="오늘은 이미 보냈어요">✓ 보냄</span>';
 async function poke(rid, uid, btn) {
   if (DEMO) return toast('데모 모드에서는 보내지지 않아요');
   btn.disabled = true; const was = btn.textContent; btn.textContent = '보내는 중…';
