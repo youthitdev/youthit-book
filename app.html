@@ -1412,13 +1412,19 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div style="display:flex;gap:10px;">
         <div style="flex:1;min-width:0;">
           <div class="field-label">읽는 책 <span class="req">* 필수</span></div>
-          <input type="text" id="cBook" placeholder="책 제목" maxlength="60" oninput="pageHint()">
+          <input type="text" id="cBook" placeholder="책 제목을 검색하면 찾아드려요" maxlength="60" autocomplete="off"
+                 oninput="pageHint();bookFind('cBook','cBookFind',drawBookChips)">
         </div>
         <div style="width:112px;flex-shrink:0;">
           <div class="field-label">읽은 쪽 <span class="req">* 필수</span></div>
           <input type="number" id="cPage" min="1" max="9999" placeholder="쪽수" oninput="pageHint()">
         </div>
       </div>
+      <!-- 【책 검색 · 2026-10-08 사용자】 인증 화면의 제목 칸에는 검색이 없었다(「+ 다른 책」 창에만 있었다).
+           손으로 치면 오타 하나에 같은 책이 두 권으로 갈라진다. 고르면 정식 제목으로 굳는다.
+           검색에 없는 책은 적은 그대로 저장된다 -->
+      <div id="cBookFind"></div>
+      <div id="cBookFindGot"></div>
       <!-- 읽는 책 고르기. 눌러서 바꾸면 제목을 다시 칠 일이 없다 —
            손으로 치면 오타 하나에 같은 책이 두 권으로 갈라진다 -->
       <div class="bk-chips" id="cBookChips"></div>
@@ -5691,8 +5697,13 @@ function openCert(rid, pickTitle) {
   const last = myCerts(rid).find(c => c.book_title);
   $('cQuote').value = ''; $('cMemo').value = '';
   // 함께 읽는 책이면 제목이 정해져 있다. 고쳐 쓰면 같은 책이 갈라진다
+  // 【끗짱의 책 · 2026-10-08 사용자】 끗짱이 직접 이끄는 루틴에는 참여 기록(myPart)이 없어서
+  //   루틴을 만들 때 고른 책이 이 순서에 없었다 — 인증 화면이 비어 있었다.
+  //   끗짱이면 맨 끝에 그 책을 둔다 (직전 인증에서 읽던 책이 있으면 그게 먼저다)
+  const leadBook = (me && r.led_by === me.id) ? (r.kkut_book_title || '') : '';
   $('cBook').value = one ? (r.kkut_book_title || '')
-    : (pickTitle || last?.book_title || myPart(rid)?.book_title || '');
+    : (pickTitle || last?.book_title || myPart(rid)?.book_title || leadBook || '');
+  delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
   $('cPage').value = '';
   $('cPageHint').style.display = 'none';
   drawBookChips();
@@ -5950,6 +5961,7 @@ function editCert(id) {
   if (r) certFields(r);   // 칸 생김새를 이 루틴 갈래에 맞춘다
   $('cQuote').value = c.quote || '';
   $('cBook').value  = c.book_title || '';
+  delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
   $('cPage').value  = c.page_end || '';
   $('cMemo').value  = c.content || '';
   $('cSubmit').textContent = '수정하기';
