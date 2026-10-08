@@ -3552,6 +3552,7 @@ function todayCard(r) {
       <div class="tc-day">${routineLine(r, d)}</div>
       ${d && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${d?.notYet ? '' : shelf}
+      ${d?.notYet ? '' : kidsBooksHtml(r.id, true)}
       ${action}
     </div>
   </div>`;
@@ -3582,20 +3583,20 @@ function kidsBooks(rid, withMe) {
     .forEach(x => add(x.user_id, x.title, x.created_at, x.cover_url, x.found_cover_url));
   return [...by.values()].sort((a, b) => b.readers.size - a.readers.size || b.last.localeCompare(a.last));
 }
-let kidBookList = [], kidBookRid = null;
-function kidsBooksHtml(rid, bare) {
-  const list = kidBookList = kidsBooks(rid, bare); kidBookRid = rid; if (!list.length) return '';
+// 루틴마다 단추가 따로 있다(홈에는 카드가 여럿). 단추가 어느 루틴의 것인지는 누를 때 알려 준다
+function kidsBooksHtml(rid, withMe, bare) {
+  if (!kidsBooks(rid, withMe).length) return '';
   const r = state.routines.find(x => x.id === rid);
   // 책 이름은 여기 늘어놓지 않는다 — 누르면 책 사진과 닉네임이 한 번에 열린다
-  return `<div class="kbk${bare ? ' bare' : ''}"><button type="button" class="kbk-go" onclick="openAllKidBooks()">
+  return `<div class="kbk${bare ? ' bare' : ''}"><button type="button" class="kbk-go" onclick="event.stopPropagation();openAllKidBooks(${rid}, ${!!withMe})">
     <span class="kbk-e">📖</span><b>${esc(r ? r.title : '')} 루틴에서 읽는 책</b><i class="ti ti-chevron-right"></i></button></div>`;
 }
 // 「읽는 책」을 누르면: 이 루틴에서 읽는 모든 책을 아이별로, 한 줄에 셋씩 (책 사진 + 닉네임 + 책 이름)
-function openAllKidBooks() {
-  const r = state.routines.find(x => x.id === kidBookRid);
+function openAllKidBooks(rid, withMe) {
+  const r = state.routines.find(x => x.id === rid);
   $('kbTitle').textContent = `${r ? r.title : ''} 루틴에서 읽는 책`;
   $('kbSub').textContent = '친구들이 직접 고른 책이에요';
-  const tiles = kidBookList.flatMap(b => [...b.readers].map(([uid, rd]) => ({ uid, title: b.title, url: rd.photo || b.found })));
+  const tiles = kidsBooks(rid, withMe).flatMap(b => [...b.readers].map(([uid, rd]) => ({ uid, title: b.title, url: rd.photo || b.found })));
   $('kbBody').innerHTML = `<div class="kb-grid">${tiles.map(t => `<div class="kb-r">
       <div class="kb-c">${t.url ? `<img src="${esc(t.url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
       <b>${t.uid === me.id ? '나' : esc(nameOf(t.uid))}</b><small>${esc(t.title)}</small></div>`).join('')}</div>`;
@@ -3919,7 +3920,7 @@ function youthCertBlock(mine) {
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       <div class="cline">${line}</div>
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
-      ${kidsBooksHtml(r.id, true)}
+      ${kidsBooksHtml(r.id, true, true)}
       ${certGrid(cs)}`;
   }).join('');
 }
