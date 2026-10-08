@@ -3619,8 +3619,12 @@ function viewHome() {
     // 제목이 없으면 카드만 쌓여 보여서 「남의 루틴인가」 싶어진다
     if (led.length) h += `<div class="sec-t" style="margin-top:0;">내가 맡은 루틴 <b style="color:var(--pink);">${led.length}</b></div>`;
     h += led.map(kkutTodayCard).join('');
-    h += `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
-      <span class="sec-t" style="margin:0;">${led.length ? '루틴 더 만들기' : '내가 이끄는 루틴'}</span>
+    // 맡은 루틴이 이미 있으면 제목 없이 넓은 버튼 하나다 (「루틴 더 만들기」는 버튼과 같은 말이었다).
+    // 처음 오는 끗짱에게는 안내가 필요해서 제목과 버튼을 그대로 둔다
+    h += led.length
+      ? `<button class="btn btn-line" style="margin:14px 0 6px;" onclick="openMake()">+ 루틴 만들기</button>`
+      : `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
+      <span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>
       <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
     </div>`;
     if (!led.length) h += `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
