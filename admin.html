@@ -1682,6 +1682,7 @@ function openKkut(uid) {
            <div><b>신청일</b><span>${a.applied_at ? fmtDate(a.applied_at) : '—'}</span></div>
            <div><b>만든 루틴</b><span>${rs.length}개</span></div>
          </div>
+         <div class="kk-q"><b>키워드</b><p>${kwHtml(a)}</p></div>
          ${a.intro  ? `<div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>` : ''}
          ${a.motive ? `<div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>` : ''}
          ${a.status === 'rejected' && a.reject_reason
@@ -2430,6 +2431,8 @@ function viewKkut() {
         <div><b>신청일</b><span>${fmtDate(a.applied_at)}</span></div>
         <div><b>만든 루틴</b><span>${a.routine_count}개</span></div>
       </div>
+      <div class="kk-q"><b>키워드 <span class="muted" style="font-weight:500;">· 청소년에게 이름 옆에 보여요</span></b>
+        <p>${kwHtml(a)}</p></div>
       <div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>
       <div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>
       ${a.status === 'rejected' && a.reject_reason
@@ -2512,7 +2515,21 @@ async function loadKkutApps() {
   const { data, error } = await sb.rpc('kkut_applications_admin');
   if (error) { console.warn('끗짱 신청 목록', error.message); return; }
   DB.kkutApps = data || [];
+  // 끗짱이 고른 키워드(청소년에게 이름 옆에 보인다). 승인할 때 같이 본다.
+  // 표가 아직 없거나(마이그레이션 94 전) 못 읽어도 승인 화면은 그대로 뜬다
+  try {
+    const kw = await sb.from('kkut_keywords').select('user_id, keywords');
+    if (!kw.error) {
+      const m = {}; (kw.data || []).forEach(x => { m[x.user_id] = x.keywords || []; });
+      DB.kkutApps.forEach(a => { a.keywords = m[a.user_id] || []; });
+    }
+  } catch (e) { /* 키워드가 없어도 승인은 된다 */ }
 }
+
+// 키워드 한 줄. 안 적었으면 그렇다고 말한다 — 빈 칸은 「깜빡 빠졌나」로 읽힌다
+const kwHtml = a => (a.keywords && a.keywords.length)
+  ? a.keywords.map(k => `<span class="chip c-act">#${esc(k)}</span>`).join(' ')
+  : `<span class="muted">아직 적지 않았어요</span>`;
 
 // 후원자 화면에 내보낼 문장 고르기.
 // 아이가 문장 대신 개인적인 이야기를 적었을 수 있어 자동 노출하지 않는다
