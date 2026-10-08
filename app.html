@@ -4100,9 +4100,10 @@ function routineFeed(r) {
   if (isGuest()) return '';
   const p = myPart(r.id);
   if (!(p && p.status === 'approved') && r.led_by !== me.id) return '';
-  const list = state.certs.filter(c => c.routine_id === r.id).slice(0, 60);
-  return `<div class="sec-t">우리 루틴 기록</div>` + (list.length
-    ? list.map(certCard).join('')
+  // 인증글을 여기 줄줄이 늘어놓지 않는다 — 루틴 소개를 보러 온 화면이다. 기록은 인증 탭에서 보고 댓글도 거기서 단다
+  const n = state.certs.filter(c => c.routine_id === r.id).length;
+  return `<div class="sec-t">우리 루틴 기록${n ? ` <span class="sec-n">${n}</span>` : ''}</div>` + (n
+    ? `<button class="btn btn-line" onclick="closeOv('ovRoutine');go('cert', ${r.id})">우리 인증 보기</button>`
     : `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`);
 }
 
