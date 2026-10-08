@@ -1441,6 +1441,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div style="flex:1;min-width:0;"><div class="s">루틴</div><div class="t" id="ovRTitle"></div></div>
     <!-- 【공유하기 · 2026-10-08 사용자】 주소창 링크는 어느 루틴에서도 같다(app.html).
          루틴마다 다른 링크(?routine=)는 이 단추가 만든다 -->
+    <button class="ov-set" id="rtEdit" style="display:none;margin-left:0;" onclick="goFromOv('ovRoutine', () => openMake(curRid))"
+      aria-label="이 루틴 수정하기"><i class="ti ti-pencil"></i>수정</button>
     <button onclick="shareRoutine(curRid)" aria-label="이 루틴 공유하기"><i class="ti ti-share-3"></i></button></div>
   <div class="ov-b" id="ovRBody"></div>
 </div>
@@ -1547,6 +1549,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <textarea id="mGuide" rows="3" placeholder="어떻게 인증하면 좋을지 적어주세요." maxlength="200"
                 style="display:none;margin-top:8px;"></textarea>
     </div>
+    <div id="mLockNote" class="hint" style="display:none;background:#FBF3E4;color:#8A5A16;border-radius:11px;padding:10px 13px;line-height:1.65;"></div>
     <div style="display:flex;gap:10px;">
       <div style="flex:1;min-width:0;">
         <div class="field-label">시작일 <span class="req">*</span></div>
@@ -5178,6 +5181,7 @@ let curRid = null;   // 지금 열려 있는 루틴. 머리의 공유 단추가 
 function openRoutine(id) {
   const r = state.routines.find(x => x.id === id); if (!r) return;
   curRid = id;
+  $('rtEdit').style.display = me && r.led_by === me.id ? '' : 'none';   // 수정은 만든 끗짱에게만, 머리에
   const p = myPart(id), people = peopleOf(id);
   const full = people >= r.max_people;
   $('ovRTitle').textContent = `${r.emoji||'📚'} ${r.title}`;
@@ -5239,7 +5243,6 @@ function openRoutine(id) {
     })()}
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
     ${needsMeet(r) ? meetCard(r) : ''}
-    ${me && r.led_by === me.id ? `<button class="btn btn-line" onclick="goFromOv('ovRoutine', () => openMake(${r.id}))">루틴 수정하기</button>` : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
       : p && p.status==='approved' ? (
@@ -5785,7 +5788,30 @@ function openMake(id) {
   kkutUseFound = wasFound;
   $('mBookInput').value = ''; drawKkutBook();
   buildGuideSel(r?.cert_guide || '');
+  paintMakeLock(r);
   makeHint(); openOv('ovMake');
+}
+
+// 【시작한 뒤에는 잠그는 것 · 2026-10-08 사용자】 이미 읽고 있는 아이의 일정과 약속이 흔들리면 안 된다.
+//   시작일·책방(그리고 함께 읽는 책)은 못 바꾸고, 종료일은 늘리기만, 정원은 들어온 아이 수 밑으로 못 줄인다.
+//   인증 안내·소개·사진·공유회 같은 설명은 그대로 고칠 수 있다. 서버도 같은 규칙이다 (migration-101)
+const routineLocked = r => !!r && r.status !== 'pending' && !!r.start_date && r.start_date <= todayKST();
+function paintMakeLock(r) {
+  const on = routineLocked(r);
+  const kids = on ? Math.max(1, peopleOf(r.id)) : 1;
+  $('mStart').disabled = on;
+  $('mStore').disabled = on;
+  $('mDays').min = on ? Math.max(MIN_DAYS, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1) : MIN_DAYS;
+  $('mPeople').min = kids;
+  const one = on && r.kind === 'one';
+  $('mBookTitle').disabled = one;
+  const lines = [];
+  if (on) {
+    lines.push('루틴이 시작돼서 <b>시작일과 책방</b>은 바꿀 수 없어요. 기간은 <b>늘리기만</b>, 모집 인원은 지금 함께하는 친구 수보다 적게는 못 줄여요.');
+    if (one) lines.push('함께 읽는 책도 바꿀 수 없어요.');
+  }
+  const note = $('mLockNote');
+  note.innerHTML = lines.join('<br>'); note.style.display = on ? '' : 'none';
 }
 
 // 종료일은 직접 고르지 않는다. 시작일 + 기간으로 계산한다. 최소 7일
@@ -5919,6 +5945,20 @@ async function submitMake() {
     kkut_book_publisher: kb.publisher || null,
     led_by: me.id,
   };
+  // 시작한 루틴은 잠긴 칸을 원래 값으로 되돌려 보낸다 (서버도 같은 규칙으로 지킨다)
+  const cur0 = makeId ? state.routines.find(x => x.id === makeId) : null;
+  const wasLocked = routineLocked(cur0);
+  if (wasLocked) {
+    row.start_date = cur0.start_date;
+    if (row.end_date < cur0.end_date) row.end_date = cur0.end_date;
+    row.bookstore_id = cur0.bookstore_id;
+    row.max_people = Math.max(row.max_people, peopleOf(cur0.id));
+    if (cur0.kind === 'one') {
+      row.kkut_book_title = cur0.kkut_book_title; row.kkut_book_url = cur0.kkut_book_url;
+      row.kkut_book_isbn = cur0.kkut_book_isbn; row.kkut_book_authors = cur0.kkut_book_authors;
+      row.kkut_book_publisher = cur0.kkut_book_publisher;
+    }
+  }
   const { error } = makeId
     ? await sb.from('routines').update(row).eq('id', makeId)
     : await sb.from('routines').insert(row);
@@ -5928,7 +5968,7 @@ async function submitMake() {
   await loadAll(); closeOv('ovMake'); render();
   // 토스트는 2.6초면 사라진다. 자세한 설명은 홈 카드에 계속 남아 있으니
   // 여기서는 「됐다」와 「다음에 뭐가 일어나나」만 말한다
-  toast(makeId ? '다시 등록했어요. 확인되면 열려요'
+  toast(makeId ? (cur0 && cur0.status !== 'pending' ? '고쳤어요. 운영진에게도 알렸어요' : '다시 등록했어요. 확인되면 열려요')
                 : '등록했어요. 운영진이 확인하면 열려요');
 }
 
