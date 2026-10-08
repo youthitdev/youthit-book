@@ -88,6 +88,22 @@ input:focus, textarea:focus, select:focus{ border-color:var(--amber); }
 .m-bad{ background:#FDF0EE; color:#8E3527; }
 .m-ok{ background:#EAF4EC; color:var(--ok); }
 
+/* 로그인 화면은 한 화면에 들어오게 작게 쓴다 */
+.lg .store-n{ font-size:19px; }
+.lg .store-s{ font-size:13px; }
+.lg label{ font-size:12.5px; margin:14px 0 5px; }
+.lg input[type=text]{ font-size:15px; padding:10px 13px; border-radius:10px; }
+.lg .btn{ font-size:15px; padding:13px; margin-top:16px; border-radius:12px; }
+.lg-list{ margin-top:6px; max-height:176px; overflow-y:auto; border:1px solid var(--line);
+  border-radius:10px; background:#fff; -webkit-overflow-scrolling:touch; }
+.lg-it{ display:flex; justify-content:space-between; align-items:baseline; gap:8px;
+  padding:9px 13px; font-size:14.5px; cursor:pointer; border-bottom:1px solid #F3EEE4; }
+.lg-it:last-child{ border-bottom:none; }
+.lg-it small{ font-size:12px; color:var(--ink-3); flex:none; }
+.lg-it:active{ background:var(--amber-l); }
+.lg-it.on{ background:var(--amber-l); font-weight:800; color:var(--amber-d); }
+.lg-none{ padding:12px 13px; font-size:13px; color:var(--ink-3); }
+
 .guide{ background:var(--amber-l); border:1px solid #F0DFBF; border-radius:14px;
   padding:16px; font-size:14px; line-height:1.75; }
 .guide > b{ display:block; margin-bottom:6px; }   /* 문장 속 <b> 까지 끊기면 안 된다 */
@@ -196,30 +212,53 @@ async function showLogin(msg) {
   $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
   const { data, error } = await sb.rpc('store_names');
   if (error) return fail('책방 목록을 불러오지 못했어요', '잠시 뒤 다시 열어주세요.', error.message || '');
-  const opts = (data || []).map(b =>
-    `<option value="${b.id}">${esc(b.name)}${b.region ? ` (${esc(b.region)})` : ''}</option>`).join('');
+  LG_STORES = data || [];
+  LG_ID = 0;
   $('app').innerHTML = `
-    <div class="card">
+    <div class="card lg">
       <div class="store-n">책방 로그인</div>
-      <div class="store-s" style="margin-top:6px;">이미 함께하는 책방이에요. 이름을 고르고
+      <div class="store-s" style="margin-top:5px;">이미 함께하는 책방이에요. 이름을 찾아 고르고
         <b>안내문에 적힌 확인 번호 네 자리</b>를 넣어주세요.</div>
       <label>책방</label>
-      <select id="lgStore"><option value="">책방을 골라주세요</option>${opts}</select>
+      <input type="text" id="lgQ" placeholder="책방 이름이나 지역을 입력하세요" autocomplete="off"
+             oninput="lgFilter(true)">
+      <div class="lg-list" id="lgList"></div>
       <label>확인 번호</label>
       <input type="text" id="lgCode" inputmode="numeric" maxlength="4" placeholder="● ● ● ●"
              autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"
-             style="text-align:center;letter-spacing:12px;font-size:26px;font-weight:800;">
+             style="text-align:center;letter-spacing:10px;font-size:20px;font-weight:800;">
       <button class="btn btn-go" id="lgGo" onclick="doLogin()">들어가기</button>
       <div id="lgMsg">${msg ? `<div class="msg m-bad">${esc(msg)}</div>` : ''}</div>
     </div>
     <div class="hint" style="text-align:center;margin-top:6px;">
       아직 함께하지 않는 책방이라면 <a href="store-invite.html" style="color:var(--amber-d);">섭외 안내</a>를 봐주세요.</div>`;
+  lgFilter(false);
+}
+
+// 책방 찾기 — 이름·지역에서 공백을 걷고 찾는다. 하나만 남으면 알아서 고른다
+let LG_STORES = [], LG_ID = 0;
+const lgNorm = t => String(t || '').toLowerCase().replace(/\s+/g, '');
+function lgFilter(typed) {
+  const q = lgNorm($('lgQ').value);
+  if (typed) LG_ID = 0;                      // 다시 치면 고른 것을 푼다
+  const hit = LG_STORES.filter(b => !q || lgNorm(b.name + (b.region || '')).includes(q));
+  $('lgList').innerHTML = hit.length
+    ? hit.map(b => `<div class="lg-it${b.id === LG_ID ? ' on' : ''}" onclick="lgPick(${b.id})">
+        <span>${esc(b.name)}</span>${b.region ? `<small>${esc(b.region)}</small>` : ''}</div>`).join('')
+    : `<div class="lg-none">찾는 책방이 없어요. 철자를 확인하거나 ‘섭외 안내’를 봐주세요.</div>`;
+}
+function lgPick(id) {
+  LG_ID = id;
+  const b = LG_STORES.find(x => x.id === id);
+  if (b) $('lgQ').value = b.name;
+  lgFilter(false);
+  $('lgCode').focus();
 }
 
 const lgMsg = t => { $('lgMsg').innerHTML = `<div class="msg m-bad">${esc(t)}</div>`; };
 
 async function doLogin() {
-  const id   = parseInt($('lgStore').value, 10);
+  const id   = LG_ID;
   const code = $('lgCode').value.replace(/[^0-9]/g, '');
   if (!id)             return lgMsg('책방을 골라주세요.');
   if (code.length !== 4) return lgMsg('확인 번호 네 자리를 넣어주세요.');
