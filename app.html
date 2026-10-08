@@ -3446,14 +3446,19 @@ function todayCard(r) {
 // 띄어쓰기·문장부호만 다른 제목은 한 권으로 묶는다. 끗짱 본인의 인증은 뺀다 (「아이들」이 읽는 책이다)
 function kidsBooks(rid) {
   const by = new Map();
-  certsOf(rid).forEach(c => {
-    const t = (c.book_title || '').trim(); if (!t || c.user_id === me.id) return;
+  const add = (uid, title, when) => {
+    const t = (title || '').trim(); if (!t || uid === me.id) return;
     const k = loose(t);
     const cur = by.get(k) || { title: t, users: new Set(), last: '' };
-    cur.users.add(c.user_id);
-    if (String(c.created_at || '') > cur.last) { cur.last = String(c.created_at || ''); cur.title = t; }
+    cur.users.add(uid);
+    if (String(when || '') > cur.last) { cur.last = String(when || ''); cur.title = t; }
     by.set(k, cur);
-  });
+  };
+  // 인증에 쓴 책, 참여할 때 고른 책, 병렬독서로 더한 책 — 아직 인증을 안 한 아이의 책도 보여야 한다
+  certsOf(rid).forEach(c => add(c.user_id, c.book_title, c.created_at));
+  (state.parts || []).filter(x => x.routine_id === rid && x.status === 'approved')
+    .forEach(x => add(x.user_id, x.book_title, x.joined_at));
+  (state.rbooks || []).filter(x => x.routine_id === rid).forEach(x => add(x.user_id, x.title, x.created_at));
   return [...by.values()].sort((a, b) => b.users.size - a.users.size || b.last.localeCompare(a.last));
 }
 function kidsBooksHtml(rid) {
@@ -3619,12 +3624,10 @@ function viewHome() {
     // 제목이 없으면 카드만 쌓여 보여서 「남의 루틴인가」 싶어진다
     if (led.length) h += `<div class="sec-t" style="margin-top:0;">내가 맡은 루틴 <b style="color:var(--pink);">${led.length}</b></div>`;
     h += led.map(kkutTodayCard).join('');
-    // 맡은 루틴이 이미 있으면 제목 없이 넓은 버튼 하나다 (「루틴 더 만들기」는 버튼과 같은 말이었다).
-    // 처음 오는 끗짱에게는 안내가 필요해서 제목과 버튼을 그대로 둔다
-    h += led.length
-      ? `<button class="btn btn-line" style="margin:14px 0 6px;" onclick="openMake()">+ 루틴 만들기</button>`
-      : `<div style="display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;">
-      <span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>
+    // 맡은 루틴이 이미 있으면 「루틴 더 만들기」 제목 없이 이전 버튼만 오른쪽에 둔다 (넓은 테두리 버튼은 덜 어울렸다).
+    // 처음 오는 끗짱에게는 안내가 필요해서 제목을 그대로 둔다
+    h += `<div style="display:flex;align-items:center;justify-content:${led.length ? 'flex-end' : 'space-between'};margin:${led.length ? '14px 0 6px' : '22px 0 10px'};">
+      ${led.length ? '' : `<span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>`}
       <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
     </div>`;
     if (!led.length) h += `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
