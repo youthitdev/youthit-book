@@ -1085,6 +1085,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kroll-p .kroll-poke { background:none; border:none; padding:0 0 0 5px; margin:0;
   font-family:inherit; font-size:12px; line-height:1; cursor:pointer; }
 .kroll-p .kroll-poke:disabled { opacity:.3; cursor:default; }
+/* 오늘 이미 콕 찌른 아이. 흐린 손가락만 남으면 빈칸처럼 보여서 글자로 알린다 */
+.kroll-p .kroll-sent { font-size:11px; font-weight:600; color:var(--ink-3); margin-left:6px; }
 .kroll-yet { font-size:12px; color:var(--ink-3); margin-top:9px;
   padding-top:9px; border-top:1px solid var(--line); line-height:1.6; }
 
@@ -3464,8 +3466,8 @@ function kidsBooks(rid) {
 function kidsBooksHtml(rid) {
   const list = kidsBooks(rid); if (!list.length) return '';
   const SHOW = 8;
-  return `<div class="kbk"><span>📖 아이들이 읽는 책</span><div class="kbk-l">${list.slice(0, SHOW).map(b =>
-    `<em title="${esc(b.title)}">${esc(b.title)}<i>${b.users.size}명</i></em>`).join('')}${
+  return `<div class="kbk"><span>📖 읽는 책</span><div class="kbk-l">${list.slice(0, SHOW).map(b =>
+    `<em title="${esc(b.title)}">${esc(b.title)}</em>`).join('')}${
     list.length > SHOW ? `<em>+${list.length - SHOW}권</em>` : ''}</div></div>`;
 }
 
@@ -3514,8 +3516,8 @@ function kkutTodayCard(r) {
     return `<span class="kroll-p ${done ? 'on' : ''}"
        onclick="event.stopPropagation();${p.self && !done ? `openCert(${r.id})` : `go('cert', ${r.id})`}">
       ${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}
-      ${ok ? `<button class="kroll-poke" ${poked ? 'disabled' : ''}
-        onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉</button>` : ''}</span>`;
+      ${ok ? (poked ? KROLL_SENT : `<button class="kroll-poke"
+        onclick="event.stopPropagation();poke(${r.id},'${p.user_id}',this)">👉</button>`) : ''}</span>`;
   }).join('')}${ps.length > SHOW ? (() => {
       const rest = ps.slice(SHOW);
       const left = rest.filter(p => !today.some(c => c.user_id === p.user_id)).length;
@@ -3759,9 +3761,9 @@ function kkutCertBlock(mine) {
             const vq = ((p.self ? me.verify_status : (state.vstat || {})[p.user_id]) || 'none') !== 'approved';
             return `<span class="kroll-p ${done ? 'on' : ''}">${done ? '✅' : '⬜️'} ${p.self ? '나' : esc(nameOf(p.user_id))}${
               vq ? '<i class="kroll-vq" title="청소년 확인 전 — 아직 책을 받을 수 없어요">확인 전</i>' : ''}
-              <b>${n}</b>${ok ? `<button class="kroll-poke" ${poked ? 'disabled' : ''}
-                title="${poked ? '오늘은 이미 보냈어요' : '콕 찌르기'}"
-                onclick="poke(${r.id},'${p.user_id}',this)">👉</button>` : ''}</span>`;
+              <b>${n}</b>${ok ? (poked ? KROLL_SENT : `<button class="kroll-poke"
+                title="콕 찌르기"
+                onclick="poke(${r.id},'${p.user_id}',this)">👉</button>`) : ''}</span>`;
           }).join('')}
         </div>
         ${rollLine(r, yet)}
@@ -4655,6 +4657,7 @@ function openBooks() {
 }
 
 // 콕 찌르기. 하루 한 번은 서버가 지킨다 — 화면은 눌린 티만 낸다
+const KROLL_SENT = '<span class="kroll-sent" title="오늘은 이미 보냈어요">✓ 보냄</span>';
 async function poke(rid, uid, btn) {
   if (DEMO) return toast('데모 모드에서는 보내지지 않아요');
   btn.disabled = true; const was = btn.textContent; btn.textContent = '보내는 중…';
@@ -4662,7 +4665,7 @@ async function poke(rid, uid, btn) {
   if (error) { btn.disabled = false; btn.textContent = was; return toast(error.message); }
   // 다시 그려도 회색으로 남게 기억해 둔다
   (state.nudges = state.nudges || []).push({ routine_id: rid, to_id: uid });
-  btn.textContent = was;          // 글자는 그대로. 회색이 된 것으로 충분하다
+  btn.outerHTML = KROLL_SENT;     // 흐린 손가락 대신 「✓ 보냄」으로 바꾼다
   toast('오늘 한 장, 하고 보냈어요');
 }
 
