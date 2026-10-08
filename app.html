@@ -4567,13 +4567,20 @@ function kkutStatBlock() {
   const days = new Set(certs.map(c => c.user_id + '|' + c.cert_date)).size;
 
   // 숫자 칸 대신 줄글이다 — 숫자만 늘어놓으면 0 이 줄줄이 보여 휑하다
-  const body = kids.size
-    ? `끗짱님과 함께 <b>${won(kids.size)}명</b>의 청소년이
+  // 청소년에게 보이는 이름(닉네임, 없으면 이름)으로 부른다
+  const who = esc(myName());
+  const body = !kids.size
+    ? `맡은 루틴 <b>${won(led.length)}개</b>에 아직 함께한 청소년이 없어요.
+       <div class="kstat-s">첫 친구가 오면 여기에 기록이 쌓여요.</div>`
+    // 들어와 있지만 아직 한 장도 안 올렸다. 「0일 동안 읽었어요」는 어색하다
+    : !days
+    ? `<b>${who}</b>님과 함께 <b>${won(kids.size)}명</b>의 청소년이
+       첫 인증을 기다리고 있어요.
+       <div class="kstat-s">맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`
+    : `<b>${who}</b>님과 함께 <b>${won(kids.size)}명</b>의 청소년이
        <b>${won(days)}일</b> 동안 책을 읽었어요.
        <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>,
-       맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`
-    : `맡은 루틴 <b>${won(led.length)}개</b>에 아직 함께한 청소년이 없어요.
-       <div class="kstat-s">첫 친구가 오면 여기에 기록이 쌓여요.</div>`;
+       맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`;
   return `<div class="sec-t">함께 쌓은 기록</div>
     <div class="card kstat">${body}</div>`;
 }
