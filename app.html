@@ -271,10 +271,10 @@ body.kkut header.k .h-title { color:var(--blue); }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:7px; }
 .body { padding:18px; }
-.shelf { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
-.shelf span { background:#fff; border:1px solid var(--line); border-radius:99px;
-  padding:7px 13px; font-size:12.5px; font-weight:600; display:inline-flex; align-items:center; gap:6px; }
-.shelf i { font-style:normal; font-size:11px; color:var(--green-d); font-weight:700; }
+.ex-c { padding:0; overflow:hidden; }
+.ex-c img { width:100%; max-height:360px; object-fit:cover; display:block; background:#eeeae2; }
+.ex-r { font-size:14.5px; line-height:1.75; padding:13px 16px 0; }
+.ex-m { font-size:11.5px; color:var(--ink-3); padding:8px 16px 14px; }
 /* 바닥에 붙이지 않고 띄운다. 아이폰 홈 인디케이터와 겹치지 않게
    safe-area 만큼 더 올린다 */
 nav { position:fixed; left:0; right:0; max-width:480px; margin:0 auto; z-index:30;
@@ -2697,13 +2697,13 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = [];
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchanges = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -2715,7 +2715,10 @@ async function loadAll() {
     // 오늘 누구를 찔렀는지. 안 들고 오면 새로고침마다 버튼이 되살아나고,
     // 눌러야 「이미 보냈어요」를 만난다
     sb.from('nudges').select('to_id,routine_id').eq('day', todayKST()),
+    // 책 교환 인증. 마이그레이션 96 이 아직이면 오류가 와도 빈 채로 둔다
+    sb.rpc('exchange_feed', { p_limit: 30 }),
   ]);
+  state.exchanges = ex.error ? [] : (ex.data || []);
   state.notifs = nt.data || [];
   state.nudges = nd.data || [];
   state.parts = p.data || [];
@@ -3815,20 +3818,20 @@ function balanceBlock() {
     </div>`;
 }
 
-// 지금 어떤 책들이 읽히고 있나. 혼자 읽기 어려워서 온 아이들이라
-// "다른 애들은 뭐 읽지?" 가 꽤 크게 작동한다
-function shelfHtml() {
-  const by = {};
-  state.certs.forEach(c => {
-    const t = (c.book_title || '').trim(); if (!t) return;
-    (by[t] = by[t] || new Set()).add(c.user_id);
-  });
-  const books = Object.entries(by).map(([t, s]) => [t, s.size])
-                      .sort((a, b) => b[1] - a[1]).slice(0, 12);
-  if (!books.length) return '';
-  return `<div class="sec-t" style="margin-top:0;">📚 우리가 지금 읽는 책</div>
-    <div class="shelf">${books.map(([t, n]) =>
-      `<span>${esc(t)}${n > 1 ? `<i>${n}명</i>` : ''}</span>`).join('')}</div>`;
+// 책 교환 인증 — 책을 받은 아이들이 남긴 사진과 「왜 이 책을 골랐는지」.
+// 혼자 읽기 어려워서 온 아이들이라 "다른 애들은 어떻게 받았지?" 가 크게 작동한다.
+// 닉네임·날짜·사진·이유만 나온다. 책방과 금액은 서버 함수가 아예 내보내지 않는다
+function exchangeHtml() {
+  const list = state.exchanges || [];
+  const days = d => { const n = Math.floor((new Date(todayKST()) - new Date(d)) / 864e5);
+                      return n <= 0 ? '오늘' : `${n}일 전`; };
+  return `<div class="sec-t">📚 책 교환 인증</div>` + (list.length
+    ? list.map(x => `<div class="card ex-c">
+        <img src="${esc(x.photo_url)}" loading="lazy" alt="">
+        ${x.reason ? `<div class="ex-r">“${esc(x.reason)}”</div>` : ''}
+        <div class="ex-m">${esc(x.nick)} · ${days(x.day)}</div>
+      </div>`).join('')
+    : `<div class="empty">아직 올라온 교환 인증이 없어요.<br>책을 받으면 한 장 남겨주세요.</div>`);
 }
 
 // 인증 카드 한 장. 루틴 상세와 '모두' 탭에서 같이 쓴다
@@ -4123,7 +4126,7 @@ function viewFeed() {
       </div>
     </div>`).join('')}` : '';
 
-  const listHtml = `<div class="sec-t">📝 우리 루틴 후기</div>` + (list.length
+  const listHtml = `<div class="sec-t">📝 루틴 후기</div>` + (list.length
     ? list.map(reviewCard).join('')
     : `<div class="empty">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
 
@@ -4135,7 +4138,7 @@ function viewFeed() {
       </div>`).join('')
     : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 데서 한 문장 옮겨 적어보세요.</div>`);
 
-  return todoHtml + listHtml + shelfHtml() + quoteHtml;
+  return todoHtml + listHtml + exchangeHtml() + quoteHtml;
 }
 
 // ── 후기 쓰기 ──────────────────────────────────────────
