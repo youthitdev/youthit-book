@@ -3586,6 +3586,13 @@ function todayCard(r) {
               : `<i class="tw-d" style="background:${TINT[sum % TINT.length]}" title="${esc(nm)}">${esc(nm[0])}</i>`;
   };
   const SHOWW = 5;
+  // 내가 읽는 책 표지. 검색해서 고른 표지가 있으면 그것을, 없으면 내가 찍어 올린 사진을 (MY 책장과 같은 규칙)
+  const bookShelf = d?.notYet || !books.length ? '' : `<div class="tc-shelf">${books.map(b => `
+        <div class="tc-bt" onclick="event.stopPropagation();openCert(${r.id}, '${esc(b.title).replace(/'/g, "\\'")}')">
+          <div class="tc-bt-i">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}</div>
+          <span>${esc(b.title)}</span>
+          ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : ''}
+        </div>`).join('')}</div>`;
   const shelf = d?.notYet ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
       ${whoToday.length ? `<span class="tw-row">${whoToday.slice(0, SHOWW).map(dot).join('')}${
           whoToday.length > SHOWW ? `<i class="tw-d tw-more">+${whoToday.length - SHOWW}</i>` : ''}</span>` : ''}
@@ -3606,6 +3613,7 @@ function todayCard(r) {
       </div>
       <div class="tc-day">${routineLine(r, d)}</div>
       ${d && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${bookShelf}
       ${shelf}
       ${action}
     </div>
