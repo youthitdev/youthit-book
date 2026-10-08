@@ -2851,7 +2851,7 @@ async function enablePush() {
   if (DEMO) return toast('데모 모드에서는 켜지지 않아요');
   if (!pushOK()) return toast('이 브라우저는 알림을 지원하지 않아요');
   const perm = await Notification.requestPermission();
-  if (perm !== 'granted') { render(); return toast('알림이 꺼져 있어요'); }
+  if (perm !== 'granted') { render(); paintPushCard(); return toast('알림이 꺼져 있어요'); }
   const reg = await swReady(5000);
   if (!reg) return toast('잠시 뒤 다시 눌러주세요');
   let sub = await reg.pushManager.getSubscription();
@@ -2867,7 +2867,8 @@ async function enablePush() {
     { p_endpoint: sub.endpoint, p_p256dh: k.p256dh, p_auth: k.auth });
   if (error) return toast('알림 설정을 저장하지 못했어요');
   pushClaimed = true;
-  render(); toast('알림을 켰어요');
+  // 알림 설정은 시트 안에서 따로 그려서 render() 로는 단추가 안 바뀐다
+  render(); paintPushCard(); toast('알림을 켰어요');
 }
 
 // 「오후 8시」보다 「저녁 8시」가 먼저 읽힌다. 12시는 「오후 12시」가 아니라 「낮 12시」다
@@ -2909,7 +2910,7 @@ async function disablePush() {
     await sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     await sub.unsubscribe();
   }
-  render(); toast('알림을 껐어요');
+  render(); paintPushCard(); toast('알림을 껐어요');
 }
 
 // 상태를 비동기로 읽어야 해서, 카드는 먼저 그리고 값이 오면 안쪽을 채운다.
