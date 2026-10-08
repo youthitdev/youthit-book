@@ -4131,12 +4131,12 @@ function viewFeed() {
     : `<div class="empty">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
 
   const quotes = state.certs.filter(c => c.quote && c.quote.trim()).slice(0, 30);
-  const quoteHtml = `<div class="sec-t">💬 우리 루틴에서 옮겨 적은 문장</div>` + (quotes.length
+  const quoteHtml = `<div class="sec-t">💬 함께 나누고 싶은 문장</div>` + (quotes.length
     ? quotes.map(c => `<div class="card" style="padding:15px 16px;">
         <div style="font-size:14.5px;line-height:1.75;">“${esc(c.quote)}”</div>
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
       </div>`).join('')
-    : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 데서 한 문장 옮겨 적어보세요.</div>`);
+    : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.</div>`);
 
   return todoHtml + listHtml + exchangeHtml() + quoteHtml;
 }
