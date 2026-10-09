@@ -4177,7 +4177,7 @@ function kkutCertBlock(mine) {
         ${kidsBooksHtml(r.id)}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
       ${meetRoll(r)}
-      ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
+      ${certAction(r, 'btn-primary', 'margin-bottom:12px;', true)}
       ${certGrid(cs, r.id)}`;
   }).join('');
 }
@@ -4208,7 +4208,7 @@ function youthCertBlock(mine) {
         <div class="rm-list" style="margin-top:2px;">${ps.map(p => memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : `setCertWho(${r.id},'${p.user_id}')`, sub: p.lead ? '끗짱' : '', subCls: 'amb' })).join('')}</div>
         <div style="margin-top:12px;">${kidsBooksHtml(r.id, true, true)}</div>
       </div>` : kidsBooksHtml(r.id, true, true)}
-      ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
+      ${certAction(r, 'btn-primary', 'margin-bottom:12px;', true)}
       ${certGrid(cs, r.id)}`;
   }).join('');
 }
@@ -5102,13 +5102,15 @@ async function poke(rid, uid, btn) {
 
 // 「오늘 인증하기」는 청소년 홈·인증 탭, 끗짱 홈·인증 탭 네 군데에 나온다.
 // 병렬독서까지 얽혀 있어서 따로 쓰면 반드시 어긋난다
-function certAction(r, cls = 'btn-primary', style = '') {
+// inTab: 인증 탭에서 부를 때. 책별 인증은 홈 카드가 맡는다 — 여기서는 「도 인증하기」를 두지 않는다 (2026-10-09 사용자)
+function certAction(r, cls = 'btn-primary', style = '', inTab = false) {
   if (routineEnded(r) || r.status === 'pending') return '';
   // 아직 안 연 루틴이다. 첫날부터 세야 「15일」이 15일이다
   if (routineDay(r)?.notYet) return '';
   if (!didToday(r.id))
     return `<button class="btn ${cls}" style="${style}" onclick="openCert(${r.id})">오늘 인증하기</button>`;
   const left = leftToday(r.id);
+  if (left.length && inTab) return '';
   if (left.length)
     return `<button class="btn btn-line" style="${style}"
       onclick="openCert(${r.id}, '${esc(left[0].title).replace(/'/g, "\\'")}')">
