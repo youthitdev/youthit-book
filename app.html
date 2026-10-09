@@ -662,6 +662,13 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .cg-item { cursor:pointer; min-width:0; }
 .cg-who { font-size:12px; font-weight:700; margin-top:5px;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cg-wr { display:flex; align-items:center; justify-content:space-between; gap:4px; margin-top:5px; }
+.cg-wr .cg-who { margin-top:0; flex:1; min-width:0; }
+.cg-lk { flex:none; border:none; background:none; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--ink-3);
+  padding:7px 2px 7px 10px; margin:-5px -2px -5px 0; cursor:pointer; line-height:1; }
+.cg-lk.on { color:#C2403F; }
+.cg-lk.own { cursor:default; padding:0; margin:0; color:#C2403F; }
+.cg-lk:not(.own):active { transform:scale(.9); }
 .cg-sub { font-size:11px; color:var(--ink-3); margin-top:1px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
 .cg img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -4238,8 +4245,11 @@ function certGrid(all, rid) {
                                 : `<div class="cg-no">📖</div>`}
         ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 인증</i>` : ''}
       </div>
-      <div class="cg-who">${c.user_id === me.id ? '나' : esc(nameOf(c.user_id))}</div>
-      <div class="cg-sub">${esc(dayKo(c.cert_date))}${n ? ` · 💬 ${n}` : ''}${likesOf(c.id).length ? ` · ❤️ ${likesOf(c.id).length}` : ''}</div>
+      <div class="cg-wr">
+        <div class="cg-who">${c.user_id === me.id ? '나' : esc(nameOf(c.user_id))}</div>
+        ${gridLike(c)}
+      </div>
+      <div class="cg-sub">${esc(dayKo(c.cert_date))}${n ? ` · 💬 ${n}` : ''}</div>
     </div>`;
   }).join('')}</div>`;
 }
@@ -7549,6 +7559,14 @@ function likeRow(c) {
   const on = iLiked(c.id);
   return `<div class="f-like"><button class="lk-b ${on ? 'on' : ''}" onclick="toggleLike(${c.id})">
       <i>${on ? '❤️' : '🤍'}</i>좋아요${n ? ` ${n}` : ''}</button></div>`;
+}
+// 인증 목록의 하트. 이름 줄 오른쪽 끝에 놓는다. 눌러도 사진은 열리지 않는다.
+// 아무도 안 눌렀으면 숫자 없이 🤍 만 — 「0」이 보이면 누르기 부담스럽다. 내 인증에는 받은 수만 보인다
+function gridLike(c) {
+  const n = likesOf(c.id).length;
+  if (me && c.user_id === me.id) return n ? `<span class="cg-lk own">❤️ ${n}</span>` : '';
+  const on = iLiked(c.id);
+  return `<button class="cg-lk ${on ? 'on' : ''}" aria-label="좋아요" onclick="event.stopPropagation();toggleLike(${c.id})">${on ? '❤️' : '🤍'}${n ? ` ${n}` : ''}</button>`;
 }
 async function toggleLike(certId) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
