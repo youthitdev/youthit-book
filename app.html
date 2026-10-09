@@ -1170,12 +1170,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .tg-d { font-size:12px; color:var(--ink-3); }
 .tg-d b { color:var(--ink); font-size:13px; }
 .tg .bal-bar { margin:10px 0 2px; background:#EBE5DA; }
-.tg-n { display:flex; gap:10px; margin-top:12px; }
-.tg-n { flex-wrap:wrap; }
-.tg-n > div { flex:1 1 calc(50% - 5px); min-width:0; background:var(--bg); border-radius:13px; padding:11px 13px; }
-.tg-n b { font-size:26px; font-weight:800; letter-spacing:-.8px; color:var(--blue); line-height:1.1; }
-.tg-n small { font-size:13px; font-weight:700; color:var(--blue); margin-left:1px; }
-.tg-n span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px; }
+.tg-n { display:grid; gap:8px; margin-top:12px; }
+.tg-n > div { min-width:0; background:var(--bg); border-radius:13px; padding:11px 6px 10px; text-align:center; }
+.tg-n b { font-size:24px; font-weight:800; letter-spacing:-.8px; color:var(--blue); line-height:1.1; }
+.tg-n small { font-size:12.5px; font-weight:700; color:var(--blue); margin-left:1px; }
+.tg-n span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px; white-space:nowrap; }
 .tg-c { margin-top:11px; font-size:13.5px; font-weight:700; color:var(--green-d); text-align:center; }
 
 /* 인증 좋아요 */
@@ -4092,10 +4091,9 @@ function togetherCard(r, cs, total) {
   // 0 인 칸은 숨긴다. 아직 없는 걸 0 으로 보이면 허전하다 — 처음 생기는 순간 칸이 하나 늘어나는 게 보상이다
   const likes = cs.reduce((n, c) => n + likesOf(c.id).length, 0);
   const books = new Set(cs.map(c => loose(c.book_title || '')).filter(Boolean)).size;
-  const days  = new Set(cs.map(c => c.cert_date)).size;
-  const cells = [[cs.length, '장', '함께 올린 인증'], [talk, '개', '주고받은 댓글'],
-                 [likes, '개', '받은 좋아요'], [books, '권', '함께 읽은 책'],
-                 [days, '일', '함께 읽은 날']].filter(x => x[0] > 0);
+  // 한 줄에 놓는다 (최대 네 칸). 「함께 읽은 날」은 위의 「N일째」와 막대가 이미 말해서 뺐다
+  const cells = [[cs.length, '장', '인증'], [talk, '개', '댓글'],
+                 [likes, '개', '좋아요'], [books, '권', '읽은 책']].filter(x => x[0] > 0);
   let cheer = '';
   if (d?.ended)            cheer = `함께 ${d.total}일을 완주했어요 🎉`;
   else if (!cs.length)     cheer = live ? '첫 기록을 남겨 보세요 🌱' : '';
@@ -4105,7 +4103,7 @@ function togetherCard(r, cs, total) {
   return `<div class="tg">
     <div class="tg-hd"><span class="tg-t">우리가 함께 쌓은 기록</span><span class="tg-d">${routineLine(r, d)}</span></div>
     ${d && !d.notYet ? `<div class="bal-bar"><i style="width:${pct}%"></i></div>` : ''}
-    ${cells.length ? `<div class="tg-n">${cells.map(([n, u, l]) =>
+    ${cells.length ? `<div class="tg-n" style="grid-template-columns:repeat(${cells.length},1fr);">${cells.map(([n, u, l]) =>
       `<div><b>${won(n)}</b><small>${u}</small><span>${l}</span></div>`).join('')}</div>` : ''}
     ${cheer ? `<div class="tg-c">${cheer}</div>` : ''}
   </div>`;
