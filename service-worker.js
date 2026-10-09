@@ -77,13 +77,13 @@ self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url = here(e.notification.data && e.notification.data.url);
   const pick = k => { const m = url.match(new RegExp('[?&]' + k + '=([\\w-]+)')); return m ? m[1] : null; };
-  const nav = { tab: pick('tab'), routine: pick('routine') };
+  const nav = { tab: pick('tab'), routine: pick('routine'), cert: pick('cert') };
   e.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     for (const c of list) {
       if (c.url.startsWith(self.registration.scope) && 'focus' in c) {
         // Client.navigate() 는 아이폰에서 초점만 옮기고 화면은 그대로인 일이 있다.
         // 열려 있으면 페이지에 시켜서 직접 화면을 바꾼다
-        if (nav.tab || nav.routine) c.postMessage({ type: 'notif-navigate', ...nav });
+        if (nav.tab || nav.routine || nav.cert) c.postMessage({ type: 'notif-navigate', ...nav });
         // 관리자 화면은 #탭 으로 간다. 열려 있으면 주소만 바꿔 주면 된다
         c.postMessage({ type: 'notif-open', url });
         return c.focus();

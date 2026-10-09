@@ -13,6 +13,9 @@
 -- 【겹쳐 보내지 않는다】 끗짱이 참여자 표에도 있는 경우, 인증 알림은 한 번만 간다.
 --   인증을 올린 사람이 끗짱이면 댓글 알림도 한 번만 간다 (끗짱 몫으로).
 --
+-- 【알림을 누르면 그 인증으로】 링크에 &cert=번호 를 붙인다. 앱이 그 인증 한 장을 바로 연다.
+--   (전에는 루틴 소개 화면으로 가서 댓글이 안 보였다)
+--
 -- 【고칠 때는 안 보낸다】 인증 수정은 UPDATE 로 들어간다. INSERT 에만 건다 (59 와 같은 이유).
 --
 -- 【알림이 터져도 저장은 된다】 EXCEPTION 으로 막아 둔다. 인증과 댓글이 알림 때문에 안 올라가면 안 된다.
@@ -41,7 +44,7 @@ BEGIN
     WHERE x IS NOT NULL AND x <> NEW.user_id
   LOOP
     PERFORM notify_push(u, '인증이 올라왔어요 📖', v_body,
-      '/youthit-book/app.html?tab=cert&routine=' || NEW.routine_id);
+      '/youthit-book/app.html?tab=cert&routine=' || NEW.routine_id || '&cert=' || NEW.id);
   END LOOP;
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
@@ -73,12 +76,12 @@ BEGIN
   -- 내 인증에 달린 댓글 (끗짱이 쓴 인증이면 아래 끗짱 몫으로 한 번만 간다)
   IF v_author IS NOT NULL AND v_author <> NEW.user_id AND v_author IS DISTINCT FROM v_lead THEN
     PERFORM notify_push(v_author, '내 인증에 댓글이 달렸어요 💬', v_body,
-      '/youthit-book/app.html?tab=cert&routine=' || v_rid);
+      '/youthit-book/app.html?tab=cert&routine=' || v_rid || '&cert=' || NEW.cert_id);
   END IF;
   -- 끗짱 몫. 끗짱이 직접 단 댓글은 알리지 않는다
   IF v_lead IS NOT NULL AND v_lead <> NEW.user_id THEN
     PERFORM notify_push(v_lead, '댓글이 달렸어요 💬', v_body,
-      '/youthit-book/app.html?tab=cert&routine=' || v_rid);
+      '/youthit-book/app.html?tab=cert&routine=' || v_rid || '&cert=' || NEW.cert_id);
   END IF;
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN

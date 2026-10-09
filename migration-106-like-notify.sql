@@ -11,7 +11,7 @@
 -- ⚠️ 39(notify_push) · 105(cert_likes) 뒤에 돌린다. 이미 돌렸어도 다시 돌려도 된다.
 
 CREATE OR REPLACE FUNCTION on_like_notify() RETURNS trigger AS $$
-DECLARE v_author uuid; v_rid bigint; v_title text; v_who text; v_body text;
+DECLARE v_author uuid; v_rid bigint; v_title text; v_who text; v_body text; v_link text;
 BEGIN
   SELECT c.user_id, c.routine_id INTO v_author, v_rid FROM certifications c WHERE c.id = NEW.cert_id;
   IF v_author IS NULL OR v_author = NEW.user_id THEN RETURN NEW; END IF;
@@ -20,18 +20,18 @@ BEGIN
   SELECT COALESCE(NULLIF(btrim(p.nick), ''), NULLIF(btrim(p.name), ''), '친구')
     INTO v_who FROM profiles p WHERE p.id = NEW.user_id;
   v_body := COALESCE(v_title, '루틴') || ' · ' || COALESCE(v_who, '친구') || '님이 좋아해요';
+  v_link := '/youthit-book/app.html?tab=cert&routine=' || v_rid || '&cert=' || NEW.cert_id;   -- 누르면 그 인증으로
 
   -- 하루 안에 같은 알림이 이미 갔으면 다시 보내지 않는다 (눌렀다 뗐다 대비)
   IF EXISTS (SELECT 1 FROM notifications n
               WHERE n.user_id = v_author AND n.title = '인증에 ❤️가 달렸어요'
                 AND n.body = v_body
-                AND n.link = '/youthit-book/app.html?tab=cert&routine=' || v_rid
+                AND n.link = v_link
                 AND n.created_at > now() - interval '1 day') THEN
     RETURN NEW;
   END IF;
 
-  PERFORM notify_push(v_author, '인증에 ❤️가 달렸어요', v_body,
-    '/youthit-book/app.html?tab=cert&routine=' || v_rid);
+  PERFORM notify_push(v_author, '인증에 ❤️가 달렸어요', v_body, v_link);
   RETURN NEW;
 EXCEPTION WHEN OTHERS THEN
   RETURN NEW;
