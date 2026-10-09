@@ -4089,11 +4089,10 @@ function togetherCard(r, cs, total) {
   const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
   const live  = d && !d.notYet && !d.ended && r.status !== 'done' && r.status !== 'pending';
   // 0 인 칸은 숨긴다. 아직 없는 걸 0 으로 보이면 허전하다 — 처음 생기는 순간 칸이 하나 늘어나는 게 보상이다
-  const likes = cs.reduce((n, c) => n + likesOf(c.id).length, 0);
   const books = new Set(cs.map(c => loose(c.book_title || '')).filter(Boolean)).size;
-  // 한 줄에 놓는다 (최대 네 칸). 「함께 읽은 날」은 위의 「N일째」와 막대가 이미 말해서 뺐다
-  const cells = [[cs.length, '장', '인증'], [talk, '개', '댓글'],
-                 [likes, '개', '좋아요'], [books, '권', '읽은 책']].filter(x => x[0] > 0);
+  // 한 줄에 놓는다 (최대 세 칸). 「함께 읽은 날」은 위의 「N일째」와 막대가 이미 말해서 뺐다
+  // 좋아요는 인증 카드에서 본다. 여기에는 두지 않기로 했다 (2026-10-09 사용자)
+  const cells = [[cs.length, '장', '인증'], [talk, '개', '댓글'], [books, '권', '읽은 책']].filter(x => x[0] > 0);
   let cheer = '';
   if (d?.ended)            cheer = `함께 ${d.total}일을 완주했어요 🎉`;
   else if (!cs.length)     cheer = live ? '첫 기록을 남겨 보세요 🌱' : '';
