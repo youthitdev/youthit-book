@@ -1163,6 +1163,20 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rm2-sent { display:block; margin-top:4px; font-size:10.5px; font-weight:600; color:var(--ink-3); }
 .rm2.more .rm2-c { background:var(--bg); color:var(--ink-3); font-size:13px; border:1px dashed var(--line); box-shadow:none; }
 
+/* 우리가 함께 쌓은 기록 — 인증 탭 맨 위. 「나」가 아니라 「우리」의 숫자라 같이 쌓는 느낌을 준다 */
+.tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
+.tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+.tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
+.tg-d { font-size:12px; color:var(--ink-3); }
+.tg-d b { color:var(--ink); font-size:13px; }
+.tg .bal-bar { margin:10px 0 2px; background:#EBE5DA; }
+.tg-n { display:flex; gap:10px; margin-top:12px; }
+.tg-n > div { flex:1; background:var(--bg); border-radius:13px; padding:11px 13px; }
+.tg-n b { font-size:26px; font-weight:800; letter-spacing:-.8px; color:var(--blue); line-height:1.1; }
+.tg-n small { font-size:13px; font-weight:700; color:var(--blue); margin-left:1px; }
+.tg-n span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px; }
+.tg-c { margin-top:11px; font-size:13.5px; font-weight:700; color:var(--green-d); text-align:center; }
+
 /* 지난 루틴 한 줄 */
 .pr { display:flex; align-items:center; gap:12px; padding:13px 0; cursor:pointer; }
 .pr + .pr { border-top:1px solid var(--line); }
@@ -4052,6 +4066,30 @@ function memberItem(r, p, today, o = {}) {
   </div>`;
 }
 
+// 인증 탭 맨 위 「우리가 함께 쌓은 기록」. total 은 동그라미로 보이는 사람 수 (끗짱 포함)
+function togetherCard(r, cs, total) {
+  const d     = routineDay(r);
+  const talk  = state.comments.filter(m => cs.some(c => c.id === m.cert_id)).length;
+  const who   = new Set(cs.filter(c => c.cert_date === todayKST()).map(c => c.user_id)).size;
+  const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
+  const live  = d && !d.notYet && !d.ended && r.status !== 'done' && r.status !== 'pending';
+  let cheer = '';
+  if (d?.ended)            cheer = `함께 ${d.total}일을 완주했어요 🎉`;
+  else if (!cs.length)     cheer = live ? '첫 기록을 남겨 보세요 🌱' : '';
+  else if (live)           cheer = !who ? '오늘의 첫 인증을 기다려요'
+                                : who >= total ? '오늘은 모두 읽었어요 🎉'
+                                : `오늘 ${who}명이 읽었어요 🌱`;
+  return `<div class="tg">
+    <div class="tg-hd"><span class="tg-t">우리가 함께 쌓은 기록</span><span class="tg-d">${routineLine(r, d)}</span></div>
+    ${d && !d.notYet ? `<div class="bal-bar"><i style="width:${pct}%"></i></div>` : ''}
+    <div class="tg-n">
+      <div><b>${won(cs.length)}</b><small>장</small><span>함께 올린 인증</span></div>
+      <div><b>${won(talk)}</b><small>개</small><span>주고받은 댓글</span></div>
+    </div>
+    ${cheer ? `<div class="tg-c">${cheer}</div>` : ''}
+  </div>`;
+}
+
 // 끗짱 몫 — 오늘 누가 인증했나
 // 「👉 를 눌러 콕 찌를 수 있어요」가 찌를 사람이 없을 때도 떠 있었다.
 // 화면이 할 수 없는 일을 하라고 하면, 안 되는 게 아니라 고장으로 보인다
@@ -4079,7 +4117,7 @@ function kkutCertBlock(mine) {
     const yet   = ps.filter(p => !today.some(c => c.user_id === p.user_id));
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
-      <div class="cline">${routineLine(r, routineDay(r))} · 오늘 <b>${today.length}</b>/${ps.length}명</div>
+      ${togetherCard(r, cs, ps.length)}
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
         <div class="rm-list" style="margin-top:2px;">
           ${ps.map(p => {
@@ -4112,11 +4150,6 @@ function youthCertBlock(mine) {
       .sort((a, b) => (b.self === true) - (a.self === true));
     if (r.led_by && r.led_by !== me.id && !ps.some(x => x.user_id === r.led_by))
       ps.splice(ps.some(x => x.self) ? 1 : 0, 0, { user_id: r.led_by, lead: true });
-    // 진행도와 포인트는 홈과 MY 에 있다. 여기서는 한 줄로만 짚고 격자를 앞세운다 —
-    // 사진 보러 들어온 탭인데 사진까지 카드 두 개를 지나야 했다
-    const line = [routineLine(r, d),
-                  `인증 ${won(cs.length)}`, `소통 ${won(talk)}`].join(' · ');
-
     // 이 루틴을 이끄는 끗짱 한 줄 — 닉네임과 키워드. 누르면 루틴 소개로 간다 (내가 끗짱인 루틴에는 없다)
     const L = r.led_by && r.led_by !== me.id ? leadOf(r.led_by) : null;
     const nm = r.led_by && r.led_by !== me.id ? leadName(r.led_by) : '';
@@ -4125,7 +4158,7 @@ function youthCertBlock(mine) {
 
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${leadLine}
-      <div class="cline">${line}</div>
+      ${togetherCard(r, cs, ps.length)}
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
         <div class="rm-list" style="margin-top:2px;">${ps.map(p => memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : `setCertWho(${r.id},'${p.user_id}')`, sub: p.lead ? '끗짱' : '', subCls: 'amb' })).join('')}</div>
         <div style="margin-top:12px;">${kidsBooksHtml(r.id, true, true)}</div>
