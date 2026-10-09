@@ -668,6 +668,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   padding:7px 2px 7px 10px; margin:-5px -2px -5px 0; cursor:pointer; line-height:1; }
 .cg-lk.on { color:#C2403F; }
 .cg-lk.own { cursor:default; padding:0; margin:0; color:#C2403F; }
+.cg-lk.own.zero { color:var(--ink-3); opacity:.6; }
 .cg-lk:not(.own):active { transform:scale(.9); }
 .cg-sub { font-size:11px; color:var(--ink-3); margin-top:1px; }
 .cg { position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#eeeae2; cursor:pointer; }
@@ -7563,10 +7564,10 @@ function likeRow(c) {
       <i>${on ? '❤️' : '🤍'}</i>좋아요${n ? ` ${n}` : ''}</button></div>`;
 }
 // 인증 목록의 하트. 이름 줄 오른쪽 끝에 놓는다. 눌러도 사진은 열리지 않는다.
-// 아무도 안 눌렀으면 숫자 없이 🤍 만 — 「0」이 보이면 누르기 부담스럽다. 내 인증에는 받은 수만 보인다
+// 아무도 안 눌렀으면 숫자 없이 🤍 만 — 「0」이 보이면 누르기 부담스럽다. 내 인증에도 하트는 보이되 누를 수는 없다
 function gridLike(c) {
   const n = likesOf(c.id).length;
-  if (me && c.user_id === me.id) return n ? `<span class="cg-lk own">❤️ ${n}</span>` : '';
+  if (me && c.user_id === me.id) return `<span class="cg-lk own${n ? '' : ' zero'}">${n ? `❤️ ${n}` : '🤍'}</span>`;   // 내 인증에도 하트는 보인다. 누르는 단추는 아니다
   const on = iLiked(c.id);
   return `<button class="cg-lk ${on ? 'on' : ''}" aria-label="좋아요" onclick="event.stopPropagation();toggleLike(${c.id})">${on ? '❤️' : '🤍'}${n ? ` ${n}` : ''}</button>`;
 }
