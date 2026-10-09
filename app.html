@@ -1177,6 +1177,15 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .tg-n span { display:block; font-size:12px; color:var(--ink-3); margin-top:3px; }
 .tg-c { margin-top:11px; font-size:13.5px; font-weight:700; color:var(--green-d); text-align:center; }
 
+/* 인증 좋아요 */
+.f-like { display:flex; align-items:center; gap:8px; margin-top:12px; }
+.lk-b { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:#fff;
+  border-radius:99px; padding:7px 14px; font-family:inherit; font-size:14px; font-weight:700; color:var(--ink-2); cursor:pointer; }
+.lk-b i { font-style:normal; font-size:16px; line-height:1; }
+.lk-b.on { background:#FFF0F0; border-color:#F4C9C9; color:#C2403F; }
+.lk-b:active { transform:scale(.95); }
+.lk-n { font-size:13px; color:var(--ink-3); }
+
 /* 지난 루틴 한 줄 */
 .pr { display:flex; align-items:center; gap:12px; padding:13px 0; cursor:pointer; }
 .pr + .pr { border-top:1px solid var(--line); }
@@ -2128,7 +2137,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[] };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[] };
 let tab = 'home';
 // 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
@@ -2967,7 +2976,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -2981,8 +2990,11 @@ async function loadAll() {
     sb.from('nudges').select('to_id,routine_id').eq('day', todayKST()),
     // 책 교환 인증. 마이그레이션 96 이 아직이면 오류가 와도 빈 채로 둔다
     sb.rpc('exchange_feed', { p_limit: 30 }),
+    // 인증 좋아요. 마이그레이션 105 가 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('cert_likes').select('cert_id,user_id'),
   ]);
   state.exchanges = ex.error ? [] : (ex.data || []);
+  state.likes = lk.error ? [] : (lk.data || []);
   state.notifs = nt.data || [];
   state.nudges = nd.data || [];
   state.parts = p.data || [];
@@ -4201,7 +4213,7 @@ function certGrid(all, rid) {
         ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 인증</i>` : ''}
       </div>
       <div class="cg-who">${c.user_id === me.id ? '나' : esc(nameOf(c.user_id))}</div>
-      <div class="cg-sub">${esc(dayKo(c.cert_date))}${n ? ` · 💬 ${n}` : ''}</div>
+      <div class="cg-sub">${esc(dayKo(c.cert_date))}${n ? ` · 💬 ${n}` : ''}${likesOf(c.id).length ? ` · ❤️ ${likesOf(c.id).length}` : ''}</div>
     </div>`;
   }).join('')}</div>`;
 }
@@ -4376,6 +4388,7 @@ function certCard(c) {
     ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
       ${(c.book_title||c.page_end) ? `<cite>📖 ${[esc(c.book_title||''), c.page_end?c.page_end+'쪽':''].filter(Boolean).join(' · ')}</cite>` : ''}</div>` : ''}
     ${c.content ? `<div class="f-text">${esc(c.content)}</div>` : ''}
+    ${likeRow(c)}
     <div class="f-cmts">
       ${cms.map(m => `<div class="f-cmt"><b>${esc(nameOf(m.user_id))}</b>${esc(m.content)}</div>`).join('')}
       <div class="f-cmt-in">
@@ -7497,6 +7510,36 @@ async function submitBuy() {
 async function showCheer() {
   $('cheerMsg').innerHTML = `이 책, 나를 응원하는<br>어른들이 함께 보냈어요`;
   openOv('ovCheer');
+}
+
+// ── 좋아요 ─────────────────────────────────────────────
+const likesOf = id => (state.likes || []).filter(l => l.cert_id === id);
+const iLiked  = id => !!me && likesOf(id).some(l => l.user_id === me.id);
+// 내 인증에는 단추 대신 받은 ♥ 만 보인다
+function likeRow(c) {
+  const n = likesOf(c.id).length;
+  if (me && c.user_id === me.id)
+    return n ? `<div class="f-like"><span class="lk-n">❤️ ${n}명이 좋아해요</span></div>` : '';
+  const on = iLiked(c.id);
+  return `<div class="f-like"><button class="lk-b ${on ? 'on' : ''}" onclick="toggleLike(${c.id})">
+      <i>${on ? '❤️' : '🤍'}</i>좋아요${n ? ` ${n}` : ''}</button></div>`;
+}
+async function toggleLike(certId) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  if (!me) return;
+  const c0 = state.certs.find(x => x.id === certId); if (!c0) return;
+  const was = iLiked(certId);
+  // 먼저 화면을 바꾸고, 실패하면 되돌린다 — 누르는 순간 반응이 있어야 한다
+  const apply = on => {
+    state.likes = (state.likes || []).filter(l => !(l.cert_id === certId && l.user_id === me.id));
+    if (on) state.likes.push({ cert_id: certId, user_id: me.id });
+    render(); refreshOpenOv(c0.routine_id);
+  };
+  apply(!was);
+  const { error } = was
+    ? await sb.from('cert_likes').delete().eq('cert_id', certId).eq('user_id', me.id)
+    : await sb.from('cert_likes').insert({ cert_id: certId, user_id: me.id });
+  if (error && !(error.code === '23505' && !was)) { apply(was); toast('좋아요를 저장하지 못했어요'); }
 }
 
 // ── 댓글 ───────────────────────────────────────────────
