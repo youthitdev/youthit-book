@@ -4107,8 +4107,11 @@ function youthCertBlock(mine) {
     const talk = state.comments.filter(m => cs.some(c => c.id === m.cert_id)).length;
     const today = cs.filter(c => c.cert_date === todayKST());
     // 참여자 현황. 나를 맨 앞에 둔다 (끗짱 화면과 같은 부품)
+    // 끗짱도 한 동그라미로 들어온다. 인증하면 색이 살고 ✓ — 아이만 있는 줄에서는 끗짱이 안 보여 허전했다
     const ps = partsOf(r.id).map(x => x.user_id === me.id ? { ...x, self: true } : x)
       .sort((a, b) => (b.self === true) - (a.self === true));
+    if (r.led_by && r.led_by !== me.id && !ps.some(x => x.user_id === r.led_by))
+      ps.splice(ps.some(x => x.self) ? 1 : 0, 0, { user_id: r.led_by, lead: true });
     // 진행도와 포인트는 홈과 MY 에 있다. 여기서는 한 줄로만 짚고 격자를 앞세운다 —
     // 사진 보러 들어온 탭인데 사진까지 카드 두 개를 지나야 했다
     const line = [routineLine(r, d),
@@ -4124,7 +4127,7 @@ function youthCertBlock(mine) {
       ${leadLine}
       <div class="cline">${line}</div>
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
-        <div class="rm-list" style="margin-top:2px;">${ps.map(p => memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : `setCertWho(${r.id},'${p.user_id}')` })).join('')}</div>
+        <div class="rm-list" style="margin-top:2px;">${ps.map(p => memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : `setCertWho(${r.id},'${p.user_id}')`, sub: p.lead ? '끗짱' : '', subCls: 'amb' })).join('')}</div>
         <div style="margin-top:12px;">${kidsBooksHtml(r.id, true, true)}</div>
       </div>` : kidsBooksHtml(r.id, true, true)}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;')}
