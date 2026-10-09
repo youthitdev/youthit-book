@@ -610,6 +610,12 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 그 책을 어디까지 읽었는지. 책마다 따로 센다 */
 .tc-bt i { display:block; font-style:normal; font-size:11px; font-weight:700;
   color:var(--green-d); text-align:center; margin-top:1px; }
+/* 표지 밑 인증 단추. 아직이면 눌러서 인증하고, 했으면 「인증완료」로 가라앉는다 */
+.tc-bb { display:block; width:100%; margin-top:8px; border:none; border-radius:10px; padding:8px 0;
+  font-family:inherit; font-size:12.5px; font-weight:800; text-align:center; cursor:pointer;
+  background:var(--blue); color:#fff; }
+.tc-bb:active { opacity:.8; }
+.tc-bb.ok { background:#F2F7E6; color:var(--green-d); cursor:default; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tcard .btn { margin-top:12px; }
@@ -3694,23 +3700,6 @@ function todayCard(r) {
 
   // 책마다 하루 한 번. 남은 책이 있으면 그 책으로 바로 열어준다
   const rest = leftToday(r.id);
-  // 인증 구경으로 가는 길. 오늘 인증하기 전에도 보인다 — 구경만 하고 싶은 아이도 길이 있어야 한다.
-  // 「오늘 N명이 인증했어요」 줄도 같은 곳으로 가지만 글자처럼 보여서 눌러도 되는지 알기 어렵다
-  const viewBtn = (mt = 8) => `<button class="btn btn-line" style="margin-top:${mt}px;" onclick="go('cert', ${r.id})">우리 인증 보기</button>`;
-  const action = ended
-    ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
-       ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
-       ${viewBtn()}`
-    : d?.notYet
-      ? recruitBlock(r)
-    : !done
-      ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>${viewBtn()}`
-      : rest.length
-        ? `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
-           <button class="btn btn-line" onclick="openCert(${r.id}, '${esc(rest[0].title).replace(/'/g, "\\'")}')">
-             「${esc(rest[0].title)}」도 인증하기</button>${viewBtn()}`
-        : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>${viewBtn(0)}`;
-
   // 루틴 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
   // 두 권 넘게 읽으면(병렬독서) 오른쪽 한 장 대신 막대 아래 한 줄로 내린다 —
   // 오른쪽에 셋을 욱여넣으면 표지가 알아볼 수 없이 작아지고, 사진 줄을
@@ -3737,17 +3726,48 @@ function todayCard(r) {
   };
   const SHOWW = 5;
   // 내가 읽는 책 표지. 검색해서 고른 표지가 있으면 그것을, 없으면 내가 찍어 올린 사진을 (MY 책장과 같은 규칙)
-  const bookShelf = d?.notYet || !books.length ? '' : `<div class="tc-shelf">${books.map(b => `
-        <div class="tc-bt" onclick="event.stopPropagation();openCert(${r.id}, '${esc(b.title).replace(/'/g, "\\'")}')">
+  // 【인증 단추는 표지 밑에 · 2026-10-09 사용자】 책마다 「인증하기」 → 「✓ 인증완료」. 병렬독서에서 어느 책을
+  //   했고 안 했는지 표지와 함께 한눈에 보인다. 한 권일 때도 같다. 끝난 루틴에는 단추를 두지 않는다
+  const live = !ended && !d?.notYet;
+  const perBook = live && books.length > 0;
+  const bookDone = b => doneToday(r.id).some(t => loose(t) === loose(b.title));
+  const bookShelf = d?.notYet || !books.length ? '' : `<div class="tc-shelf">${books.map(b => {
+    const ok = bookDone(b);
+    const t = esc(b.title).replace(/'/g, "\\'");
+    return `
+        <div class="tc-bt" ${live && !ok ? `onclick="event.stopPropagation();openCert(${r.id}, '${t}')"` : ''}>
           <div class="tc-bt-i">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}</div>
           <span>${esc(b.title)}</span>
-          ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : ''}
-        </div>`).join('')}</div>`;
+          ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : perBook ? '<i>&nbsp;</i>' : ''}   <!-- 쪽수 줄 높이를 맞춰 단추가 나란히 서게 -->
+          ${perBook ? (ok ? '<div class="tc-bb ok">✓ 인증완료</div>'
+                          : `<button class="tc-bb" onclick="event.stopPropagation();openCert(${r.id}, '${t}')">인증하기</button>`) : ''}
+        </div>`;
+  }).join('')}</div>`;
   const shelf = d?.notYet ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
       ${whoToday.length ? `<span class="tw-row">${whoToday.slice(0, SHOWW).map(dot).join('')}${
           whoToday.length > SHOWW ? `<i class="tw-d tw-more">+${whoToday.length - SHOWW}</i>` : ''}</span>` : ''}
       <span class="tw-t">${whoToday.length ? `오늘 <b>${whoToday.length}명</b>이 인증했어요` : '오늘 첫 인증을 기다려요'}</span>
       <i class="ti ti-chevron-right"></i></div>`;
+
+  // 인증 구경으로 가는 길. 오늘 인증하기 전에도 보인다 — 구경만 하고 싶은 아이도 길이 있어야 한다.
+  // 「오늘 N명이 인증했어요」 줄도 같은 곳으로 가지만 글자처럼 보여서 눌러도 되는지 알기 어렵다
+  const viewBtn = (mt = 8) => `<button class="btn btn-line" style="margin-top:${mt}px;" onclick="go('cert', ${r.id})">우리 인증 보기</button>`;
+  const action = ended
+    ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
+       ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
+       ${viewBtn()}`
+    : d?.notYet
+      ? recruitBlock(r)
+    : perBook
+      ? (() => { const left = books.filter(b => !bookDone(b)).length;   // 참여할 때 적은 책만 있는 옛 참여자도 같은 셈
+          return `${left ? '' : '<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>'}${viewBtn(left ? 12 : 8)}`; })()
+    : !done
+      ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>${viewBtn()}`
+      : rest.length
+        ? `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
+           <button class="btn btn-line" onclick="openCert(${r.id}, '${esc(rest[0].title).replace(/'/g, "\\'")}')">
+             「${esc(rest[0].title)}」도 인증하기</button>${viewBtn()}`
+        : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>${viewBtn(0)}`;
 
   return `<div class="tcard">
     <div class="tc-b">
