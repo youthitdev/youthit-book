@@ -4224,7 +4224,10 @@ let homePickIds = null;
 const PICK_COVER_KEY = 'hankkut-pick-covers';
 const pickCoverCache = (() => { try { return JSON.parse(sessionStorage.getItem(PICK_COVER_KEY) || '{}'); } catch (e) { return {}; } })();
 
+// 추천이 아직 적어서 홈에서는 내려 두었다 (2026-10-10 사용자). 쌓이면 true 로 켜면 된다 — 사장님 화면과 책방 정보 창의 추천은 그대로 보인다
+const SHOW_HOME_PICKS = false;
 function pickSection() {
+  if (!SHOW_HOME_PICKS) return '';
   const cand = (state.stores || []).filter(b => b.active && b.pick_title);
   if (!cand.length) return '';
   let ids = (homePickIds || []).filter(id => cand.some(b => b.id === id));
