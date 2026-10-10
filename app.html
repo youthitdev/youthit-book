@@ -468,6 +468,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-t i { font-size:15px; color:var(--ink-3); vertical-align:-2px; margin-left:1px; }
 .tc-t:active { opacity:.6; }
+.tc-day { display:flex; justify-content:space-between; align-items:baseline; }
+.tc-rec { border:none; background:none; font-family:inherit; font-size:12.5px; font-weight:700; color:var(--blue); cursor:pointer; padding:2px 0 2px 10px; }
+.tc-rec i { font-size:13px; vertical-align:-1px; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
 /* 오늘 인증한 친구들 — 동그라미가 겹쳐 놓이고, 누르면 인증 탭 */
@@ -1213,6 +1216,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rl-s { display:inline-block; margin-top:8px; font-size:12px; font-weight:700; color:var(--ink-3); background:var(--bg); border-radius:99px; padding:3px 10px; }
 .rl-s.on { color:var(--green-d); background:#F2F7E6; }
 .rl-c > i { color:var(--ink-3); font-size:17px; flex:none; }
+.pk-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.pk-t { text-align:left; background:none; border:none; padding:0; font-family:inherit; cursor:pointer; min-width:0; }
+.pk-i { aspect-ratio:3/4; border-radius:10px; overflow:hidden; background:#eeeae2; display:flex; align-items:center; justify-content:center;
+  font-size:22px; box-shadow:0 1px 4px rgba(0,0,0,.09); }
+.pk-i img { width:100%; height:100%; object-fit:cover; display:block; }
+.pk-t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:12.5px; font-weight:800; margin-top:7px; line-height:1.35; }
+.pk-t span { display:block; font-size:11px; color:var(--ink-3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -3683,6 +3693,7 @@ const pendingBuy = rid => me && state.purchases.find(p =>
 
 // ── 화면 ───────────────────────────────────────────────
 function go(t, rid) {
+  if (t === 'home') homePickIds = null;   // 홈에 들어올 때마다 추천 책방을 새로 뽑는다
   tab = t;
   certFocus = (t === 'cert') ? (rid || null) : null;
   document.querySelectorAll('nav div').forEach(d => d.classList.toggle('on', d.dataset.tab === t));
@@ -3694,7 +3705,7 @@ function render() {
   paintBell();
   // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
   if (isGuest() && tab !== 'home' && tab !== 'store') { b.innerHTML = guestWall(); return; }
-  if (tab === 'home') { b.innerHTML = '<div id="pushNudge"></div>' + viewHome(); paintPushNudge(); }
+  if (tab === 'home') { b.innerHTML = '<div id="pushNudge"></div>' + viewHome(); paintPushNudge(); fillPickCovers(); }
   else if (tab === 'cert') b.innerHTML = viewCert();
   else if (tab === 'feed') b.innerHTML = viewFeed();
   else if (tab === 'store') b.innerHTML = viewStores();
@@ -3906,26 +3917,23 @@ function todayCard(r) {
       <span class="tw-t">${whoToday.length ? `오늘 <b>${whoToday.length}명</b>이 인증했어요` : '오늘 첫 인증을 기다려요'}</span>
       <i class="ti ti-chevron-right"></i></div>`;
 
-  // 인증 구경으로 가는 길. 오늘 인증하기 전에도 보인다 — 구경만 하고 싶은 아이도 길이 있어야 한다.
-  // 「오늘 N명이 인증했어요」 줄도 같은 곳으로 가지만 글자처럼 보여서 눌러도 되는지 알기 어렵다
-  const viewBtn = (mt = 8) => `<button class="btn btn-line" style="margin-top:${mt}px;" onclick="go('cert', ${r.id})">우리 인증 보기</button>`;
   const action = ended
     ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
        ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
        ${certsOf(r.id).length ? `<button class="btn btn-line" style="margin-top:8px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드</button>` : ''}
-       ${viewBtn()}`
+       `
     : d?.notYet
       ? recruitBlock(r)
     : perBook
       ? (() => { const left = books.filter(b => !bookDone(b)).length;   // 참여할 때 적은 책만 있는 옛 참여자도 같은 셈
-          return `${left ? '' : '<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>'}${viewBtn(left ? 12 : 8)}`; })()
+          return `${left ? '' : '<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>'}`; })()
     : !done
-      ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>${viewBtn()}`
+      ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`
       : rest.length
         ? `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>
            <button class="btn btn-line" onclick="openCert(${r.id}, '${esc(rest[0].title).replace(/'/g, "\\'")}')">
-             「${esc(rest[0].title)}」도 인증하기</button>${viewBtn()}`
-        : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>${viewBtn(0)}`;
+             「${esc(rest[0].title)}」도 인증하기</button>`
+        : `<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>`;
 
   return `<div class="tcard">
     <div class="tc-b">
@@ -3939,7 +3947,7 @@ function todayCard(r) {
             ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`
             : ''}
       </div>
-      <div class="tc-day">${routineLine(r, d)}</div>
+      <div class="tc-day">${routineLine(r, d)}${d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
       ${d && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${bookShelf}
       ${shelf}
@@ -4074,7 +4082,7 @@ function kkutTodayCard(r) {
           ? `<b>고쳐서 다시 등록해주세요</b><span>${esc(r.reject_reason)}</span>`
           : `<b>운영진이 확인하고 있어요</b><span>열리면 청소년이 신청할 수 있어요.</span>`}
       </div>` : ''}
-      <div class="tc-day">${routineLine(r, d)}</div>
+      <div class="tc-day">${routineLine(r, d)}${waiting || d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
       ${(() => { const nb = waiting || d?.ended ? null : kkutNowBook(r); return nb ? `<div class="tc-nb">
         <div class="nb-c">${nb.cover ? `<img src="${esc(nb.cover)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
         <div class="nb-t"><em>지금 읽는 책</em><b>${esc(nb.title)}</b></div></div>` : ''; })()}
@@ -4083,8 +4091,7 @@ function kkutTodayCard(r) {
       ${waiting || d?.ended || d?.notYet ? '' : shelf}
       ${waiting || d?.notYet ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
-      ${!waiting && d?.notYet ? recruitBlock(r) : certAction(r, 'btn-primary', 'margin-bottom:8px;')}
-      <button class="btn btn-line" onclick="go('cert', ${r.id})">우리 인증 보기</button>
+      ${!waiting && d?.notYet ? recruitBlock(r) : certAction(r, 'btn-primary', 'margin-bottom:0;')}
     </div>
   </div>`;
 }
@@ -4104,7 +4111,7 @@ function viewHome() {
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
         <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth('signup')">시작하기</button>
-      </div>` + recruit;
+      </div>` + pickSection() + recruit;
   }
 
   let h = '';
@@ -4159,7 +4166,7 @@ function viewHome() {
     // 【전에는 어른 끗짱에게 감췄다】 「고를 수도 없는 목록」이라고 봤는데,
     //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 루틴을 어떻게 여는지가
     //   제 루틴을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
-    return h + (others.length ? recruitSection(others) : '');
+    return h + pickSection() + (others.length ? recruitSection(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
@@ -4206,7 +4213,52 @@ function viewHome() {
         끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
     </div>`;
   }
-  return h + recruit;
+  return h + pickSection() + recruit;
+}
+
+// ── 홈의 책방 추천 ─────────────────────────────────────
+// 사장님이 남긴 추천 책(migration-110·111)을 표지로 보여 준다. 홈에 들어올 때마다 다른 책방 셋이 무작위로 뽑힌다.
+// 같은 홈 화면을 다시 그릴 때(render)는 그대로 둔다 — 다시 그릴 때마다 바뀌면 눈앞에서 깜빡인다.
+// 표지가 비어 있으면(사장님이 검색 없이 제목만 적었다) 제목으로 찾아 채운다 (로그인한 사람만 검색할 수 있다)
+let homePickIds = null;
+const PICK_COVER_KEY = 'hankkut-pick-covers';
+const pickCoverCache = (() => { try { return JSON.parse(sessionStorage.getItem(PICK_COVER_KEY) || '{}'); } catch (e) { return {}; } })();
+
+function pickSection() {
+  const cand = (state.stores || []).filter(b => b.active && b.pick_title);
+  if (!cand.length) return '';
+  let ids = (homePickIds || []).filter(id => cand.some(b => b.id === id));
+  if (!ids.length) {
+    const a = cand.map(b => b.id);
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    ids = homePickIds = a.slice(0, 3);
+  }
+  const tiles = ids.map(id => cand.find(b => b.id === id)).map(b => {
+    const cv = b.pick_cover || pickCoverCache[b.pick_title] || '';
+    return `<button class="pk-t" onclick="openStoreInfo(${b.id})">
+      <div class="pk-i" data-pk="${b.id}">${cv ? `<img src="${esc(cv)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
+      <b>${esc(b.pick_title)}</b>
+      <span>${esc(b.name)}</span>
+    </button>`;
+  }).join('');
+  return `<div class="sec-t">💛 책방에서 추천해요</div><div class="pk-row">${tiles}</div>`;
+}
+
+// 표지가 비어 있는 추천은 제목으로 찾아 채운다. 찾은 것은 이 탭을 닫을 때까지 기억한다
+async function fillPickCovers() {
+  if (!me || isGuest() || DEMO) return;
+  const need = (state.stores || []).filter(b => b.active && b.pick_title && !b.pick_cover && !pickCoverCache[b.pick_title]
+    && (homePickIds || []).includes(b.id));
+  for (const b of need) {
+    try {
+      const { data, error } = await sb.functions.invoke('book-search', { body: { q: b.pick_title } });
+      const th = !error && data?.books?.find(x => x.thumbnail)?.thumbnail;
+      pickCoverCache[b.pick_title] = th || '-';
+      try { sessionStorage.setItem(PICK_COVER_KEY, JSON.stringify(pickCoverCache)); } catch (e) {}
+      const el = document.querySelector(`.pk-i[data-pk="${b.id}"]`);
+      if (el && th) el.innerHTML = `<img src="${esc(th)}" alt="" loading="lazy">`;
+    } catch (e) { /* 표지가 없어도 제목은 보인다 */ }
+  }
 }
 
 function viewCert() {

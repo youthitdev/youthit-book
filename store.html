@@ -104,6 +104,18 @@ input:focus, textarea:focus, select:focus{ border-color:var(--amber); }
 .lg-it.on{ background:var(--amber-l); font-weight:800; color:var(--amber-d); }
 .lg-none{ padding:12px 13px; font-size:13px; color:var(--ink-3); }
 
+.pk-find{ margin-top:6px; border:1px solid var(--line); border-radius:12px; background:#fff; max-height:260px; overflow-y:auto; }
+.pk-find button{ display:flex; gap:11px; align-items:center; width:100%; text-align:left; background:none; border:none;
+  border-bottom:1px solid #F3EEE4; padding:9px 12px; font-family:inherit; cursor:pointer; }
+.pk-find button:last-child{ border-bottom:none; }
+.pk-find button:active{ background:var(--amber-l); }
+.pk-c{ width:38px; height:54px; border-radius:5px; overflow:hidden; background:#eeeae2; flex:none; display:flex; align-items:center; justify-content:center; font-style:normal; }
+.pk-c img{ width:100%; height:100%; object-fit:cover; display:block; }
+.pk-find b{ display:block; font-size:14px; font-weight:800; }
+.pk-find span{ display:block; font-size:12px; color:var(--ink-3); margin-top:2px; }
+.pk-none{ padding:12px 13px; font-size:13px; color:var(--ink-3); }
+.pk-got{ display:flex; align-items:center; gap:11px; margin-top:8px; font-size:12.5px; color:var(--ok); font-weight:700; }
+.pk-got img{ width:42px; height:60px; border-radius:6px; object-fit:cover; box-shadow:0 1px 4px rgba(0,0,0,.15); }
 .guide{ background:var(--amber-l); border:1px solid #F0DFBF; border-radius:14px;
   padding:16px; font-size:14px; line-height:1.75; }
 .guide > b{ display:block; margin-bottom:6px; }   /* 문장 속 <b> 까지 끊기면 안 된다 */
@@ -157,7 +169,7 @@ const ls = {
 const URL_KEY = new URLSearchParams(location.search).get('k') || '';
 let KEY = URL_KEY || ls.get(KEY_SAVE);
 
-let rows = [], picked = null, receipt = null, photo = null, store = null, storePick = { title: '', line: '' };
+let rows = [], picked = null, receipt = null, photo = null, store = null, storePick = { title: '', line: '', cover: '' };
 
 // ── QR 로 들어온 길 (migration-88) ─────────────────────
 // 아이 폰의 QR 을 카메라로 찍으면 여기로 온다. 그 건 하나만 열린다.
@@ -186,7 +198,8 @@ async function load() {
     sb.rpc('store_pick',    { p_key: KEY }),     // 110 이 아직이면 오류가 와도 빈 채로 둔다
   ]);
   const pr = pk && !pk.error ? (Array.isArray(pk.data) ? pk.data[0] : pk.data) : null;
-  storePick = { title: (pr && pr.pick_title) || '', line: (pr && pr.pick_line) || '', ready: !!(pk && !pk.error) };
+  pkPicked = (pr && pr.pick_title) || '';
+  storePick = { title: (pr && pr.pick_title) || '', line: (pr && pr.pick_line) || '', cover: (pr && pr.pick_cover) || '', ready: !!(pk && !pk.error) };
   store = (Array.isArray(card.data) ? card.data[0] : card.data) || null;
   const { data, error } = list;
   // 【무슨 일인지 보이게 둔다】 전에는 어떤 오류든 「주소가 올바르지 않아요」로
@@ -339,18 +352,57 @@ function pickCard() {
   return `<div class="card" style="margin-top:14px;">
     <div class="store-n" style="font-size:16.5px;">💛 이번 달 추천 한 줄</div>
     <div class="store-s" style="margin-top:4px;">청소년이 책방을 고를 때 사장님의 추천이 보여요. 어렵게 생각하지 않으셔도 돼요.</div>
-    <label>추천하는 책</label>
-    <input type="text" id="pkTitle" maxlength="60" placeholder="예) 아몬드" value="${esc(storePick.title)}">
+    <label>추천하는 책 <span style="font-weight:500;color:var(--ink-3);">— 제목을 치면 찾아드려요</span></label>
+    <input type="text" id="pkTitle" maxlength="60" placeholder="예) 아몬드" value="${esc(storePick.title)}"
+           autocomplete="off" oninput="pkType()">
+    <div id="pkFind"></div>
+    <div id="pkGot">${pkGot()}</div>
     <label>한 줄 (80자까지)</label>
     <input type="text" id="pkLine" maxlength="80" placeholder="예) 마음이 복잡한 날 읽으면 좋아요" value="${esc(storePick.line)}">
     <button class="btn btn-line" id="pkGo" onclick="savePick()" style="margin-top:14px;">저장하기</button>
     <div id="pkMsg"></div>
   </div>`;
 }
+
+// 고른 책의 표지. 검색에서 고르면 표지가 같이 저장된다. 제목을 고쳐 쓰면 연결이 풀린다
+const pkGot = () => storePick.cover
+  ? `<div class="pk-got"><img src="${esc(storePick.cover)}" alt=""><span>표지가 함께 저장돼요</span></div>` : '';
+let pkT = null, pkSeq = 0, pkFound = [], pkPicked = storePick.title;
+function pkType() {
+  clearTimeout(pkT);
+  const q = $('pkTitle').value.trim();
+  if (q !== pkPicked) { storePick.cover = ''; $('pkGot').innerHTML = ''; }
+  if (q.length < 2 || q === pkPicked) { $('pkFind').innerHTML = ''; return; }
+  pkT = setTimeout(() => pkRun(q), 350);
+}
+async function pkRun(q) {
+  const seq = ++pkSeq;
+  $('pkFind').innerHTML = `<div class="pk-find"><div class="pk-none">찾는 중…</div></div>`;
+  let books = [];
+  try {
+    const { data, error } = await sb.functions.invoke('book-search', { body: { q, store_key: KEY } });
+    if (!error) books = (data && data.books) || [];
+  } catch (e) { /* 검색이 안 돼도 제목은 그대로 저장된다 */ }
+  if (seq !== pkSeq || $('pkTitle').value.trim() !== q) return;
+  if (!books.length) { $('pkFind').innerHTML = `<div class="pk-find"><div class="pk-none">검색에 없어요. 적으신 제목 그대로 저장돼요.</div></div>`; return; }
+  pkFound = books;
+  $('pkFind').innerHTML = `<div class="pk-find">${books.map((b, i) => `
+    <button type="button" onclick="pkUse(${i})">
+      <i class="pk-c">${b.thumbnail ? `<img src="${esc(b.thumbnail)}" loading="lazy" alt="">` : '📖'}</i>
+      <div><b>${esc(b.title)}</b><span>${esc([b.authors, b.publisher].filter(Boolean).join(' · '))}</span></div>
+    </button>`).join('')}</div>`;
+}
+function pkUse(i) {
+  const b = pkFound[i]; if (!b) return;
+  $('pkTitle').value = b.title.slice(0, 60);
+  pkPicked = $('pkTitle').value.trim();
+  storePick.cover = b.thumbnail || '';
+  $('pkFind').innerHTML = ''; $('pkGot').innerHTML = pkGot();
+}
 async function savePick() {
   const btn = $('pkGo'); btn.disabled = true; btn.textContent = '저장 중…';
   const t = $('pkTitle').value, l = $('pkLine').value;
-  const { error } = await sb.rpc('store_set_pick', { p_key: KEY, p_title: t, p_line: l });
+  const { error } = await sb.rpc('store_set_pick', { p_key: KEY, p_title: t, p_line: l, p_cover: t.trim() === pkPicked ? (storePick.cover || null) : null });
   btn.disabled = false; btn.textContent = '저장하기';
   const m = $('pkMsg');
   if (error) { m.innerHTML = `<div class="msg m-bad">${esc(error.message || '저장하지 못했어요')}</div>`; return; }

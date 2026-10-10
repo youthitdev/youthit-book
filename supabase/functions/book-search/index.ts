@@ -29,6 +29,23 @@ const isUser = (req: Request): boolean => {
   } catch { return false; }
 };
 
+// 책방 사장님은 회원이 아니라 책방 열쇠로 들어온다 (store.html). 「이 열쇠가 맞는 책방인가」를 DB 에 물어 통과시킨다.
+// 호출한 쪽이 보낸 공개 키(apikey)를 그대로 써서 묻는다 — 이 함수에 따로 비밀 키를 두지 않는다
+const storeKeyOk = async (req: Request, key: unknown): Promise<boolean> => {
+  const k = typeof key === "string" ? key : "";
+  const apikey = req.headers.get("apikey") ?? "";
+  const base = Deno.env.get("SUPABASE_URL") ?? "";
+  if (!k || k.length > 200 || !apikey || !base) return false;
+  try {
+    const r = await fetch(`${base}/rest/v1/rpc/store_key_ok`, {
+      method: "POST",
+      headers: { apikey, Authorization: `Bearer ${apikey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ p_key: k }),
+    });
+    return r.ok && (await r.json()) === true;
+  } catch { return false; }
+};
+
 // app.html 은 github.io 에서 돈다. 다른 도메인이라 CORS 헤더가 없으면 막힌다
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -55,10 +72,11 @@ Deno.serve(async (req) => {
   // 키를 아직 안 넣었어도 앱이 멈추면 안 된다. 빈 목록으로 조용히 돌려보낸다
   if (!key) return json(200, { books: [], note: "KAKAO_REST_KEY 미설정" });
 
-  if (!isUser(req)) return json(403, { error: "로그인이 필요해요" });
-
-  let b: { q?: string };
+  let b: { q?: string; store_key?: string };
   try { b = await req.json(); } catch { return json(400, { error: "JSON 본문이 필요해요" }); }
+
+  // 로그인한 회원이거나, 맞는 책방 열쇠를 가진 사장님만
+  if (!isUser(req) && !(await storeKeyOk(req, b.store_key))) return json(403, { error: "로그인이 필요해요" });
 
   const q = (b.q ?? "").trim();
   if (q.length < 2) return json(200, { books: [] });
