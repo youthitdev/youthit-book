@@ -5530,22 +5530,10 @@ function pastBlock() {
   }).sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
   if (!past.length) return '';
 
-  const row = r => {
-    const d = routineDay(r);
-    const led = r.led_by === me.id;
-    const days = !d ? '기간 미정' : (d.ended ? `${d.total}일 완주` : `${d.n}일까지`);
-    // 맡은 루틴은 몇 명과 했는지, 참여한 루틴은 내가 몇 번 읽었는지가 궁금하다
-    const tail = led
-      ? `${(state.parts || []).filter(x => x.routine_id === r.id && x.status === 'approved').length}명`
-      : `인증 ${myCerts(r.id).length}회`;
-    return `<div class="pr" onclick="openRoutine(${r.id})">
-      <div class="pr-t">${esc(r.emoji || '📚')} ${esc(r.title)}${led ? ' <i class="pr-led">맡음</i>' : ''}</div>
-      <div class="pr-s">${days} · ${tail}</div>
-    </div>`;
-  };
-
-  return `<div class="sec-t">지난 루틴 <b style="color:var(--ink-3);">${past.length}</b></div>
-    <div class="card" style="padding:4px 16px;">${past.map(row).join('')}</div>`;
+  // 【지난 루틴은 인증 탭으로 · 2026-10-10 사용자】 목록은 인증 탭의 「지난 루틴」에 모았다.
+  //   두 곳에 같은 목록이 있으면 어느 쪽이 맞는지 알 수 없다. MY 에는 가는 길만 남긴다
+  return `<button class="store-more" onclick="go('cert')">
+    <span>지난 루틴 보기</span><em>${past.length}개</em><i class="ti ti-chevron-right"></i></button>`;
 }
 
 // ── 인증 달력 ──────────────────────────────────────────
