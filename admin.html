@@ -2718,7 +2718,9 @@ function viewStores() {
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>서점</th><th class="num">확인 번호</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(s => `<tr>
-      <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}</td>
+      <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}${s.pick_title
+        ? `<div class="muted" style="margin-top:4px;">💛 『${esc(s.pick_title)}』${s.pick_line ? ` ${esc(s.pick_line)}` : ''}
+             <a href="#" onclick="clearStorePick(${s.id});return false;" style="margin-left:4px;">지우기</a></div>` : ''}</td>
       <td class="num"><button class="vq-quiet" style="letter-spacing:2px;font-weight:800;"
           onclick="vqCopy(this, '${esc(s.code || '')}')">${esc(s.code || '—')}</button></td>
       <td class="muted">${esc(s.address) || '-'}</td>
@@ -2731,6 +2733,18 @@ function viewStores() {
         <button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
+}
+
+// 책방지기의 한 줄 추천 (migration-110). 부적절한 글이면 운영진이 내린다
+async function clearStorePick(id) {
+  const st = (DB.bookstores || []).find(x => x.id === id); if (!st) return;
+  if (!confirm(`「${st.name}」의 추천 한 줄을 내릴까요?`)) return;
+  if (LIVE) {
+    const { error } = await sb.from('bookstores').update({ pick_title: null, pick_line: null, pick_at: null }).eq('id', id);
+    if (error) return alert('내리지 못했어요: ' + error.message);
+  }
+  st.pick_title = null; st.pick_line = null;
+  render();
 }
 
 let storeEditId = null;

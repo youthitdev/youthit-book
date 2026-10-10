@@ -157,7 +157,7 @@ const ls = {
 const URL_KEY = new URLSearchParams(location.search).get('k') || '';
 let KEY = URL_KEY || ls.get(KEY_SAVE);
 
-let rows = [], picked = null, receipt = null, photo = null, store = null;
+let rows = [], picked = null, receipt = null, photo = null, store = null, storePick = { title: '', line: '' };
 
 // ── QR 로 들어온 길 (migration-88) ─────────────────────
 // 아이 폰의 QR 을 카메라로 찍으면 여기로 온다. 그 건 하나만 열린다.
@@ -180,10 +180,13 @@ async function load() {
   if (TOKEN) return loadRedeem(savedCode());
   if (!KEY) return showLogin('');
   $('app').innerHTML = `<div class="card"><div class="hint">불러오는 중이에요…</div></div>`;
-  const [card, list] = await Promise.all([
+  const [card, list, pk] = await Promise.all([
     sb.rpc('store_card',    { p_key: KEY }),
     sb.rpc('store_pending', { p_key: KEY }),
+    sb.rpc('store_pick',    { p_key: KEY }),     // 110 이 아직이면 오류가 와도 빈 채로 둔다
   ]);
+  const pr = pk && !pk.error ? (Array.isArray(pk.data) ? pk.data[0] : pk.data) : null;
+  storePick = { title: (pr && pr.pick_title) || '', line: (pr && pr.pick_line) || '', ready: !!(pk && !pk.error) };
   store = (Array.isArray(card.data) ? card.data[0] : card.data) || null;
   const { data, error } = list;
   // 【무슨 일인지 보이게 둔다】 전에는 어떤 오류든 「주소가 올바르지 않아요」로
@@ -317,6 +320,8 @@ function paint() {
       <div class="hint" style="margin-top:8px;">청소년이 올리는 교환 인증 사진은 한끗독서 회원에게 공개되며, 책방 이름이 함께 표시됩니다.</div>
     </div>
 
+    ${pickCard()}
+
     <div class="sec">청구할 건 ${wait.length ? `<span style="color:var(--amber-d);">${wait.length}</span>` : ''}</div>
     ${wait.length
       ? wait.map(card).join('')
@@ -325,6 +330,32 @@ function paint() {
 
     ${rest.length ? `<div class="sec">지난 건</div>${rest.map(card).join('')}` : ''}
   `;
+}
+
+// ── 사장님의 한 줄 추천 (migration-110) ─────────────────
+// 아이가 책방을 고를 때 앱의 책방 정보 창에 「사장님 추천」으로 보인다. 둘 다 비우고 저장하면 내려간다
+function pickCard() {
+  if (!storePick.ready) return '';          // 110 이 아직이면 칸 자체를 보이지 않는다
+  return `<div class="card" style="margin-top:14px;">
+    <div class="store-n" style="font-size:16.5px;">💛 이번 달 추천 한 줄</div>
+    <div class="store-s" style="margin-top:4px;">청소년이 책방을 고를 때 사장님의 추천이 보여요. 어렵게 생각하지 않으셔도 돼요.</div>
+    <label>추천하는 책</label>
+    <input type="text" id="pkTitle" maxlength="60" placeholder="예) 아몬드" value="${esc(storePick.title)}">
+    <label>한 줄 (80자까지)</label>
+    <input type="text" id="pkLine" maxlength="80" placeholder="예) 마음이 복잡한 날 읽으면 좋아요" value="${esc(storePick.line)}">
+    <button class="btn btn-line" id="pkGo" onclick="savePick()" style="margin-top:14px;">저장하기</button>
+    <div id="pkMsg"></div>
+  </div>`;
+}
+async function savePick() {
+  const btn = $('pkGo'); btn.disabled = true; btn.textContent = '저장 중…';
+  const t = $('pkTitle').value, l = $('pkLine').value;
+  const { error } = await sb.rpc('store_set_pick', { p_key: KEY, p_title: t, p_line: l });
+  btn.disabled = false; btn.textContent = '저장하기';
+  const m = $('pkMsg');
+  if (error) { m.innerHTML = `<div class="msg m-bad">${esc(error.message || '저장하지 못했어요')}</div>`; return; }
+  storePick.title = t.trim(); storePick.line = l.trim();
+  m.innerHTML = `<div class="msg m-ok">${storePick.title ? '저장했어요. 청소년에게 보여요.' : '추천을 내렸어요.'}</div>`;
 }
 
 function card(r) {
