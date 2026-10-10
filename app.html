@@ -1018,6 +1018,15 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .stamp-c b { font-size:20px; font-weight:800; letter-spacing:-.5px; line-height:1.15; }
 .stamp-c i { font-style:normal; font-size:12px; opacity:.85; }
 .stamp-d { font-size:17px; font-weight:800; color:#fff; letter-spacing:-.3px; }
+.stamp-pg { width:min(300px,86vw); margin:18px auto 0; padding:14px 16px; border-radius:16px; background:rgba(255,255,255,.96); text-align:left;
+  box-shadow:0 8px 24px rgba(0,0,0,.22); animation:sgUp .5s .5s ease both; }
+@keyframes sgUp { from { transform:translateY(14px); opacity:0; } to { transform:none; opacity:1; } }
+.sg-t { font-size:20px; font-weight:800; color:var(--green-d); letter-spacing:-.4px; }
+.sg-r { display:flex; align-items:center; gap:10px; margin-top:9px; font-size:12px; font-weight:700; color:var(--ink-2); }
+.sg-r span { width:78px; flex:none; }
+.sg-b { flex:1; height:9px; border-radius:99px; background:#EBE5DA; overflow:hidden; }
+.sg-f { display:block; height:100%; border-radius:99px; background:var(--green); transition:width 1.3s cubic-bezier(.2,.8,.2,1); }
+.sg-n { margin-top:11px; font-size:12.5px; line-height:1.6; color:var(--ink-2); }
 .stamp-p { font-size:13.5px; font-weight:700; color:var(--green); margin-top:4px; }
 @keyframes stampIn {
   0%   { transform:scale(1.7) rotate(-14deg); opacity:0; }
@@ -2279,6 +2288,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="stamp-c"><b>한끗<br>독서</b><i>오늘 한 장</i></div>
     <div class="stamp-d" id="stampDay"></div>
     <div class="stamp-p" id="stampPt"></div>
+    <!-- 오늘 읽은 쪽이 내 책 높이와 함께 짓는 도시에 더해지는 모습 (인증 직후에만 채운다) -->
+    <div class="stamp-pg" id="stampPg" style="display:none;"></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -7526,16 +7537,45 @@ async function savePost() {
 // 【숫자는 오늘 것만】 「며칠째」와 「+10P」만 말한다. 누적이나 순위는 안 꺼낸다
 let stampT = null;
 
-function showStamp(day, pts) {
+function showStamp(day, pts, pg) {
   const el = $('stamp'); if (!el) return;
   // 도장 안에 이미 「오늘 한 장」이 있다. 기간이 없는 루틴이면 이 줄은 비운다
   $('stampDay').textContent = day ? `${won(day)}일째` : '';
   $('stampPt').textContent  = pts ? `+${pts}P` : '';
+  const box = $('stampPg');
+  if (pg) {
+    box.innerHTML = stampPagesHtml(pg); box.style.display = '';
+    // 막대는 옛 값에서 시작해 새 값으로 차오른다 — 도장이 찍힌 뒤에 움직여야 눈에 들어온다
+    setTimeout(() => box.querySelectorAll('.sg-f').forEach(f => { f.style.width = f.dataset.to + '%'; }), 700);
+  } else { box.innerHTML = ''; box.style.display = 'none'; }
   el.classList.remove('on');
   void el.offsetWidth;                 // 연달아 인증해도 다시 처음부터 찍히게
   el.classList.add('on');
   clearTimeout(stampT);
-  stampT = setTimeout(hideStamp, 1600);
+  stampT = setTimeout(hideStamp, pg ? 4800 : 1600);
+}
+
+// 인증 직후: 오늘 읽은 쪽이 「내 책 높이」와 「함께 짓는 책의 도시」에 더해진다.
+// before/after 는 서버가 센 합계({mine,total}) — 인증 전후를 비교한 값이라 상한(300쪽)도 이미 반영돼 있다.
+function stampPagesHtml(pg) {
+  const add = pg.after.mine - pg.before.mine;
+  const mb = personalMetaphor(pg.before.mine), ma = personalMetaphor(pg.after.mine);
+  const cb = cityMilestone(pg.before.total),  ca = cityMilestone(pg.after.total);
+  const myUp   = (ma.cur ? ma.cur.at : 0) > (mb.cur ? mb.cur.at : 0);      // 새 사물을 넘었다
+  const cityUp = ca.built.length > cb.built.length;                           // 새 건물이 완공됐다
+  // 새 칸을 넘었으면 막대는 가득 찬 채로 끝난다 (다음 칸의 작은 막대로 되돌아가면 어색하다)
+  const myTo   = myUp   ? 100 : ma.pct, cityTo = cityUp ? 100 : ca.pct;
+  const myFrom = mb.pct, cityFrom = cb.pct;
+  const myObj  = ma.cur ? `${ma.cur.ico} ${ma.cur.name}` : '내 책 높이';
+  const cityObj = ca.done ? `${CITY[CITY.length - 1].ico} ${CITY[CITY.length - 1].name}` : `${ca.next.ico} ${ca.next.name}`;
+  const note = cityUp
+    ? `🎉 ${ca.built[ca.built.length - 1].ico} ${ca.built[ca.built.length - 1].name}이 완공됐어요!`
+    : myUp && ma.cur ? `🎉 ${ma.cur.ico} ${ma.cur.name}만큼 쌓았어요!`
+    : `오늘 읽은 +${add}쪽이 ${myObj}에 더해졌고, ${cityObj} 완공에도 보태졌어요`;
+  return `<div class="sg-t">+${won(add)}쪽</div>
+    <div class="sg-r"><span>내 책 높이</span><div class="sg-b"><i class="sg-f" style="width:${myFrom}%" data-to="${myTo}"></i></div></div>
+    <div class="sg-r"><span>함께 짓는 도시</span><div class="sg-b"><i class="sg-f" style="width:${cityFrom}%" data-to="${cityTo}"></i></div></div>
+    <div class="sg-n">${note}</div>`;
 }
 function hideStamp() { clearTimeout(stampT); $('stamp')?.classList.remove('on'); }
 
@@ -7581,6 +7621,7 @@ async function submitCert() {
     return toast(fin1 ? '수정했어요. 완독 도장을 찍었어요 🎉' : '수정했어요');
   }
 
+  const pgBefore = state.pages && typeof state.pages.mine === 'number' ? { ...state.pages } : null;   // 인증 전 누적 쪽수
   const { error } = await sb.from('certifications')
     .insert({ routine_id: certRid, user_id: me.id, photo_urls: urls, ...row });
   btn.disabled = false; btn.textContent = label;
@@ -7591,8 +7632,11 @@ async function submitCert() {
   await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
   // 배너 한 줄 대신 도장을 찍는다. 매일 하는 일이라 누를 맛이 있어야 한다
   const r1 = state.routines.find(x => x.id === certRid);
-  showStamp(routineDay(r1)?.n, r1?.points_per_cert);
-  if (fin2) setTimeout(() => toast('완독 도장을 찍었어요 🎉'), 1800);
+  const pgAfter = state.pages;
+  const pgShow = pgBefore && pgAfter && typeof pgAfter.mine === 'number' && pgAfter.mine > pgBefore.mine
+    ? { before: pgBefore, after: pgAfter } : null;
+  showStamp(routineDay(r1)?.n, r1?.points_per_cert, pgShow);
+  if (fin2) setTimeout(() => toast('완독 도장을 찍었어요 🎉'), pgShow ? 5200 : 1800);
   cheerLevel();
   maybeAskPush();
 }
