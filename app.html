@@ -1266,6 +1266,25 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .pg-t span { display:block; font-size:12.5px; color:var(--ink-3); margin-top:2px; line-height:1.5; }
 .pg-n { font-size:12.5px; color:var(--ink-3); margin-top:7px; }
 .pg-n b { color:var(--blue); font-weight:800; }
+.ct-card { background:linear-gradient(160deg,#F7FAF0,#FFFFFF); }
+.ct-hd { display:flex; justify-content:space-between; align-items:baseline; }
+.ct-hd b { font-size:14.5px; font-weight:800; }
+.ct-hd span { font-size:11.5px; font-weight:700; color:var(--green-d); background:#EEF5DC; border-radius:99px; padding:2px 9px; }
+.ct-next { margin-top:10px; font-size:14px; font-weight:700; }
+.ct-next em { font-style:normal; font-size:11.5px; font-weight:700; color:var(--ink-3); margin-right:4px; }
+.ct-num { margin-top:8px; font-size:13px; color:var(--ink-2); }
+.ct-num b { font-size:17px; font-weight:800; color:var(--green-d); }
+.ct-num span { color:var(--ink-3); font-size:12px; }
+.ct-say { margin-top:10px; font-size:14px; font-weight:700; color:var(--green-d); line-height:1.6; }
+.ct-road { display:flex; justify-content:space-between; gap:4px; margin-top:12px; }
+.ct-b { flex:1; text-align:center; font-size:19px; filter:grayscale(1); opacity:.28; }
+.ct-b.on { filter:none; opacity:1; }
+.ct-b.now { opacity:.7; filter:grayscale(.4); transform:scale(1.1); }
+.ct-last { margin-top:10px; font-size:12px; color:var(--ink-3); }
+.ct-mine { display:flex; align-items:center; gap:4px; width:100%; margin-top:11px; padding:10px 0 0; border:none; border-top:1px solid var(--line);
+  background:none; font-family:inherit; font-size:13px; color:var(--ink-2); cursor:pointer; text-align:left; }
+.ct-mine b { color:var(--blue); font-weight:800; }
+.ct-mine i { margin-left:auto; color:var(--ink-3); font-size:15px; }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -4184,7 +4203,7 @@ function viewHome() {
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
           읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
         <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth('signup')">시작하기</button>
-      </div>` + pickSection() + recruit;
+      </div>` + cityCard() + pickSection() + recruit;
   }
 
   let h = '';
@@ -4239,7 +4258,7 @@ function viewHome() {
     // 【전에는 어른 끗짱에게 감췄다】 「고를 수도 없는 목록」이라고 봤는데,
     //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 루틴을 어떻게 여는지가
     //   제 루틴을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
-    return h + pickSection() + (others.length ? recruitSection(others) : '');
+    return h + cityCard() + pickSection() + (others.length ? recruitSection(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
@@ -4286,7 +4305,7 @@ function viewHome() {
         끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
     </div>`;
   }
-  return h + pickSection() + recruit;
+  return h + cityCard() + pickSection() + recruit;
 }
 
 // ── 홈의 책방 추천 ─────────────────────────────────────
@@ -5754,6 +5773,47 @@ function pagesBlock() {
       ${m.next ? `<div class="lv-bar" style="margin-top:10px;"><span style="width:${m.pct}%;"></span></div>
         <div class="pg-n">다음은 ${m.next.ico} ${m.next.name}까지 <b>${won(m.left)}쪽</b></div>` : ''}
     </div>`;
+}
+
+// ── 함께 짓는 한끗 책의 도시 (전체 누적 쪽수) ──────────
+// 앱을 쓰는 모두가 읽은 쪽수를 한 곳에 모아 건물 하나씩 완공한다. 순위·경쟁이 아니라 「같이 짓는」 이야기다.
+// 쪽수는 서버가 센다 (migration-112). 마일스톤은 지금 규모에 맞춰 첫 건물을 가깝게 잡았다.
+// 목표를 못 채워도 실패·리셋은 없다 — 다음 건물이 계속 기다린다.
+const CITY = [
+  { at: 500,    ico: '☕',  name: '한끗 북클럽 모임방', say: '우리의 첫 모임방이 열렸어요!' },
+  { at: 2000,   ico: '📖',  name: '한끗 작은 서재',     say: '차곡차곡 모인 쪽수로 작은 서재 한 칸이 완성됐어요' },
+  { at: 5000,   ico: '📚',  name: '한끗 동네 작은책방', say: '골목길에 다정한 책방 하나가 들어섰어요!' },
+  { at: 15000,  ico: '🏡',  name: '한끗 북카페',         say: '따뜻한 북카페 한 곳을 가득 채웠어요' },
+  { at: 50000,  ico: '🏛️', name: '한끗 구립 도서관',   say: '우리 손으로 세운 첫 웅장한 도서관!' },
+  { at: 150000, ico: '🏰',  name: '한끗 중앙 국립도서관', say: '지혜가 모인 국립도서관이 완성됐어요' },
+  { at: 300000, ico: '🏙️', name: '한끗 책의 도시',     say: '시즌 1 최종 완공! 우리가 함께 도시를 지었어요' },
+];
+function cityMilestone(total) {
+  const n = Math.max(0, Number(total) || 0);
+  const built = CITY.filter(c => n >= c.at);
+  const next  = CITY.find(c => c.at > n) || null;
+  const prevAt = built.length ? built[built.length - 1].at : 0;
+  return { total: n, built, next, left: next ? next.at - n : 0,
+           pct: next ? Math.min(100, Math.round((n - prevAt) / (next.at - prevAt) * 100)) : 100,
+           done: !next };
+}
+function cityCard() {
+  const t = state.pages && state.pages.total;
+  if (t === null || t === undefined) return '';          // 112 가 아직이거나 불러오지 못했다
+  const m = cityMilestone(t);
+  const road = CITY.map(c => `<span class="ct-b ${t >= c.at ? 'on' : (m.next && c.at === m.next.at ? 'now' : '')}" title="${esc(c.name)}">${c.ico}</span>`).join('');
+  const mine = state.pages && state.pages.mine;
+  return `<div class="card ct-card">
+    <div class="ct-hd"><b>🏗 함께 짓는 한끗 책의 도시</b><span>시즌 1</span></div>
+    ${m.done
+      ? `<div class="ct-say">${CITY[CITY.length - 1].say}</div>`
+      : `<div class="ct-next"><em>다음 완공</em> ${m.next.ico} ${m.next.name}</div>
+         <div class="lv-bar" style="margin-top:8px;"><span style="width:${Math.max(m.pct, 2)}%;"></span></div>
+         <div class="ct-num"><b>${won(m.total)}</b> / ${won(m.next.at)}쪽 <span>· ${won(m.left)}쪽 남았어요. 한 끗을 보태주세요</span></div>`}
+    <div class="ct-road">${road}</div>
+    ${m.built.length && !m.done ? `<div class="ct-last">${m.built[m.built.length - 1].ico} ${m.built[m.built.length - 1].say}</div>` : ''}
+    ${me && !isGuest() && mine ? `<button class="ct-mine" onclick="go('my')">${esc(myName())}님의 기여: <b>${won(mine)}쪽</b> <i class="ti ti-chevron-right"></i></button>` : ''}
+  </div>`;
 }
 
 function levelCard() {
