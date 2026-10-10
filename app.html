@@ -1046,6 +1046,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .menu i { font-style:normal; color:var(--ink-3); font-size:16px; flex:none; }
 .rm-row { display:flex; align-items:center; justify-content:space-between; gap:12px;
   padding:6px 0; font-size:13.5px; font-weight:700; }
+.rm-hd { font-size:12.5px; font-weight:800; color:var(--ink-2); margin:2px 0 4px; }
+.rm-row small { display:block; font-size:11.5px; font-weight:500; color:var(--ink-3); margin-top:2px; }
 .rm-row .rm-sub { font-weight:600; color:var(--ink-2); }
 .rm-row input[type=checkbox] { width:44px; height:26px; flex:none; margin:0;
   -webkit-appearance:none; appearance:none; background:var(--line); border:none;
@@ -3309,6 +3311,21 @@ async function saveRemind() {
   me.remind_on = on;
 }
 
+// 알림 종류별 끄기 (migration-108). 꺼 둔 종류는 알림함에도 오지 않는다
+const muted = k => (me && me.mute_kinds || []).includes(k);
+async function saveMute() {
+  const off = [];
+  if (!$('mkFriends').checked) off.push('friends');
+  if (!$('mkPoke').checked)    off.push('poke');
+  if (DEMO) { me.mute_kinds = off; return; }
+  const { error } = await sb.from('profiles').update({ mute_kinds: off }).eq('id', me.id);
+  if (error) {
+    $('mkFriends').checked = !muted('friends'); $('mkPoke').checked = !muted('poke');
+    return toast('저장하지 못했어요: ' + error.message);
+  }
+  me.mute_kinds = off;
+}
+
 async function disablePush() {
   const reg = await swReady();
   const sub = reg && await reg.pushManager.getSubscription();
@@ -3360,6 +3377,18 @@ async function paintPushCard() {
         </div>
         <div class="hint" id="rmHint" style="margin:9px 0 0;">
           ${hhmmKo(hhmm)}까지 오늘 인증이 없으면 한 번 알려드려요.</div>
+      </div>
+      <div class="rm" style="margin-top:14px;">
+        <div class="rm-hd">받고 싶은 소식</div>
+        <label class="rm-row">
+          <span>친구들 소식<small>인증이 올라오거나 댓글·좋아요가 달릴 때</small></span>
+          <input type="checkbox" id="mkFriends" ${muted('friends') ? '' : 'checked'} onchange="saveMute()">
+        </label>
+        <label class="rm-row">
+          <span>콕 찌르기<small>끗짱이 오늘 한 장 어때요? 하고 보낼 때</small></span>
+          <input type="checkbox" id="mkPoke" ${muted('poke') ? '' : 'checked'} onchange="saveMute()">
+        </label>
+        <div class="hint" style="margin:9px 0 0;">끄면 알림함에도 오지 않아요. 승인·책 교환·공지는 늘 가요.</div>
       </div>`;
   paintPushRow();
 }
