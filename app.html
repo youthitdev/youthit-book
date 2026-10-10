@@ -2010,6 +2010,22 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
+<!-- 루틴 마무리 카드 -->
+<div class="sheet" id="shWrap" onclick="if(event.target===this)closeSheet('shWrap')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">우리의 기록 카드</div>
+        <div class="sheet-s">이름 없이 숫자만 담겨 있어서 마음 놓고 나눠도 돼요.</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shWrap')" aria-label="닫기">✕</button>
+    </div>
+    <div id="wrapBody" style="text-align:center;"></div>
+    <button class="btn btn-primary" id="wrapShare" style="margin-top:12px;display:none;" onclick="shareWrap()">저장하고 공유하기</button>
+  </div>
+</div>
+
 <!-- 인증 신고 -->
 <div class="sheet" id="shReport" onclick="if(event.target===this)closeSheet('shReport')">
   <div class="sheet-in">
@@ -3868,6 +3884,7 @@ function todayCard(r) {
   const action = ended
     ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
        ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
+       ${certsOf(r.id).length ? `<button class="btn btn-line" style="margin-top:8px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드</button>` : ''}
        ${viewBtn()}`
     : d?.notYet
       ? recruitBlock(r)
@@ -4512,6 +4529,7 @@ function routineFeed(r) {
   return `<div class="sec-t">우리 인증${n ? ` <span class="sec-n">${n}</span>` : ''}</div>` + (n
     ? `<button class="btn btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;"
         onclick="closeOv('ovRoutine');go('cert', ${r.id})">우리 인증 보기<i class="ti ti-arrow-right" style="font-size:17px;"></i></button>`
+      + (routineEnded(r) ? `<button class="btn btn-line" style="margin-top:8px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드 만들기</button>` : '')
     : `<div class="empty">아직 기록이 없어요.<br>첫 인증을 남겨보세요.</div>`);
 }
 
@@ -4693,6 +4711,114 @@ async function shareCert(id) {
   }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('사진으로 저장했어요');
+}
+
+// ── 루틴 마무리 카드 ───────────────────────────────────
+// 루틴이 끝나면 「함께 쌓은 기록」을 한 장으로 만든다. 이름은 넣지 않는다 — 밖으로 나가는 그림이다.
+// 숫자는 인증 탭의 「함께 쌓은 기록」과 같은 셈이다 (사진 표지는 넣지 않는다 — 바깥 그림은 캔버스를 막는다)
+let wrapBlob = null, wrapName = '';
+function wrapStats(r) {
+  const cs = certsOf(r.id);
+  const d  = routineDay(r);
+  const people = partsOf(r.id).length + (r.led_by && !partsOf(r.id).some(p => p.user_id === r.led_by) ? 1 : 0);
+  const mine = new Set(cs.filter(c => me && c.user_id === me.id).map(c => c.cert_date)).size;
+  return {
+    total: d ? d.total : 0,
+    certs: cs.length,
+    books: new Set(cs.map(c => loose(c.book_title || '')).filter(Boolean)).size,
+    people, mine,
+    lead: !!(me && r.led_by === me.id),
+  };
+}
+
+async function buildWrapCard(r) {
+  const st = wrapStats(r);
+  const W = 1080, H = 1350, PAD = 84;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+
+  const g = x.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, '#1F4E46'); g.addColorStop(1, '#2F6B4F');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // 은은한 동그라미 두 개 — 밋밋하지 않게
+  x.fillStyle = 'rgba(255,255,255,.06)';
+  x.beginPath(); x.arc(W - 120, 160, 300, 0, Math.PI * 2); x.fill();
+  x.beginPath(); x.arc(100, H - 80, 260, 0, Math.PI * 2); x.fill();
+
+  setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.75)'; x.fillText('한끗독서', PAD, 130);
+
+  // 제목
+  setFont(x, 'bold', 120); x.fillStyle = '#fff'; x.fillText(r.emoji || '📚', PAD, 330);
+  setFont(x, 'bold', 78); x.fillStyle = '#fff';
+  const tl = wrapText(x, r.title || '', W - PAD * 2, 2);
+  tl.forEach((l, i) => x.fillText(l, PAD, 450 + i * 98));
+  const ty = 450 + tl.length * 98;
+  setFont(x, 'normal', 44); x.fillStyle = 'rgba(255,255,255,.8)';
+  x.fillText(`함께 읽은 ${st.total}일`, PAD, ty + 24);
+
+  // 숫자 칸 셋
+  const cells = [[st.certs, '장', '함께 올린 인증'], [st.books, '권', '함께 읽은 책'], [st.people, '명', '함께한 사람']];
+  const cw = (W - PAD * 2 - 40) / 3, cy = ty + 100, ch = 250;
+  cells.forEach(([n, u, l], i) => {
+    const cx = PAD + i * (cw + 20);
+    x.fillStyle = 'rgba(255,255,255,.12)';
+    x.beginPath(); x.roundRect ? x.roundRect(cx, cy, cw, ch, 28) : x.rect(cx, cy, cw, ch); x.fill();
+    // 숫자와 단위를 한 덩어리로 보고 가운데에 놓는다
+    x.fillStyle = '#fff'; setFont(x, 'bold', 96);
+    const nw = x.measureText(String(n)).width;
+    setFont(x, 'bold', 40); const uw = x.measureText(u).width;
+    const sx = cx + (cw - (nw + 6 + uw)) / 2;
+    setFont(x, 'bold', 96); x.fillText(String(n), sx, cy + 130);
+    setFont(x, 'bold', 40); x.fillText(u, sx + nw + 6, cy + 130);
+    setFont(x, 'normal', 32); x.fillStyle = 'rgba(255,255,255,.75)'; x.textAlign = 'center';
+    x.fillText(l, cx + cw / 2, cy + 200); x.textAlign = 'left';
+  });
+
+  // 나의 한 줄 (청소년) / 끗짱의 한 줄
+  setFont(x, 'bold', 52); x.fillStyle = '#E3F2B8';
+  const line = st.lead ? `${Math.max(st.people - 1, 0)}명의 친구와 함께 읽었어요`
+             : `나는 ${st.mine}일 읽었어요`;
+  x.fillText(line + ' 🌱', PAD, cy + ch + 130);
+
+  // 기간
+  const fmt = d => String(d || '').replace(/-/g, '.');
+  setFont(x, 'normal', 34); x.fillStyle = 'rgba(255,255,255,.7)';
+  x.fillText(`${fmt(r.start_date)} – ${fmt(r.end_date).slice(5)}`, PAD, H - 130);
+  setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.85)'; x.textAlign = 'right';
+  x.fillText('book.youthvoice.or.kr', W - PAD, H - 130); x.textAlign = 'left';
+
+  return new Promise(ok => cv.toBlob(ok, 'image/png'));
+}
+
+async function openWrap(rid) {
+  const r = state.routines.find(x => x.id === rid); if (!r) return;
+  $('wrapBody').innerHTML = '<div class="hint">카드를 만드는 중이에요…</div>';
+  $('wrapShare').style.display = 'none';
+  showLayer('shWrap');
+  try {
+    wrapBlob = await buildWrapCard(r);
+    if (!wrapBlob) throw new Error('카드를 만들지 못했어요');
+    wrapName = `한끗독서_${String(r.title || '루틴').replace(/\s+/g, '')}_마무리.png`;
+    $('wrapBody').innerHTML = `<img src="${URL.createObjectURL(wrapBlob)}" alt="우리의 기록 카드"
+      style="width:100%;max-width:340px;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);">`;
+    $('wrapShare').style.display = '';
+  } catch (e) {
+    $('wrapBody').innerHTML = `<div class="hint">${esc(e.message || '카드를 만들지 못했어요')}</div>`;
+  }
+}
+
+async function shareWrap() {
+  if (!wrapBlob) return;
+  const file = new File([wrapBlob], wrapName, { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(wrapBlob); a.download = wrapName;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast('사진으로 저장했어요');
