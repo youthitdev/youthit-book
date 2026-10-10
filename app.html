@@ -474,7 +474,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .tc-day { font-size:12.5px; color:var(--ink-3); margin-top:4px; }
 .tc-day b { color:var(--ink); font-size:15px; }
 /* 오늘 인증한 친구들 — 동그라미가 겹쳐 놓이고, 누르면 인증 탭 */
-.tc-who { display:flex; align-items:center; gap:10px; margin-top:12px; padding:9px 2px 2px; border-top:1px solid var(--line); cursor:pointer; }
+.tc-who { display:flex; align-items:center; gap:10px; margin-top:10px; padding:8px 2px 0; border-top:1px solid var(--line); cursor:pointer; }
 .tc-who .tw-row { display:flex; flex:none; }
 .tc-who .tw-d { width:30px; height:30px; border-radius:50%; border:2px solid #fff; display:flex; align-items:center; justify-content:center;
   color:#fff; font-style:normal; font-size:12.5px; font-weight:800; margin-left:-8px; box-shadow:0 1px 3px rgba(0,0,0,.12); }
@@ -619,6 +619,19 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   background:var(--blue); color:#fff; }
 .tc-bb:active { opacity:.8; }
 .tc-bb.ok { background:#F2F7E6; color:var(--green-d); cursor:default; }
+.tc-rows { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+.tc-row { display:flex; align-items:center; gap:12px; }
+.tc-ri { position:relative; width:40px; height:56px; border-radius:6px; overflow:hidden; background:#eeeae2; flex:none;
+  display:flex; align-items:center; justify-content:center; font-size:16px; box-shadow:0 1px 3px rgba(0,0,0,.12); }
+.tc-ri img { width:100%; height:100%; object-fit:cover; display:block; }
+.tc-ri .fin-b { top:2px; right:2px; font-size:8px; padding:0 3px; border-width:1px; border-radius:4px; transform:rotate(6deg); }
+.tc-rt { flex:1; min-width:0; }
+.tc-rt b { display:block; font-size:14.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tc-rt span { font-size:12px; font-weight:700; color:var(--green-d); }
+.tc-rb { flex:none; border:none; border-radius:10px; padding:9px 14px; font-family:inherit; font-size:13px; font-weight:800;
+  background:var(--blue); color:#fff; cursor:pointer; }
+.tc-rb:active { opacity:.8; }
+.tc-rb.ok { background:#F2F7E6; color:var(--green-d); cursor:default; padding:9px 12px; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tcard .btn { margin-top:12px; }
@@ -1223,6 +1236,19 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .pk-i img { width:100%; height:100%; object-fit:cover; display:block; }
 .pk-t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:12.5px; font-weight:800; margin-top:7px; line-height:1.35; }
 .pk-t span { display:block; font-size:11px; color:var(--ink-3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tg-line { margin-top:11px; font-size:13.5px; color:var(--ink-3); }
+.tg-line b { font-size:16px; font-weight:800; color:var(--blue); margin:0 1px 0 3px; }
+.cs-h { display:flex; align-items:baseline; gap:6px; margin:2px 2px 8px; }
+.cs-h b { font-size:13.5px; font-weight:800; }
+.cs-h span { font-size:12px; color:var(--ink-3); }
+.cs-row { display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; margin:0 -2px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.cs-row::-webkit-scrollbar { display:none; }
+.cs-t { flex:none; width:78px; text-align:left; background:none; border:none; padding:0; font-family:inherit; cursor:pointer; }
+.cs-i { width:78px; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#eeeae2; display:flex; align-items:center;
+  justify-content:center; font-size:20px; box-shadow:0 1px 4px rgba(0,0,0,.1); }
+.cs-i img { width:100%; height:100%; object-fit:cover; display:block; }
+.cs-t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:11.5px; font-weight:700;
+  line-height:1.35; margin-top:6px; color:var(--ink-2); }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -3899,16 +3925,17 @@ function todayCard(r) {
   const live = !ended && !d?.notYet;
   const perBook = live && books.length > 0;
   const bookDone = b => doneToday(r.id).some(t => loose(t) === loose(b.title));
-  const bookShelf = d?.notYet || !books.length ? '' : `<div class="tc-shelf">${books.map(b => {
+  // 【홈은 가볍게 · 2026-10-10 사용자】 표지를 크게 늘어놓으면 한 루틴이 화면 절반을 먹는다. 책 한 권 = 한 줄:
+  //   작은 표지 · 제목과 쪽수 · 오른쪽 끝에 「인증하기」/「✓ 완료」. 표지를 크게 보는 곳은 인증 탭이다
+  const bookShelf = d?.notYet || !books.length ? '' : `<div class="tc-rows">${books.map(b => {
     const ok = bookDone(b);
     const t = esc(b.title).replace(/'/g, "\\'");
-    return `
-        <div class="tc-bt" ${live && !ok ? `onclick="event.stopPropagation();openCert(${r.id}, '${t}')"` : ''}>
-          <div class="tc-bt-i">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}${iFinished(r.id, b.title) ? FIN_BADGE : ''}</div>
-          <span>${esc(b.title)}</span>
-          ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : perBook ? '<i>&nbsp;</i>' : ''}   <!-- 쪽수 줄 높이를 맞춰 단추가 나란히 서게 -->
-          ${perBook ? (ok ? '<div class="tc-bb ok">✓ 인증완료</div>'
-                          : `<button class="tc-bb" onclick="event.stopPropagation();openCert(${r.id}, '${t}')">인증하기</button>`) : ''}
+    const pg = pageOf(r.id, b.title);
+    return `<div class="tc-row">
+          <div class="tc-ri">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}${iFinished(r.id, b.title) ? FIN_BADGE : ''}</div>
+          <div class="tc-rt"><b>${esc(b.title)}</b>${pg ? `<span>${won(pg)}쪽</span>` : ''}</div>
+          ${perBook ? (ok ? '<span class="tc-rb ok">✓ 완료</span>'
+                          : `<button class="tc-rb" onclick="event.stopPropagation();openCert(${r.id}, '${t}')">인증하기</button>`) : ''}
         </div>`;
   }).join('')}</div>`;
   const shelf = d?.notYet ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
@@ -3925,8 +3952,7 @@ function todayCard(r) {
     : d?.notYet
       ? recruitBlock(r)
     : perBook
-      ? (() => { const left = books.filter(b => !bookDone(b)).length;   // 참여할 때 적은 책만 있는 옛 참여자도 같은 셈
-          return `${left ? '' : '<div class="tc-done">🌱 오늘 인증을 마쳤어요</div>'}`; })()
+      ? ''     // 책마다 「✓ 완료」가 보여서 「오늘 인증을 마쳤어요」 줄은 두지 않는다
     : !done
       ? `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기</button>`
       : rest.length
@@ -4362,14 +4388,29 @@ function togetherCard(r, cs, total) {
   else if (live)           cheer = !who ? '오늘의 첫 인증을 기다려요'
                                 : who >= total ? '오늘은 모두 읽었어요 🎉'
                                 : `오늘 ${who}명이 읽었어요 🌱`;
+  // 【큰 카드를 한 줄로 · 2026-10-10 사용자】 세 칸 타일은 위쪽을 너무 차지했다. 막대 아래 한 줄로 줄이고,
+  //   그 자리는 표지 줄(coverStrip)이 쓴다
+  const parts = cells.map(([n, u, l]) => `${l} <b>${won(n)}</b>${u}`);
   return `<div class="tg">
     <div class="tg-hd"><span class="tg-t">우리가 함께 쌓은 기록</span><span class="tg-d">${routineLine(r, d)}</span></div>
     ${d && !d.notYet ? `<div class="bal-bar"><i style="width:${pct}%"></i></div>` : ''}
-    ${cells.length ? `<div class="tg-n" style="grid-template-columns:repeat(${cells.length},1fr);">${cells.map(([n, u, l]) =>
-      `<div><b>${won(n)}</b><small>${u}</small><span>${l}</span></div>`).join('')}</div>` : ''}
+    ${parts.length ? `<div class="tg-line">${parts.join(' · ')}</div>` : ''}
     ${cheer ? `<div class="tg-c">${cheer}</div>` : ''}
     ${d?.ended && cs.length ? `<button class="btn btn-line" style="margin-top:12px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드 만들기</button>` : ''}
   </div>`;
+}
+
+// 우리가 읽는 책 — 표지를 옆으로 늘어놓는다. 누르면 그 책을 읽는 친구들(닉네임)이 열린다
+function coverStrip(rid, withMe) {
+  const books = kidsBooks(rid, withMe);
+  if (!books.length) return '';
+  return `<div class="cs-h"><b>우리가 읽는 책</b><span>${books.length}권</span></div>
+    <div class="cs-row">${books.map(b => {
+      const url = b.found || [...b.readers.values()].map(x => x.photo).find(Boolean) || '';
+      return `<button class="cs-t" onclick="event.stopPropagation();openAllKidBooks(${rid}, ${!!withMe})">
+        <div class="cs-i">${url ? `<img src="${esc(url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
+        <b>${esc(b.title)}</b></button>`;
+    }).join('')}</div>`;
 }
 
 // 끗짱 몫 — 오늘 누가 인증했나
@@ -4401,7 +4442,8 @@ function kkutCertBlock(mine) {
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${togetherCard(r, cs, ps.length)}
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
-        <div class="rm-list" style="margin-top:2px;">
+        ${coverStrip(r.id)}
+        <div class="rm-list" style="margin-top:6px;">
           ${ps.map(p => {
             const n  = cs.filter(c => c.user_id === p.user_id).length;
             // 확인 전인 아이는 지금 책을 못 받는다. 끗짱이 알아야 챙겨준다
@@ -4411,7 +4453,6 @@ function kkutCertBlock(mine) {
           }).join('')}
         </div>
         ${rollLine(r, yet)}
-        ${kidsBooksHtml(r.id)}
       </div>` : '<div class="empty" style="padding:16px;">참여자가 없어요</div>'}
       ${meetRoll(r)}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;', true)}
@@ -4442,9 +4483,9 @@ function youthCertBlock(mine) {
       ${leadLine}
       ${togetherCard(r, cs, ps.length)}
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
-        <div class="rm-list" style="margin-top:2px;">${ps.map(p => memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : `setCertWho(${r.id},'${p.user_id}')`, sub: p.lead ? '끗짱' : '', subCls: 'amb' })).join('')}</div>
-        <div style="margin-top:12px;">${kidsBooksHtml(r.id, true, true)}</div>
-      </div>` : kidsBooksHtml(r.id, true, true)}
+        ${coverStrip(r.id, true)}
+        <div class="rm-list" style="margin-top:6px;">${ps.map(p => memberItem(r, p, today, { click: p.self && !today.some(c => c.user_id === me.id) ? `openCert(${r.id})` : `setCertWho(${r.id},'${p.user_id}')`, sub: p.lead ? '끗짱' : '', subCls: 'amb' })).join('')}</div>
+      </div>` : (kidsBooks(r.id, true).length ? `<div class="card" style="padding:12px 15px;">${coverStrip(r.id, true)}</div>` : '')}
       ${certAction(r, 'btn-primary', 'margin-bottom:12px;', true)}
       ${certGrid(cs, r.id)}`;
   }).join('');
