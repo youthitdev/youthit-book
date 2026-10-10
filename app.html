@@ -1203,6 +1203,16 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .store-pick em { display:block; font-style:normal; font-size:12px; font-weight:800; color:#8A5A16; margin-bottom:4px; }
 .store-pick b { font-size:15.5px; font-weight:800; }
 .store-pick p { margin:6px 0 0; font-size:13.5px; line-height:1.65; color:var(--ink-2); }
+.rl-c { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--card); border:1px solid var(--line);
+  border-radius:16px; padding:15px 16px; margin-bottom:10px; font-family:inherit; cursor:pointer; }
+.rl-c:active { background:var(--bg); }
+.rl-b { flex:1; min-width:0; }
+.rl-t { font-size:15.5px; font-weight:800; letter-spacing:-.3px; }
+.rl-m { font-size:12.5px; color:var(--ink-3); margin-top:3px; }
+.rl-m b { color:var(--ink); }
+.rl-s { display:inline-block; margin-top:8px; font-size:12px; font-weight:700; color:var(--ink-3); background:var(--bg); border-radius:99px; padding:3px 10px; }
+.rl-s.on { color:var(--green-d); background:#F2F7E6; }
+.rl-c > i { color:var(--ink-3); font-size:17px; flex:none; }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -4200,30 +4210,60 @@ function viewHome() {
 }
 
 function viewCert() {
-  // 청소년 끗짱은 위에 맡은 루틴(누가 했나), 아래에 참여 루틴(내 기록)을 본다
-  // 끝난 루틴은 홈과 마찬가지로 여기서도 뺀다. 지난 것은 MY 「지난 루틴」에서 들어간다 —
-  // 두 화면이 다른 목록을 보여주면 어느 쪽이 맞는지 알 수 없다
-  let led  = canLead() ? state.routines.filter(r => r.led_by === me.id && !isOver(r)) : [];
-  let join = state.routines.filter(r => {
-    const p = myPart(r.id); return p && p.status === 'approved';
+  // 【인증 탭 = 우리 기록 보기 · 2026-10-09 사용자】 홈은 「오늘 할 일」, 여기는 「기록 보관함」이다.
+  //   루틴이 둘 이상이면 먼저 목록이 나오고, 하나를 누르면 그 루틴의 기록 화면이 열린다.
+  //   하나뿐이면 목록을 건너뛰고 바로 연다 — 대부분의 아이가 그렇고, 한 번 더 누르게 하면 불편하다.
+  //   끝난 루틴도 이 목록의 「지난 루틴」에 모인다.
+  const led  = canLead() ? state.routines.filter(r => r.led_by === me.id) : [];
+  const join = state.routines.filter(r => {
+    const p = myPart(r.id); return p && p.status === 'approved' && r.led_by !== me.id;
   });
+  const all  = [...led, ...join];
 
-  // 「우리 기록 보기」는 그 루틴을 보러 누르는 단추다. 전부 펼쳐 놓으면
-  // 어느 게 내가 누른 건지 찾아야 한다. 하나만 세우고 돌아갈 길을 남긴다.
-  // 그새 끝나 목록에서 빠졌으면 조용히 전체로 돌아간다
-  const one = (certFocus && [...led, ...join].find(r => r.id === certFocus)) || null;
-  // 루틴 이름은 바로 아래 블록 제목에 또 나온다. 띠는 돌아가는 길만 한다
-  // 루틴이 하나뿐이면 「전체」도 똑같은 화면이라, 눌러도 띠만 사라지고 달라지는 게 없다. 그땐 띠를 두지 않는다
-  const back = (one && led.length + join.length > 1) ? `<button class="only-one" onclick="go('cert')">
-      <i class="ti ti-arrow-left"></i>전체 루틴 보기</button>` : '';
-  if (one) { led = led.filter(r => r.id === one.id); join = join.filter(r => r.id === one.id); }
+  if (!all.length) return `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
+             : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`;
 
-  return back
-       + (led.length ? kkutCertBlock(led) : '')
-       + (join.length ? youthCertBlock(join) : '')
-       + (led.length || join.length ? ''
-          : `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
-             : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`);
+  // 「우리 기록 보기」나 목록의 카드를 눌러 들어왔으면 그 루틴. 하나뿐이어도 그 루틴.
+  const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 ? all[0] : null);
+  if (one) {
+    const back = all.length > 1 ? `<button class="only-one" onclick="go('cert')">
+        <i class="ti ti-arrow-left"></i>루틴 목록</button>` : '';
+    return back + (one.led_by === me.id ? kkutCertBlock([one]) : youthCertBlock([one]));
+  }
+  return certListHtml(all);
+}
+
+// 인증 탭의 루틴 목록. 카드는 가볍게: 이름 · 기간 · 내 오늘 인증 (끗짱은 오늘 몇 명)
+function certListHtml(all) {
+  const active = all.filter(r => !isOver(r));
+  const past   = all.filter(r =>  isOver(r))
+    .sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
+  const card = r => {
+    const d = routineDay(r), lead = r.led_by === me.id, over = isOver(r);
+    const range = (r.start_date && r.end_date)
+      ? `${r.start_date.slice(5).replace('-', '.')} – ${r.end_date.slice(5).replace('-', '.')}` : '';
+    let status = '';
+    if (!over && !(d && d.notYet) && r.status !== 'pending') {
+      if (lead) {
+        const total = partsOf(r.id).length + 1;
+        const n = new Set(certsOf(r.id).filter(c => c.cert_date === todayKST()).map(c => c.user_id)).size;
+        status = `<span class="rl-s${n ? ' on' : ''}">오늘 ${n}/${total}명</span>`;
+      } else {
+        const ok = didToday(r.id);
+        status = `<span class="rl-s${ok ? ' on' : ''}">${ok ? '✓ 오늘 인증했어요' : '오늘 인증 전'}</span>`;
+      }
+    }
+    return `<button class="rl-c" onclick="go('cert', ${r.id})">
+      <div class="rl-b">
+        <div class="rl-t">${esc(r.emoji || '📚')} ${esc(r.title)}${lead ? ' <i class="pr-led">맡음</i>' : ''}</div>
+        <div class="rl-m">${range ? range + ' · ' : ''}${routineLine(r, d)}</div>
+        ${status}
+      </div>
+      <i class="ti ti-chevron-right"></i>
+    </button>`;
+  };
+  return (active.length ? `<div class="sec-t" style="margin-top:0;">내 루틴 <span class="sec-n">${active.length}</span></div>${active.map(card).join('')}` : '')
+       + (past.length ? `<div class="sec-t"${active.length ? '' : ' style="margin-top:0;"'}>지난 루틴 <span class="sec-n">${past.length}</span></div>${past.map(card).join('')}` : '');
 }
 
 // 참여자 한 명 — 동그란 프로필 + 닉네임. 오늘 인증했으면 색이 살고 ✓, 아직이면 회색.
@@ -4273,6 +4313,7 @@ function togetherCard(r, cs, total) {
     ${cells.length ? `<div class="tg-n" style="grid-template-columns:repeat(${cells.length},1fr);">${cells.map(([n, u, l]) =>
       `<div><b>${won(n)}</b><small>${u}</small><span>${l}</span></div>`).join('')}</div>` : ''}
     ${cheer ? `<div class="tg-c">${cheer}</div>` : ''}
+    ${d?.ended && cs.length ? `<button class="btn btn-line" style="margin-top:12px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드 만들기</button>` : ''}
   </div>`;
 }
 
