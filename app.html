@@ -1255,6 +1255,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .pk-i img { width:100%; height:100%; object-fit:cover; display:block; }
 .pk-t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:12.5px; font-weight:800; margin-top:7px; line-height:1.35; }
 .pk-t span { display:block; font-size:11px; color:var(--ink-3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tg-pages { margin-top:12px; font-size:15px; font-weight:700; color:var(--ink-2); }
+.tg-pages b { font-size:24px; font-weight:800; letter-spacing:-.6px; color:var(--blue); margin:0 1px 0 2px; }
 .tg-line { margin-top:11px; font-size:13.5px; color:var(--ink-3); }
 .tg-line b { font-size:16px; font-weight:800; color:var(--blue); margin:0 1px 0 3px; }
 .cs-h { display:flex; align-items:baseline; gap:6px; margin:2px 2px 8px; }
@@ -2318,7 +2320,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null, routinePages:{} };
 let tab = 'home';
 // 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
@@ -3156,7 +3158,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3176,11 +3178,15 @@ async function loadAll() {
     sb.from('book_finishes').select('user_id,routine_id,book_key,book_title'),
     // 누적 쪽수(전체·내 것). 마이그레이션 112 가 아직이면 오류가 와도 비워 둔다
     sb.rpc('dokseo_pages_summary'),
+    // 루틴마다 함께 읽은 쪽수. 마이그레이션 115 가 아직이면 오류가 와도 비워 둔다
+    sb.rpc('dokseo_routine_pages'),
   ]);
   state.exchanges = ex.error ? [] : (ex.data || []);
   state.likes = lk.error ? [] : (lk.data || []);
   state.finishes = fn.error ? [] : (fn.data || []);
   state.pages = pg.error ? null : (pg.data || null);
+  state.routinePages = {};
+  if (!rpg.error) (rpg.data || []).forEach(x => { state.routinePages[x.routine_id] = Number(x.pages) || 0; });
   state.notifs = nt.data || [];
   state.nudges = nd.data || [];
   state.parts = p.data || [];
@@ -4466,24 +4472,19 @@ function togetherCard(r, cs, total) {
   const who   = new Set(cs.filter(c => c.cert_date === todayKST()).map(c => c.user_id)).size;
   const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
   const live  = d && !d.notYet && !d.ended && r.status !== 'done' && r.status !== 'pending';
-  // 0 인 칸은 숨긴다. 아직 없는 걸 0 으로 보이면 허전하다 — 처음 생기는 순간 칸이 하나 늘어나는 게 보상이다
-  const books = new Set(cs.map(c => loose(c.book_title || '')).filter(Boolean)).size;
-  // 한 줄에 놓는다 (최대 세 칸). 「함께 읽은 날」은 위의 「N일째」와 막대가 이미 말해서 뺐다
-  // 좋아요는 인증 카드에서 본다. 여기에는 두지 않기로 했다 (2026-10-09 사용자)
-  const cells = [[cs.length, '장', '인증'], [talk, '개', '댓글'], [books, '권', '읽은 책']].filter(x => x[0] > 0);
+  // 【인증·댓글·읽은 책 숫자는 뺐다 · 2026-10-10 사용자】 이 화면의 목적은 「같이 쌓은 양」이다. 한 문장으로 말한다.
+  //   쪽수가 하나도 없으면(글 루틴에서 아무도 안 적었을 때) 이 줄은 두지 않는다
+  const pages = (state.routinePages || {})[r.id] || 0;
   let cheer = '';
   if (d?.ended)            cheer = `함께 ${d.total}일을 완주했어요 🎉`;
   else if (!cs.length)     cheer = live ? '첫 기록을 남겨 보세요 🌱' : '';
   else if (live)           cheer = !who ? '오늘의 첫 인증을 기다려요'
                                 : who >= total ? '오늘은 모두 읽었어요 🎉'
                                 : `오늘 ${who}명이 읽었어요 🌱`;
-  // 【큰 카드를 한 줄로 · 2026-10-10 사용자】 세 칸 타일은 위쪽을 너무 차지했다. 막대 아래 한 줄로 줄이고,
-  //   그 자리는 표지 줄(coverStrip)이 쓴다
-  const parts = cells.map(([n, u, l]) => `${l} <b>${won(n)}</b>${u}`);
   return `<div class="tg">
     <div class="tg-hd"><span class="tg-t">우리가 함께 쌓은 기록</span><span class="tg-d">${routineLine(r, d)}</span></div>
     ${d && !d.notYet ? `<div class="bal-bar"><i style="width:${pct}%"></i></div>` : ''}
-    ${parts.length ? `<div class="tg-line">${parts.join(' · ')}</div>` : ''}
+    ${pages ? `<div class="tg-pages">함께 <b>${won(pages)}</b>쪽을 읽었어요</div>` : ''}
     ${cheer ? `<div class="tg-c">${cheer}</div>` : ''}
     ${d?.ended && cs.length ? `<button class="btn btn-line" style="margin-top:12px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드 만들기</button>` : ''}
   </div>`;
