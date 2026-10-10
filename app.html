@@ -5607,6 +5607,8 @@ function kkutStatBlock() {
   const kbooks = new Set(certs.filter(c => c.book_title).map(c => c.book_title));
   if (!led.length) return '';
 
+  // 아이들이 읽은 쪽수 — 서버가 센다 (migration-114). 아직 없거나 0 이면 말하지 않는다
+  const kidPages = state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0;
   // 같은 아이가 같은 날 두 권을 인증해도 하루다. 「며칠의 책을 읽었나」를 센다
   const days = new Set(certs.map(c => c.user_id + '|' + c.cert_date)).size;
 
@@ -5623,7 +5625,7 @@ function kkutStatBlock() {
        <div class="kstat-s">맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`
     : `<b>${who}</b>님과 함께 <b>${won(kids.size)}명</b>의 청소년이
        <b>${won(days)}일</b> 동안 책을 읽었어요.
-       <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>,
+       <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>${kidPages ? `, 읽은 쪽수는 <b>${won(kidPages)}쪽</b>` : ''},
        맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`;
   return `<div class="sec-t">함께 쌓은 기록</div>
     <div class="card kstat">${body}</div>`;
