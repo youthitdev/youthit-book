@@ -1259,6 +1259,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .cs-i img { width:100%; height:100%; object-fit:cover; display:block; }
 .cs-t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:11.5px; font-weight:700;
   line-height:1.35; margin-top:6px; color:var(--ink-2); }
+.pg-b { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+.pg-row { display:flex; align-items:center; gap:12px; }
+.pg-i { width:44px; height:44px; border-radius:14px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:24px; flex:none; }
+.pg-t b { display:block; font-size:15px; font-weight:800; }
+.pg-t span { display:block; font-size:12.5px; color:var(--ink-3); margin-top:2px; line-height:1.5; }
+.pg-n { font-size:12.5px; color:var(--ink-3); margin-top:7px; }
+.pg-n b { color:var(--blue); font-weight:800; }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -2268,7 +2275,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[] };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null };
 let tab = 'home';
 // 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
@@ -3107,7 +3114,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3125,10 +3132,13 @@ async function loadAll() {
     sb.from('cert_likes').select('cert_id,user_id'),
     // 완독 도장. 마이그레이션 109 가 아직이면 오류가 와도 빈 채로 둔다
     sb.from('book_finishes').select('user_id,routine_id,book_key,book_title'),
+    // 누적 쪽수(전체·내 것). 마이그레이션 112 가 아직이면 오류가 와도 비워 둔다
+    sb.rpc('dokseo_pages_summary'),
   ]);
   state.exchanges = ex.error ? [] : (ex.data || []);
   state.likes = lk.error ? [] : (lk.data || []);
   state.finishes = fn.error ? [] : (fn.data || []);
+  state.pages = pg.error ? null : (pg.data || null);
   state.notifs = nt.data || [];
   state.nudges = nd.data || [];
   state.parts = p.data || [];
@@ -5704,6 +5714,48 @@ function myLevel(n) {
 // **「앞에 뭐가 있는지」** 가 같이 보여야 재미가 난다. 여섯 칸을 늘어놓고
 // 지나온 칸은 채우고, 다음 칸은 흐리게 두되 이름은 보여 준다 —
 // 가려 두면 궁금하지 않고 답답하다.
+// ── 내가 쌓은 책 높이 (누적 쪽수 비유) ─────────────────
+// 책은 한 쪽이 약 0.05mm 다. 읽은 쪽수를 실제 두께로 바꾼 뒤, 그 높이에 가까운 사물을 붙인다.
+// 사물의 쪽수는 높이 ÷ 0.005cm 로 구했다 (예: 달걀 5cm = 1,000쪽). 부풀리지 않는다.
+const PAGE_CM = 0.005;
+const PAGE_LADDER = [
+  { at: 30,    ico: '🪙', name: '동전 한 닢 두께' },
+  { at: 100,   ico: '✏️', name: '연필 굵기' },
+  { at: 300,   ico: '🖐', name: '손가락 한 마디 높이' },
+  { at: 1000,  ico: '🥚', name: '달걀 한 개 높이' },
+  { at: 2000,  ico: '☕', name: '머그컵 높이' },
+  { at: 3000,  ico: '📱', name: '스마트폰 한 대 길이' },
+  { at: 6000,  ico: '📏', name: '30cm 자 한 개' },
+  { at: 10000, ico: '🪑', name: '의자 방석 높이' },
+  { at: 30000, ico: '🧍', name: '내 키' },
+];
+function fmtHeight(cm) {
+  if (cm < 10)  return `약 ${cm < 1 ? cm.toFixed(2).replace(/0$/, '') : cm.toFixed(1).replace(/\.0$/, '')}cm`;
+  if (cm < 100) return `약 ${Math.round(cm)}cm`;
+  return `약 ${(cm / 100).toFixed(1).replace(/\.0$/, '')}m`;
+}
+function personalMetaphor(pages) {
+  const n = Math.max(0, Number(pages) || 0);
+  let cur = null;
+  for (const l of PAGE_LADDER) if (n >= l.at) cur = l;
+  const next = PAGE_LADDER.find(l => l.at > n) || null;
+  return { pages: n, height: fmtHeight(n * PAGE_CM), cur, next, left: next ? next.at - n : 0,
+           pct: next ? Math.min(100, Math.round((n - (cur ? cur.at : 0)) / (next.at - (cur ? cur.at : 0)) * 100)) : 100 };
+}
+function pagesBlock() {
+  const mine = state.pages && state.pages.mine;
+  if (mine === null || mine === undefined) return '';       // 112 가 아직이거나 불러오지 못했다
+  const m = personalMetaphor(mine);
+  if (!m.pages) return `<div class="pg-b"><div class="pg-t"><b>아직 쌓은 책이 없어요</b><span>첫 인증을 하면 책 높이가 올라가기 시작해요 🌱</span></div></div>`;
+  return `<div class="pg-b">
+      <div class="pg-row"><div class="pg-i">${m.cur ? m.cur.ico : '📖'}</div>
+        <div class="pg-t"><b>${won(m.pages)}쪽 읽었어요</b>
+          <span>책으로 쌓으면 ${m.height}${m.cur ? ` · ${m.cur.ico} ${m.cur.name}!` : ''}</span></div></div>
+      ${m.next ? `<div class="lv-bar" style="margin-top:10px;"><span style="width:${m.pct}%;"></span></div>
+        <div class="pg-n">다음은 ${m.next.ico} ${m.next.name}까지 <b>${won(m.left)}쪽</b></div>` : ''}
+    </div>`;
+}
+
 function levelCard() {
   if (!me || isGuest()) return '';
   const cnt = myCertCount();
@@ -5726,6 +5778,7 @@ function levelCard() {
       </div>
       <div class="lv-bar"><span style="width:${pct}%;"></span></div>
       <div class="lv-road">${road}</div>
+      ${pagesBlock()}
     </div>`;
 }
 
