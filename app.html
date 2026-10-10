@@ -3938,7 +3938,8 @@ function todayCard(r) {
                           : `<button class="tc-rb" onclick="event.stopPropagation();openCert(${r.id}, '${t}')">인증하기</button>`) : ''}
         </div>`;
   }).join('')}</div>`;
-  const shelf = d?.notYet ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
+  // 아직 아무도 안 했을 때는 이 줄을 두지 않는다 — 「첫 인증을 기다려요」는 할 말이 없는 줄이었다 (2026-10-10 사용자)
+  const shelf = d?.notYet || !whoToday.length ? '' : `<div class="tc-who" onclick="go('cert', ${r.id})">
       ${whoToday.length ? `<span class="tw-row">${whoToday.slice(0, SHOWW).map(dot).join('')}${
           whoToday.length > SHOWW ? `<i class="tw-d tw-more">+${whoToday.length - SHOWW}</i>` : ''}</span>` : ''}
       <span class="tw-t">${whoToday.length ? `오늘 <b>${whoToday.length}명</b>이 인증했어요` : '오늘 첫 인증을 기다려요'}</span>
