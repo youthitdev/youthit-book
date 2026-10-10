@@ -1085,9 +1085,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .poke:disabled { background:var(--bg); color:var(--ink-3); cursor:default; }
 
 /* 최근 인증 석 장. 기록 보기로 넘어가지 않고도 뭘 올렸는지 보인다 */
-.tc-rc { display:flex; gap:8px; margin-top:12px; }
-.tc-rc-i { width:calc((100% - 16px) / 3); flex:none; min-width:0; cursor:pointer; }
-.tc-rc-i img, .tc-rc-no { width:100%; aspect-ratio:1/1; border-radius:10px;
+.tc-rc { display:flex; gap:8px; margin-top:10px; align-items:flex-start; }
+.tc-rc-i { width:56px; flex:none; min-width:0; cursor:pointer; }
+.tc-rc-h { flex:none; width:44px; font-size:11px; font-weight:800; color:var(--ink-3); line-height:1.35; padding-top:6px; }
+.tc-rc-i img, .tc-rc-no { width:100%; aspect-ratio:1/1; border-radius:8px;
   object-fit:cover; display:block; background:#F2EEE6; }
 .tc-rc-no { display:flex; align-items:center; justify-content:center; font-size:20px; }
 .tc-rc-i span { display:block; font-size:10.5px; color:var(--ink-3);
@@ -1182,6 +1183,14 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rm2.sel .rm2-n { font-weight:800; color:var(--ink); }
 .cg-who-clr { border:none; background:none; font-family:inherit; font-size:12.5px; font-weight:700;
   color:var(--blue); cursor:pointer; padding:0 0 0 6px; }
+.rm-list.sm { gap:8px 4px; margin-top:8px; }
+.rm-list.sm .rm2 { width:52px; }
+.rm-list.sm .rm2-c { width:36px; height:36px; font-size:14px; }
+.rm-list.sm .rm2.on .rm2-c { box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--green); }
+.rm-list.sm .rm2-ck { width:15px; height:15px; font-size:9px; line-height:11px; right:-4px; bottom:-2px; }
+.rm-list.sm .rm2-n { font-size:10.5px; margin-top:4px; }
+.rm-list.sm .rm2-poke { font-size:10px; padding:2px 7px; margin-top:3px; }
+.rm-list.sm .rm2-sent { font-size:9.5px; margin-top:3px; }
 .rm2-ck { position:absolute; right:-5px; bottom:-3px; width:19px; height:19px; border-radius:50%;
   background:var(--green); color:#fff; border:2px solid #fff; font-size:11px; font-weight:800; line-height:15px; }
 .rm2-n { font-size:11.5px; color:var(--ink-2); margin-top:6px; white-space:nowrap;
@@ -3974,7 +3983,7 @@ function todayCard(r) {
             ? `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`
             : ''}
       </div>
-      <div class="tc-day">${routineLine(r, d)}${d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
+      <div class="tc-day"><span>${routineLine(r, d)}</span>${d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
       ${d && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${bookShelf}
       ${shelf}
@@ -4048,6 +4057,22 @@ function kkutNowBook(r) {
   return { title, cover };
 }
 
+// 홈 카드의 「책 한 줄」. 작은 표지 · 제목과 쪽수 · 오른쪽 끝의 「인증하기」/「✓ 완료」 (청소년·끗짱 홈이 같이 쓴다)
+function homeBookRows(r, books, perBook) {
+  const done = doneToday(r.id);
+  return `<div class="tc-rows">${books.map(b => {
+    const ok = done.some(t => loose(t) === loose(b.title));
+    const t = esc(b.title).replace(/'/g, "\\'");
+    const pg = pageOf(r.id, b.title);
+    return `<div class="tc-row">
+          <div class="tc-ri">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}${iFinished(r.id, b.title) ? FIN_BADGE : ''}</div>
+          <div class="tc-rt"><b>${esc(b.title)}</b>${pg ? `<span>${won(pg)}쪽</span>` : ''}</div>
+          ${perBook ? (ok ? '<span class="tc-rb ok">✓ 완료</span>'
+                          : `<button class="tc-rb" onclick="event.stopPropagation();openCert(${r.id}, '${t}')">인증하기</button>`) : ''}
+        </div>`;
+  }).join('')}</div>`;
+}
+
 function kkutTodayCard(r) {
   // 끗짱도 아이들과 같이 읽는다. 그러니 「우리」에 끗짱도 든다 —
   // 세는 데서 빼면 함께 읽는다는 게 화면에서 안 보인다
@@ -4068,7 +4093,7 @@ function kkutTodayCard(r) {
   // 두 화면이 같은 부품을 쓰면 한쪽만 어긋나는 일이 없다
   const live = !waiting && !d?.ended;
   const SHOW = 6;
-  const shelf = ps.length ? `<div class="rm-list">${ps.slice(0, SHOW).map(p => memberItem(r, p, today)).join('')}${ps.length > SHOW ? (() => {
+  const shelf = ps.length ? `<div class="rm-list sm">${ps.slice(0, SHOW).map(p => memberItem(r, p, today)).join('')}${ps.length > SHOW ? (() => {
       const rest = ps.slice(SHOW);
       const left = rest.filter(p => !today.some(c => c.user_id === p.user_id)).length;
       return `<div class="rm2 more" onclick="event.stopPropagation();go('cert', ${r.id})"><div class="rm2-c">+${rest.length}</div>
@@ -4082,7 +4107,7 @@ function kkutTodayCard(r) {
     if (c.user_id === me.id || seen.has(c.user_id)) return false;
     seen.add(c.user_id); return true;
   }).slice(0, 3);
-  const strip = recent.length ? `<div class="tc-rc">${recent.map(c => `
+  const strip = recent.length ? `<div class="tc-rc"><span class="tc-rc-h">방금<br>올라온</span>${recent.map(c => `
     <div class="tc-rc-i" onclick="event.stopPropagation();openOneCert(${c.id})">
       ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
                               : `<div class="tc-rc-no">📖</div>`}
@@ -4098,6 +4123,14 @@ function kkutTodayCard(r) {
     : isOneBook(r) ? ''
     : `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`;
 
+  // 끗짱 자신의 책. 병렬독서로 더한 책 + 루틴을 열 때 고른 책. 아무 것도 없으면 지금 읽는 책 하나라도 보인다
+  let ownBooks = isShared(r) ? [] : booksOf(r.id);
+  if (!ownBooks.length && !isShared(r) && !waiting && !d?.ended) {
+    const nb = kkutNowBook(r);
+    if (nb) ownBooks = [{ title: nb.title, cover_url: nb.cover }];
+  }
+  const perBook = live && !d?.notYet && ownBooks.length > 0;
+
   return `<div class="tcard">
     <div class="tc-b">
       <div class="tc-hd">
@@ -4109,16 +4142,14 @@ function kkutTodayCard(r) {
           ? `<b>고쳐서 다시 등록해주세요</b><span>${esc(r.reject_reason)}</span>`
           : `<b>운영진이 확인하고 있어요</b><span>열리면 청소년이 신청할 수 있어요.</span>`}
       </div>` : ''}
-      <div class="tc-day">${routineLine(r, d)}${waiting || d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
-      ${(() => { const nb = waiting || d?.ended ? null : kkutNowBook(r); return nb ? `<div class="tc-nb">
-        <div class="nb-c">${nb.cover ? `<img src="${esc(nb.cover)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
-        <div class="nb-t"><em>지금 읽는 책</em><b>${esc(nb.title)}</b></div></div>` : ''; })()}
+      <div class="tc-day"><span>${routineLine(r, d)}</span>${waiting || d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
       ${d && !waiting && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
+      ${perBook ? homeBookRows(r, ownBooks, true) : ''}
       ${waiting || d?.ended || d?.notYet ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
       ${waiting || d?.ended || d?.notYet ? '' : shelf}
       ${waiting || d?.notYet ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
-      ${!waiting && d?.notYet ? recruitBlock(r) : certAction(r, 'btn-primary', 'margin-bottom:0;')}
+      ${!waiting && d?.notYet ? recruitBlock(r) : (perBook ? '' : certAction(r, 'btn-primary', 'margin-top:12px;margin-bottom:0;'))}
     </div>
   </div>`;
 }
