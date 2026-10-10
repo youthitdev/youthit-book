@@ -1190,6 +1190,15 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rp-r { display:flex; align-items:center; gap:10px; padding:13px 14px; border:1px solid var(--line); border-radius:12px; font-size:14.5px; cursor:pointer; }
 .rp-r input { width:18px; height:18px; accent-color:var(--blue); margin:0; flex:none; }
 .rp-r:has(input:checked) { border-color:var(--blue); background:var(--bg); font-weight:700; }
+.fin-b { position:absolute; top:6px; right:6px; font-style:normal; font-size:10.5px; font-weight:800; letter-spacing:.5px;
+  color:#C2403F; background:rgba(255,255,255,.92); border:1.5px solid #C2403F; border-radius:6px; padding:1px 5px;
+  transform:rotate(8deg); box-shadow:0 1px 3px rgba(0,0,0,.2); }
+.tc-bt-i, .bk-img, .kb-c { position:relative; }
+.fin-row { display:flex; align-items:center; gap:12px; margin-top:12px; padding:13px 14px; border:1px solid var(--line);
+  border-radius:12px; cursor:pointer; font-size:14.5px; font-weight:700; }
+.fin-row input { width:20px; height:20px; accent-color:var(--blue); margin:0; flex:none; }
+.fin-row small { display:block; font-size:11.5px; font-weight:500; color:var(--ink-3); margin-top:2px; }
+.fin-row:has(input:checked) { border-color:var(--blue); background:var(--bg); }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -1605,6 +1614,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
            손으로 치면 오타 하나에 같은 책이 두 권으로 갈라진다 -->
       <div class="bk-chips" id="cBookChips"></div>
       <div id="cPageHint" style="display:none;font-size:12.5px;line-height:1.6;padding:10px 13px;border-radius:11px;"></div>
+      <label class="fin-row" id="cFinRow"><input type="checkbox" id="cFin">
+        <span>이 책, 다 읽었어요 🎉<small>완독 도장이 찍히고, 같은 루틴 친구들에게 알려요</small></span></label>
     </div>
     <div>
       <div class="field-label" id="cMemoLabel">더 남기고 싶은 말 <span class="opt">선택</span></div>
@@ -2197,7 +2208,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[] };
+let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[] };
 let tab = 'home';
 // 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
@@ -3036,7 +3047,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3052,9 +3063,12 @@ async function loadAll() {
     sb.rpc('exchange_feed', { p_limit: 30 }),
     // 인증 좋아요. 마이그레이션 105 가 아직이면 오류가 와도 빈 채로 둔다
     sb.from('cert_likes').select('cert_id,user_id'),
+    // 완독 도장. 마이그레이션 109 가 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('book_finishes').select('user_id,routine_id,book_key,book_title'),
   ]);
   state.exchanges = ex.error ? [] : (ex.data || []);
   state.likes = lk.error ? [] : (lk.data || []);
+  state.finishes = fn.error ? [] : (fn.data || []);
   state.notifs = nt.data || [];
   state.nudges = nd.data || [];
   state.parts = p.data || [];
@@ -3865,7 +3879,7 @@ function todayCard(r) {
     const t = esc(b.title).replace(/'/g, "\\'");
     return `
         <div class="tc-bt" ${live && !ok ? `onclick="event.stopPropagation();openCert(${r.id}, '${t}')"` : ''}>
-          <div class="tc-bt-i">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}</div>
+          <div class="tc-bt-i">${(b.found_cover_url || b.cover_url) ? `<img src="${esc(b.found_cover_url || b.cover_url)}" alt="">` : '📖'}${iFinished(r.id, b.title) ? FIN_BADGE : ''}</div>
           <span>${esc(b.title)}</span>
           ${pageOf(r.id, b.title) ? `<i>${won(pageOf(r.id, b.title))}쪽</i>` : perBook ? '<i>&nbsp;</i>' : ''}   <!-- 쪽수 줄 높이를 맞춰 단추가 나란히 서게 -->
           ${perBook ? (ok ? '<div class="tc-bb ok">✓ 인증완료</div>'
@@ -3963,7 +3977,7 @@ function openAllKidBooks(rid, withMe) {
   $('kbSub').textContent = '친구들이 직접 고른 책이에요';
   const tiles = kidsBooks(rid, withMe).flatMap(b => [...b.readers].map(([uid, rd]) => ({ uid, title: b.title, url: rd.photo || b.found })));
   $('kbBody').innerHTML = `<div class="kb-grid">${tiles.map(t => `<div class="kb-r">
-      <div class="kb-c">${t.url ? `<img src="${esc(t.url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}</div>
+      <div class="kb-c">${t.url ? `<img src="${esc(t.url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">` : '📖'}${finishedBy(t.uid, rid, t.title) ? FIN_BADGE : ''}</div>
       <b>${t.uid === me.id ? '나' : esc(nameOf(t.uid))}</b><small>${esc(t.title)}</small></div>`).join('')}</div>`;
   showLayer('shKidBook');
 }
@@ -5295,7 +5309,7 @@ function bookTile(b) {
   return `<div class="bk">
     <div class="bk-img">${b.photo
       ? `<img src="${esc(b.photo)}" loading="lazy" alt="">`
-      : `<span>📖</span>`}</div>
+      : `<span>📖</span>`}${iFinishedAny(b.title) ? FIN_BADGE : ''}</div>
     ${b.title ? `<div class="bk-t">${esc(b.title)}</div>` : ''}
   </div>`;
 }
@@ -6653,7 +6667,7 @@ function openCert(rid, pickTitle) {
   $('cBook').value = one ? (r.kkut_book_title || '')
     : (pickTitle || last?.book_title || myPart(rid)?.book_title || leadBook || '');
   delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
-  $('cPage').value = '';
+  $('cPage').value = ''; finBook = null; syncFin();
   $('cPageHint').style.display = 'none';
   drawBookChips();
   drawPhotos(); pageHint(); checkCert(); openOv('ovCert');
@@ -6869,6 +6883,7 @@ function pageRange(rid, book, page) {
 
 function pageHint() {
   checkCert();
+  syncFin();
   const h = $('cPageHint'), page = parseInt($('cPage').value||'0',10);
   const book = $('cBook').value.trim();
   const last = myCerts(certRid).find(c => c.page_end && c.book_title === book);
@@ -6911,7 +6926,7 @@ function editCert(id) {
   $('cQuote').value = c.quote || '';
   $('cBook').value  = c.book_title || '';
   delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
-  $('cPage').value  = c.page_end || '';
+  $('cPage').value  = c.page_end || ''; finBook = null; syncFin();
   $('cMemo').value  = c.content || '';
   $('cSubmit').textContent = '수정하기';
   $('cPageHint').style.display = 'none';
@@ -7282,8 +7297,9 @@ async function submitCert() {
     btn.disabled = false; btn.textContent = label;
     if (error) return toast('저장하지 못했어요: ' + error.message);
     certEditId = null;
+    const fin1 = await applyFinish(certRid, row.book_title);
     await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
-    return toast('수정했어요');
+    return toast(fin1 ? '수정했어요. 완독 도장을 찍었어요 🎉' : '수정했어요');
   }
 
   const { error } = await sb.from('certifications')
@@ -7292,10 +7308,12 @@ async function submitCert() {
   if (error) {
     return toast(error.code === '23505' ? '오늘은 이미 인증했어요 🌱' : '인증을 저장하지 못했어요: ' + error.message);
   }
+  const fin2 = await applyFinish(certRid, row.book_title);
   await loadAll(); closeOv('ovCert'); render(); refreshOpenOv(certRid);
   // 배너 한 줄 대신 도장을 찍는다. 매일 하는 일이라 누를 맛이 있어야 한다
   const r1 = state.routines.find(x => x.id === certRid);
   showStamp(routineDay(r1)?.n, r1?.points_per_cert);
+  if (fin2) setTimeout(() => toast('완독 도장을 찍었어요 🎉'), 1800);
   cheerLevel();
   maybeAskPush();
 }
@@ -7803,6 +7821,35 @@ async function sendReport() {
   if (error) return toast(error.message);
   closeSheet('shReport');
   toast('신고했어요. 운영진이 확인할게요');
+}
+
+// ── 완독 도장 (migration-109) ──────────────────────────
+// 책은 띄어쓰기·문장부호를 걷은 값(loose)으로 묶는다 — 앱이 같은 책을 알아보는 방식과 같다
+const finishedBy = (uid, rid, title) => !!title && (state.finishes || [])
+  .some(f => f.user_id === uid && f.routine_id === rid && f.book_key === loose(title));
+const iFinished = (rid, title) => !!me && finishedBy(me.id, rid, title);
+// 내 책장은 루틴을 가리지 않는다. 어느 루틴에서든 끝냈으면 그 책은 끝낸 책이다
+const iFinishedAny = title => !!me && !!title && (state.finishes || []).some(f => f.user_id === me.id && f.book_key === loose(title));
+const FIN_BADGE = '<i class="fin-b">완독</i>';
+
+let finBook = null;   // 완독 체크를 마지막으로 맞춘 책. 책이 바뀔 때만 다시 맞춘다
+function syncFin() {
+  const row = $('cFinRow'); if (!row) return;
+  const book = $('cBook').value.trim(), key = loose(book);
+  if (finBook === key) return;
+  finBook = key;
+  $('cFin').checked = iFinished(certRid, book);
+}
+// 저장한 뒤 체크 상태에 맞춰 도장을 찍거나 뗀다. 실패해도 인증은 이미 저장됐다
+async function applyFinish(rid, book) {
+  if (!$('cFinRow') || !book) return false;
+  const want = $('cFin').checked, have = iFinished(rid, book);
+  if (want === have) return false;
+  const { error } = want
+    ? await sb.rpc('finish_book', { p_routine: rid, p_title: book, p_key: loose(book) })
+    : await sb.rpc('unfinish_book', { p_routine: rid, p_key: loose(book) });
+  if (error) { toast('완독 표시를 저장하지 못했어요'); return false; }
+  return want;
 }
 
 // ── 좋아요 ─────────────────────────────────────────────
