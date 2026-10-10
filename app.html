@@ -4479,7 +4479,7 @@ function kkutCertBlock(mine) {
     return `<div class="sec-t" style="margin-top:0;">${r.emoji||'📚'} ${esc(r.title)}</div>
       ${togetherCard(r, cs, ps.length)}
       ${ps.length ? `<div class="card" style="padding:12px 15px;">
-        ${coverStrip(r.id)}
+        ${coverStrip(r.id, true)}
         <div class="rm-list" style="margin-top:6px;">
           ${ps.map(p => {
             const n  = cs.filter(c => c.user_id === p.user_id).length;
