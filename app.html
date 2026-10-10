@@ -632,6 +632,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   background:var(--blue); color:#fff; cursor:pointer; }
 .tc-rb:active { opacity:.8; }
 .tc-rb.ok { background:#F2F7E6; color:var(--green-d); cursor:default; padding:9px 12px; }
+.tc-cntr { display:flex; justify-content:space-between; align-items:baseline; }
 .tc-cnt { font-size:14px; color:var(--ink-2); margin-top:11px; }
 .tc-cnt b { font-size:17px; font-weight:800; color:var(--green-d); }
 .tcard .btn { margin-top:12px; }
@@ -4093,7 +4094,7 @@ function kkutTodayCard(r) {
   // 두 화면이 같은 부품을 쓰면 한쪽만 어긋나는 일이 없다
   const live = !waiting && !d?.ended;
   const SHOW = 6;
-  const shelf = ps.length ? `<div class="rm-list sm">${ps.slice(0, SHOW).map(p => memberItem(r, p, today)).join('')}${ps.length > SHOW ? (() => {
+  const shelf = ps.length ? `<div class="rm-list sm">${ps.slice(0, SHOW).map(p => memberItem(r, p, today, { noPoke: true })).join('')}${ps.length > SHOW ? (() => {
       const rest = ps.slice(SHOW);
       const left = rest.filter(p => !today.some(c => c.user_id === p.user_id)).length;
       return `<div class="rm2 more" onclick="event.stopPropagation();go('cert', ${r.id})"><div class="rm2-c">+${rest.length}</div>
@@ -4145,7 +4146,11 @@ function kkutTodayCard(r) {
       <div class="tc-day"><span>${routineLine(r, d)}</span>${waiting || d?.notYet ? '' : `<button class="tc-rec" onclick="go('cert', ${r.id})">기록 <i class="ti ti-chevron-right"></i></button>`}</div>
       ${d && !waiting && !d.notYet ? `<div class="bal-bar" style="background:#EBE5DA;margin:9px 0 0;"><i style="width:${pct}%"></i></div>` : ''}
       ${perBook ? homeBookRows(r, ownBooks, true) : ''}
-      ${waiting || d?.ended || d?.notYet ? '' : `<div class="tc-cnt">오늘 <b>${today.length}</b> / ${ps.length}명 인증</div>`}
+      ${waiting || d?.ended || d?.notYet ? '' : (() => {
+        // 홈에서는 누가 했나만 본다. 콕은 인증 탭에서 한 사람씩 보낸다 (2026-10-10 사용자)
+        const yet = ps.filter(p => !p.self && !today.some(c => c.user_id === p.user_id)).length;
+        return `<div class="tc-cnt tc-cntr"><span>오늘 <b>${today.length}</b> / ${ps.length}명 인증</span>${yet
+          ? `<button class="tc-rec" onclick="go('cert', ${r.id})">아직 ${yet}명 <i class="ti ti-chevron-right"></i></button>` : ''}</div>`; })()}
       ${waiting || d?.ended || d?.notYet ? '' : shelf}
       ${waiting || d?.notYet ? '' : strip}
       ${d?.ended && !waiting ? `<div class="tc-done">🌱 ${ps.length}명과 끝까지 함께했어요</div>` : ''}
@@ -4390,7 +4395,7 @@ function memberItem(r, p, today, o = {}) {
   const av    = avatarOf(p.user_id);
   const live  = !routineEnded(r) && r.status !== 'pending' && !routineDay(r)?.notYet;
   const poked = (state.nudges || []).some(x => x.routine_id === r.id && x.to_id === p.user_id);
-  const ok    = live && !done && !p.self && r.led_by === me.id;   // 콕은 끗짱만 (migration-50)
+  const ok    = live && !done && !p.self && r.led_by === me.id && !o.noPoke;   // 콕은 끗짱만 (migration-50). 홈에서는 빼고 인증 탭에서만 보낸다
   const click = o.click || (p.self && !done ? `openCert(${r.id})` : `go('cert', ${r.id})`);
   const sel = (certWho[r.id] === p.user_id) ? ' sel' : '';
   return `<div class="rm2 ${done ? 'on' : 'off'}${sel}" onclick="event.stopPropagation();${click}">
