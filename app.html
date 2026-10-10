@@ -3346,6 +3346,22 @@ function paintBell() {
   const b = $('hdrBell'); if (!b) return;
   b.style.display = (me && !isGuest()) ? '' : 'none';
   $('bellDot').style.display = unreadCount() ? '' : 'none';
+  syncAppBadge();
+}
+
+// 홈 화면 앱 아이콘의 빨간 숫자. 안 읽은 알림 수와 같다 — 알림함을 열어 읽으면 사라진다.
+// 아이폰은 홈 화면에 추가한 앱에서만(iOS 16.4 이상), 알림을 허용했을 때만 보인다.
+// 푸시가 올 때는 서비스워커가 먼저 올려 두고, 앱이 열리면 여기서 진짜 개수로 맞춘다.
+// 서비스워커가 세는 값도 같이 맞춘다 — 안 그러면 읽은 뒤에 다음 푸시가 옛 숫자에서 이어진다
+let lastBadge = -1;
+function syncAppBadge() {
+  const n = (me && !isGuest() && !DEMO) ? unreadCount() : 0;
+  if (n === lastBadge) return;
+  lastBadge = n;
+  try {
+    if (navigator.setAppBadge) { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); }
+    if (window.caches) caches.open('hankkut-badge').then(c => c.put('n', new Response(String(n))));
+  } catch (e) {}
 }
 
 function whenText(iso) {

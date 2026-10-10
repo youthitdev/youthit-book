@@ -27,7 +27,7 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(ks =>
-    Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+    Promise.all(ks.filter(k => k !== CACHE && k !== 'hankkut-badge').map(k => caches.delete(k)))));
   self.clients.claim();
 });
 
@@ -66,6 +66,15 @@ self.addEventListener('push', e => {
       badge: BASE + 'icon-192.png',
       data:  { url: here(d.url) },
     });
+    // 홈 화면 아이콘의 빨간 숫자. 안 읽은 개수는 서버에 있지만 워커는 모른다 —
+    // 푸시가 올 때마다 하나씩 올리고, 앱이 열리면 진짜 개수로 맞춰 준다 (app.html 의 syncAppBadge)
+    try {
+      const store = await caches.open('hankkut-badge');
+      const cur = Number(await (await store.match('n') || new Response('0')).text()) || 0;
+      const n = cur + 1;
+      await store.put('n', new Response(String(n)));
+      if (self.navigator.setAppBadge) await self.navigator.setAppBadge(n);
+    } catch (err) {}
     // 열려 있는 화면은 🔔 목록을 앱 켜질 때 한 번만 읽는다.
     // 알려주지 않으면 배너만 오고 종은 그대로라, 앱을 꺼다 켜야 숫자가 붙는다
     const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
