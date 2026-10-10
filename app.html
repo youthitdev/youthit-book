@@ -1268,6 +1268,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .cs-i img { width:100%; height:100%; object-fit:cover; display:block; }
 .cs-t b { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:11.5px; font-weight:700;
   line-height:1.35; margin-top:6px; color:var(--ink-2); }
+.hr-n { font-size:12.5px; color:var(--ink-3); margin:-4px 0 12px; }
+.hr-n b { color:var(--blue); font-weight:800; }
+.hr-n span { color:var(--ink-3); }
+.hr-road { display:flex; justify-content:space-between; gap:2px; }
+.hr-s { flex:1; text-align:center; font-size:20px; filter:grayscale(1); opacity:.28; }
+.hr-s.on { filter:none; opacity:1; }
+.hr-s.now { filter:grayscale(.3); opacity:.8; transform:scale(1.15); }
 .pg-b { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
 .pg-row { display:flex; align-items:center; gap:12px; }
 .pg-i { width:44px; height:44px; border-radius:14px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:24px; flex:none; }
@@ -1711,6 +1718,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div id="cPageHint" style="display:none;font-size:12.5px;line-height:1.6;padding:10px 13px;border-radius:11px;"></div>
       <label class="fin-row" id="cFinRow"><input type="checkbox" id="cFin">
         <span>이 책, 다 읽었어요 🎉<small>완독 도장이 찍히고, 같은 루틴 친구들에게 알려요</small></span></label>
+    </div>
+    <!-- 함께 읽는 글: 책이 없어서 위치가 아니라 「오늘 읽은 분량」을 적는다 (선택). 적으면 책 높이·도시에 더해진다 -->
+    <div id="cSharedPage" style="display:none;">
+      <div class="field-label">오늘 읽은 쪽 <span class="opt">선택</span></div>
+      <input type="number" id="cPageS" min="1" max="100" placeholder="예) 3">
+      <div class="hint">글이 몇 쪽 분량이었는지 적어 주세요. 내 책 높이와 한끗 책의 도시에 더해져요.</div>
     </div>
     <div>
       <div class="field-label" id="cMemoLabel">더 남기고 싶은 말 <span class="opt">선택</span></div>
@@ -3085,7 +3098,6 @@ async function enter() {
   await loadAll();
   go('home');
   startNotifPoll();
-  cheerLevel();
 
   // 링크로 들어와 둘러보다 로그인한 사람은 보던 루틴으로 돌아간다. 끗짱 신청서가 먼저면 그쪽이 먼저다
   const goR = sessionStorage.getItem('goRoutine');
@@ -3578,7 +3590,7 @@ async function refreshNotifs() {
   // 확인이 끝났거나, 루틴에 들어갔거나, 끗짱이 됐거나. 알림만 새로 읽고
   // 화면을 그대로 두면 「승인됐다」는 알림 밑에 「확인하고 있어요」가 남는다
   const after = ((state.notifs || [])[0] || {}).id || 0;
-  if (after > before) { await reloadMine(); cheerLevel(); }
+  if (after > before) { await reloadMine(); }
 }
 
 // 프로필과 자료를 다시 들고 온다. 열려 있는 오버레이는 건드리지 않는다 —
@@ -4800,7 +4812,7 @@ function certCard(c) {
 // pageRange() 는 지금 쓰는 중인 값이라 최신 인증을 보지만, 여기선
 // 그 인증보다 앞선 것 중 가장 최근을 봐야 지난 기록도 맞게 나온다
 function pageRangeOf(c) {
-  if (!c.page_end) return null;
+  if (!c.page_end || !c.book_title) return null;   // 책이 없는 글 인증의 쪽수는 위치가 아니라 분량이라 범위로 보이지 않는다
   const prev = state.certs
     .filter(x => x.user_id === c.user_id && x.routine_id === c.routine_id
               && x.book_title === c.book_title && x.page_end
@@ -5721,24 +5733,7 @@ function calBlock() {
 // 【문턱을 낮게 시작한다】 5번이면 벌써 둘째 칸이다. 한 루틴(15일)을 마치면
 //   셋째 칸에 닿는다. 처음 몇 칸이 빨라야 다음 칸이 궁금해진다.
 // 【내려가지 않는다】 인증을 지우면 숫자는 줄지만, 레벨을 뺏는 화면은 만들지 않는다
-const LEVELS = [
-  { n: 1, ico: '📄', name: '첫 장',   at: 0   },
-  { n: 2, ico: '🔖', name: '책갈피', at: 5   },
-  { n: 3, ico: '✏️', name: '밑줄',   at: 15  },
-  { n: 4, ico: '📗', name: '한 권',   at: 30  },
-  { n: 5, ico: '📚', name: '책장',   at: 60  },
-  { n: 6, ico: '🌳', name: '책숲',   at: 100 },
-];
-
 const myCertCount = () => (state.certs || []).filter(c => c.user_id === me.id).length;
-
-function myLevel(n) {
-  const cnt = n ?? myCertCount();
-  let cur = LEVELS[0];
-  for (const l of LEVELS) if (cnt >= l.at) cur = l;
-  const next = LEVELS.find(l => l.at > cnt) || null;
-  return { cur, next, left: next ? next.at - cnt : 0 };
-}
 
 // 작은 알약 하나로는 아무 일도 안 일어나 보인다. 레벨은 「지금 어디쯤인지」와
 // **「앞에 뭐가 있는지」** 가 같이 보여야 재미가 난다. 여섯 칸을 늘어놓고
@@ -5772,20 +5767,6 @@ function personalMetaphor(pages) {
   return { pages: n, height: fmtHeight(n * PAGE_CM), cur, next, left: next ? next.at - n : 0,
            pct: next ? Math.min(100, Math.round((n - (cur ? cur.at : 0)) / (next.at - (cur ? cur.at : 0)) * 100)) : 100 };
 }
-function pagesBlock() {
-  const mine = state.pages && state.pages.mine;
-  if (mine === null || mine === undefined) return '';       // 112 가 아직이거나 불러오지 못했다
-  const m = personalMetaphor(mine);
-  if (!m.pages) return `<div class="pg-b"><div class="pg-t"><b>아직 쌓은 책이 없어요</b><span>첫 인증을 하면 책 높이가 올라가기 시작해요 🌱</span></div></div>`;
-  return `<div class="pg-b">
-      <div class="pg-row"><div class="pg-i">${m.cur ? m.cur.ico : '📖'}</div>
-        <div class="pg-t"><b>${won(m.pages)}쪽 읽었어요</b>
-          <span>책으로 쌓으면 ${m.height}${m.cur ? ` · ${m.cur.ico} ${m.cur.name}!` : ''}</span></div></div>
-      ${m.next ? `<div class="lv-bar" style="margin-top:10px;"><span style="width:${m.pct}%;"></span></div>
-        <div class="pg-n">다음은 ${m.next.ico} ${m.next.name}까지 <b>${won(m.left)}쪽</b></div>` : ''}
-    </div>`;
-}
-
 // ── 함께 짓는 한끗 책의 도시 (전체 누적 쪽수) ──────────
 // 앱을 쓰는 모두가 읽은 쪽수를 한 곳에 모아 건물 하나씩 완공한다. 순위·경쟁이 아니라 「같이 짓는」 이야기다.
 // 쪽수는 서버가 센다 (migration-112). 마일스톤은 지금 규모에 맞춰 첫 건물을 가깝게 잡았다.
@@ -5827,44 +5808,39 @@ function cityCard() {
   </div>`;
 }
 
+// 【레벨 카드를 책 높이로 바꿨다 · 2026-10-10 사용자】 인증 횟수로 매기던 레벨(첫 장·책갈피·…)과 읽은 쪽수로 쌓는
+//   책 높이는 둘 다 「다음 칸까지」를 말해서 한 카드에 막대가 둘이었다. 하나로 합친다.
+//   꾸준함(인증 횟수)은 작은 한 줄로 남긴다. 함께 읽는 글은 쪽수를 선택으로 적는다 (migration-113).
 function levelCard() {
   if (!me || isGuest()) return '';
-  const cnt = myCertCount();
-  const { cur, next, left } = myLevel(cnt);
-  const from = cur.at, to = next ? next.at : cur.at;
-  const pct = next ? Math.min(100, Math.round((cnt - from) / Math.max(to - from, 1) * 100)) : 100;
+  const cnt  = myCertCount();
+  const mine = state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : null;   // 112 가 아직이면 null
+  const m    = personalMetaphor(mine || 0);
+  const have = mine !== null && mine > 0;
 
-  const road = LEVELS.map(l => {
-    const cls = l.n < cur.n ? 'past' : l.n === cur.n ? 'now' : 'next';
-    return `<div class="lv-step ${cls}"><em>${l.ico}</em><i>${l.name}</i></div>`;
-  }).join('');
+  // 쪽수를 못 가져왔을 때(112 가 아직이거나 오류)는 인증 횟수만 보여 준다
+  if (mine === null) return `<div class="card lv-card"><div class="lv-top">
+      <div class="lv-ico">📖</div><div class="lv-txt"><b>인증 ${won(cnt)}번</b><i>꾸준히 읽고 있어요</i></div></div></div>`;
 
+  const road = PAGE_LADDER.map(l =>
+    `<span class="hr-s ${m.pages >= l.at ? 'on' : (m.next && l.at === m.next.at ? 'now' : '')}" title="${esc(l.name)}">${l.ico}</span>`).join('');
+  const title = have ? (m.cur ? m.cur.name : '쌓기 시작했어요') : '아직 쌓은 책이 없어요';
+  const sub   = have ? `${won(m.pages)}쪽 읽었어요 · 책으로 쌓으면 ${m.height}`
+              : cnt  ? '읽은 쪽을 적으면 책 높이가 쌓여요'
+                     : '첫 인증을 하면 책 높이가 올라가기 시작해요 🌱';
   return `<div class="card lv-card">
       <div class="lv-top">
-        <div class="lv-ico">${cur.ico}</div>
+        <div class="lv-ico">${have ? (m.cur ? m.cur.ico : '📖') : '🌱'}</div>
         <div class="lv-txt">
-          <b>레벨 ${cur.n} · ${cur.name}</b>
-          <i>${next ? `<span>「${next.name}」까지</span> <b>${left}번</b>` : '여섯 칸을 다 올랐어요'}</i>
+          <b>${title}</b>
+          <i>${sub}</i>
         </div>
       </div>
-      <div class="lv-bar"><span style="width:${pct}%;"></span></div>
-      <div class="lv-road">${road}</div>
-      ${pagesBlock()}
+      ${m.next ? `<div class="lv-bar"><span style="width:${Math.max(m.pct, have ? 2 : 0)}%;"></span></div>
+        <div class="hr-n">다음은 ${m.next.ico} ${m.next.name}까지 <b>${won(m.left)}쪽</b>${cnt ? ` <span>· 인증 ${won(cnt)}번</span>` : ''}</div>`
+        : `<div class="hr-n">쌓을 수 있는 사물을 모두 넘었어요 🎉${cnt ? ` <span>· 인증 ${won(cnt)}번</span>` : ''}</div>`}
+      <div class="hr-road">${road}</div>
     </div>`;
-}
-
-// 레벨이 오른 날 한 번만 축하한다. 조용히 바뀌면 오른 줄도 모른다.
-// 기기에만 적어 둔다 — 서버에 칸 하나 더 두고 지킬 만한 일이 아니다
-function cheerLevel() {
-  if (!me || DEMO || isGuest()) return;
-  const now = myLevel().cur;
-  const key = `dokseo_lv_${me.id}`;
-  let seen = 0;
-  try { seen = Number(localStorage.getItem(key) || 0); } catch {}
-  if (now.n > seen) {
-    try { localStorage.setItem(key, String(now.n)); } catch {}
-    if (seen) setTimeout(() => toast(`${now.ico} 레벨 ${now.n} · ${now.name}이 됐어요`), 700);
-  }
 }
 
 // ── MY 맨 아래 메뉴 ────────────────────────────────────
@@ -6906,6 +6882,7 @@ function certFields(r) {
   // 「함께 읽는 글」 은 책도 쪽수도 없다. 있으면 가짜가 된다.
   // 대신 오늘 글을 위에 깔고, 소감을 받는다
   $('cBookWrap').style.display = sh ? 'none' : '';
+  $('cSharedPage').style.display = sh ? '' : 'none';
   $('cTodayPost').innerHTML    = sh ? postCard(r, true) : '';
   // 글 루틴에는 찍을 책이 없다. 화면에 뜬 글을 읽는 거라 사진은 선택이다
   $('cPhLabel').innerHTML = sh
@@ -6957,7 +6934,7 @@ function openCert(rid, pickTitle) {
   $('cBook').value = one ? (r.kkut_book_title || '')
     : (pickTitle || last?.book_title || myPart(rid)?.book_title || leadBook || '');
   delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
-  $('cPage').value = ''; finBook = null; syncFin();
+  $('cPage').value = ''; $('cPageS').value = ''; finBook = null; syncFin();
   $('cPageHint').style.display = 'none';
   drawBookChips();
   drawPhotos(); pageHint(); checkCert(); openOv('ovCert');
@@ -7216,7 +7193,7 @@ function editCert(id) {
   $('cQuote').value = c.quote || '';
   $('cBook').value  = c.book_title || '';
   delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
-  $('cPage').value  = c.page_end || ''; finBook = null; syncFin();
+  $('cPage').value  = c.page_end || ''; $('cPageS').value = isShared(r) ? (c.page_end || '') : ''; finBook = null; syncFin();
   $('cMemo').value  = c.content || '';
   $('cSubmit').textContent = '수정하기';
   $('cPageHint').style.display = 'none';
@@ -7595,10 +7572,13 @@ async function submitCert() {
   const btn = $('cSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
 
+  const sharedNow = isShared(r0);
   const row = {
     quote: $('cQuote').value.trim() || null,
-    book_title: $('cBook').value.trim() || null,
-    page_end: parseInt($('cPage').value||'0',10) || null,
+    book_title: sharedNow ? null : ($('cBook').value.trim() || null),
+    // 책 루틴은 「그 책의 어디까지」, 함께 읽는 글은 「오늘 읽은 분량」(선택). 뜻이 달라 칸도 따로다
+    page_end: sharedNow ? (Math.min(100, parseInt($('cPageS').value || '0', 10)) || null)
+                        : (parseInt($('cPage').value||'0',10) || null),
     content: $('cMemo').value.trim() || null,
   };
 
@@ -7637,7 +7617,6 @@ async function submitCert() {
     ? { before: pgBefore, after: pgAfter } : null;
   showStamp(routineDay(r1)?.n, r1?.points_per_cert, pgShow);
   if (fin2) setTimeout(() => toast('완독 도장을 찍었어요 🎉'), pgShow ? 5200 : 1800);
-  cheerLevel();
   maybeAskPush();
 }
 
