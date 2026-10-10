@@ -155,6 +155,16 @@ tr:hover td { background:#fcfcfd; }
 .vq-when { font-size:11px; color:#A79F92; margin-top:5px; }
 .vq-cold { color:#A8432F; font-weight:700; }
 /* 프로필 사진 */
+.rp-c { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; display:flex; gap:16px; }
+.rp-c img { width:150px; height:150px; border-radius:12px; object-fit:cover; background:#eee; flex:none; }
+.rp-c .rp-no { width:150px; height:150px; border-radius:12px; background:#F2EEE6; flex:none; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--ink-3); text-align:center; padding:8px; }
+.rp-b { flex:1; min-width:0; }
+.rp-b b { font-size:14.5px; font-weight:800; }
+.rp-m { font-size:12.5px; color:var(--ink-3); margin:3px 0 8px; }
+.rp-t { font-size:13px; white-space:pre-wrap; background:#F7F4EE; border-radius:10px; padding:8px 10px; margin:6px 0; }
+.rp-w { font-size:12.5px; margin-top:6px; }
+.rp-w i { font-style:normal; display:inline-block; background:#FDF0EE; color:#8E3527; border-radius:99px; padding:2px 9px; margin:0 5px 4px 0; font-weight:700; }
+.rp-a { display:flex; gap:8px; margin-top:12px; }
 .av-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
 .av-c { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 12px; text-align:center; }
 .av-c img { width:96px; height:96px; border-radius:50%; object-fit:cover; display:block; margin:0 auto 10px; background:#eee; }
@@ -407,6 +417,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
+    <button class="tab" data-tab="reports" onclick="switchTab('reports')">인증 신고<i id="cntReports"></i></button>
     <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필 사진<i id="cntPhotos"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
@@ -877,6 +888,7 @@ function renderSummary() {
   setCnt('cntStores',   (DB.bookstores || []).length, false);
   setCnt('cntQuotes',   (DB.quotes || []).filter(q => q.quote_public).length, false);
   setCnt('cntNotify',   (DB.scheduled || []).filter(n => !n.sent_at).length, false);
+  setCnt('cntReports',  (DB.reports || []).length, true);
   setCnt('cntPhotos',   (DB.avatars || []).length, false);
 }
 
@@ -890,6 +902,7 @@ function renderPanel() {
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   if (tab === 'verify')   return el.innerHTML = viewVerify();
   if (tab === 'notify')   return el.innerHTML = viewNotify();
+  if (tab === 'reports')  return el.innerHTML = viewReports();
   if (tab === 'photos')   return el.innerHTML = viewPhotos();
   if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
@@ -2554,6 +2567,58 @@ const kwHtml = a => (a.keywords && a.keywords.length)
 
 // 후원자 화면에 내보낼 문장 고르기.
 // 아이가 문장 대신 개인적인 이야기를 적었을 수 있어 자동 노출하지 않는다
+// ── 인증 신고 ──────────────────────────────────────────────
+// 회원이 신고한 인증이다 (migration-107). 「내리기」는 사진과 글만 비운다 — 인증 기록과 포인트는 남는다.
+// 같은 인증에 쌓인 신고는 한꺼번에 처리한다
+const RP_LABEL = { photo: '부적절한 사진', privacy: '얼굴·개인정보', rude: '불쾌한 말', other: '그 밖의 이유' };
+function viewReports() {
+  const rows = DB.reports || [];
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">인증 신고</div>
+    <div class="panel-d">회원이 신고한 인증이에요. 신고한 사람은 상대에게 알려지지 않아요. <b>내리기</b>를 누르면 사진과 글이 지워지고
+      인증 기록(날짜·포인트)은 남아요. 본인에게는 「내려갔어요」 알림이 가요.</div></div>
+  </div>
+  ${rows.length ? rows.map(g => {
+    const c = g.cert, ph = (c.photo_urls || [])[0];
+    const by = {}; g.reports.forEach(r => { by[r.reason] = (by[r.reason] || 0) + 1; });
+    return `<div class="rp-c">
+      ${ph ? `<a href="${esc(ph)}" target="_blank" rel="noopener"><img src="${esc(ph)}" alt="" loading="lazy"></a>`
+           : `<div class="rp-no">사진 없음<br>(이미 내렸거나 글만 있어요)</div>`}
+      <div class="rp-b">
+        <b>${esc(g.author)}</b>
+        <div class="rp-m">${esc(g.routine)} · ${fmtDate(c.created_at)}${c.book_title ? ` · ${esc(c.book_title)}` : ''}</div>
+        ${c.quote ? `<div class="rp-t">“${esc(c.quote)}”</div>` : ''}
+        ${c.content ? `<div class="rp-t">${esc(c.content)}</div>` : ''}
+        <div class="rp-w">신고 ${g.reports.length}건 · ${Object.entries(by).map(([k, n]) => `<i>${RP_LABEL[k] || k}${n > 1 ? ' ' + n : ''}</i>`).join('')}</div>
+        ${g.reports.filter(r => r.note).map(r => `<div class="rp-t" style="background:#FFF7E8;">“${esc(r.note)}” — ${esc(r.who)}</div>`).join('')}
+        <div class="rp-a">
+          <button class="btn btn-dark" onclick="resolveReport(${c.id}, 'removed')">내리기</button>
+          <button class="btn btn-line" onclick="resolveReport(${c.id}, 'dismissed')">문제없음</button>
+        </div>
+      </div>
+    </div>`; }).join('')
+    : `<div class="empty">처리할 신고가 없어요.</div>`}`;
+}
+async function resolveReport(certId, action) {
+  const g = (DB.reports || []).find(x => x.cert.id === certId); if (!g) return;
+  const ask = action === 'removed'
+    ? `「${g.author}」 님의 인증 사진과 글을 내릴까요?\n인증 기록과 포인트는 그대로 남고, 본인에게 알림이 가요.`
+    : '문제없음으로 처리할까요? 신고가 닫혀요.';
+  if (!confirm(ask)) return;
+  if (LIVE) {
+    const { error } = await sb.rpc('admin_resolve_report', { p_cert: certId, p_action: action });
+    if (error) return alert('처리하지 못했어요: ' + error.message);
+    if (action === 'removed') {
+      // 사진 파일도 지운다. 권한이 없어 실패해도 주소는 이미 끊겼다
+      const paths = (g.cert.photo_urls || []).map(u => (u.split('/cert-photos/')[1] || '').split('?')[0]).filter(Boolean);
+      if (paths.length) await sb.storage.from('cert-photos').remove(paths);
+    }
+  }
+  DB.reports = DB.reports.filter(x => x.cert.id !== certId);
+  render();
+}
+
 // ── 프로필 사진 ────────────────────────────────────────────
 // 청소년이 올린 얼굴 사진이다. 부적절하면 여기서 내린다 — 내리면 이름 첫 글자 동그라미로 돌아가고,
 // 본인은 내 정보에서 다시 올릴 수 있다. 사진 파일도 함께 지운다
@@ -3351,6 +3416,23 @@ async function loadLive() {
   const av = await sb.from('profiles').select('id,name,nick,role,can_lead,avatar_url')
                      .not('avatar_url', 'is', null).order('name');
   DB.avatars = av.error ? [] : (av.data || []);
+
+  // 처리 전 인증 신고 (migration-107). 표가 아직 없으면 오류가 오니 빈 목록으로 둔다
+  DB.reports = [];
+  const rp = await sb.from('cert_reports').select('*').eq('status', 'open').order('created_at');
+  if (!rp.error && (rp.data || []).length) {
+    const certIds = [...new Set(rp.data.map(r => r.cert_id))];
+    const { data: cs } = await sb.from('certifications')
+      .select('id,user_id,routine_id,photo_urls,content,quote,book_title,created_at').in('id', certIds);
+    const uids = [...new Set([...(cs || []).map(c => c.user_id), ...rp.data.map(r => r.reporter_id)])];
+    const { data: ps } = await sb.from('profiles').select('id,name,nick').in('id', uids);
+    const nm = id => { const p = (ps || []).find(x => x.id === id); return (p && (p.nick || p.name)) || '이름 없음'; };
+    DB.reports = (cs || []).map(c => ({
+      cert: c, author: nm(c.user_id),
+      routine: (DB.routines || []).find(r => r.id === c.routine_id)?.title || '루틴',
+      reports: rp.data.filter(r => r.cert_id === c.id).map(r => ({ reason: r.reason, note: r.note, who: nm(r.reporter_id), created_at: r.created_at })),
+    }));
+  }
 }
 
 // 둘 다 비공개 버킷이라 볼 때마다 짧은 서명 URL 을 새로 발급받는다
@@ -3364,7 +3446,7 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'photos', 'report'],
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'report'],
                  money: ['pending', 'settled', 'stores', 'charges'] };
 const groupOf = t => GROUPS.money.includes(t) ? 'money' : 'ops';
 let grp = 'ops';

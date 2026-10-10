@@ -1183,6 +1183,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .n-bar button { border:1px solid var(--line); background:#fff; border-radius:99px; padding:7px 14px;
   font-family:inherit; font-size:12.5px; font-weight:700; color:var(--ink-2); cursor:pointer; }
 .n-dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--green); margin:0 7px 2px 0; vertical-align:middle; }
+.f-rep { flex:none; border:none; background:none; font-family:inherit; font-size:12px; color:var(--ink-3); padding:6px 4px; cursor:pointer; }
+.rp-list { display:flex; flex-direction:column; gap:8px; }
+.rp-r { display:flex; align-items:center; gap:10px; padding:13px 14px; border:1px solid var(--line); border-radius:12px; font-size:14.5px; cursor:pointer; }
+.rp-r input { width:18px; height:18px; accent-color:var(--blue); margin:0; flex:none; }
+.rp-r:has(input:checked) { border-color:var(--blue); background:var(--bg); font-weight:700; }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -2000,6 +2005,24 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <button class="sheet-x" onclick="closeSheet('shKidBook')" aria-label="닫기">✕</button>
     </div>
     <div id="kbBody"></div>
+  </div>
+</div>
+
+<!-- 인증 신고 -->
+<div class="sheet" id="shReport" onclick="if(event.target===this)closeSheet('shReport')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">이 인증을 신고할까요?</div>
+        <div class="sheet-s">운영진만 보고, 누가 신고했는지는 상대에게 알려지지 않아요.</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shReport')" aria-label="닫기">✕</button>
+    </div>
+    <div class="rp-list" id="rpList"></div>
+    <textarea id="rpNote" maxlength="300" rows="2" placeholder="더 알려 주실 게 있으면 적어 주세요 (선택)"
+      style="width:100%;margin-top:10px;"></textarea>
+    <button class="btn btn-primary" id="rpGo" onclick="sendReport()" style="margin-top:12px;">신고하기</button>
   </div>
 </div>
 
@@ -4472,7 +4495,7 @@ function certCard(c) {
       ${me && c.user_id === me.id ? `<div style="display:flex;gap:4px;flex-shrink:0;">
         <button class="f-act" title="공유" aria-label="공유" onclick="shareCert(${c.id})">📤</button>
         <button class="f-act" title="수정" aria-label="수정" onclick="editCert(${c.id})">✏️</button>
-        <button class="f-act" title="삭제" aria-label="삭제" onclick="delCert(${c.id})">🗑️</button></div>` : ''}
+        <button class="f-act" title="삭제" aria-label="삭제" onclick="delCert(${c.id})">🗑️</button></div>` : (me && !isGuest() ? `<button class="f-rep" onclick="openReport(${c.id})">신고</button>` : '')}
     </div>
     ${(c.photo_urls||[]).length ? `<div class="f-photos">${c.photo_urls.map(u=>`<img src="${esc(u)}" loading="lazy">`).join('')}</div>` : ''}
     ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
@@ -7602,6 +7625,29 @@ async function submitBuy() {
 async function showCheer() {
   $('cheerMsg').innerHTML = `이 책, 나를 응원하는<br>어른들이 함께 보냈어요`;
   openOv('ovCheer');
+}
+
+// ── 신고 ───────────────────────────────────────────────
+// 사진·글이 마음에 걸리면 운영진에게 알린다. 신고한 사람은 상대에게 알려지지 않는다 (migration-107)
+const RP_REASONS = [['photo', '부적절한 사진이에요'], ['privacy', '얼굴이나 개인정보가 드러나요'],
+                    ['rude', '불쾌한 말이 있어요'], ['other', '그 밖의 이유예요']];
+let reportCertId = null, reportReason = null;
+function openReport(certId) {
+  reportCertId = certId; reportReason = null;
+  $('rpNote').value = '';
+  $('rpList').innerHTML = RP_REASONS.map(([k, t]) =>
+    `<label class="rp-r"><input type="radio" name="rpr" value="${k}" onchange="reportReason='${k}'"><span>${t}</span></label>`).join('');
+  showLayer('shReport');
+}
+async function sendReport() {
+  if (!reportReason) return toast('이유를 하나 골라 주세요');
+  if (DEMO) return toast('데모 모드에서는 보내지지 않아요');
+  const btn = $('rpGo'); btn.disabled = true;
+  const { error } = await sb.rpc('report_cert', { p_cert: reportCertId, p_reason: reportReason, p_note: $('rpNote').value.trim() || null });
+  btn.disabled = false;
+  if (error) return toast(error.message);
+  closeSheet('shReport');
+  toast('신고했어요. 운영진이 확인할게요');
 }
 
 // ── 좋아요 ─────────────────────────────────────────────
