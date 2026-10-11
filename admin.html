@@ -412,8 +412,6 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
       <!-- 후원 입력은 「정산 → 후원 내역」에 같은 단추가 있다. 달에 한 번 쓰는
            일을 늘 보이는 자리에 둘 이유가 없고, 폰에서 머리가 세 줄로 터졌다 -->
-      <button class="btn btn-line" id="inboxBtn" style="display:none;position:relative;" onclick="openInbox()">📬 받은 알림<i class="inb-dot" id="inboxDot" style="display:none;"></i></button>
-      <button class="btn btn-line" id="pushBtn" style="display:none;" onclick="openPush()">🔔 알림</button>
       <button class="btn btn-line" id="logoutBtn" style="display:none;" onclick="adminLogout()">로그아웃</button>
     </div>
   </div>
@@ -429,6 +427,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="grp-b"    data-grp="money" onclick="switchGroup('money')">정산</button>
   </div>
   <div class="tabs" id="tabsOps">
+    <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">받은 알림<i id="cntInbox"></i></button>
     <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
     <button class="tab" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
@@ -622,36 +621,6 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
 <!-- 후원 입력 -->
 <!-- 운영진 알림. 청소년 앱을 따로 깔지 않아도 여기로 받는다 -->
-<!-- 받은 알림. 가입·끗짱 신청·확인 요청·정산·인증 신고 같은 운영 알림이 쌓이는 곳이다 (앱의 종 모양과 같은 표) -->
-<div class="overlay" id="inboxOverlay">
-  <div class="modal">
-    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-      <div>
-        <div class="modal-t">받은 알림</div>
-        <div class="modal-d" id="inboxSub">최근 50개까지 보여요.</div>
-      </div>
-      <button class="btn btn-line" id="inboxAll" style="display:none;white-space:nowrap;" onclick="inboxReadAll()">모두 읽음</button>
-    </div>
-    <div class="modal-bd" id="inboxBody" style="padding:14px 16px;"></div>
-    <div class="modal-ft">
-      <button class="btn btn-line" onclick="closeModal('inboxOverlay')">닫기</button>
-    </div>
-  </div>
-</div>
-
-<div class="overlay" id="pushOverlay">
-  <div class="modal">
-    <div class="modal-hd">
-      <div class="modal-t">알림 받기</div>
-      <div class="modal-d">새 청소년이 가입하거나 끗짱 신청이 들어오면 이 기기로 알려드려요.</div>
-    </div>
-    <div class="modal-bd" id="pushBody"><div class="hint" style="margin:0;">확인 중…</div></div>
-    <div class="modal-ft">
-      <button class="btn btn-line" onclick="closeModal('pushOverlay')">닫기</button>
-    </div>
-  </div>
-</div>
-
 <!-- 운영진이 직접 세우는 끗짱. 유스보이스가 섭외한 어른은 신청서를 쓸 일이 없다 -->
 <div class="overlay" id="mkKkutOverlay">
   <div class="modal">
@@ -913,6 +882,7 @@ function renderSummary() {
     el.textContent = todo ? (n ? String(n) : '') : ` ${n}`;
     el.style.display = (todo && !n) ? 'none' : '';
   };
+  setCnt('cntInbox',    inboxUnread(), true);
   setCnt('cntVerify',   waitV, true);
   setCnt('cntKkut',     waitK, true);
   setCnt('cntRoutines', waitR, true);
@@ -936,6 +906,7 @@ function renderPanel() {
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   if (tab === 'verify')   return el.innerHTML = viewVerify();
   if (tab === 'notify')   return el.innerHTML = viewNotify();
+  if (tab === 'inbox')    return viewInbox();
   if (tab === 'reports')  return el.innerHTML = viewReports();
   if (tab === 'photos')   return el.innerHTML = viewPhotos();
   if (tab === 'report')   return el.innerHTML = viewReport();
@@ -1868,11 +1839,6 @@ async function claimPush(sub) {
   pushClaimed = true;
   await sb.rpc('claim_push',
     { p_endpoint: sub.endpoint, p_p256dh: k.p256dh, p_auth: k.auth });
-}
-
-function openPush() {
-  document.getElementById('pushOverlay').classList.add('on');
-  paintPush();
 }
 
 async function paintPush() {
@@ -3494,7 +3460,7 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'report'],
+const GROUPS = { ops:   ['inbox', 'verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'report'],
                  money: ['pending', 'settled', 'stores', 'charges'] };
 const groupOf = t => GROUPS.money.includes(t) ? 'money' : 'ops';
 let grp = 'ops';
@@ -3581,6 +3547,8 @@ if ('serviceWorker' in navigator) {
 // ── 받은 알림 ──────────────────────────────────────────────
 // 운영 알림(가입·끗짱 신청·청소년 확인·정산·인증 신고)은 푸시로 오고 알림함에도 쌓이는데, 관리자 화면에는 볼 곳이 없었다.
 // 앱의 종 모양과 같은 표(notifications, 내 줄만 읽힌다)를 읽는다. 알림에 #탭 이 붙어 있으면 누를 때 그 탭으로 간다.
+// 【탭으로 옮겼다 · 2026-10-11 사용자】 머리 줄에는 로고·이메일·로그아웃만 둔다. 알림은 운영 탭 줄의 맨 앞이고,
+//   이 기기로 푸시를 켜는 줄(예전의 「🔔 알림」)은 이 탭 맨 위에 있다.
 let INBOX = [];
 async function loadInbox() {
   if (!LIVE || !MY_UID) return;
@@ -3588,12 +3556,13 @@ async function loadInbox() {
     .eq('user_id', MY_UID).order('created_at', { ascending: false }).limit(50);
   if (error) return;
   INBOX = data || [];
-  paintInboxDot();
-  if (document.getElementById('inboxOverlay').classList.contains('on')) paintInbox();
+  paintInboxCount();
+  if (tab === 'inbox') paintInboxList();
 }
 const inboxUnread = () => INBOX.filter(n => !n.read).length;
-function paintInboxDot() {
-  document.getElementById('inboxDot').style.display = inboxUnread() ? '' : 'none';
+function paintInboxCount() {
+  const el = document.getElementById('cntInbox');
+  if (el) { const n = inboxUnread(); el.className = 'todo'; el.textContent = n ? String(n) : ''; el.style.display = n ? '' : 'none'; }
   document.title = (inboxUnread() ? `(${inboxUnread()}) ` : '') + document.title.replace(/^\(\d+\)\s*/, '');
 }
 const inboxAgo = iso => {
@@ -3605,37 +3574,55 @@ const inboxAgo = iso => {
   return d < 7 ? d + '일 전' : fmtDate(iso);
 };
 const inboxTab = n => { const h = String(n.link || '').split('#')[1] || ''; return document.querySelector(`.tab[data-tab="${CSS.escape(h)}"]`) ? h : null; };
-function paintInbox() {
+
+// 탭 화면. 위에 푸시 켜기 줄, 아래에 목록
+function viewInbox() {
+  const el = document.getElementById('panel');
+  el.innerHTML = `
+  <div class="panel-hd">
+    <div><div class="panel-t">받은 알림</div>
+    <div class="panel-d" id="inboxSub"></div></div>
+    <button class="btn btn-line" id="inboxAll" style="display:none;white-space:nowrap;" onclick="inboxReadAll()">모두 읽음</button>
+  </div>
+  <div class="card" style="padding:14px 18px;margin-bottom:14px;">
+    <div style="font-size:12.5px;font-weight:800;margin-bottom:8px;">📱 이 기기로 알림 받기</div>
+    <div id="pushBody"><div class="hint" style="margin:0;">확인 중…</div></div>
+  </div>
+  <div id="inboxList"></div>`;
+  paintInboxList();
+  paintPush();
+  loadInbox();
+}
+function paintInboxList() {
+  const box = document.getElementById('inboxList'); if (!box) return;
   const un = inboxUnread();
   document.getElementById('inboxAll').style.display = un ? '' : 'none';
   document.getElementById('inboxSub').textContent = un ? `안 읽은 알림 ${un}개 · 최근 50개까지 보여요.` : '최근 50개까지 보여요.';
-  document.getElementById('inboxBody').innerHTML = INBOX.length
+  box.innerHTML = INBOX.length
     ? INBOX.map((n, i) => `<div class="inb-i${n.read ? '' : ' un'}" onclick="inboxGo(${i})">
         <div class="inb-t">${inboxTab(n) ? '<span class="inb-go">열기 ›</span>' : ''}${esc(n.title)}</div>
         ${n.body ? `<div class="inb-b">${esc(n.body)}</div>` : ''}
         <div class="inb-w">${inboxAgo(n.created_at)}</div></div>`).join('')
     : `<div class="empty">아직 받은 알림이 없어요.</div>`;
 }
-function openInbox() { paintInbox(); document.getElementById('inboxOverlay').classList.add('on'); loadInbox(); }
 async function inboxMark(ids) {
   const mine = INBOX.filter(n => !n.read && (!ids || ids.includes(n.id)));
   if (!mine.length) return;
   mine.forEach(n => { n.read = true; });
-  paintInboxDot();
+  paintInboxCount();
   if (LIVE) await sb.from('notifications').update({ read: true }).eq('user_id', MY_UID).in('id', mine.map(n => n.id));
 }
 async function inboxGo(i) {
   const n = INBOX[i]; if (!n) return;
   await inboxMark([n.id]);
   const t = inboxTab(n);
-  if (t) { closeModal('inboxOverlay'); switchTab(t); history.replaceState(null, '', '#' + t); }
-  else paintInbox();
+  if (t) { switchTab(t); history.replaceState(null, '', '#' + t); }
+  else paintInboxList();
 }
-async function inboxReadAll() { await inboxMark(null); paintInbox(); }
+async function inboxReadAll() { await inboxMark(null); paintInboxList(); }
 
 let INBOX_T = null;
 function startInbox() {
-  document.getElementById('inboxBtn').style.display = '';
   loadInbox();
   clearInterval(INBOX_T);
   INBOX_T = setInterval(() => { if (document.visibilityState === 'visible') loadInbox(); }, 60000);
@@ -3657,7 +3644,6 @@ function startInbox() {
 
   document.getElementById('whoami').textContent = email;
   document.getElementById('logoutBtn').style.display = '';
-  if (pushOK()) document.getElementById('pushBtn').style.display = '';
   await loadLive();
   startInbox();
   const t = tabFromHash();
