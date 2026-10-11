@@ -6984,6 +6984,7 @@ function openCert(rid, pickTitle) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
   // 알림·링크로도 이 창이 열린다. 시작 전 루틴에는 인증이 올라가면 안 된다 (서버도 막는다 — migration-119)
   if (routineDay(r)?.notYet) return toast(`아직 시작 전이에요. ${fmtDay(r.start_date)}부터 인증할 수 있어요`);
+  if (routineEnded(r)) return toast('끝난 루틴이라 더 인증할 수 없어요');   // 종료일 당일까지만
   certRid = rid; photos = []; keptUrls = []; certEditId = null;
   $('ovCLabel').textContent = '오늘의 인증';
   $('cSubmit').textContent = '인증하기';
