@@ -191,6 +191,19 @@ tr:hover td { background:#fcfcfd; }
 .cv-o b { display:block; font-size:12px; margin-top:6px; line-height:1.35; }
 .cv-o span { display:block; font-size:11px; color:var(--ink-3); margin-top:2px; line-height:1.35; }
 .cv-msg { grid-column:1/-1; font-size:12.5px; color:var(--ink-3); }
+.ct-bk { background:#F7F4EE; border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:13px; line-height:1.7; }
+.ct-bk b { font-size:13.5px; }
+.ct-bk div { display:flex; gap:8px; }
+.ct-bk div > i { font-style:normal; color:var(--ink-3); flex:none; min-width:64px; }
+.ct-f { display:flex; gap:8px; align-items:center; margin-bottom:12px; font-size:13px; }
+.ct-f select { padding:7px 10px; border:1px solid var(--line); border-radius:9px; font-family:inherit; font-size:13px; }
+.ct-i { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+.ct-m { font-size:12.5px; color:var(--ink-3); }
+.ct-m b { color:var(--ink); font-size:13.5px; }
+.ct-q { font-size:13.5px; background:#FFF9EC; border-radius:9px; padding:8px 11px; margin-top:7px; white-space:pre-wrap; }
+.ct-c { font-size:13.5px; margin-top:7px; white-space:pre-wrap; }
+.ct-p { display:flex; gap:7px; flex-wrap:wrap; margin-top:9px; }
+.ct-p img { width:92px; height:92px; object-fit:cover; border-radius:9px; background:#eee; display:block; }
 .rp-w i { font-style:normal; display:inline-block; background:#FDF0EE; color:#8E3527; border-radius:99px; padding:2px 9px; margin:0 5px 4px 0; font-weight:700; }
 .rp-a { display:flex; gap:8px; margin-top:12px; }
 .av-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
@@ -559,6 +572,20 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-bd" id="kkutInfoBody"></div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('kkutOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 루틴별 인증 내용과 읽고 있는 책 (운영진용). 청소년이 올린 글·사진이 그대로 보인다 -->
+<div class="overlay" id="certsOverlay">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-hd">
+      <div class="modal-t" id="certsTitle">인증</div>
+      <div class="modal-d" id="certsSub"></div>
+    </div>
+    <div class="modal-bd" id="certsBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('certsOverlay')">닫기</button>
     </div>
   </div>
 </div>
@@ -1747,6 +1774,7 @@ function viewRoutines() {
       <td class="right" style="white-space:nowrap;">
         <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">수정</button>
         <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
+        <button class="btn btn-line" onclick="openRoutineCerts(${r.id})">인증 보기</button>
         <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 만들어진 루틴이 없어요.</div>`}`;
@@ -2466,6 +2494,79 @@ async function decideRoutine(id, open) {
 //   관리자 화면에서 다시 계산하면 두 벌이 생기고, 두 벌은 언젠가 어긋난다.
 //   dokseo_points() 는 운영진에게 열려 있으니 사람마다 한 번씩 부른다.
 //   한 루틴에 많아야 50명이고 한꺼번에 보내니 기다릴 만하다.
+// 루틴별 인증 내용·읽고 있는 책. 운영진이 「이 루틴에서 무슨 일이 일어나고 있나」를 볼 자리
+let CERTV = null;   // { id, certs, books, who }
+async function openRoutineCerts(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  document.getElementById('certsTitle').textContent = `${r.emoji || '📚'} ${r.title}`;
+  document.getElementById('certsSub').textContent = `${md(r.start_date)}~${md(r.end_date)} · 참여 ${rParts(id).length}/${r.max_people}명`;
+  document.getElementById('certsBody').innerHTML = `<div class="empty">불러오는 중…</div>`;
+  document.getElementById('certsOverlay').classList.add('on');
+
+  let certs = [], pb = [], rb = [];
+  if (LIVE) {
+    // page_end 가 없는 프로젝트에서도 목록은 떠야 한다. 안 되면 칸을 줄여 다시 묻는다
+    const base = 'id,user_id,cert_date,created_at,book_title,quote,content,photo_urls';
+    let q = await sb.from('certifications').select(base + ',page_end').eq('routine_id', id)
+      .order('created_at', { ascending: false }).limit(300);
+    if (q.error) q = await sb.from('certifications').select(base).eq('routine_id', id)
+      .order('created_at', { ascending: false }).limit(300);
+    certs = q.data || [];
+    const a = await sb.from('routine_participants').select('user_id, book_title').eq('routine_id', id);
+    pb = a.data || [];
+    const b = await sb.from('routine_books').select('user_id, title').eq('routine_id', id);
+    rb = b.data || [];
+    // 인증을 올렸지만 참여자 목록에 없는 사람(끗짱 등)의 이름도 필요하다
+    const need = [...new Set(certs.map(c => c.user_id))].filter(u => u && !(DB.names || {})[u]);
+    if (need.length) {
+      const { data: pr } = await sb.from('profiles').select('id, name').in('id', need);
+      DB.names = DB.names || {}; (pr || []).forEach(p => { DB.names[p.id] = p.name; });
+    }
+  } else {
+    certs = [{ id: 1, user_id: 'd1', cert_date: '2026-10-11', created_at: '2026-10-11T08:00:00Z', book_title: '어떤 어른', quote: '어른이 되어 간다는 건…', content: '오늘은 3장 읽었어요.', photo_urls: [], page_end: 38 }];
+    pb = [{ user_id: 'd1', book_title: '어떤 어른' }];
+  }
+  CERTV = { id, certs, who: '' };
+
+  // 사람별 읽는 책: 참여할 때 고른 책 + 「+ 다른 책」 + 인증에 적힌 책
+  const books = {};
+  const add = (u, t) => { t = String(t || '').trim(); if (!u || !t) return; (books[u] = books[u] || new Set()).add(t); };
+  pb.forEach(x => add(x.user_id, x.book_title));
+  rb.forEach(x => add(x.user_id, x.title));
+  certs.forEach(c => add(c.user_id, c.book_title));
+  if (r.kkut_book_title) add(r.led_by, r.kkut_book_title);
+  CERTV.books = books;
+  paintRoutineCerts();
+}
+function paintRoutineCerts() {
+  if (!CERTV) return;
+  const { certs, books, who } = CERTV;
+  const people = [...new Set([...Object.keys(books), ...certs.map(c => c.user_id)])];
+  const shown = who ? certs.filter(c => c.user_id === who) : certs;
+  const r = (DB.routines || []).find(x => x.id === CERTV.id) || {};
+  document.getElementById('certsBody').innerHTML = `
+    <div class="ct-bk"><b>읽고 있는 책</b>
+      ${people.length ? people.map(u => `<div><i>${esc(rName(u))}${u === r.led_by ? ' (끗짱)' : ''}</i>
+          <span>${books[u] ? [...books[u]].map(esc).join(' · ') : '<span class="muted">아직 없어요</span>'}</span></div>`).join('')
+        : '<div class="muted">아직 참여한 청소년이 없어요.</div>'}
+    </div>
+    <div class="ct-f">
+      <span>인증 ${shown.length}건</span>
+      <select onchange="CERTV.who=this.value; paintRoutineCerts()">
+        <option value="">모두 보기</option>
+        ${people.map(u => `<option value="${esc(u)}"${u === who ? ' selected' : ''}>${esc(rName(u))}</option>`).join('')}
+      </select>
+    </div>
+    ${shown.length ? shown.map(c => `<div class="ct-i">
+        <div class="ct-m"><b>${esc(rName(c.user_id))}</b> · ${fmtDate(c.cert_date || c.created_at)}${c.book_title
+          ? ` · ${esc(c.book_title)}` : ''}${c.page_end ? ` · ${c.page_end}쪽까지` : ''}</div>
+        ${c.quote ? `<div class="ct-q">“${esc(c.quote)}”</div>` : ''}
+        ${c.content ? `<div class="ct-c">${esc(c.content)}</div>` : ''}
+        ${(c.photo_urls || []).length ? `<div class="ct-p">${c.photo_urls.map(u =>
+            `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>` : ''}
+      </div>`).join('') : `<div class="empty">올라온 인증이 없어요.</div>`}`;
+}
+
 async function openRoutinePeople(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   const ps = rParts(id);
