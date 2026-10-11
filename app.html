@@ -1497,7 +1497,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <b>💪 끗짱 <em>어른</em></b>
         <span>청소년 곁에서 함께 읽으며, 건강한 읽기 습관이 자리 잡도록 도와요.
           매일 기록에 한 줄씩 답을 달아줍니다.</span>
-        <i>운영진 승인 뒤 루틴을 열 수 있어요</i>
+        <i>운영진이 확인한 분만 끗짱이 될 수 있어요.<br>
+          가입한 뒤 <b>신청 폼</b>을 보내 주시면 확인 후 열어 드려요.</i>
       </button>
     </div>
   </div>
@@ -2841,6 +2842,48 @@ function renderKkutGate() {
   }
 
   const rejected = a && a.status === 'rejected';
+
+  // 앱 안 신청서는 닫았다. 새로 쓰거나 반려된 사람 모두 구글폼 안내를 본다
+  if (!KKUT_FORM_IN_APP) {
+    $('kkutBody').innerHTML = `
+      ${backable() ? `
+        <div style="display:flex;justify-content:flex-end;margin:-4px 0 12px;">
+          <button class="kk-later" onclick="closeKkutGate()">먼저 둘러보기
+            <i class="ti ti-chevron-right" style="font-size:13px;"></i></button>
+        </div>` : ''}
+      ${rejected && a.reject_reason ? `
+        <div class="gate-card" style="background:#fff5f5;border-color:#ffd9d9;margin-bottom:14px;">
+          <div class="gate-ico">✉️</div>
+          <div class="gate-t">운영진이 남긴 말</div>
+          <div class="gate-s" style="white-space:pre-wrap;">${esc(a.reject_reason)}</div>
+        </div>` : ''}
+      <div class="gate-card">
+        <div class="gate-ico">📖</div>
+        <div class="gate-t">끗짱이 되려면 신청 폼이 필요해요</div>
+        <div class="gate-s">
+          끗짱은 청소년 곁에서 함께하는 역할이라,<br>
+          유스보이스가 신청 내용을 읽고 연락드린 뒤 열어 드려요.<br>
+          가입만으로는 아직 루틴을 열 수 없어요.
+        </div>
+        ${KKUT_FORM_URL
+          ? `<a class="btn btn-primary" style="display:block;margin-top:16px;text-decoration:none;"
+               href="${esc(KKUT_FORM_URL)}" target="_blank" rel="noopener">신청 폼 쓰러 가기</a>`
+          : `<div class="gate-num" style="margin-top:14px;">신청 폼을 준비하고 있어요. 곧 안내해 드릴게요</div>`}
+        <div class="gate-s" style="margin-top:12px;font-size:12.5px;color:var(--ink-3);">
+          폼에 적는 이메일은 이 계정의 이메일 <b>${esc(me.email || '')}</b> 과 같아야 해요.
+        </div>
+      </div>
+      <div class="gate-why" style="margin-top:14px;">
+        <b>왜 폼으로 받나요?</b>
+        끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.
+        청소년이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 열어요.
+      </div>
+      <div style="text-align:center;margin-top:18px;">
+        <b style="font-size:13px;color:var(--ink-3);cursor:pointer;" onclick="reloadKkutGate()">새로고침</b>
+      </div>`;
+    return;
+  }
+
   // 이름은 자동으로 채우면서 나머지를 다시 적게 하는 건 앞뒤가 안 맞는다.
   // 가입할 때 적은 것으로 미리 채우고, 고칠 수 있게 둔다.
   // ⚠️ 소속만 가린다 — school_status 는 청소년에게 「재학·학교밖」이 들어 있는
@@ -3249,6 +3292,12 @@ const canLead = () => !!me && !!me.can_lead;
 // 끗짱으로 가입해 놓고 신청서를 아직 안 낸 사람. 끗짱도 청소년도 아닌 중간이다.
 // 신청서를 낸 사람은 승인 전까지 앱에 못 들어오므로 여기까지 오지 않는다
 const kkutPending = () => !!me && !canLead() && me.join_role === 'kkut' && !state.kkutApp;
+
+// 끗짱은 앱 안의 신청서가 아니라 유스보이스의 구글폼으로 받는다 (2026-10-11).
+// 폼을 통과한 분을 운영진이 관리자에서 「끗짱으로 이동」 한다. 주소가 정해지면 아래 한 줄만 채운다.
+// 앱 안 신청서를 다시 열고 싶으면 KKUT_FORM_IN_APP 을 true 로 — 코드는 그대로 남아 있다
+const KKUT_FORM_URL = '';
+const KKUT_FORM_IN_APP = false;
 
 // 끗짱이면 앱 전체를 버건디로. 색은 CSS 의 body.kkut 한 덩이에 모여 있고,
 // 여기서는 그 꼬리표만 붙였다 뗀다.
@@ -4332,10 +4381,10 @@ function viewHome() {
     // 「루틴을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
     h += `<div class="card" onclick="openKkutApply()" style="text-align:center;padding:26px 20px;cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
       <div style="font-size:30px;">📖</div>
-      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">끗짱 신청서가 기다리고 있어요</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">끗짱이 되려면 신청 폼이 필요해요</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;">
-        운영진 확인을 받으면 직접 루틴을 열고<br>함께 읽을 사람을 모을 수 있어요.</div>
-      <div style="font-size:13px;font-weight:700;color:var(--pink);margin-top:12px;">이어서 쓰기 ›</div>
+        운영진이 확인한 분만 끗짱이 될 수 있어요.<br>확인을 받으면 직접 루틴을 열 수 있어요.</div>
+      <div style="font-size:13px;font-weight:700;color:var(--pink);margin-top:12px;">안내 보기 ›</div>
     </div>`;
   } else {
     h += `<div class="card" style="text-align:center;padding:26px 20px;">
@@ -5478,8 +5527,8 @@ function kkutCard() {
   if (!a && me?.join_role === 'kkut') return `
     <div class="sec-t">끗짱</div>
     <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
-      <div style="font-weight:700;">📖 끗짱 신청서가 기다리고 있어요</div>
-      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">이어서 쓰시면 운영진이 읽어보고 연락드려요</div>
+      <div style="font-weight:700;">📖 끗짱이 되려면 신청 폼이 필요해요</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">운영진이 확인한 분만 끗짱이 될 수 있어요</div>
     </div>`;
 
   if (!el) return '';
@@ -5495,7 +5544,7 @@ function kkutCard() {
     <div class="sec-t">끗짱</div>
     <div class="card" onclick="openKkutApply()" style="cursor:pointer;">
       <div style="font-weight:700;">✉️ 신청 결과가 왔어요</div>
-      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">내용을 고쳐서 다시 신청할 수 있어요</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">${KKUT_FORM_IN_APP ? '내용을 고쳐서 다시 신청할 수 있어요' : '눌러서 안내를 확인해 주세요'}</div>
     </div>`;
 
   // ⏸ 「끗짱을 신청할 수 있어요」 권유 카드를 잠시 내린다 (2026-09-29 사용자).
