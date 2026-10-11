@@ -1303,6 +1303,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   background:none; font-family:inherit; font-size:13px; color:var(--ink-2); cursor:pointer; text-align:left; }
 .ct-mine b { color:var(--blue); font-weight:800; }
 .ct-mine i { margin-left:auto; color:var(--ink-3); font-size:15px; }
+.rs-who { margin:0 0 14px; padding:12px 16px; border-radius:12px; background:rgba(255,255,255,.14); color:#fff; font-size:13px; }
+.rs-who span { display:block; font-size:11.5px; opacity:.75; margin-bottom:2px; }
+.rs-who b { font-size:15.5px; font-weight:800; word-break:break-all; }
 .tg { background:var(--card); border-radius:18px; padding:15px 16px 14px; margin-bottom:12px; }
 .tg-hd { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
 .tg-t { font-size:12.5px; font-weight:800; color:var(--ink-2); }
@@ -1565,6 +1568,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 <div class="auth" id="resetScr" style="display:none;">
   <h1>새 비밀번호를<br>정해 주세요</h1>
   <div class="sub">앞으로 이 비밀번호로 로그인해요</div>
+  <!-- 어느 계정의 비밀번호를 바꾸는지 보여 준다. 메일 링크를 여러 계정으로 받았을 때 헷갈리지 않게 -->
+  <div class="rs-who" id="rsWho" style="display:none;"></div>
   <input type="password" id="rsPw1" placeholder="새 비밀번호 (6자 이상)" autocomplete="new-password">
   <input type="password" id="rsPw2" placeholder="한 번 더 적어 주세요" autocomplete="new-password"
          onkeydown="if(event.key==='Enter')saveNewPw()">
@@ -2694,6 +2699,12 @@ function showResetPw(fromSettings) {
   $('resetScr').style.display = '';
   $('rsCancel').style.display = fromSettings ? '' : 'none';
   $('rsPw1').value = $('rsPw2').value = ''; window.scrollTo(0, 0); $('rsPw1').focus();
+  // 이 화면에 들어온 세션의 이메일이 바꿀 계정이다
+  const who = $('rsWho'); who.style.display = 'none';
+  sb.auth.getSession().then(({ data }) => {
+    const em = data?.session?.user?.email;
+    if (em) { who.innerHTML = `<span>변경할 계정</span><b>${esc(em)}</b>`; who.style.display = ''; }
+  }).catch(() => {});
 }
 function cancelResetPw() { $('resetScr').style.display = 'none'; $('appScr').style.display = ''; }
 async function saveNewPw() {
