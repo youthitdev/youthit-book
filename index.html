@@ -359,7 +359,7 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   <div class="wrap">
     <div class="sec-label">지금 읽히는 책</div>
     <h2>청소년들이<br>읽고 있는 책</h2>
-    <p class="sec-lead">아이들이 동네책방에서 직접 고른 책입니다.</p>
+    <p class="sec-lead">청소년들이 지금 읽고 있는 책입니다.</p>
   </div>
   <div class="reel" id="shelf"></div>
 </section>
@@ -626,13 +626,13 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
     });
     // ⚠️ return 이 아니라 throw 다. 여기서 return 하면 아래 「지금까지」·사진·문장 구역까지 통째로 안 그려진다
     if (!r.ok) throw 0;
-    const books = await r.json();
-    if (!Array.isArray(books) || !books.length) throw 0;
-    // 표지는 검색해서 고른 책에만 있다. 없으면 책 모양 자리만 둔다
+    const all = await r.json();
+    // 표지가 있는 책만 보인다 (2026-10-11 사용자). 표지는 검색해서 고른 책에만 있고,
+    // 회색 칸에 책 모양만 있는 카드는 빈 것처럼 보인다. 표지가 하나도 없으면 섹션째 숨는다
+    const books = Array.isArray(all) ? all.filter(b => b.cover_url) : [];
+    if (!books.length) throw 0;
     const item = b => `<div class="bk">
-        <div class="bk-c">${b.cover_url
-          ? `<img src="${esc(b.cover_url)}" alt="" loading="lazy" onerror="this.parentNode.textContent='📖'">`
-          : '📖'}</div>
+        <div class="bk-c"><img src="${esc(b.cover_url)}" alt="" loading="lazy" onerror="var k=this.closest('.bk'); if(k) k.style.display='none'"></div>
         <div class="bk-t">${esc(b.book_title)}</div>
         ${b.readers > 1 ? `<div class="bk-n">${b.readers}명</div>` : ''}
       </div>`;
