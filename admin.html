@@ -303,6 +303,14 @@ tr:hover td { background:#fcfcfd; }
 .pill.wait { background:#fff4e0; color:#a35c00; }
 
 /* 모달 */
+.inb-dot { position:absolute; top:-3px; right:-3px; width:10px; height:10px; border-radius:50%; background:#C2403F; border:2px solid var(--card); }
+.inb-i { border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; cursor:pointer; background:#fff; }
+.inb-i.un { border-color:#C2403F; background:#FFF8F6; }
+.inb-i:hover { background:#FAF7F2; }
+.inb-t { font-size:14px; font-weight:800; }
+.inb-b { font-size:12.5px; color:var(--ink-2); margin-top:3px; line-height:1.55; }
+.inb-w { font-size:11.5px; color:var(--ink-3); margin-top:5px; }
+.inb-go { float:right; font-size:11.5px; font-weight:700; color:#8A5A16; margin-left:8px; }
 .overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); display:none; align-items:center; justify-content:center; z-index:50; padding:20px; }
 .overlay.on { display:flex; }
 .modal { background:var(--card); border-radius:18px; width:100%; max-width:460px; max-height:90vh; overflow-y:auto; }
@@ -396,6 +404,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <span id="whoami" style="font-size:12.5px;color:var(--muted);"></span>
       <!-- 후원 입력은 「정산 → 후원 내역」에 같은 단추가 있다. 달에 한 번 쓰는
            일을 늘 보이는 자리에 둘 이유가 없고, 폰에서 머리가 세 줄로 터졌다 -->
+      <button class="btn btn-line" id="inboxBtn" style="display:none;position:relative;" onclick="openInbox()">📬 받은 알림<i class="inb-dot" id="inboxDot" style="display:none;"></i></button>
       <button class="btn btn-line" id="pushBtn" style="display:none;" onclick="openPush()">🔔 알림</button>
       <button class="btn btn-line" id="logoutBtn" style="display:none;" onclick="adminLogout()">로그아웃</button>
     </div>
@@ -605,6 +614,23 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
 <!-- 후원 입력 -->
 <!-- 운영진 알림. 청소년 앱을 따로 깔지 않아도 여기로 받는다 -->
+<!-- 받은 알림. 가입·끗짱 신청·확인 요청·정산·인증 신고 같은 운영 알림이 쌓이는 곳이다 (앱의 종 모양과 같은 표) -->
+<div class="overlay" id="inboxOverlay">
+  <div class="modal">
+    <div class="modal-hd" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div>
+        <div class="modal-t">받은 알림</div>
+        <div class="modal-d" id="inboxSub">최근 50개까지 보여요.</div>
+      </div>
+      <button class="btn btn-line" id="inboxAll" style="display:none;white-space:nowrap;" onclick="inboxReadAll()">모두 읽음</button>
+    </div>
+    <div class="modal-bd" id="inboxBody" style="padding:14px 16px;"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('inboxOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="pushOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -3544,6 +3570,70 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ── 받은 알림 ──────────────────────────────────────────────
+// 운영 알림(가입·끗짱 신청·청소년 확인·정산·인증 신고)은 푸시로 오고 알림함에도 쌓이는데, 관리자 화면에는 볼 곳이 없었다.
+// 앱의 종 모양과 같은 표(notifications, 내 줄만 읽힌다)를 읽는다. 알림에 #탭 이 붙어 있으면 누를 때 그 탭으로 간다.
+let INBOX = [];
+async function loadInbox() {
+  if (!LIVE || !MY_UID) return;
+  const { data, error } = await sb.from('notifications').select('*')
+    .eq('user_id', MY_UID).order('created_at', { ascending: false }).limit(50);
+  if (error) return;
+  INBOX = data || [];
+  paintInboxDot();
+  if (document.getElementById('inboxOverlay').classList.contains('on')) paintInbox();
+}
+const inboxUnread = () => INBOX.filter(n => !n.read).length;
+function paintInboxDot() {
+  document.getElementById('inboxDot').style.display = inboxUnread() ? '' : 'none';
+  document.title = (inboxUnread() ? `(${inboxUnread()}) ` : '') + document.title.replace(/^\(\d+\)\s*/, '');
+}
+const inboxAgo = iso => {
+  const m = Math.floor((Date.now() - new Date(iso)) / 60000);
+  if (m < 1) return '방금';
+  if (m < 60) return m + '분 전';
+  if (m < 1440) return Math.floor(m / 60) + '시간 전';
+  const d = Math.floor(m / 1440);
+  return d < 7 ? d + '일 전' : fmtDate(iso);
+};
+const inboxTab = n => { const h = String(n.link || '').split('#')[1] || ''; return document.querySelector(`.tab[data-tab="${CSS.escape(h)}"]`) ? h : null; };
+function paintInbox() {
+  const un = inboxUnread();
+  document.getElementById('inboxAll').style.display = un ? '' : 'none';
+  document.getElementById('inboxSub').textContent = un ? `안 읽은 알림 ${un}개 · 최근 50개까지 보여요.` : '최근 50개까지 보여요.';
+  document.getElementById('inboxBody').innerHTML = INBOX.length
+    ? INBOX.map((n, i) => `<div class="inb-i${n.read ? '' : ' un'}" onclick="inboxGo(${i})">
+        <div class="inb-t">${inboxTab(n) ? '<span class="inb-go">열기 ›</span>' : ''}${esc(n.title)}</div>
+        ${n.body ? `<div class="inb-b">${esc(n.body)}</div>` : ''}
+        <div class="inb-w">${inboxAgo(n.created_at)}</div></div>`).join('')
+    : `<div class="empty">아직 받은 알림이 없어요.</div>`;
+}
+function openInbox() { paintInbox(); document.getElementById('inboxOverlay').classList.add('on'); loadInbox(); }
+async function inboxMark(ids) {
+  const mine = INBOX.filter(n => !n.read && (!ids || ids.includes(n.id)));
+  if (!mine.length) return;
+  mine.forEach(n => { n.read = true; });
+  paintInboxDot();
+  if (LIVE) await sb.from('notifications').update({ read: true }).eq('user_id', MY_UID).in('id', mine.map(n => n.id));
+}
+async function inboxGo(i) {
+  const n = INBOX[i]; if (!n) return;
+  await inboxMark([n.id]);
+  const t = inboxTab(n);
+  if (t) { closeModal('inboxOverlay'); switchTab(t); history.replaceState(null, '', '#' + t); }
+  else paintInbox();
+}
+async function inboxReadAll() { await inboxMark(null); paintInbox(); }
+
+let INBOX_T = null;
+function startInbox() {
+  document.getElementById('inboxBtn').style.display = '';
+  loadInbox();
+  clearInterval(INBOX_T);
+  INBOX_T = setInterval(() => { if (document.visibilityState === 'visible') loadInbox(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadInbox(); });
+}
+
 (async function init() {
   if (!LIVE) { render(); return; }
   document.getElementById('demoFlag').style.display = 'none';
@@ -3561,6 +3651,7 @@ if ('serviceWorker' in navigator) {
   document.getElementById('logoutBtn').style.display = '';
   if (pushOK()) document.getElementById('pushBtn').style.display = '';
   await loadLive();
+  startInbox();
   const t = tabFromHash();
   if (t) switchTab(t); else render();
 })();
