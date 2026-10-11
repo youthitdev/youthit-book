@@ -3307,6 +3307,12 @@ const KKUT_FORM_IN_APP = false;
 // 그 위 띠가 초록이면 앱이 두 동강 나 보인다
 function paintTheme(isK) {
   document.body.classList.toggle('kkut', !!isK);
+  // 브라우저 탭 아이콘. 끗짱이면 주황 (2026-10-11 사용자). 홈 화면 아이콘은 그대로다
+  document.querySelectorAll('link[rel="icon"]').forEach(l => {
+    if (!l.dataset.orig) { l.dataset.orig = l.getAttribute('href'); l.dataset.origType = l.getAttribute('type') || ''; }
+    l.setAttribute('href', isK ? 'logo-book-kkut.svg' : l.dataset.orig);
+    l.setAttribute('type', isK ? 'image/svg+xml' : l.dataset.origType);
+  });
   const m = document.querySelector('meta[name="theme-color"]');
   if (m) m.content = isK ? '#6A2234' : '#1F4E46';
   // .ov-h 는 열릴 때 JS 가 색을 박아 넣는 자리라 변수만 바꿔선 안 따라온다
