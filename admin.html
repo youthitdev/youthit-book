@@ -178,6 +178,19 @@ tr:hover td { background:#fcfcfd; }
 .rp-m { font-size:12.5px; color:var(--ink-3); margin:3px 0 8px; }
 .rp-t { font-size:13px; white-space:pre-wrap; background:#F7F4EE; border-radius:10px; padding:8px 10px; margin:6px 0; }
 .rp-w { font-size:12.5px; margin-top:6px; }
+.cv-r { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px; }
+.cv-h { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.cv-h b { font-size:14.5px; }
+.cv-h span { font-size:12.5px; color:var(--ink-3); }
+.cv-h button { margin-left:auto; }
+.cv-res { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:10px; margin-top:12px; }
+.cv-res:empty { display:none; }
+.cv-o { background:#fff; border:1.5px solid var(--line); border-radius:12px; padding:8px; cursor:pointer; text-align:left; font-family:inherit; }
+.cv-o:hover { border-color:var(--ink-2); }
+.cv-o img { width:100%; aspect-ratio:3/4; object-fit:cover; border-radius:7px; background:#F2EEE6; display:block; }
+.cv-o b { display:block; font-size:12px; margin-top:6px; line-height:1.35; }
+.cv-o span { display:block; font-size:11px; color:var(--ink-3); margin-top:2px; line-height:1.35; }
+.cv-msg { grid-column:1/-1; font-size:12.5px; color:var(--ink-3); }
 .rp-w i { font-style:normal; display:inline-block; background:#FDF0EE; color:#8E3527; border-radius:99px; padding:2px 9px; margin:0 5px 4px 0; font-weight:700; }
 .rp-a { display:flex; gap:8px; margin-top:12px; }
 .av-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px; }
@@ -444,6 +457,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
     <button class="tab" data-tab="reports" onclick="switchTab('reports')">인증 신고<i id="cntReports"></i></button>
     <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필 사진<i id="cntPhotos"></i></button>
+    <button class="tab" data-tab="covers" onclick="switchTab('covers')">책 표지<i id="cntCovers"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
@@ -903,6 +917,7 @@ function renderSummary() {
   setCnt('cntNotify',   (DB.scheduled || []).filter(n => !n.sent_at).length, false);
   setCnt('cntReports',  (DB.reports || []).length, true);
   setCnt('cntPhotos',   (DB.avatars || []).length, false);
+  setCnt('cntCovers',   COVERS ? COVERS.length : 0, false);
 }
 
 function renderPanel() {
@@ -918,8 +933,65 @@ function renderPanel() {
   if (tab === 'inbox')    return viewInbox();
   if (tab === 'reports')  return el.innerHTML = viewReports();
   if (tab === 'photos')   return el.innerHTML = viewPhotos();
+  if (tab === 'covers')   return el.innerHTML = viewCovers();
   if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
+}
+
+// ── 책 표지 ────────────────────────────────────────────────
+// 랜딩 「청소년들이 읽고 있는 책」은 검색해서 고른 공식 표지만 보인다. 손으로 제목을 친 책은 표지가 없어 빠진다.
+// 여기서 그 책을 검색해 맞는 판본을 직접 고르면 (migration-118) 랜딩에 붙는다. 자동으로 첫 결과를 붙이지 않는다
+let COVERS = null;       // [{ book_title, readers }] 표지가 아직 없는 책
+let COVER_FOUND = {};    // 책 번호 → 검색 결과
+async function loadCovers() {
+  if (!LIVE) { COVERS = [{ book_title: '노 피플 존', readers: 2 }, { book_title: '양면의 조개껍데기', readers: 1 }]; return; }
+  const { data, error } = await sb.rpc('admin_cover_books');
+  COVERS = error ? [] : (data || []);
+  if (error) alert('목록을 불러오지 못했어요. 마이그레이션 118을 돌렸는지 확인해 주세요.\n' + (error.message || ''));
+}
+function viewCovers() {
+  if (COVERS === null) {
+    loadCovers().then(() => { renderSummary(); if (tab === 'covers') renderPanel(); });
+    return `<div class="empty">불러오는 중…</div>`;
+  }
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">책 표지</div>
+    <div class="panel-d">랜딩의 「청소년들이 읽고 있는 책」에는 <b>표지가 있는 책만</b> 나와요. 아래는 표지가 아직 없는 책이에요.
+      <b>표지 찾기</b>를 눌러 맞는 판본을 고르면 랜딩에 붙어요. 청소년이 찍어 올린 사진은 쓰지 않아요.</div></div>
+  </div>
+  ${COVERS.length ? COVERS.map((b, i) => `
+    <div class="cv-r">
+      <div class="cv-h"><b>${esc(b.book_title)}</b><span>읽는 청소년 ${b.readers}명</span>
+        <button class="btn btn-line" onclick="coverFind(${i})">표지 찾기</button></div>
+      <div class="cv-res" id="cvRes${i}"></div>
+    </div>`).join('') : `<div class="empty">표지가 없는 책이 없어요. 👍</div>`}`;
+}
+async function coverFind(i) {
+  const b = COVERS[i]; const box = document.getElementById('cvRes' + i); if (!b || !box) return;
+  box.innerHTML = `<div class="cv-msg">찾는 중…</div>`;
+  let books = [];
+  try {
+    const { data, error } = await sb.functions.invoke('book-search', { body: { q: b.book_title } });
+    if (!error) books = data?.books || [];
+  } catch (e) { /* 아래에서 없다고 알린다 */ }
+  books = books.filter(x => x.thumbnail);
+  COVER_FOUND[i] = books;
+  box.innerHTML = books.length
+    ? books.map((x, j) => `<button class="cv-o" onclick="coverPick(${i},${j})">
+        <img src="${esc(x.thumbnail)}" alt="" loading="lazy">
+        <b>${esc(x.title)}</b><span>${esc([x.authors, x.publisher, x.year].filter(Boolean).join(' · '))}</span></button>`).join('')
+    : `<div class="cv-msg">검색에서 표지를 찾지 못했어요. 이 책은 랜딩에 나오지 않아요.</div>`;
+}
+async function coverPick(i, j) {
+  const b = COVERS[i], x = (COVER_FOUND[i] || [])[j]; if (!b || !x) return;
+  if (!confirm(`「${b.book_title}」의 표지로\n「${x.title}」(${[x.publisher, x.year].filter(Boolean).join(' · ')}) 표지를 쓸까요?`)) return;
+  if (LIVE) {
+    const { error } = await sb.rpc('admin_set_book_cover', { p_title: b.book_title, p_cover: x.thumbnail });
+    if (error) return alert('저장하지 못했어요.\n' + (error.message || ''));
+  }
+  COVERS.splice(i, 1); COVER_FOUND = {};
+  renderSummary(); renderPanel();
 }
 
 // ── 청소년 확인 ────────────────────────────────────────────
@@ -3468,7 +3540,7 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'report'],
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'covers', 'report'],
                  money: ['pending', 'settled', 'stores', 'charges'],
                  inbox: ['inbox'] };
 const groupOf = t => GROUPS.money.includes(t) ? 'money' : t === 'inbox' ? 'inbox' : 'ops';
