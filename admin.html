@@ -53,6 +53,13 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .grp-b { background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px;
   padding:0 2px 11px; font-family:inherit; font-size:15px; font-weight:700;
   color:var(--ink-3); cursor:pointer; }
+.grp { align-items:center; }
+.grp-b i { font-style:normal; }
+.grp-b i.todo { display:inline-block; min-width:18px; padding:1px 6px; margin-left:6px; border-radius:99px; background:var(--pink); color:#fff; font-size:11.5px; font-weight:800; text-align:center; }
+.grp-r { margin-left:auto; padding-bottom:6px; }
+.pill { border:1px solid var(--line); background:#fff; border-radius:99px; padding:6px 12px; font-family:inherit; font-size:12px; font-weight:700; color:var(--ink-2); cursor:pointer; white-space:nowrap; }
+.pill.on { color:var(--green); border-color:#cfe5a8; background:#F4F9EA; }
+.pill.off { background:var(--ink); color:#fff; border-color:var(--ink); }
 .grp-b.on { color:var(--ink); border-bottom-color:var(--ink); }
 .tabs { display:flex; gap:6px; margin:14px 0; flex-wrap:wrap; }
 .tab { padding:9px 16px; border-radius:10px; border:1px solid var(--line); background:var(--card); font-size:13.5px; font-weight:600; color:var(--ink-2); cursor:pointer; font-family:inherit; }
@@ -425,9 +432,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="grp">
     <button class="grp-b on" data-grp="ops"   onclick="switchGroup('ops')">운영</button>
     <button class="grp-b"    data-grp="money" onclick="switchGroup('money')">정산</button>
+    <button class="grp-b"    data-grp="inbox" onclick="switchGroup('inbox')">알림<i id="cntInbox"></i></button>
+    <!-- 이 기기로 푸시 알림 켜기. 한 번 켜면 다시 볼 일이 거의 없어 이 줄 오른쪽 끝에 작게 둔다 -->
+    <span class="grp-r" id="pushPill"></span>
   </div>
   <div class="tabs" id="tabsOps">
-    <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">받은 알림<i id="cntInbox"></i></button>
     <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
     <button class="tab" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
@@ -1842,20 +1851,19 @@ async function claimPush(sub) {
 }
 
 async function paintPush() {
-  const el = document.getElementById('pushBody'); if (!el) return;
+  const el = document.getElementById('pushPill'); if (!el) return;
   const st = await pushState();
+  const tip = {
+    'needs-install': '아이폰은 홈 화면에 추가해야 알림을 받을 수 있어요.\n사파리 아래 공유 → 홈 화면에 추가 → 홈 화면 아이콘으로 다시 열기',
+    'blocked'      : '브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.',
+  };
   el.innerHTML = {
-    'unsupported'  : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
-    'needs-install': `<div class="hint" style="margin:0;line-height:1.8;">
-        아이폰은 <b>홈 화면에 추가</b>해야 알림을 받을 수 있어요.<br>
-        사파리 아래 <b>공유</b> → <b>홈 화면에 추가</b> → 홈 화면 아이콘으로 다시 열기</div>`,
-    'blocked'      : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>`,
-    'off'          : `<button class="btn btn-dark" onclick="enablePush()">알림 켜기</button>
-        <div class="hint">가입·끗짱 신청이 들어오면 이 기기로 바로 와요.</div>`,
-    'on'           : `<div style="display:flex;align-items:center;gap:10px;">
-        <b style="flex:1;color:var(--green);">켜져 있어요</b>
-        <button class="btn btn-line" onclick="disablePush()">끄기</button></div>
-        <div class="hint">기기마다 따로 켜야 해요. 폰과 PC 둘 다 받으시려면 양쪽에서 켜주세요.</div>`,
+    'unsupported'  : '',
+    'needs-install': `<button class="pill" onclick="alert(${JSON.stringify(tip['needs-install'])})">알림 안내</button>`,
+    'blocked'      : `<button class="pill" onclick="alert(${JSON.stringify(tip['blocked'])})">알림 막힘</button>`,
+    'off'          : `<button class="pill off" onclick="enablePush()">🔔 이 기기 알림 켜기</button>`,
+    'on'           : `<button class="pill on" title="기기마다 따로 켜야 해요. 폰과 PC 둘 다 받으시려면 양쪽에서 켜주세요."
+                        onclick="if(confirm('이 기기의 알림을 끌까요?'))disablePush()">🔔 켜짐</button>`,
   }[st];
 }
 
@@ -3460,9 +3468,10 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['inbox', 'verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'report'],
-                 money: ['pending', 'settled', 'stores', 'charges'] };
-const groupOf = t => GROUPS.money.includes(t) ? 'money' : 'ops';
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'report'],
+                 money: ['pending', 'settled', 'stores', 'charges'],
+                 inbox: ['inbox'] };
+const groupOf = t => GROUPS.money.includes(t) ? 'money' : t === 'inbox' ? 'inbox' : 'ops';
 let grp = 'ops';
 
 function switchGroup(g) {
@@ -3547,8 +3556,8 @@ if ('serviceWorker' in navigator) {
 // ── 받은 알림 ──────────────────────────────────────────────
 // 운영 알림(가입·끗짱 신청·청소년 확인·정산·인증 신고)은 푸시로 오고 알림함에도 쌓이는데, 관리자 화면에는 볼 곳이 없었다.
 // 앱의 종 모양과 같은 표(notifications, 내 줄만 읽힌다)를 읽는다. 알림에 #탭 이 붙어 있으면 누를 때 그 탭으로 간다.
-// 【탭으로 옮겼다 · 2026-10-11 사용자】 머리 줄에는 로고·이메일·로그아웃만 둔다. 알림은 운영 탭 줄의 맨 앞이고,
-//   이 기기로 푸시를 켜는 줄(예전의 「🔔 알림」)은 이 탭 맨 위에 있다.
+// 【위치 · 2026-10-11 사용자】 머리 줄에는 로고·이메일·로그아웃만 둔다. 알림은 「운영 · 정산」 줄의 세 번째 갈래(알림)이고,
+//   이 기기로 푸시를 켜는 단추(예전의 「🔔 알림」)는 그 줄 오른쪽 끝에 작게 있다.
 let INBOX = [];
 async function loadInbox() {
   if (!LIVE || !MY_UID) return;
@@ -3584,13 +3593,8 @@ function viewInbox() {
     <div class="panel-d" id="inboxSub"></div></div>
     <button class="btn btn-line" id="inboxAll" style="display:none;white-space:nowrap;" onclick="inboxReadAll()">모두 읽음</button>
   </div>
-  <div class="card" style="padding:14px 18px;margin-bottom:14px;">
-    <div style="font-size:12.5px;font-weight:800;margin-bottom:8px;">📱 이 기기로 알림 받기</div>
-    <div id="pushBody"><div class="hint" style="margin:0;">확인 중…</div></div>
-  </div>
   <div id="inboxList"></div>`;
   paintInboxList();
-  paintPush();
   loadInbox();
 }
 function paintInboxList() {
@@ -3623,6 +3627,7 @@ async function inboxReadAll() { await inboxMark(null); paintInboxList(); }
 
 let INBOX_T = null;
 function startInbox() {
+  paintPush();
   loadInbox();
   clearInterval(INBOX_T);
   INBOX_T = setInterval(() => { if (document.visibilityState === 'visible') loadInbox(); }, 60000);
