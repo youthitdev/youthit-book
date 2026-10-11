@@ -135,8 +135,9 @@ footer{ margin-top:34px; font-size:12.5px; color:var(--ink-3); line-height:1.7; 
 <div class="wrap">
   <header>
     <!-- 【머리를 누르면】 QR 로 들어와 금액을 적는 중이면 우리 책방 화면으로 (2026-10-07 사용자 — 다른 길이 없었다).
-         이미 우리 책방 화면이면 한끗독서 홈으로 (2026-10-11 사용자 — 눌러도 같은 화면만 나왔다) -->
-    <a class="home" href="index.html" onclick="goHome(event)"><b>한끗<em>독서</em></b><span>책방</span></a>
+         이미 우리 책방 화면이면 책방 메인(store-invite.html)으로 (2026-10-11 사용자 — 눌러도 같은 화면만 나왔다.
+         한끗독서 홈(index.html)이 아니라 책방 메인이다) -->
+    <a class="home" href="store-invite.html" onclick="goHome(event)"><b>한끗<em>독서</em></b><span>책방</span></a>
   </header>
   <div id="app"></div>
   <footer>
@@ -576,8 +577,8 @@ const homeUrl = () => location.pathname + (URL_KEY ? '?k=' + encodeURIComponent(
 
 function goHome(e) {
   e.preventDefault();
-  // QR 화면이 아니라 이미 우리 책방 화면(목록·로그인)이면 같은 곳으로 보내는 게 아니라 한끗독서 홈으로
-  if (!TOKEN) { location.href = 'index.html'; return; }
+  // QR 화면이 아니라 이미 우리 책방 화면(목록·로그인)이면 같은 곳으로 보내는 게 아니라 책방 메인으로
+  if (!TOKEN) { location.href = 'store-invite.html'; return; }
   // QR 로 들어와 금액·사진을 적던 중이면 쓰던 게 사라진다. 그때만 한 번 묻는다
   const writing = TOKEN && picked && (receipt || photo || ($('amt') && $('amt').value));
   if (writing && !confirm('쓰던 내용이 사라져요. 나갈까요?')) return;
