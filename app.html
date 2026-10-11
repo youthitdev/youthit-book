@@ -38,18 +38,17 @@
   --blue:#1F4E46; --green:#83CA00; --green-d:#4E7A1C; --gold:#E8A33D; --pink:#C2533F;
   --tint:#EDF2EC;   /* 바닥 탭에서 고른 칸 뒤에 깔리는 옅은 바탕 */
 }
-/* ── 끗짱으로 들어오면 앱 전체가 버건디가 된다 ──────────
+/* ── 끗짱으로 들어오면 앱 전체가 주황이 된다 (2026-10-11 사용자: 버건디 → 주황) ──
    색을 쓰는 곳을 하나씩 고치지 않고 --blue 자체를 덮어쓴다. 단추·머리글·
    바닥 탭·댓글 단추·동그란 얼굴까지 열일곱 군데가 한꺼번에 따라온다.
    ⚠️ 이름은 --blue 지만 내용은 「이 앱의 바탕색」이다 (:root 의 설명 참고) */
 body.kkut {
-  --blue:#6A2234;    /* 짙은 버건디 — 청소년의 잉크 그린과 같은 무게 */
-  --pink:#B43A52;    /* 강조. 벽돌빛(#C2533F)은 버건디 옆에서 주황으로 튄다 */
-  --tint:#F7ECEE;
+  --blue:#C4580C;    /* 짙은 주황 — 흰 글자가 읽히는 가장 밝은 쪽(대비 4.5). 청소년의 잉크 그린과 같은 무게 */
+  --pink:#B34A06;    /* 강조·글자. 바탕 주황보다 한 단계 짙게 — 흰 바탕 위에서 읽혀야 한다 */
+  --tint:#FDF1E4;
   /* 「채워진다」를 나타내는 색 — 진행 막대·달력의 읽은 날·도장.
-     연두(#83CA00)는 버건디 옆에서 형광으로 튄다. 금색은 같이 두면
-     책 표지처럼 앉고, 「채워진다」는 뜻도 그대로 산다 */
-  --green:#C98B2E; --green-d:#8A5A12;
+     주황 옆에서는 청소년과 같은 연두가 잘 앉는다. 금색은 주황과 겹쳐 구분이 안 된다 */
+  --green:#83CA00; --green-d:#4E7A1C;
 }
 /* ── 첫 화면 ─────────────────────────────────────────── */
 .sp { position:fixed; inset:0; z-index:900; display:flex; flex-direction:column;
@@ -244,8 +243,8 @@ header { position:sticky; top:0; z-index:20; background:var(--bg); color:var(--i
 /* 내려가면 카드가 글자에 비쳐 든다. 그때만 선과 흐림을 준다 */
 header.down { border-bottom-color:var(--line); background:rgba(250,247,241,.9);
   -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
-/* 역할은 색으로 남긴다 — 청소년은 잉크 그린, 끗짱은 버건디.
-   끗짱 화면에서는 --blue 가 이미 버건디라 덧칠할 것이 없다.
+/* 역할은 색으로 남긴다 — 청소년은 잉크 그린, 끗짱은 주황.
+   끗짱 화면에서는 --blue 가 이미 주황이라 덧칠할 것이 없다.
    .k 는 승인 전 게이트(body.kkut 가 아직 안 붙은 화면)에만 쓰인다 */
 .h-title { color:var(--blue); }
 header.k .h-title { color:var(--pink); }
@@ -3301,7 +3300,7 @@ const kkutPending = () => !!me && !canLead() && me.join_role === 'kkut' && !stat
 const KKUT_FORM_URL = '';
 const KKUT_FORM_IN_APP = false;
 
-// 끗짱이면 앱 전체를 버건디로. 색은 CSS 의 body.kkut 한 덩이에 모여 있고,
+// 끗짱이면 앱 전체를 주황으로. 색은 CSS 의 body.kkut 한 덩이에 모여 있고,
 // 여기서는 그 꼬리표만 붙였다 뗀다.
 // 폰 맨 위 시계 줄까지 따라오게 theme-color 도 같이 바꾼다 — 머리글만 버건디고
 // 그 위 띠가 초록이면 앱이 두 동강 나 보인다
@@ -3314,7 +3313,7 @@ function paintTheme(isK) {
     l.setAttribute('type', isK ? 'image/svg+xml' : l.dataset.origType);
   });
   const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.content = isK ? '#6A2234' : '#1F4E46';
+  if (m) m.content = isK ? '#C4580C' : '#1F4E46';
   // .ov-h 는 열릴 때 JS 가 색을 박아 넣는 자리라 변수만 바꿔선 안 따라온다
   document.querySelectorAll('.ov-h').forEach(h => h.style.background = 'var(--blue)');
 }
