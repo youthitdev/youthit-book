@@ -3573,6 +3573,20 @@ function paintInboxCount() {
   const el = document.getElementById('cntInbox');
   if (el) { const n = inboxUnread(); el.className = 'todo'; el.textContent = n ? String(n) : ''; el.style.display = n ? '' : 'none'; }
   document.title = (inboxUnread() ? `(${inboxUnread()}) ` : '') + document.title.replace(/^\(\d+\)\s*/, '');
+  syncAppBadge();
+}
+// 홈 화면 아이콘의 빨간 숫자. 푸시가 올 때마다 서비스워커가 올리기만 해서, 읽어도 안 내려갔다.
+// 안 읽은 알림 수로 맞춘다. 서비스워커가 다음에 올릴 때 이 값에서 이어 가도록 같이 적어 둔다
+let lastBadge = -1;
+function syncAppBadge() {
+  if (!LIVE) return;
+  const n = inboxUnread();
+  if (n === lastBadge) return;
+  lastBadge = n;
+  try {
+    if (navigator.setAppBadge) { n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); }
+    if (window.caches) caches.open('hankkut-badge').then(c => c.put('n', new Response(String(n))));
+  } catch (e) {}
 }
 const inboxAgo = iso => {
   const m = Math.floor((Date.now() - new Date(iso)) / 60000);
