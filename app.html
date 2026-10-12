@@ -1284,6 +1284,17 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .pg-n { font-size:12.5px; color:var(--ink-3); margin-top:7px; }
 .pg-n b { color:var(--blue); font-weight:800; }
 .ct-card { background:linear-gradient(160deg,#F7FAF0,#FFFFFF); }
+/* 홈의 한 줄 버튼. 누르면 시트가 열린다 */
+.ct-bar { display:block; width:100%; text-align:left; font-family:inherit; cursor:pointer; margin-bottom:12px;
+  background:linear-gradient(160deg,#F7FAF0,#FFFFFF); border:1px solid #E4EDD0; border-radius:16px; padding:11px 14px 12px; }
+.ct-bar:active { opacity:.7; }
+.ct-bar-h { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-2); }
+.ct-bar-h > b { flex:1; min-width:0; font-size:13.5px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ct-bar-h > span { white-space:nowrap; font-size:12px; color:var(--ink-3); }
+.ct-bar-h > span b { color:var(--green-d); font-size:14px; font-weight:800; }
+.ct-bar-h > i { color:var(--ink-3); font-size:15px; }
+.ct-bar-b { display:block; height:6px; background:#EBE5DA; border-radius:99px; margin-top:9px; overflow:hidden; }
+.ct-bar-b > span { display:block; height:100%; background:var(--green); border-radius:99px; }
 .ct-hd { display:flex; justify-content:space-between; align-items:baseline; }
 .ct-hd b { font-size:14.5px; font-weight:800; }
 .ct-hd span { font-size:11.5px; font-weight:700; color:var(--green-d); background:#EEF5DC; border-radius:99px; padding:2px 9px; }
@@ -2019,6 +2030,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
 <!-- 서점 한 곳 (아래에서 올라오는 시트) -->
 <!-- 청소년 확인 서류. 도서기금은 청소년에게 쓰는 돈이라 책을 받기 전에 한 번 확인한다 -->
+<!-- 함께 짓는 한끗 책의 도시 (홈의 한 줄 버튼을 누르면 올라온다) -->
+<div class="sheet" id="shCity" onclick="if(event.target===this)closeSheet('shCity')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;"></div>
+      <button class="sheet-x" onclick="closeSheet('shCity')" aria-label="닫기">✕</button>
+    </div>
+    <div id="shCityBody"></div>
+  </div>
+</div>
+
 <div class="sheet" id="shVerify" onclick="if(event.target===this)closeSheet('shVerify')">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -4373,7 +4396,7 @@ function viewHome() {
     // 【전에는 어른 끗짱에게 감췄다】 「고를 수도 없는 목록」이라고 봤는데,
     //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 루틴을 어떻게 여는지가
     //   제 루틴을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
-    return h + cityCard() + pickSection() + (others.length ? recruitSection(others) : '');
+    return cityCard() + h + pickSection() + (others.length ? recruitSection(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
@@ -4420,7 +4443,7 @@ function viewHome() {
         끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
     </div>`;
   }
-  return h + cityCard() + pickSection() + recruit;
+  return cityCard() + h + pickSection() + recruit;
 }
 
 // ── 홈의 책방 추천 ─────────────────────────────────────
@@ -5893,9 +5916,27 @@ function cityMilestone(total) {
            pct: next ? Math.min(100, Math.round((n - prevAt) / (next.at - prevAt) * 100)) : 100,
            done: !next };
 }
+// 홈에서는 한 줄 버튼만 보이고, 누르면 아래에서 올라오는 창에 큰 카드가 열린다 (2026-10-12 사용자).
+// 버튼에도 막대와 쪽수를 둔다 — 이름만 있으면 눌러 볼 이유가 없어 도시가 잊힌다
 function cityCard() {
   const t = state.pages && state.pages.total;
   if (t === null || t === undefined) return '';          // 112 가 아직이거나 불러오지 못했다
+  const m = cityMilestone(t);
+  return `<button class="ct-bar" onclick="openCity()">
+    <span class="ct-bar-h"><b>🏗 함께 짓는 한끗 책의 도시</b>
+      <span>${m.done ? '모두 완공 🎉' : `<b>${won(m.total)}</b> / ${won(m.next.at)}쪽`}</span>
+      <i class="ti ti-chevron-right"></i></span>
+    ${m.done ? '' : `<span class="ct-bar-b"><span style="width:${Math.max(m.pct, 2)}%;"></span></span>`}
+  </button>`;
+}
+function openCity() {
+  $('shCityBody').innerHTML = cityFull();
+  showLayer('shCity');
+}
+
+function cityFull() {
+  const t = state.pages && state.pages.total;
+  if (t === null || t === undefined) return '';
   const m = cityMilestone(t);
   const road = CITY.map(c => `<span class="ct-b ${t >= c.at ? 'on' : (m.next && c.at === m.next.at ? 'now' : '')}" title="${esc(c.name)}">${c.ico}</span>`).join('');
   const mine = state.pages && state.pages.mine;
@@ -5908,7 +5949,7 @@ function cityCard() {
          <div class="ct-num"><b>${won(m.total)}</b> / ${won(m.next.at)}쪽 <span>· ${won(m.left)}쪽 남았어요. 한 끗을 보태주세요</span></div>`}
     <div class="ct-road">${road}</div>
     ${m.built.length && !m.done ? `<div class="ct-last">${m.built[m.built.length - 1].ico} ${m.built[m.built.length - 1].say}</div>` : ''}
-    ${me && !isGuest() && mine ? `<button class="ct-mine" onclick="go('my')">${esc(myName())}님의 기여: <b>${won(mine)}쪽</b> <i class="ti ti-chevron-right"></i></button>` : ''}
+    ${me && !isGuest() && mine ? `<button class="ct-mine" onclick="closeSheet('shCity');go('my')">${esc(myName())}님의 기여: <b>${won(mine)}쪽</b> <i class="ti ti-chevron-right"></i></button>` : ''}
   </div>`;
 }
 
