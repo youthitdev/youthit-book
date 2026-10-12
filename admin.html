@@ -2964,9 +2964,10 @@ function viewQuotes() {
       <td style="max-width:420px;">${esc(q.quote)}</td>
       <td class="muted">${esc(q.book_title) || '-'}</td>
       <td class="num muted">${fmtDate(q.created_at)}</td>
-      <td class="right">
+      <td class="right" style="white-space:nowrap;">
         <button class="btn ${q.quote_public ? 'btn-dark' : 'btn-line'}" onclick="toggleQuote(${q.id})">
           ${q.quote_public ? '공개 중' : '공개하기'}</button>
+        <button class="btn btn-danger" onclick="deleteQuote(${q.id})" title="이 문장만 지워요">삭제</button>
       </td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">아직 올라온 문장이 없어요.</div>`}`;
@@ -2981,6 +2982,21 @@ async function toggleQuote(id) {
     if (error) { alert('바꾸지 못했어요: ' + error.message); return; }
   }
   q.quote_public = next;
+  render();
+}
+
+// 잘못 적은 문장을 지운다 (2026-10-12 사용자). 문장 칸만 비운다 — 인증 기록·사진·글은 그대로고, 본인에게 알림도 가지 않는다.
+// 사진이나 글까지 내려야 하면 「신고」 탭의 「내리기」를 쓴다
+async function deleteQuote(id) {
+  const q = (DB.quotes || []).find(x => x.id === id);
+  if (!q) return;
+  const short = String(q.quote).length > 40 ? String(q.quote).slice(0, 40) + '…' : q.quote;
+  if (!confirm(`이 문장을 지울까요?\n\n“${short}”\n\n· 문장만 지워져요. 인증 기록과 사진·글은 그대로예요\n· 홈페이지·후원자 공개도 함께 꺼져요\n· 되돌릴 수 없어요`)) return;
+  if (LIVE) {
+    const { error } = await sb.from('certifications').update({ quote: null, quote_public: false }).eq('id', id);
+    if (error) { alert('지우지 못했어요: ' + error.message); return; }
+  }
+  DB.quotes = DB.quotes.filter(x => x.id !== id);
   render();
 }
 
