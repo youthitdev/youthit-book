@@ -338,6 +338,35 @@ tr:hover td { background:#fcfcfd; }
 .kk-q.no p { color:#8E3527; }
 /* 승인·반려 옆에 역할 칩과 작은 단추가 같이 선다. 키가 달라 가운데로 맞춘다 */
 .kk-a { display:flex; gap:8px; margin-top:16px; align-items:center; flex-wrap:wrap; }
+/* 끗짱 승인 — 한 줄 목록. 줄을 누르면 아래로 펼쳐진다 (2026-10-12 사용자: 카드가 너무 커서 보기 어렵다) */
+.kl { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; margin:0 20px 20px; }
+.kr { border-bottom:1px solid var(--line); }
+.kr:last-child { border-bottom:none; }
+.kr-r { display:grid; grid-template-columns:84px minmax(110px,.9fr) minmax(120px,1fr) minmax(110px,.9fr) 74px minmax(140px,2fr) auto 18px;
+  gap:10px; align-items:center; padding:11px 16px; cursor:pointer; font-size:13px; }
+.kr-r:hover { background:#FBF9F4; }
+.kr-r > * { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.kr-n b { font-size:14px; }
+.kr-n i { font-style:normal; color:var(--ink-3); font-size:12.5px; margin-left:4px; }
+.kr-m, .kr-c, .kr-w { color:var(--ink-2); }
+.kr-w { font-size:12px; color:var(--ink-3); }
+.kr-i { color:var(--ink-3); }
+.kr-a { display:flex; gap:6px; align-items:center; white-space:nowrap; overflow:visible; }
+.kr-a .btn { padding:6px 12px; font-size:12.5px; }
+.kr-x { color:var(--ink-3); transition:transform .15s; font-size:16px; text-align:center; }
+.kr.open .kr-x { transform:rotate(90deg); }
+.kr-d { display:none; padding:2px 18px 18px 18px; background:#FBF9F4; border-top:1px dashed var(--line); }
+.kr.open .kr-d { display:block; }
+.kr-d .kk-g { background:#fff; }
+@media (max-width:1100px) {
+  .kr-r { grid-template-columns:84px 1fr auto 18px; }
+  .kr-m, .kr-c, .kr-w, .kr-i { display:none; }
+}
+@media (max-width:640px) {
+  .kl { margin:0 10px 16px; }
+  .kr-r { grid-template-columns:auto 1fr auto 14px; gap:8px; padding:10px 12px; }
+  .kr-a .btn { padding:6px 10px; }
+}
 .pill { font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:99px; flex-shrink:0; }
 .pill.ok   { background:#e8f6ec; color:#1b7a3c; }
 .pill.no   { background:#fdeaef; color:#8E3527; }
@@ -2624,42 +2653,49 @@ function viewKkut() {
     const badge = a.status === 'approved' ? '<span class="pill ok">승인</span>'
                 : a.status === 'rejected' ? '<span class="pill no">반려</span>'
                 : '<span class="pill wait">심사 대기</span>';
+    const open = KK_OPEN.has(a.user_id);
+    const one = String(a.intro || '').replace(/\s+/g, ' ');
     return `
-    <div class="kk">
-      <div class="kk-h">
-        <div>
-          <div class="kk-n">${esc(a.name)} <span class="muted" style="font-weight:500;">${a.age}세</span></div>
-          <div class="kk-m">${esc(a.affiliation)} · ${esc(a.region)}</div>
+    <div class="kr${open ? ' open' : ''}" id="kr-${esc(a.user_id)}">
+      <div class="kr-r" onclick="kkToggle('${a.user_id}')">
+        <span>${badge}</span>
+        <span class="kr-n"><b>${esc(a.name)}</b><i>${a.age}세</i></span>
+        <span class="kr-m" title="${esc(a.affiliation)} · ${esc(a.region)}">${esc(a.affiliation)} · ${esc(a.region)}</span>
+        <span class="kr-c">${esc(a.contact)}</span>
+        <span class="kr-w">${fmtDate(a.applied_at)}</span>
+        <span class="kr-i" title="${esc(one)}">${esc(one)}</span>
+        <span class="kr-a" onclick="event.stopPropagation()">
+          ${a.status !== 'approved'
+            ? `<button class="btn btn-dark" onclick="decideKkut('${a.user_id}', true)">승인</button>` : ''}
+          ${a.status !== 'rejected'
+            ? `<button class="btn btn-line" onclick="decideKkut('${a.user_id}', false)">반려</button>` : ''}
+          ${(() => {
+            // 어른인지 청소년인지는 승인할 때 정해지는데, 잘못 고르면 되돌릴 길이 있어야 한다
+            if (a.status !== 'approved') return '';
+            const v = (DB.verify || []).find(x => x.user_id === a.user_id); if (!v) return '';
+            const adult = v.role === 'adult';
+            return `<span class="vq-st st-${adult ? 'adult' : 'none'}">${adult ? '어른' : '청소년'}</span>
+              <button class="vq-quiet" onclick="setAdult('${a.user_id}', ${!adult})">${
+                adult ? '청소년으로' : '어른으로'}</button>`;
+          })()}
+        </span>
+        <span class="kr-x">›</span>
+      </div>
+      <div class="kr-d">
+        <div class="kk-g">
+          <div><b>소속·지역</b><span>${esc(a.affiliation)} · ${esc(a.region)}</span></div>
+          <div><b>연락처</b><span>${esc(a.contact)}</span></div>
+          <div><b>이메일</b><span>${esc(a.email)}</span></div>
+          <div><b>신청일</b><span>${fmtDate(a.applied_at)}</span></div>
+          <div><b>만든 루틴</b><span>${a.routine_count}개</span></div>
         </div>
-        ${badge}
-      </div>
-      <div class="kk-g">
-        <div><b>연락처</b><span>${esc(a.contact)}</span></div>
-        <div><b>이메일</b><span>${esc(a.email)}</span></div>
-        <div><b>신청일</b><span>${fmtDate(a.applied_at)}</span></div>
-        <div><b>만든 루틴</b><span>${a.routine_count}개</span></div>
-      </div>
-      <div class="kk-q"><b>키워드 <span class="muted" style="font-weight:500;">· 청소년에게 이름 옆에 보여요</span></b>
-        <p>${kwHtml(a)}</p></div>
-      <div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>
-      <div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>
-      ${kkExtra(a)}
-      ${a.status === 'rejected' && a.reject_reason
-        ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
-      <div class="kk-a">
-        ${a.status !== 'approved'
-          ? `<button class="btn btn-dark" onclick="decideKkut('${a.user_id}', true)">승인</button>` : ''}
-        ${a.status !== 'rejected'
-          ? `<button class="btn btn-line" onclick="decideKkut('${a.user_id}', false)">반려</button>` : ''}
-        ${(() => {
-          // 어른인지 청소년인지는 승인할 때 정해지는데, 잘못 고르면 되돌릴 길이 있어야 한다
-          if (a.status !== 'approved') return '';
-          const v = (DB.verify || []).find(x => x.user_id === a.user_id); if (!v) return '';
-          const adult = v.role === 'adult';
-          return `<span class="vq-st st-${adult ? 'adult' : 'none'}">${adult ? '어른' : '청소년'}</span>
-            <button class="vq-quiet" onclick="setAdult('${a.user_id}', ${!adult})">${
-              adult ? '청소년으로' : '어른으로'}</button>`;
-        })()}
+        <div class="kk-q"><b>키워드 <span class="muted" style="font-weight:500;">· 청소년에게 이름 옆에 보여요</span></b>
+          <p>${kwHtml(a)}</p></div>
+        <div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>
+        <div class="kk-q"><b>어떤 마음으로 함께하고 싶은가</b><p>${esc(a.motive)}</p></div>
+        ${kkExtra(a)}
+        ${a.status === 'rejected' && a.reject_reason
+          ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
       </div>
     </div>`;
   };
@@ -2672,10 +2708,18 @@ function viewKkut() {
       <b>14세부터</b> 신청할 수 있고 그 밖의 조건은 없어요.
       소속·나이·지원동기를 보고 판단해 주세요.</div></div>
   </div>
-  ${wait.length ? `<div class="kk-grid">${wait.map(card).join('')}</div>`
+  ${wait.length ? `<div class="kl">${wait.map(card).join('')}</div>`
     : `<div class="empty">심사를 기다리는 신청이 없어요.</div>`}
-  ${done.length ? `<div class="panel-t" style="margin:26px 0 12px;font-size:14px;">지난 심사 ${done.length}건</div>
-    <div class="kk-grid">${done.map(card).join('')}</div>` : ''}`;
+  ${done.length ? `<div class="panel-t" style="margin:26px 20px 12px;font-size:14px;">지난 심사 ${done.length}건</div>
+    <div class="kl">${done.map(card).join('')}</div>` : ''}`;
+}
+
+// 끗짱 승인 줄을 펼쳤는지. 처리하고 다시 그려도 펼친 줄은 그대로 둔다 (기본은 모두 접힘)
+const KK_OPEN = new Set();
+function kkToggle(uid) {
+  if (KK_OPEN.has(uid)) KK_OPEN.delete(uid); else KK_OPEN.add(uid);
+  const el = document.getElementById('kr-' + uid);
+  if (el) el.classList.toggle('open', KK_OPEN.has(uid));
 }
 
 async function decideKkut(userId, approve) {
