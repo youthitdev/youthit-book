@@ -2707,11 +2707,41 @@ function viewKkut() {
       연락처로 한 번 통화해 보고 누르시길 권해요.<br>
       <b>14세부터</b> 신청할 수 있고 그 밖의 조건은 없어요.
       소속·나이·지원동기를 보고 판단해 주세요.</div></div>
+    <button class="btn btn-line" onclick="exportKkut()" title="신청 목록 전체를 엑셀로 열 수 있는 파일로 받아요">엑셀로 받기</button>
   </div>
   ${wait.length ? `<div class="kl">${wait.map(card).join('')}</div>`
     : `<div class="empty">심사를 기다리는 신청이 없어요.</div>`}
   ${done.length ? `<div class="panel-t" style="margin:26px 20px 12px;font-size:14px;">지난 심사 ${done.length}건</div>
     <div class="kl">${done.map(card).join('')}</div>` : ''}`;
+}
+
+// 표를 엑셀로 열리는 파일(.csv)로 내려받는다. 앞에 BOM 을 붙여야 엑셀에서 한글이 안 깨진다.
+// 휴대폰 번호는 엑셀이 숫자로 읽어 맨 앞 0 을 지우므로 ="…" 로 글자임을 알려 준다
+function downloadCsv(filename, header, rows, textCols = []) {
+  const cell = (v, i, cols) => {
+    let t = String(v ?? '').replace(/\r?\n/g, ' ');
+    if (cols.includes(i) && t) return `="${t.replace(/"/g, '""')}"`;
+    return /[",]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  const line = (r, cols) => r.map((v, i) => cell(v, i, cols)).join(',');
+  const csv = '\uFEFF' + [line(header, []), ...rows.map(r => line(r, textCols))].join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+const todayStamp = () => new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '');
+function exportKkut() {
+  const rows = DB.kkutApps || [];
+  if (!rows.length) return alert('내려받을 신청이 없어요.');
+  const ST = { pending: '심사 대기', approved: '승인', rejected: '반려' };
+  downloadCsv(`끗짱신청_${todayStamp()}.csv`,
+    ['상태', '이름', '나이', '소속', '지역', '연락처', '이메일', '신청일', '소개', '지원 동기',
+     '청소년과 함께한 경험', '추천·활동 링크', '보호 약속 동의일', '키워드', '만든 루틴', '반려 사유'],
+    rows.map(a => [ST[a.status] || a.status, a.name, a.age, a.affiliation, a.region, a.contact, a.email,
+      fmtDate(a.applied_at), a.intro, a.motive, a.experience, a.referrer,
+      a.pledge_at ? fmtDate(a.pledge_at) : '', (a.keywords || []).join(' '), a.routine_count, a.reject_reason]),
+    [5]);   // 연락처 칸
 }
 
 // 끗짱 승인 줄을 펼쳤는지. 처리하고 다시 그려도 펼친 줄은 그대로 둔다 (기본은 모두 접힘)
