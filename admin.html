@@ -590,22 +590,6 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
-<!-- 청소년으로 가입한 어른을 끗짱 승인 대기로 옮긴다 (migration-120) -->
-<div class="overlay" id="queueKkutOverlay">
-  <div class="modal">
-    <div class="modal-hd">
-      <div class="modal-t">끗짱 승인 대기로 옮기기</div>
-      <div class="modal-d">청소년은 만 20세까지라 아래 분들은 청소년으로 볼 수 없어요. 옮기면 <b>청소년 확인</b>에서 빠지고
-        <b>끗짱 승인</b>의 「심사 대기」에 올라요. <b>승인은 따로 눌러야</b> 권한이 생겨요. 옮기지 않을 분은 체크를 빼 주세요.</div>
-    </div>
-    <div class="modal-bd" id="queueKkutBody"></div>
-    <div class="modal-ft">
-      <button class="btn btn-line" onclick="closeModal('queueKkutOverlay')">닫기</button>
-      <button class="btn btn-dark" id="queueKkutGo" onclick="submitQueueKkut()">옮기기</button>
-    </div>
-  </div>
-</div>
-
 <div class="overlay" id="peopleOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -691,11 +675,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 <div class="overlay" id="mkKkutOverlay">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-t">끗짱으로 이동</div>
+      <div class="modal-t">끗짱 승인 대기로 옮기기</div>
       <div class="modal-d" id="mkWho"></div>
     </div>
     <div class="modal-bd">
-      <div class="field">
+      <div class="field" id="mkAdultField" style="display:none;">
         <div class="label">청소년인가요, 어른인가요 <span>*</span></div>
         <select id="mkAdult">
           <option value="1">어른 — 루틴만 만들어요. 포인트·교환권·책은 받지 않아요</option>
@@ -712,15 +696,15 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <input type="text" id="mkAff" placeholder="예) 유스보이스 · 없으면 비워두세요">
       </div>
       <div class="field">
-        <div class="label">왜 세우시나요 <span>*</span></div>
+        <div class="label">옮기는 이유 <span>*</span></div>
         <textarea id="mkWhy" rows="3"
-          placeholder="예) 대표가 직접 섭외한 어른 끗짱이에요. 9월 28일 통화로 확인했어요."></textarea>
-        <div class="hint">끗짱 승인 탭에 그대로 남아요. 나중에 「왜 이 사람인가」를 설명하는 유일한 글이에요.</div>
+          placeholder="예) 구글폼 신청을 확인했어요. / 청소년으로 가입한 어른이라 옮겼어요."></textarea>
+        <div class="hint">「끗짱 승인」 탭의 심사 대기에 올라가요. <b>승인은 거기서 따로</b> 눌러야 권한이 생기고, 어른인지 청소년인지도 그때 정해요.</div>
       </div>
     </div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('mkKkutOverlay')">취소</button>
-      <button class="btn btn-dark" onclick="submitMakeKkut()">끗짱으로 이동</button>
+      <button class="btn btn-dark" onclick="submitMakeKkut()">대기로 옮기기</button>
     </div>
   </div>
 </div>
@@ -1202,45 +1186,12 @@ function viewVerify() {
   ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
     <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 「아직 확인 전」 맨 위에 있어요</div>
   </div>` : ''}
-  ${(() => { const n = vqAdults().length; return n ? `<div class="preview" style="margin:16px 20px 0;border-color:#C9D8EE;background:#F3F7FD;">
-    <div class="preview-t" style="color:#2F4C7A;">만 ${VQ_ADULT_AGE}세 이상 ${n}명 — 청소년이 아니라 끗짱 후보예요
-      <button class="btn btn-line" style="margin-left:10px;" onclick="openQueueKkut()">끗짱 대기로 옮기기</button></div>
-  </div>` : ''; })()}
+
   <div style="padding:14px 20px 20px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임 · 지역 · 이메일 · 번호로 찾기"
            value="${esc(vqFind)}" oninput="vqSearch(this.value)">
     <div id="vqList">${vqRows()}</div>
   </div>`;
-}
-
-// 청소년으로 가입한 어른 → 끗짱 승인 대기 (migration-120). 청소년 가입은 만 20세까지라 21세부터는 청소년이 아니다
-const VQ_ADULT_AGE = 21;
-const vqAdults = () => vqPool().filter(r => r.age != null && r.age >= VQ_ADULT_AGE && !r.can_lead
-                                            && !ADMIN_EMAILS.includes(String(r.email || '').toLowerCase()));
-function openQueueKkut() {
-  const rows = vqAdults();
-  document.getElementById('queueKkutBody').innerHTML = rows.length
-    ? `<div class="tbl narrow"><table>
-        ${rows.map(r => `<tr>
-          <td style="width:34px;"><input type="checkbox" class="qk-c" value="${esc(r.user_id)}" checked></td>
-          <td><b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? ` <span class="muted">${esc(r.nick)}</span>` : ''}
-              <div class="muted">만 ${r.age}세 · ${esc(r.region || '지역 없음')}</div></td>
-        </tr>`).join('')}
-      </table></div>`
-    : `<div class="empty">옮길 분이 없어요.</div>`;
-  document.getElementById('queueKkutGo').disabled = !rows.length;
-  document.getElementById('queueKkutOverlay').classList.add('on');
-}
-async function submitQueueKkut() {
-  const ids = [...document.querySelectorAll('#queueKkutBody .qk-c:checked')].map(c => c.value);
-  if (!ids.length) return alert('옮길 분을 한 명 이상 골라 주세요.');
-  if (!confirm(`${ids.length}명을 끗짱 승인 대기로 옮길까요?\n\n· 청소년 확인 명단에서 빠져요\n· 승인하기 전에는 아무 권한도 생기지 않아요\n· 그분이 앱에 들어오면 「끗짱 신청」 안내가 보여요`)) return;
-  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
-  const { data, error } = await sb.rpc('admin_queue_kkut', { p_users: ids });
-  if (error) return alert('옮기지 못했어요. 마이그레이션 120을 돌렸는지 확인해 주세요.\n' + (error.message || ''));
-  closeModal('queueKkutOverlay');
-  await loadLive(); await loadKkutApps(); render();
-  alert(`${data ?? 0}명을 끗짱 승인 대기로 옮겼어요. 「끗짱 승인」 탭에서 볼 수 있어요.`);
 }
 
 // 어른인지 청소년인지를 나중에 고친다.
@@ -1289,25 +1240,24 @@ function openMakeKkut(userId) {
 
 async function submitMakeKkut() {
   const r = (DB.verify || []).find(x => x.user_id === mkKkutId); if (!r) return;
-  const adult = document.getElementById('mkAdult').value === '1';
   const age   = parseInt(document.getElementById('mkAge').value || '0', 10);
   const aff   = document.getElementById('mkAff').value.trim();
   const why   = document.getElementById('mkWhy').value.trim();
 
   if (!age || age < 14 || age > 100) return alert('나이를 14~100 사이로 적어주세요.');
-  if (!why) return alert('왜 세우는지 한 줄 적어주세요.\n끗짱 승인 탭에 그대로 남아요.');
-  if (!confirm(`${r.name} 님을 ${adult ? '어른' : '청소년'} 끗짱으로 옮길까요?\n\n`
-      + `· 루틴을 만들고 청소년 기록을 볼 수 있게 돼요\n`
-      + (adult ? `· 어른이라 포인트·교환권·책은 받지 않아요\n` : '')
-      + `· 본인에게 알림이 가요`)) return;
+  if (!why) return alert('옮기는 이유를 한 줄 적어주세요.\n끗짱 승인 탭에 그대로 남아요.');
+  if (!confirm(`${r.name} 님을 끗짱 승인 대기로 옮길까요?\n\n`
+      + `· 청소년 확인 명단에서 빠지고 「끗짱 승인」의 심사 대기에 올라가요\n`
+      + `· 승인하기 전에는 아무 권한도 생기지 않아요`)) return;
 
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
-  const { error } = await sb.rpc('admin_make_kkut',
-    { p_user: mkKkutId, p_adult: adult, p_age: age, p_affiliation: aff || null, p_why: why });
-  if (error) return alert('세우지 못했어요: ' + error.message);
+  const { error } = await sb.rpc('admin_make_kkut_pending',
+    { p_user: mkKkutId, p_age: age, p_affiliation: aff || null, p_why: why });
+  if (error) return alert('옮기지 못했어요: ' + error.message + '\n(마이그레이션 121을 돌렸는지 확인해 주세요)');
 
   closeModal('mkKkutOverlay');
   await loadLive(); await loadKkutApps(); render();
+  alert('끗짱 승인 대기로 옮겼어요. 「끗짱 승인」 탭에서 승인할 수 있어요.');
 }
 
 // 끗짱 자격을 거둔다. 어른은 청소년 확인을 할 대상이 아니라서,
