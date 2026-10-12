@@ -1111,52 +1111,69 @@ const phoneKo = v => {
   return v;
 };
 
+// 청소년 확인 — 끗짱 승인처럼 한 줄 목록. 줄을 누르면 상세가 펼쳐진다 (2026-10-12 사용자). 기본은 모두 접힘
+const VQ_OPEN = new Set();
+function vqToggle(uid) {
+  if (VQ_OPEN.has(uid)) VQ_OPEN.delete(uid); else VQ_OPEN.add(uid);
+  const el = document.getElementById('vr-' + uid);
+  if (el) el.classList.toggle('open', VQ_OPEN.has(uid));
+}
 function vqCard(r) {
   const st   = vqState(r);
   const done = st.key === 'approved';
   const adult = r.role === 'adult';
+  const open = VQ_OPEN.has(r.user_id);
 
   // 생년월일이 없으면 나이를 알 수 없다. 조용히 빼면 「없다」는 걸 아무도 모른다
-  const birth = r.birth_date
-    ? `만 ${r.age}세 · ${r.birth_date}`
-    : (adult ? '' : `<span class="vq-warn">⚠️ 생년월일 없음</span>`);
-  const who = [birth, r.region || (adult ? '' : '지역 없음'),
-               r.can_lead ? '끗짱' : null].filter(Boolean).join(' · ');
-
+  const ageTxt = r.birth_date ? `만 ${r.age}세` : (adult ? '' : '⚠️ 생년월일 없음');
   const chip = (t, v) => `<button onclick="vqCopy(this, '${esc(v)}')">${t} ${esc(v)}</button>`;
+  const pt = (DB.points || {})[r.user_id];
+  const ptTxt = (!pt || adult) ? '' : `${won(pt.points)}P${pt.remain ? ` · 교환권 ${pt.remain}장` : ''}`;
+  const joined = r.joined_at ? dateKo(String(r.joined_at).slice(0, 10)) + ' 가입' : '';
+  const docs = docPaths(r.doc_path);
 
-  return `<div class="vq">
-    <div class="vq-t">
-      <b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? ` <span class="muted">${esc(r.nick)}</span>` : ''}
-      <div class="vq-sub">${who || '정보 없음'}${done && r.verify_kind ? ` · <b>${esc(r.verify_kind)}</b>로 확인` : ''}</div>
-      ${r.reason ? `<p class="rw-r">반려됨 · ${esc(r.reason)}</p>` : ''}
-      <div class="vq-c">
-        ${r.email ? chip('✉', r.email) : ''}
-        ${r.phone ? chip('📱', phoneKo(r.phone)) : `<span class="muted" style="font-size:11.5px;padding:4px 0;">번호 없음</span>`}
-      </div>
-      <div class="vq-when">${when(r)}${(() => {
-        const pt = (DB.points || {})[r.user_id];
-        if (!pt || adult) return '';
-        return ` · <b>${won(pt.points)}P</b>`
-          + (pt.remain ? ` · 교환권 <b>${pt.remain}장</b>` : '')
-          + (pt.used ? ` <span class="muted">(${pt.used}장 썼어요)</span>` : '');
-      })()}</div>
+  return `<div class="kr${open ? ' open' : ''}" id="vr-${esc(r.user_id)}">
+    <div class="kr-r" onclick="vqToggle('${r.user_id}')">
+      <span><span class="vq-st st-${st.key}">${st.label}</span></span>
+      <span class="kr-n"><b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? `<i>${esc(r.nick)}</i>` : ''}</span>
+      <span class="kr-m">${ageTxt ? `<span${r.birth_date ? '' : ' style="color:#8E3527;"'}>${ageTxt}</span> · ` : ''}${esc(r.region || (adult ? '' : '지역 없음'))}${r.can_lead ? ' · 끗짱' : ''}</span>
+      <span class="kr-c">${r.phone ? esc(phoneKo(r.phone)) : '<span class="muted">번호 없음</span>'}</span>
+      <span class="kr-w">${esc(joined)}</span>
+      <span class="kr-i">${esc(ptTxt)}</span>
+      <span class="kr-a" onclick="event.stopPropagation()">
+        ${st.key === 'pending' ? `
+          ${docs.map((d, i) => `<button class="btn btn-line" onclick="viewDoc('${esc(d)}')">서류${docs.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
+          <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">승인</button>
+          <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">반려</button>` : ''}
+        ${(st.key === 'none' || st.key === 'rejected') ? `
+          <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 승인</button>` : ''}
+        ${st.key === 'approved' ? `
+          <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
+      </span>
+      <span class="kr-x">›</span>
     </div>
-    <div class="vq-b">
-      <span class="vq-st st-${st.key}">${st.label}</span>
-      ${docPaths(r.doc_path).map((d, i, all) => `<button class="btn btn-line" onclick="viewDoc('${esc(d)}')">서류 보기${all.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
-      ${st.key === 'pending' ? `
-        <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">승인</button>
-        <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">반려</button>` : ''}
-      ${(st.key === 'none' || st.key === 'rejected') ? `
-        <button class="vq-quiet" onclick="decideVerify('${r.user_id}', true)">서류 없이 승인</button>` : ''}
-      ${st.key === 'approved' ? `
-        <button class="vq-quiet" onclick="decideVerify('${r.user_id}', false)">확인 취소</button>` : ''}
-      ${r.can_lead ? `
-        <button class="vq-quiet" onclick="setAdult('${r.user_id}', ${r.role !== 'adult'})">${
-          r.role === 'adult' ? '청소년으로' : '어른으로'}</button>
-        <button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
-        : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 이동</button>`}
+    <div class="kr-d">
+      <div class="kk-g">
+        <div><b>이름·닉네임</b><span>${esc(r.name)}${r.nick && r.nick !== r.name ? ' · ' + esc(r.nick) : ''}</span></div>
+        <div><b>나이</b><span>${r.birth_date ? `만 ${r.age}세 · ${esc(r.birth_date)}` : '생년월일 없음'}</span></div>
+        <div><b>지역</b><span>${esc(r.region || '-')}</span></div>
+        <div><b>가입·접속</b><span>${when(r)}</span></div>
+        ${ptTxt ? `<div><b>포인트</b><span>${esc(ptTxt)}${pt && pt.used ? ` (${pt.used}장 썼어요)` : ''}</span></div>` : ''}
+        ${done && r.verify_kind ? `<div><b>확인 방법</b><span>${esc(r.verify_kind)}로 확인</span></div>` : ''}
+      </div>
+      <div class="vq-c" style="margin-top:10px;">
+        ${r.email ? chip('✉', r.email) : ''}
+        ${r.phone ? chip('📱', phoneKo(r.phone)) : ''}
+      </div>
+      ${r.reason ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(r.reason)}</p></div>` : ''}
+      <div class="kk-a">
+        ${docs.map((d, i) => `<button class="btn btn-line" onclick="viewDoc('${esc(d)}')">서류 보기${docs.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
+        ${r.can_lead ? `
+          <button class="vq-quiet" onclick="setAdult('${r.user_id}', ${r.role !== 'adult'})">${
+            r.role === 'adult' ? '청소년으로' : '어른으로'}</button>
+          <button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
+          : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 이동</button>`}
+      </div>
     </div>
   </div>`;
 }
@@ -1194,15 +1211,13 @@ function vqRows() {
   left.sort((a, b) => (ord[a.status || 'none'] ?? 9) - (ord[b.status || 'none'] ?? 9) || newest(a, b));
   right.sort(newest);
 
-  const col = (tone, title, list, none) => `<div class="vq-col">
+  const col = (tone, title, list, none) => `<div class="vq-col" style="margin-bottom:22px;">
       <div class="vq-col-h ${tone}">${title} <b>${list.length}</b>명</div>
-      ${list.length ? list.map(vqCard).join('') : `<div class="vq-none">${none}</div>`}
+      ${list.length ? `<div class="kl" style="margin:0;">${list.map(vqCard).join('')}</div>` : `<div class="vq-none">${none}</div>`}
     </div>`;
 
-  return `<div class="vq-two">
-    ${col('wait', '<i>⏳</i> 아직 확인 전', left,  '다 처리했어요 🌱')}
-    ${col('done', '<i>✓</i> 확인 끝',      right, '아직 없어요')}
-  </div>`;
+  return `${col('wait', '<i>⏳</i> 아직 확인 전', left,  '다 처리했어요 🌱')}
+    ${col('done', '<i>✓</i> 확인 끝',      right, '아직 없어요')}`;
 }
 
 function viewVerify() {
@@ -1214,6 +1229,7 @@ function viewVerify() {
     <div><div class="panel-t">청소년 확인 <b style="color:var(--pink);">${rows.length}</b>명</div>
     <div class="panel-d">책을 받기 전에 한 번 확인해요. 읽고 포인트 모으는 건 확인 전에도 돼요.<br>
       <b>승인하면 서류 파일은 바로 지워져요.</b> 확인했다는 사실과 방법만 남아요.</div></div>
+    <button class="btn btn-line" onclick="exportVerify()" title="이 명단 전체를 엑셀로 열 수 있는 파일로 받아요">엑셀로 받기</button>
   </div>
   ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
     <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 「아직 확인 전」 맨 위에 있어요</div>
@@ -2752,6 +2768,24 @@ function exportKkut() {
       fmtDate(a.applied_at), a.intro, a.motive, a.experience, a.referrer,
       a.pledge_at ? fmtDate(a.pledge_at) : '', (a.keywords || []).join(' '), a.routine_count, a.reject_reason]),
     [5]);   // 연락처 칸
+}
+
+function exportVerify() {
+  const rows = vqPool();
+  if (!rows.length) return alert('내려받을 명단이 없어요.');
+  downloadCsv(`청소년명단_${todayStamp()}.csv`,
+    ['확인 상태', '이름', '닉네임', '구분', '나이', '생년월일', '지역', '연락처', '이메일', '가입일', '마지막 접속',
+     '마지막 인증일', '인증 횟수', '포인트', '교환권 남음', '확인 방법', '반려 사유', '끗짱'],
+    rows.map(r => {
+      const pt = (DB.points || {})[r.user_id] || {};
+      return [vqState(r).label, r.name, r.nick, r.role === 'adult' ? '어른' : '청소년',
+        r.birth_date ? r.age : '', r.birth_date, r.region, r.phone ? phoneKo(r.phone) : '', r.email,
+        r.joined_at ? fmtDate(r.joined_at) : '', r.last_seen_at ? fmtDate(r.last_seen_at) : '',
+        r.last_cert_on ? fmtDate(r.last_cert_on) : '', r.cert_count || 0,
+        r.role === 'adult' ? '' : (pt.points ?? ''), r.role === 'adult' ? '' : (pt.remain ?? ''),
+        r.verify_kind, r.reason, r.can_lead ? '예' : ''];
+    }),
+    [7]);   // 연락처 칸
 }
 
 // 반려한 신청을 재심사로 심사 대기에 올린다 (migration-122)
