@@ -358,6 +358,9 @@ tr:hover td { background:#fcfcfd; }
 .kr-d { display:none; padding:2px 18px 18px 18px; background:#FBF9F4; border-top:1px dashed var(--line); }
 .kr.open .kr-d { display:block; }
 .kr-d .kk-g { background:#fff; }
+.kr.re .kr-r { background:#FDF1EF; }
+.kr.re .kr-r:hover { background:#FBE6E2; }
+.kr.re .kr-d { background:#FDF6F4; }
 @media (max-width:1100px) {
   .kr-r { grid-template-columns:84px 1fr auto 18px; }
   .kr-m, .kr-c, .kr-w, .kr-i { display:none; }
@@ -2646,29 +2649,35 @@ async function openRoutinePeople(id) {
 // 승인 전에는 루틴을 못 만들고 아이들 기록이 있는 화면도 열리지 않는다
 function viewKkut() {
   const rows = DB.kkutApps || [];
-  const wait = rows.filter(a => a.status === 'pending');
+  // 심사 대기인데 반려 사유가 남아 있으면 「재심사」 — 반려했다가 다시 올린 신청이다 (migration-122). 맨 위에 둔다
+  const isRe = a => a.status === 'pending' && !!(a.reject_reason || '').trim();
+  const wait = rows.filter(a => a.status === 'pending').sort((x, y) => Number(isRe(y)) - Number(isRe(x)));
   const done = rows.filter(a => a.status !== 'pending');
 
   const card = a => {
     const badge = a.status === 'approved' ? '<span class="pill ok">승인</span>'
                 : a.status === 'rejected' ? '<span class="pill no">반려</span>'
+                : isRe(a) ? '<span class="pill no">재심사</span>'
                 : '<span class="pill wait">심사 대기</span>';
     const open = KK_OPEN.has(a.user_id);
-    const one = String(a.intro || '').replace(/\s+/g, ' ');
+    const one = isRe(a) ? '이전 반려: ' + String(a.reject_reason).replace(/\s+/g, ' ')
+                        : String(a.intro || '').replace(/\s+/g, ' ');
     return `
-    <div class="kr${open ? ' open' : ''}" id="kr-${esc(a.user_id)}">
+    <div class="kr${open ? ' open' : ''}${isRe(a) ? ' re' : ''}" id="kr-${esc(a.user_id)}">
       <div class="kr-r" onclick="kkToggle('${a.user_id}')">
         <span>${badge}</span>
         <span class="kr-n"><b>${esc(a.name)}</b><i>${a.age}세</i></span>
         <span class="kr-m" title="${esc(a.affiliation)} · ${esc(a.region)}">${esc(a.affiliation)} · ${esc(a.region)}</span>
         <span class="kr-c">${esc(a.contact)}</span>
         <span class="kr-w">${fmtDate(a.applied_at)}</span>
-        <span class="kr-i" title="${esc(one)}">${esc(one)}</span>
+        <span class="kr-i" title="${esc(one)}"${isRe(a) ? ' style="color:#8E3527;"' : ''}>${esc(one)}</span>
         <span class="kr-a" onclick="event.stopPropagation()">
           ${a.status !== 'approved'
             ? `<button class="btn btn-dark" onclick="decideKkut('${a.user_id}', true)">승인</button>` : ''}
           ${a.status !== 'rejected'
             ? `<button class="btn btn-line" onclick="decideKkut('${a.user_id}', false)">반려</button>` : ''}
+          ${a.status === 'rejected'
+            ? `<button class="btn btn-line" onclick="requeueKkut('${a.user_id}')" title="보강해서 다시 요청한 분을 심사 대기에 올려요">재심사로 올리기</button>` : ''}
           ${(() => {
             // 어른인지 청소년인지는 승인할 때 정해지는데, 잘못 고르면 되돌릴 길이 있어야 한다
             if (a.status !== 'approved') return '';
@@ -2682,6 +2691,7 @@ function viewKkut() {
         <span class="kr-x">›</span>
       </div>
       <div class="kr-d">
+        ${isRe(a) ? `<div class="kk-q no" style="margin-top:12px;"><b>이전에 반려한 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
         <div class="kk-g">
           <div><b>소속·지역</b><span>${esc(a.affiliation)} · ${esc(a.region)}</span></div>
           <div><b>연락처</b><span>${esc(a.contact)}</span></div>
@@ -2738,10 +2748,21 @@ function exportKkut() {
   downloadCsv(`끗짱신청_${todayStamp()}.csv`,
     ['상태', '이름', '나이', '소속', '지역', '연락처', '이메일', '신청일', '소개', '지원 동기',
      '청소년과 함께한 경험', '추천·활동 링크', '보호 약속 동의일', '키워드', '만든 루틴', '반려 사유'],
-    rows.map(a => [ST[a.status] || a.status, a.name, a.age, a.affiliation, a.region, a.contact, a.email,
+    rows.map(a => [(a.status === 'pending' && (a.reject_reason || '').trim()) ? '재심사' : (ST[a.status] || a.status), a.name, a.age, a.affiliation, a.region, a.contact, a.email,
       fmtDate(a.applied_at), a.intro, a.motive, a.experience, a.referrer,
       a.pledge_at ? fmtDate(a.pledge_at) : '', (a.keywords || []).join(' '), a.routine_count, a.reject_reason]),
     [5]);   // 연락처 칸
+}
+
+// 반려한 신청을 재심사로 심사 대기에 올린다 (migration-122)
+async function requeueKkut(userId) {
+  const a = (DB.kkutApps || []).find(x => x.user_id === userId);
+  if (!confirm(`${a ? a.name : '이 분'}을 재심사로 심사 대기에 올릴까요?\n\n· 심사 대기 맨 위에 빨간 「재심사」로 보여요\n· 이전 반려 사유는 그대로 남아요\n· 승인하기 전에는 권한이 생기지 않아요`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.rpc('admin_requeue_kkut', { p_user: userId });
+  if (error) return alert('올리지 못했어요: ' + error.message + '\n(마이그레이션 122를 돌렸는지 확인해 주세요)');
+  KK_OPEN.add(userId);
+  await loadKkutApps(); render();
 }
 
 // 끗짱 승인 줄을 펼쳤는지. 처리하고 다시 그려도 펼친 줄은 그대로 둔다 (기본은 모두 접힘)
