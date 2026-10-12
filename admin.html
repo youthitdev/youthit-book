@@ -2937,13 +2937,14 @@ function viewQuotes() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">문장 · 후기 고르기</div>
-    <div class="panel-d">공개로 켠 것만 후원자 화면에 보여요.
+    <div class="panel-d">여기서 <b>「공개」를 켠 것만 홈페이지와 후원자 화면</b>(로그인 없이 보는 곳)에 나가요.
+      앱 안의 후기·문장은 <b>같은 루틴 친구들끼리 보는 것</b>이라 이 설정과 별개예요.
       지금 문장 ${on}개, 후기 ${rvOn}개 공개 중이에요.</div></div>
   </div>
 
   <div class="panel-t" style="font-size:14px;margin:4px 0 12px;">후기</div>
   ${rv.length ? `<div class="tbl"><table>
-    <tr><th>후기</th><th>종류</th><th>책</th><th>날짜</th><th class="right">공개</th></tr>
+    <tr><th>후기</th><th>종류</th><th>책</th><th>날짜</th><th class="right">홈페이지·후원자 공개</th></tr>
     ${rv.map(r => `<tr>
       <td style="max-width:420px;white-space:pre-wrap;">${esc(r.content)}</td>
       <td class="muted">${r.kind === 'book' ? '책' : '루틴'}</td>
@@ -2958,7 +2959,7 @@ function viewQuotes() {
 
   <div class="panel-t" style="font-size:14px;margin:26px 0 12px;">문장</div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>문장</th><th>책</th><th>날짜</th><th class="right">공개</th></tr>
+    <tr><th>문장</th><th>책</th><th>날짜</th><th class="right">홈페이지·후원자 공개</th></tr>
     ${rows.map(q => `<tr>
       <td style="max-width:420px;">${esc(q.quote)}</td>
       <td class="muted">${esc(q.book_title) || '-'}</td>
