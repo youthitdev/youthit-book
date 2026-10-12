@@ -3131,6 +3131,13 @@ async function enter() {
   if (!user) { $('authScr').style.display = ''; $('appScr').style.display = 'none'; return; }
   me = await loadMe(user);
   if (!me) { authError('프로필을 불러오지 못했어요. 다시 시도해주세요.'); return; }
+  // 운영진이 탈퇴 처리한 계정 (migration-123). 개인정보는 이미 지워져 있다. 들어오지 못하게 하고 로그아웃한다
+  if (me.withdrawn_at) {
+    await sb.auth.signOut(); me = null;
+    $('authScr').style.display = ''; $('appScr').style.display = 'none';
+    authError('탈퇴 처리된 계정이에요. 다시 이용하시려면 새로 가입해 주세요.');
+    return;
+  }
 
   // 끗짱은 관리자 승인을 받아야 들어온다. 청소년을 만나는 자리라서,
   // 승인 전에는 아이들의 이름·사진·기록이 있는 화면을 아예 열지 않는다.

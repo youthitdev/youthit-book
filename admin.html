@@ -1173,6 +1173,7 @@ function vqCard(r) {
             r.role === 'adult' ? '청소년으로' : '어른으로'}</button>
           <button class="vq-quiet" onclick="revokeLead('${r.user_id}')">끗짱 취소</button>`
           : `<button class="vq-quiet" onclick="openMakeKkut('${r.user_id}')">끗짱으로 이동</button>`}
+        ${r.can_lead ? '' : `<button class="btn btn-danger" style="margin-left:auto;" onclick="withdrawMember('${r.user_id}')" title="개인정보를 지우고 계정을 닫아요">삭제</button>`}
       </div>
     </div>
   </div>`;
@@ -1188,7 +1189,8 @@ const inKkutTab = uid => (DB.kkutApps || []).some(a => a.user_id === uid);
 //   그대로 청소년 확인에 남았다. 나이가 아니라 신청서 유무로 가른다.
 // 【나중에】 청소년 끗짱(인증 100회 임명 등)이 생기면 그 아이는 책도 받아야 해서
 //   확인이 필요하다. 그때 이 줄을 다시 볼 것 — 지금은 그런 길이 없다
-const vqPool = () => (DB.verify || []).filter(r => !inKkutTab(r.user_id));
+// 탈퇴 처리한 회원(migration-123)은 이름이 「탈퇴한 회원」으로 바뀌어 있다. 명단에서 뺀다
+const vqPool = () => (DB.verify || []).filter(r => !inKkutTab(r.user_id) && r.name !== '탈퇴한 회원');
 
 function vqRows() {
   const q = vqFind.trim().toLowerCase();
@@ -2722,6 +2724,7 @@ function viewKkut() {
         ${kkExtra(a)}
         ${a.status === 'rejected' && a.reject_reason
           ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
+        ${a.status !== 'approved' ? `<div class="kk-a"><button class="btn btn-danger" onclick="deleteKkutApp('${a.user_id}')" title="신청서 기록만 지워요. 회원은 그대로예요">신청 삭제</button></div>` : ''}
       </div>
     </div>`;
   };
@@ -2768,6 +2771,52 @@ function exportKkut() {
       fmtDate(a.applied_at), a.intro, a.motive, a.experience, a.referrer,
       a.pledge_at ? fmtDate(a.pledge_at) : '', (a.keywords || []).join(' '), a.routine_count, a.reject_reason]),
     [5]);   // 연락처 칸
+}
+
+// 끗짱 신청 삭제 (migration-123). 신청서 한 줄만 지운다. 회원은 그대로
+async function deleteKkutApp(userId) {
+  const a = (DB.kkutApps || []).find(x => x.user_id === userId); if (!a) return;
+  if (!confirm(`${a.name} 님의 끗짱 신청을 삭제할까요?\n\n· 신청서 기록(연락처·소개 포함)이 지워져요\n· 회원 계정은 그대로예요\n· 되돌릴 수 없어요`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.rpc('admin_delete_kkut_app', { p_user: userId });
+  if (error) return alert('삭제하지 못했어요: ' + error.message + '\n(마이그레이션 123을 돌렸는지 확인해 주세요)');
+  KK_OPEN.delete(userId);
+  await loadLive(); await loadKkutApps(); render();
+}
+
+// 청소년 탈퇴 처리 (migration-123). 개인정보와 쓴 사진·글은 지우고, 날짜·쪽수·정산 같은 기록은 이름 없이 남긴다
+async function withdrawMember(userId) {
+  const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
+  const pt = (DB.points || {})[userId];
+  const warn = pt && pt.remain ? `\n⚠️ 아직 쓰지 않은 교환권이 ${pt.remain}장 있어요. 탈퇴 처리하면 쓸 수 없게 돼요.\n` : '';
+  const typed = prompt(`${r.name} 님을 삭제(탈퇴 처리)해요.\n${warn}\n`
+    + `지워지는 것\n· 이름·닉네임·지역·휴대폰·생년월일·이메일·프로필 사진·서류\n· 올린 인증 사진·글·문장, 댓글·후기 내용\n· 로그인 (같은 이메일로 다시 가입은 가능)\n\n`
+    + `남는 것\n· 인증 날짜·쪽수·포인트와 책 교환·정산 기록 — 「탈퇴한 회원」으로 이름 없이\n\n`
+    + `되돌릴 수 없어요. 계속하려면 「삭제」를 입력해 주세요.`);
+  if (typed === null) return;
+  if (typed.trim() !== '삭제') return alert('「삭제」를 정확히 입력하셔야 진행해요.');
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+
+  const { data, error } = await sb.rpc('admin_withdraw_member', { p_user: userId });
+  if (error) return alert('탈퇴 처리하지 못했어요: ' + error.message + '\n(마이그레이션 123을 돌렸는지 확인해 주세요)');
+
+  // 저장소의 파일도 지운다. 주소에서 저장소 이름과 경로를 나눈다. 권한이 없어 일부 실패해도 주소는 이미 끊겼다
+  const byBucket = {};
+  (data?.urls || []).forEach(u => {
+    const m = String(u).match(/\/(cert-photos|avatars|routine-covers|dokseo-verify)\/([^?]+)/);
+    if (m) (byBucket[m[1]] = byBucket[m[1]] || []).push(decodeURIComponent(m[2]));
+    else if (/^[0-9a-f-]{36}\//.test(String(u))) (byBucket['dokseo-verify'] = byBucket['dokseo-verify'] || []).push(u);   // 서류는 경로 그대로 저장돼 있다
+  });
+  let failed = 0;
+  for (const [bk, paths] of Object.entries(byBucket)) {
+    const { error: e } = await sb.storage.from(bk).remove(paths);
+    if (e) failed += paths.length;
+  }
+  VQ_OPEN.delete(userId);
+  await loadLive(); render();
+  alert('탈퇴 처리했어요.'
+    + (data && data.auth === false ? '\n\n⚠️ 로그인 막기는 이 프로젝트에서 되지 않았어요. 앱은 탈퇴 처리된 계정을 들여보내지 않지만, Supabase 사용자 목록(Authentication)에서도 이 계정을 지워 주세요.' : '')
+    + (failed ? `\n\n⚠️ 사진·서류 파일 ${failed}개는 저장소에서 지우지 못했어요. Supabase 저장소에서 직접 지워 주세요.` : ''));
 }
 
 function exportVerify() {
