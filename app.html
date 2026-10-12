@@ -5398,10 +5398,10 @@ function verifyLine() {
     </div>`;
 }
 
-let vfDoc = null;
+let vfDoc = null, vfDoc2 = null;   // 서류 사진 두 장까지 — 학생증 앞·뒷면 (2026-10-12 사용자). 둘째는 선택
 
 function openVerify() {
-  vfDoc = null;
+  vfDoc = null; vfDoc2 = null;
   drawVerify();
   showLayer('shVerify');
 }
@@ -5429,8 +5429,10 @@ function drawVerify() {
       <div>뒷자리가 보이면 받을 수 없어요. 손가락이나 스티커로 가리고 찍어주세요.</div>
     </div>
     <div class="field-label" style="margin-top:16px;">서류 사진 <span class="req">* 필수</span></div>
+    <div class="hint" style="margin:-4px 0 8px;">학생증처럼 <b>앞·뒷면</b>이 다 필요하면 두 장까지 낼 수 있어요. 뒷면은 선택이에요.</div>
     <div id="vfBox"></div>
-    <input type="file" id="vfInput" accept="image/*" style="display:none;" onchange="pickVerifyDoc(event)">
+    <input type="file" id="vfInput" accept="image/*" style="display:none;" onchange="pickVerifyDoc(event, 1)">
+    <input type="file" id="vfInput2" accept="image/*" style="display:none;" onchange="pickVerifyDoc(event, 2)">
     <button class="btn btn-primary" id="vfSave" style="margin-top:14px;" disabled onclick="submitVerify()">
       내기</button>
     <div class="hint" style="margin-top:10px;">확인이 끝나면 <b>서류는 바로 지워요.</b>
@@ -5440,21 +5442,24 @@ function drawVerify() {
 
 function drawVfDoc() {
   const box = $('vfBox'); if (!box) return;
-  box.innerHTML = vfDoc
-    ? `<div class="book-prev"><div class="bp-wrap">
-         <div class="bp-frame"><img src="${esc(vfDoc)}" alt=""></div>
-         <button type="button" class="bp-x" onclick="vfDoc=null;drawVfDoc();checkVerify()">×</button>
-       </div><div class="bp-note">이 사진으로 낼게요</div></div>`
-    : `<div class="cover-pick" onclick="document.getElementById('vfInput').click()">
-         <i class="ti ti-id" style="font-size:20px;"></i>서류 사진 고르기</div>`;
+  // 칸 하나: 사진이 있으면 미리보기(×로 빼기), 없으면 고르기. 둘째 칸은 첫 장이 있어야 열린다
+  const slot = (n, doc, label, pick) => doc
+    ? `<div class="book-prev" style="margin-top:${n === 1 ? 0 : 12}px;"><div class="bp-wrap">
+         <div class="bp-frame"><img src="${esc(doc)}" alt=""></div>
+         <button type="button" class="bp-x" onclick="${n === 1 ? 'vfDoc=vfDoc2;vfDoc2=null' : 'vfDoc2=null'};drawVfDoc()">×</button>
+       </div><div class="bp-note">${label}</div></div>`
+    : `<div class="cover-pick" style="margin-top:${n === 1 ? 0 : 12}px;" onclick="document.getElementById('vfInput${n === 1 ? '' : '2'}').click()">
+         <i class="ti ti-id" style="font-size:20px;"></i>${pick}</div>`;
+  box.innerHTML = slot(1, vfDoc, '앞면(첫 장)으로 낼게요', '서류 사진 고르기')
+    + (vfDoc ? slot(2, vfDoc2, '뒷면(둘째 장)도 낼게요', '뒷면·둘째 장 고르기 (선택)') : '');
   checkVerify();
 }
 
 function checkVerify() { const b = $('vfSave'); if (b) b.disabled = !vfDoc; }
 
-async function pickVerifyDoc(e) {
+async function pickVerifyDoc(e, n) {
   const f = e.target.files[0]; if (!f) return;
-  try { vfDoc = await resize(f, 1600, .86); drawVfDoc(); }
+  try { const img = await resize(f, 1600, .86); if (n === 2) vfDoc2 = img; else vfDoc = img; drawVfDoc(); }
   catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
   e.target.value = '';
 }
@@ -5464,17 +5469,26 @@ async function submitVerify() {
   if (!vfDoc) return;
   const btn = $('vfSave'); btn.disabled = true; btn.textContent = '내는 중…';
 
-  const path = `${me.id}/verify_${Date.now()}.jpg`;
-  const { error: up } = await sb.storage.from('dokseo-verify')
-    .upload(path, toBlob(vfDoc), { contentType: 'image/jpeg', cacheControl: '31536000' });
-  if (up) { btn.disabled = false; btn.textContent = '내기'; return toast('올리지 못했어요: ' + up.message); }
+  // 한 장이면 경로 하나, 두 장이면 「|」로 이어 한 칸에 담는다 (칸을 늘리지 않으려는 것 — 관리자 화면이 나눠서 연다)
+  const paths = [];
+  for (const [i, doc] of [vfDoc, vfDoc2].filter(Boolean).entries()) {
+    const path = `${me.id}/verify_${Date.now()}_${i + 1}.jpg`;
+    const { error: up } = await sb.storage.from('dokseo-verify')
+      .upload(path, toBlob(doc), { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (up) {
+      if (paths.length) await sb.storage.from('dokseo-verify').remove(paths);   // 한 장만 남기지 않는다
+      btn.disabled = false; btn.textContent = '내기'; return toast('올리지 못했어요: ' + up.message);
+    }
+    paths.push(path);
+  }
+  const path = paths.join('|');
 
   const { error } = await sb.from('profiles')
     .update({ verify_status: 'pending', verify_doc_path: path }).eq('id', me.id);
   btn.disabled = false; btn.textContent = '내기';
   if (error) return toast('저장하지 못했어요: ' + error.message);
 
-  me.verify_status = 'pending'; me.verify_doc_path = path; vfDoc = null;
+  me.verify_status = 'pending'; me.verify_doc_path = path; vfDoc = null; vfDoc2 = null;
   closeSheet('shVerify'); render();
   toast('냈어요. 운영진이 확인하면 알려드릴게요');
 }

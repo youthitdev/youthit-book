@@ -1128,7 +1128,7 @@ function vqCard(r) {
     </div>
     <div class="vq-b">
       <span class="vq-st st-${st.key}">${st.label}</span>
-      ${r.doc_path ? `<button class="btn btn-line" onclick="viewDoc('${esc(r.doc_path)}')">서류 보기</button>` : ''}
+      ${docPaths(r.doc_path).map((d, i, all) => `<button class="btn btn-line" onclick="viewDoc('${esc(d)}')">서류 보기${all.length > 1 ? ' ' + (i + 1) : ''}</button>`).join('')}
       ${st.key === 'pending' ? `
         <button class="btn btn-dark" onclick="decideVerify('${r.user_id}', true)">승인</button>
         <button class="btn btn-line" onclick="decideVerify('${r.user_id}', false)">반려</button>` : ''}
@@ -1335,6 +1335,8 @@ async function revokeLead(userId) {
 }
 
 async function viewDoc(path) { openSigned('dokseo-verify', path, '서류'); }
+// 서류는 한 장이거나 두 장(앞·뒷면)이다. 두 장이면 경로를 「|」로 이어 한 칸에 담는다 (app.html submitVerify)
+const docPaths = v => String(v || '').split('|').map(x => x.trim()).filter(Boolean);
 
 async function decideVerify(userId, approve) {
   const r = (DB.verify || []).find(x => x.user_id === userId); if (!r) return;
@@ -1372,7 +1374,7 @@ async function decideVerify(userId, approve) {
 
   // 파일을 먼저 지우고 상태를 바꾼다. 순서가 반대면 경로를 잃고 파일만 남는다
   if (r.doc_path) {
-    const { error } = await sb.storage.from('dokseo-verify').remove([r.doc_path]);
+    const { error } = await sb.storage.from('dokseo-verify').remove(docPaths(r.doc_path));
     if (error && !confirm('서류 파일을 지우지 못했어요: ' + error.message + '\n그래도 진행할까요?')) return;
   }
   const { error } = await sb.rpc('decide_verify',
