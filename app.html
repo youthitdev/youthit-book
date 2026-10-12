@@ -2822,12 +2822,23 @@ function renderKkutGate() {
     $('kkutBody').innerHTML = `
       <div class="gate-card">
         <div class="gate-ico">🕰️</div>
-        <div class="gate-t">신청서를 잘 받았어요</div>
+        <div class="gate-t">${a.pledge_at ? '신청서를 잘 받았어요' : '끗짱 승인을 기다리고 있어요'}</div>
         <div class="gate-s">
           운영진이 확인 후 연락드릴게요.<br>
-          적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드려요.
+          ${a.contact && a.contact !== '운영진이 따로 확인'
+            ? `적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드려요.` : ''}
         </div>
       </div>
+      ${a.pledge_at ? '' : `
+      <div class="gate-why" style="margin-top:14px;">
+        <b>끗짱 신청 폼을 아직 안 쓰셨다면</b>
+        끗짱은 유스보이스의 신청 폼으로 받고 있어요. 폼을 보내 주시면 확인 후 열어 드려요.
+        폼에 적는 이메일은 이 계정의 이메일 <b>${esc(me.email || '')}</b> 과 같아야 해요.
+      </div>
+      ${KKUT_FORM_URL ? `<a class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-top:12px;"
+        href="${esc(KKUT_FORM_URL)}" target="_blank" rel="noopener">신청 폼 쓰러 가기</a>` : ''}
+      <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:10px;"
+         href="kkut-guide.html" target="_blank" rel="noopener">끗짱 안내문 보기</a>`}
       <div class="gate-why">
         <b>왜 기다려야 하나요?</b>
         끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.

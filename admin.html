@@ -590,6 +590,22 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
+<!-- 청소년으로 가입한 어른을 끗짱 승인 대기로 옮긴다 (migration-120) -->
+<div class="overlay" id="queueKkutOverlay">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">끗짱 승인 대기로 옮기기</div>
+      <div class="modal-d">청소년은 만 20세까지라 아래 분들은 청소년으로 볼 수 없어요. 옮기면 <b>청소년 확인</b>에서 빠지고
+        <b>끗짱 승인</b>의 「심사 대기」에 올라요. <b>승인은 따로 눌러야</b> 권한이 생겨요. 옮기지 않을 분은 체크를 빼 주세요.</div>
+    </div>
+    <div class="modal-bd" id="queueKkutBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('queueKkutOverlay')">닫기</button>
+      <button class="btn btn-dark" id="queueKkutGo" onclick="submitQueueKkut()">옮기기</button>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="peopleOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -1186,11 +1202,45 @@ function viewVerify() {
   ${wait.length ? `<div class="preview" style="margin:16px 20px 0;border-color:#E5C795;background:#FFFBF0;">
     <div class="preview-t" style="color:#7A5417;">확인을 기다리는 사람 ${wait.length}명 — 「아직 확인 전」 맨 위에 있어요</div>
   </div>` : ''}
+  ${(() => { const n = vqAdults().length; return n ? `<div class="preview" style="margin:16px 20px 0;border-color:#C9D8EE;background:#F3F7FD;">
+    <div class="preview-t" style="color:#2F4C7A;">만 ${VQ_ADULT_AGE}세 이상 ${n}명 — 청소년이 아니라 끗짱 후보예요
+      <button class="btn btn-line" style="margin-left:10px;" onclick="openQueueKkut()">끗짱 대기로 옮기기</button></div>
+  </div>` : ''; })()}
   <div style="padding:14px 20px 20px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임 · 지역 · 이메일 · 번호로 찾기"
            value="${esc(vqFind)}" oninput="vqSearch(this.value)">
     <div id="vqList">${vqRows()}</div>
   </div>`;
+}
+
+// 청소년으로 가입한 어른 → 끗짱 승인 대기 (migration-120). 청소년 가입은 만 20세까지라 21세부터는 청소년이 아니다
+const VQ_ADULT_AGE = 21;
+const vqAdults = () => vqPool().filter(r => r.age != null && r.age >= VQ_ADULT_AGE && !r.can_lead
+                                            && !ADMIN_EMAILS.includes(String(r.email || '').toLowerCase()));
+function openQueueKkut() {
+  const rows = vqAdults();
+  document.getElementById('queueKkutBody').innerHTML = rows.length
+    ? `<div class="tbl narrow"><table>
+        ${rows.map(r => `<tr>
+          <td style="width:34px;"><input type="checkbox" class="qk-c" value="${esc(r.user_id)}" checked></td>
+          <td><b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? ` <span class="muted">${esc(r.nick)}</span>` : ''}
+              <div class="muted">만 ${r.age}세 · ${esc(r.region || '지역 없음')}</div></td>
+        </tr>`).join('')}
+      </table></div>`
+    : `<div class="empty">옮길 분이 없어요.</div>`;
+  document.getElementById('queueKkutGo').disabled = !rows.length;
+  document.getElementById('queueKkutOverlay').classList.add('on');
+}
+async function submitQueueKkut() {
+  const ids = [...document.querySelectorAll('#queueKkutBody .qk-c:checked')].map(c => c.value);
+  if (!ids.length) return alert('옮길 분을 한 명 이상 골라 주세요.');
+  if (!confirm(`${ids.length}명을 끗짱 승인 대기로 옮길까요?\n\n· 청소년 확인 명단에서 빠져요\n· 승인하기 전에는 아무 권한도 생기지 않아요\n· 그분이 앱에 들어오면 「끗짱 신청」 안내가 보여요`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { data, error } = await sb.rpc('admin_queue_kkut', { p_users: ids });
+  if (error) return alert('옮기지 못했어요. 마이그레이션 120을 돌렸는지 확인해 주세요.\n' + (error.message || ''));
+  closeModal('queueKkutOverlay');
+  await loadLive(); await loadKkutApps(); render();
+  alert(`${data ?? 0}명을 끗짱 승인 대기로 옮겼어요. 「끗짱 승인」 탭에서 볼 수 있어요.`);
 }
 
 // 어른인지 청소년인지를 나중에 고친다.
