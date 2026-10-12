@@ -6062,7 +6062,8 @@ function viewMy() {
     ${noRoutineBlock()}
     ${/* 읽은 날마다 책값이 간다는 안내는 잠시 내려둔다 (2026-10-08). 다시 쓰려면 creditBlock() */''}
     ${kkutStatBlock()}
-    ${(!canLead() || total || joined) ? `<div class="card mstat">
+    ${/* 끗짱은 「함께 쌓은 기록」 줄글이 있어 세 칸을 빼고, 「참여 루틴 0」 같은 어긋난 숫자도 없앤다 (2026-10-12 사용자) */''}
+    ${!canLead() ? `<div class="card mstat">
       <div><em>📸</em><b>${total}</b><i>내 인증</i></div>
       <div><em>📚</em><b>${joined}</b><i>참여 루틴</i></div>
       <div><em>📖</em><b>${books.length}</b><i>읽은 책</i></div>
