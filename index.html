@@ -363,6 +363,24 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   <div class="reel" id="shelf"></div>
 </section>
 
+<!-- 아이들의 후기 · 옮겨 적은 문장 : 운영진이 관리자에서 「공개」로 켠 것만 나온다. 둘 다 없으면 통째로 숨는다 -->
+<section id="voiceSec" style="display:none">
+  <div class="wrap">
+    <div id="reviewBlock" style="display:none">
+      <div class="sec-label">읽고 나서 남긴 이야기</div>
+      <h2>아이들의 후기</h2>
+      <p class="sec-lead">운영진이 확인한 것만 보여드려요.</p>
+      <div class="voices" id="reviews"></div>
+    </div>
+    <div id="quotesBlock" style="display:none;margin-top:44px">
+      <div class="sec-label">아이들이 멈춰 선 문장</div>
+      <h2>읽다가 옮겨 적은 말</h2>
+      <p class="sec-lead">운영진이 확인한 것만 보여드려요.</p>
+      <div id="quotes"></div>
+    </div>
+  </div>
+</section>
+
 <!-- 문제 -->
 <section class="problem">
   <div class="wrap">
@@ -533,13 +551,6 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
       <div class="photos" id="photos"></div>
     </div>
 
-    <div id="quotesBlock" style="display:none;margin-top:38px">
-      <div class="sec-label">아이들이 멈춰 선 문장</div>
-      <h2 style="font-size:20px">읽다가 옮겨 적은 말</h2>
-      <p class="sec-lead">운영진이 확인한 것만 보여드려요.</p>
-      <div id="quotes"></div>
-    </div>
-
     <div style="text-align:center;margin-top:36px">
       <a class="btn btn-blue" id="donateBtn" href="#">후원으로 함께하기</a>
       <p style="font-size:12.5px;color:var(--ink-3);margin-top:10px">
@@ -660,10 +671,11 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
       body: JSON.stringify(body || {}),
     }).then(r => r.ok ? r.json() : null);
 
-    const [tot, quotes, photos] = await Promise.all([
+    const [tot, quotes, photos, reviews] = await Promise.all([
       call('dokseo_public_totals'),
       call('dokseo_public_quotes', { p_limit: 6 }),
       call('dokseo_book_photos',  { p_limit: 6 }),
+      call('dokseo_public_reviews', { p_limit: 6 }),
     ]);
 
     const won = v => Number(v || 0).toLocaleString('ko-KR');
@@ -699,6 +711,16 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
         `<div class="quote"><p>\u201c${esc(x.quote)}\u201d</p>
           <cite>${x.book_title ? esc(x.book_title) + ' · ' : ''}${day(x.day)}</cite></div>`).join('');
       document.getElementById('quotesBlock').style.display = '';
+      document.getElementById('voiceSec').style.display = '';
+    }
+    // 후기는 말풍선으로. 이름 없이 글과 (책 후기면) 책 제목만 나간다
+    if (Array.isArray(reviews) && reviews.length) {
+      document.getElementById('reviews').innerHTML = reviews.map(x =>
+        `<div class="voice"><p>${esc(x.content)}</p>
+          <cite style="display:block;font-style:normal;font-size:12px;color:var(--ink-3);margin:12px 4px 0">${
+            x.kind === 'book' && x.book_title ? '📗 ' + esc(x.book_title) : '📚 루틴 후기'}</cite></div>`).join('');
+      document.getElementById('reviewBlock').style.display = '';
+      document.getElementById('voiceSec').style.display = '';
     }
   } catch (e) { /* 숫자가 없어도 페이지는 그대로 */ }
 })();
