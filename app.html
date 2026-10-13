@@ -1038,6 +1038,14 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rc-share { position:absolute; top:12px; right:12px; border:1px solid var(--line); background:#fff; color:var(--ink-2);
   font-family:inherit; font-size:12px; font-weight:700; border-radius:99px; padding:5px 12px; cursor:pointer; }
 .rc-share:active { opacity:.6; }
+.rc-pick { margin-top:14px; text-align:left; }
+.rc-pick-t { font-size:12.5px; font-weight:700; margin-bottom:8px; }
+.rc-pick-t span { font-weight:500; color:var(--ink-3); }
+.rc-pick-r { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
+.rc-pick-r button { flex:none; width:52px; height:72px; border:2px solid var(--line); border-radius:9px; background:#fff; padding:0; cursor:pointer;
+  font-family:inherit; font-size:12px; font-weight:700; color:var(--ink-3); overflow:hidden; }
+.rc-pick-r button.on { border-color:var(--blue); color:var(--blue); }
+.rc-pick-r img { width:100%; height:100%; object-fit:cover; display:block; }
 .lv-top { display:flex; align-items:center; gap:12px; }
 .lv-ico { width:46px; height:46px; flex:none; border-radius:14px; background:var(--bg);
   display:flex; align-items:center; justify-content:center; font-size:23px; }
@@ -5194,6 +5202,16 @@ function myOfficialCovers(max) {
     .forEach(b => { const k = loose(b.title || ''); if (k && !seen.has(k) && out.length < max) { seen.add(k); out.push(b.found_cover_url); } });
   return out;
 }
+// 카드에 놓을 수 있는 공식 표지 목록. 청소년은 내가 읽은 책, 끗짱은 맡은 루틴에서 함께 읽은 책
+function recordCoverChoices(kind) {
+  if (kind !== 'kkut') return myOfficialCovers(8);
+  const ids = state.routines.filter(r => r.led_by === me.id).map(r => r.id);
+  const seen = new Set(), out = [];
+  [...(state.rbooks || [])].filter(b => ids.includes(b.routine_id) && b.found_cover_url)
+    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+    .forEach(b => { const k = loose(b.title || ''); if (k && !seen.has(k) && out.length < 8) { seen.add(k); out.push(b.found_cover_url); } });
+  return out;
+}
 function kkutStats() {
   const led   = state.routines.filter(r => r.led_by === me.id);
   const ids   = led.map(r => r.id);
@@ -5205,7 +5223,7 @@ function kkutStats() {
            pages: state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0 };
 }
 
-async function buildRecordCard(kind) {
+async function buildRecordCard(kind, coverUrl) {
   const W = 1080, H = 1350, PAD = 84;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const x = cv.getContext('2d');
@@ -5219,11 +5237,12 @@ async function buildRecordCard(kind) {
   x.beginPath(); x.arc(100, H - 80, 260, 0, Math.PI * 2); x.fill();
   setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.75)'; x.fillText('한끗독서', PAD, 130);
 
-  let big, bigSub, cells, covers = [];
+  let cells, cover = coverUrl ? await loadCover(coverUrl) : null;
+  const TW = cover ? 640 : W - PAD * 2;     // 오른쪽 위 표지와 제목이 겹치지 않게
   if (lead) {
     const k = kkutStats();
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
-    wrapText(x, `${recName()}님과 함께`, W - PAD * 2, 1).forEach(l => x.fillText(l, PAD, 300));
+    wrapText(x, `${recName()}님과 함께`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
     setFont(x, 'bold', 130); x.fillText('💪', PAD, 480);
     setFont(x, 'bold', 78); x.fillText(k.kids ? `${won(k.kids)}명의 청소년이` : '청소년과 함께', PAD, 610);
     setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)';
@@ -5235,13 +5254,21 @@ async function buildRecordCard(kind) {
     const days = new Set((state.certs || []).filter(c => c.user_id === me.id).map(c => c.cert_date)).size;
     const books = new Set((state.certs || []).filter(c => c.user_id === me.id && c.book_title).map(c => loose(c.book_title))).size;
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
-    wrapText(x, `${recName()}님의 책 높이`, W - PAD * 2, 1).forEach(l => x.fillText(l, PAD, 300));
+    wrapText(x, `${recName()}님의 책 높이`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
     setFont(x, 'bold', 140); x.fillText(m.cur ? m.cur.ico : '📖', PAD, 490);
-    setFont(x, 'bold', 78); x.fillText(m.cur ? m.cur.name : '쌓기 시작했어요', PAD, 620);
+    setFont(x, 'bold', 70); x.fillText(m.cur ? passedTxt(m.cur.name) : '쌓기 시작했어요', PAD, 620);
     setFont(x, 'normal', 48); x.fillStyle = 'rgba(255,255,255,.85)';
     x.fillText(`${won(pg)}쪽 · 책으로 쌓으면 ${m.height}`, PAD, 694);
     cells = [[days, '일', '인증한 날'], [books, '권', '읽은 책'], [pg, '쪽', '읽은 쪽']];
-    covers = (await Promise.all(myOfficialCovers(4).map(loadCover))).filter(Boolean);
+  }
+
+  // 고른 책 표지 한 장 — 오른쪽 위 빈 자리에. 불러오지 못하면 그냥 비운다
+  if (cover) {
+    const cw0 = 230, ch0 = 322, cx0 = W - PAD - cw0, cy0 = 96;
+    x.save(); x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 28; x.shadowOffsetY = 10;
+    x.fillStyle = '#fff'; x.beginPath(); x.roundRect ? x.roundRect(cx0, cy0, cw0, ch0, 14) : x.rect(cx0, cy0, cw0, ch0); x.fill(); x.restore();
+    x.save(); x.beginPath(); x.roundRect ? x.roundRect(cx0, cy0, cw0, ch0, 14) : x.rect(cx0, cy0, cw0, ch0); x.clip();
+    x.drawImage(cover, cx0, cy0, cw0, ch0); x.restore();
   }
 
   // 숫자 칸 셋
@@ -5260,16 +5287,6 @@ async function buildRecordCard(kind) {
     x.fillText(l, cx + cw / 2, cy + 184); x.textAlign = 'left';
   });
 
-  // 공식 표지 (청소년). 불러온 것만, 가운데 줄 세운다
-  if (covers.length) {
-    const ch2 = 270, cw2 = 192, gap = 28, total = covers.length * cw2 + (covers.length - 1) * gap;
-    let px = (W - total) / 2; const py = cy + ch + 56;
-    covers.forEach(im => {
-      x.save(); x.beginPath(); x.roundRect ? x.roundRect(px, py, cw2, ch2, 14) : x.rect(px, py, cw2, ch2); x.clip();
-      x.drawImage(im, px, py, cw2, ch2); x.restore(); px += cw2 + gap;
-    });
-  }
-
   const d = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '.');
   setFont(x, 'normal', 34); x.fillStyle = 'rgba(255,255,255,.7)'; x.fillText(d, PAD, H - 110);
   setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.85)'; x.textAlign = 'right';
@@ -5278,18 +5295,33 @@ async function buildRecordCard(kind) {
   return new Promise((ok, no) => { try { cv.toBlob(b => b ? ok(b) : no(new Error('카드를 만들지 못했어요')), 'image/png'); } catch (e) { no(e); } });
 }
 
+let recKind = 'me', recCover = null, recChoices = [], recSeq = 0;
 async function openRecordCard(kind) {
   if (!me || isGuest()) return;
+  recKind = kind; recChoices = recordCoverChoices(kind); recCover = recChoices[0] || null;
   $('wrapT').textContent = kind === 'kkut' ? '함께 쌓은 기록 카드' : '내 책 높이 카드';
   $('wrapS').textContent = '닉네임과 숫자만 담겨 있어요. 실명·사진·지역은 들어가지 않아요. 확인하고 공유해 주세요.';
   $('wrapBody').innerHTML = '<div class="hint">카드를 만드는 중이에요…</div>';
   $('wrapShare').style.display = 'none';
   showLayer('shWrap');
+  await refreshRecordCard();
+}
+function pickRecordCover(i) { recCover = i < 0 ? null : recChoices[i]; refreshRecordCard(); }
+async function refreshRecordCard() {
+  const seq = ++recSeq;
   try {
-    wrapBlob = await buildRecordCard(kind);
-    wrapName = `한끗독서_${kind === 'kkut' ? '함께쌓은기록' : '내책높이'}.png`;
+    const b = await buildRecordCard(recKind, recCover);
+    if (seq !== recSeq) return;              // 그새 다른 표지를 골랐으면 늦게 온 그림은 버린다
+    wrapBlob = b;
+    wrapName = `한끗독서_${recKind === 'kkut' ? '함께쌓은기록' : '내책높이'}.png`;
+    const pick = recChoices.length ? `<div class="rc-pick">
+        <div class="rc-pick-t">카드에 놓을 책 표지 <span>(공식 표지만 고를 수 있어요)</span></div>
+        <div class="rc-pick-r">
+          <button class="${recCover ? '' : 'on'}" onclick="pickRecordCover(-1)">없음</button>
+          ${recChoices.map((u, i) => `<button class="${u === recCover ? 'on' : ''}" onclick="pickRecordCover(${i})"><img src="${esc(u)}" alt="" loading="lazy"></button>`).join('')}
+        </div></div>` : '';
     $('wrapBody').innerHTML = `<img src="${URL.createObjectURL(wrapBlob)}" alt="내 기록 카드"
-      style="width:100%;max-width:340px;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);">`;
+      style="width:100%;max-width:340px;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);">${pick}`;
     $('wrapShare').style.display = '';
   } catch (e) {
     $('wrapBody').innerHTML = `<div class="hint">${esc(e.message || '카드를 만들지 못했어요')}</div>`;
@@ -6014,6 +6046,9 @@ const PAGE_LADDER = [
   { at: 10000, ico: '🪑', name: '의자 방석 높이' },
   { at: 30000, ico: '🧍', name: '내 키' },
 ];
+// 받침이 없으면 「를」, 있으면 「을」. 단계 이름 뒤에 「…를 넘었어요」를 붙일 때 쓴다 (2026-10-13 사용자)
+const josaRul = w => { const c = String(w).charCodeAt(String(w).length - 1) - 0xAC00; return (c >= 0 && c % 28 !== 0) ? '을' : '를'; };
+const passedTxt = n => `${n}${josaRul(n)} 넘었어요`;
 function fmtHeight(cm) {
   if (cm < 10)  return `약 ${cm < 1 ? cm.toFixed(2).replace(/0$/, '') : cm.toFixed(1).replace(/\.0$/, '')}cm`;
   if (cm < 100) return `약 ${Math.round(cm)}cm`;
@@ -6102,7 +6137,7 @@ function levelCard() {
 
   const road = PAGE_LADDER.map(l =>
     `<span class="hr-s ${m.pages >= l.at ? 'on' : (m.next && l.at === m.next.at ? 'now' : '')}" title="${esc(l.name)}">${l.ico}</span>`).join('');
-  const title = have ? (m.cur ? m.cur.name : '쌓기 시작했어요') : '아직 쌓은 책이 없어요';
+  const title = have ? (m.cur ? passedTxt(m.cur.name) : '쌓기 시작했어요') : '아직 쌓은 책이 없어요';
   const sub   = have ? `${won(m.pages)}쪽 읽었어요 · 책으로 쌓으면 ${m.height}`
               : cnt  ? '읽은 쪽을 적으면 책 높이가 쌓여요'
                      : '첫 인증을 하면 책 높이가 올라가기 시작해요 🌱';
