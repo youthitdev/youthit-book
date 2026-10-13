@@ -5241,8 +5241,11 @@ function kkutStats() {
   const certs = (state.certs || []).filter(c => ids.includes(c.routine_id) && c.user_id !== me.id);
   return { routines: led.length, kids: kids.size,
            days: new Set(certs.map(c => c.user_id + '|' + c.cert_date)).size,
-           books: new Set(certs.filter(c => c.book_title).map(c => loose(c.book_title))).size,
-           pages: state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0 };
+           // 「함께」는 나와 청소년들이다 (2026-10-13 사용자). 같은 책은 한 번만 세고, 쪽수는 합산한다
+           books: new Set([...certs, ...(state.certs || []).filter(c => c.user_id === me.id)]
+                           .filter(c => c.book_title).map(c => loose(c.book_title))).size,
+           pages: (state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0)
+                + (state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : 0) };
 }
 
 async function buildRecordCard(kind, coverUrl) {
@@ -5955,11 +5958,14 @@ function kkutStatBlock() {
                     && p.status === 'approved' && p.user_id !== me.id);
   const kids   = new Set(parts.map(p => p.user_id));
   const certs  = (state.certs || []).filter(c => ids.includes(c.routine_id) && c.user_id !== me.id);
-  const kbooks = new Set(certs.filter(c => c.book_title).map(c => c.book_title));
+  // 「함께」는 나와 청소년들이다 — 같은 책은 한 번, 쪽수는 합산 (카드 이미지와 같은 셈)
+  const kbooks = new Set([...certs, ...(state.certs || []).filter(c => c.user_id === me.id)]
+                          .filter(c => c.book_title).map(c => loose(c.book_title)));
   if (!led.length) return '';
 
   // 아이들이 읽은 쪽수 — 서버가 센다 (migration-114). 아직 없거나 0 이면 말하지 않는다
-  const kidPages = state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0;
+  const kidPages = (state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0)
+                 + (state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : 0);
   // 같은 아이가 같은 날 두 권을 인증해도 하루다. 「며칠의 책을 읽었나」를 센다
   const days = new Set(certs.map(c => c.user_id + '|' + c.cert_date)).size;
 
@@ -5981,10 +5987,10 @@ function kkutStatBlock() {
   // 줄글 카드 대신 「기록 카드」 이미지를 그대로 보여 준다. 만드는 동안과 실패했을 때는 줄글을 보인다.
   // 공유 단추는 여기 하나뿐이다 (같은 화면에 두 개가 있던 것을 없앴다)
   setTimeout(paintKkutRecordImg, 0);
-  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">나의 독서 기록
+  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">함께 쌓은 독서 기록
       <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')">공유</button></div>
     <div class="card kstat" id="kkutRecBox" style="padding:${kkutRecImg.url ? '10px' : '16px'};">${kkutRecImg.url
-      ? `<img src="${kkutRecImg.url}" alt="나의 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`
+      ? `<img src="${kkutRecImg.url}" alt="함께 쌓은 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`
       : body}</div>`;
 }
 
@@ -6003,7 +6009,7 @@ async function paintKkutRecordImg() {
     const again = $('kkutRecBox');
     if (again) {
       again.style.padding = '10px';
-      again.innerHTML = `<img src="${kkutRecImg.url}" alt="나의 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`;
+      again.innerHTML = `<img src="${kkutRecImg.url}" alt="함께 쌓은 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`;
     }
   } catch (e) { /* 줄글이 그대로 남는다 */ }
 }
@@ -6213,7 +6219,7 @@ function cityFull() {
 //   꾸준함(인증 횟수)은 작은 한 줄로 남긴다. 함께 읽는 글은 쪽수를 선택으로 적는다 (migration-113).
 function levelCard() {
   if (!me || isGuest()) return '';
-  if (canLead()) return '';   // 끗짱 MY 는 「나의 독서 기록」 이미지 하나로 보인다 (2026-10-13 사용자)
+  if (canLead()) return '';   // 끗짱 MY 는 「함께 쌓은 독서 기록」 이미지 하나로 보인다 (2026-10-13 사용자)
   const cnt  = myCertCount();
   const mine = state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : null;   // 112 가 아직이면 null
   const m    = personalMetaphor(mine || 0);
