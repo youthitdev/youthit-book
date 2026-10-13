@@ -1010,7 +1010,7 @@ function renderPanel() {
 
 // ── 공지 (홈의 「📢 공지」) ─────────────────────────────────
 // 운영진이 쓰면 청소년·끗짱 홈 맨 위에 한 줄로 보인다 (migration-125). 푸시는 선택 — 체크하면 기존 「알림 보내기」 예약(지금 시각)에 넣는다
-let NOTICES = null;
+let NOTICES = null, NOTICE_EDIT = null;
 const noticeLive = n => new Date(n.starts_at) <= new Date() && (!n.ends_at || new Date(n.ends_at) > new Date());
 async function loadNotices() {
   if (!LIVE) { NOTICES = [{ id: 1, title: '10월 공유회 안내', body: '10월 20일 오후 3시 서울숲에서 만나요.', starts_at: '2026-10-10T00:00:00Z', ends_at: null, created_at: '2026-10-10T00:00:00Z' }]; return; }
@@ -1027,21 +1027,32 @@ function viewNotices() {
   const fmt = n => `${fmtDate(n.created_at)} 올림 · ${n.ends_at ? fmtDate(n.ends_at) + '까지' : '내릴 때까지'}`;
   const row = (n, on) => `<div class="nt-r"><b>${esc(n.title)}</b> <span class="muted">${fmt(n)}</span>
       <p>${esc(n.body)}</p>
-      ${on ? `<div class="kk-a"><button class="btn btn-line" onclick="endNotice(${n.id})">내리기</button></div>` : ''}</div>`;
+      <div class="kk-a">
+        <button class="btn btn-line" onclick="editNotice(${n.id})">${on ? '수정' : '수정 · 다시 올리기'}</button>
+        ${on ? `<button class="btn btn-line" onclick="endNotice(${n.id})">내리기</button>` : ''}
+        <button class="btn btn-danger" onclick="deleteNotice(${n.id})">삭제</button>
+      </div></div>`;
+  const ed = NOTICE_EDIT ? NOTICES.find(x => x.id === NOTICE_EDIT) : null;
   return `
   <div class="panel-hd">
     <div><div class="panel-t">공지</div>
     <div class="panel-d">올리면 청소년과 끗짱의 <b>홈 맨 위</b>에 「📢 공지」 한 줄로 보여요. 누르면 본문이 열려요.
       가장 최근 공지가 한 줄에 나와요. <b>푸시</b>는 체크했을 때만 나가요(알림을 켜 둔 사람에게, 최대 5분 안에).</div></div>
   </div>
-  <div class="nt-f">
-    <div><label>제목 (80자까지)</label><input type="text" id="ntTitle" maxlength="80" placeholder="예) 10월 공유회 안내"></div>
-    <div><label>본문</label><textarea id="ntBody" rows="5" maxlength="2000" placeholder="청소년이 읽을 내용을 적어 주세요."></textarea></div>
+  <div class="nt-f" id="ntForm">
+    ${ed ? `<div style="font-size:13px;font-weight:800;color:#9A6A12;">✏️ 공지 수정 중 <span class="muted" style="font-weight:500;">— 고친 뒤 「수정 저장」을 누르세요</span></div>` : ''}
+    <div><label>제목 (80자까지)</label><input type="text" id="ntTitle" maxlength="80" placeholder="예) 10월 공유회 안내" value="${ed ? esc(ed.title) : ''}"></div>
+    <div><label>본문</label><textarea id="ntBody" rows="5" maxlength="2000" placeholder="청소년이 읽을 내용을 적어 주세요.">${ed ? esc(ed.body) : ''}</textarea></div>
     <div><label>보이는 기간</label>
-      <select id="ntDays"><option value="7">7일</option><option value="14">14일</option><option value="30">30일</option><option value="0">내릴 때까지 계속</option></select></div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);font-weight:600;">
-      <input type="checkbox" id="ntPush" style="width:16px;height:16px;"> 푸시 알림도 보내기 <span class="muted">(알림을 켜 둔 모든 사람에게)</span></label>
-    <div><button class="btn btn-dark" onclick="postNotice()">공지 올리기</button></div>
+      <select id="ntDays">
+        ${ed ? `<option value="keep">${noticeLive(ed) ? '지금 설정 그대로 (' + (ed.ends_at ? fmtDate(ed.ends_at) + '까지' : '내릴 때까지') + ')' : '그대로 두기 (지금은 내려간 상태)'}</option>` : ''}
+        <option value="7">${ed ? '지금부터 ' : ''}7일</option><option value="14">${ed ? '지금부터 ' : ''}14일</option><option value="30">${ed ? '지금부터 ' : ''}30일</option><option value="0">내릴 때까지 계속</option></select></div>
+    ${ed ? '' : `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);font-weight:600;">
+      <input type="checkbox" id="ntPush" style="width:16px;height:16px;"> 푸시 알림도 보내기 <span class="muted">(알림을 켜 둔 모든 사람에게)</span></label>`}
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-dark" onclick="postNotice()">${ed ? '수정 저장' : '공지 올리기'}</button>
+      ${ed ? `<button class="btn btn-line" onclick="cancelNoticeEdit()">취소</button>` : ''}
+    </div>
   </div>
   <div class="panel-t" style="margin:6px 20px 10px;font-size:14px;">지금 보이는 공지 ${live.length}개</div>
   ${live.length ? live.map(n => row(n, true)).join('') : `<div class="empty" style="padding:18px;">지금 보이는 공지가 없어요.</div>`}
@@ -1050,10 +1061,22 @@ function viewNotices() {
 async function postNotice() {
   const title = document.getElementById('ntTitle').value.trim();
   const body  = document.getElementById('ntBody').value.trim();
-  const days  = parseInt(document.getElementById('ntDays').value, 10);
-  const push  = document.getElementById('ntPush').checked;
+  const dv    = document.getElementById('ntDays').value;
+  const days  = dv === 'keep' ? 0 : parseInt(dv, 10);
+  const push  = !!(document.getElementById('ntPush') && document.getElementById('ntPush').checked);
   if (!title) return alert('제목을 적어 주세요.');
   if (!body)  return alert('본문을 적어 주세요.');
+  // 수정 — 푸시는 보내지 않는다. 기간은 「그대로」면 건드리지 않는다
+  if (NOTICE_EDIT) {
+    if (!confirm('이 공지를 수정할까요?\n\n이미 본 사람에게도 고친 내용이 보여요.')) return;
+    if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+    const patch = { title, body };
+    if (dv !== 'keep') patch.ends_at = days ? new Date(Date.now() + days * 864e5).toISOString() : null;
+    const { error } = await sb.from('notices').update(patch).eq('id', NOTICE_EDIT);
+    if (error) return alert('수정하지 못했어요: ' + error.message);
+    NOTICE_EDIT = null; NOTICES = null; await loadNotices(); render();
+    return alert('공지를 수정했어요.');
+  }
   if (!confirm(`공지를 올릴까요?\n\n제목: ${title}\n보이는 기간: ${days ? days + '일' : '내릴 때까지'}\n푸시 알림: ${push ? '함께 보내요 (알림을 켜 둔 모든 사람)' : '보내지 않아요'}`)) return;
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
   const ends = days ? new Date(Date.now() + days * 864e5).toISOString() : null;
@@ -1067,6 +1090,21 @@ async function postNotice() {
   }
   NOTICES = null; await loadNotices(); render();
   alert('공지를 올렸어요.' + pushMsg);
+}
+function editNotice(id) {
+  NOTICE_EDIT = id; render();
+  const f = document.getElementById('ntForm'); if (f) f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+function cancelNoticeEdit() { NOTICE_EDIT = null; render(); }
+// 지우면 기록도 사라진다. 「내리기」는 홈에서만 숨기고 지난 공지로 남긴다
+async function deleteNotice(id) {
+  const n = (NOTICES || []).find(x => x.id === id); if (!n) return;
+  if (!confirm(`「${n.title}」 공지를 삭제할까요?\n\n· 홈과 목록에서 완전히 사라져요\n· 되돌릴 수 없어요\n(잠시 숨기기만 하려면 「내리기」를 쓰세요)`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.from('notices').delete().eq('id', id);
+  if (error) return alert('삭제하지 못했어요: ' + error.message);
+  if (NOTICE_EDIT === id) NOTICE_EDIT = null;
+  NOTICES = null; await loadNotices(); render();
 }
 async function endNotice(id) {
   const n = (NOTICES || []).find(x => x.id === id); if (!n) return;
