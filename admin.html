@@ -191,6 +191,14 @@ tr:hover td { background:#fcfcfd; }
 .cv-o b { display:block; font-size:12px; margin-top:6px; line-height:1.35; }
 .cv-o span { display:block; font-size:11px; color:var(--ink-3); margin-top:2px; line-height:1.35; }
 .cv-msg { grid-column:1/-1; font-size:12.5px; color:var(--ink-3); }
+.nt-f { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin:0 20px 16px; display:grid; gap:10px; }
+.nt-f input[type=text], .nt-f textarea, .nt-f select { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-family:inherit; font-size:13.5px; }
+.nt-f label { font-size:12px; font-weight:700; color:var(--ink-3); }
+.nt-r { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:0 20px 10px; }
+.nt-r b { font-size:14.5px; }
+.nt-r .muted { font-size:12px; }
+.nt-r p { margin:8px 0 0; font-size:13px; line-height:1.65; white-space:pre-wrap; color:var(--ink-2); }
+.nt-r .kk-a { margin-top:10px; }
 .ct-bk { background:#F7F4EE; border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:13px; line-height:1.7; }
 .ct-bk b { font-size:13.5px; }
 .ct-bk div { display:flex; gap:8px; }
@@ -500,6 +508,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림<i id="cntNotify"></i></button>
+    <button class="tab" data-tab="notices" onclick="switchTab('notices')">공지<i id="cntNotices"></i></button>
     <button class="tab" data-tab="reports" onclick="switchTab('reports')">신고<i id="cntReports"></i></button>
     <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필<i id="cntPhotos"></i></button>
     <button class="tab" data-tab="covers" onclick="switchTab('covers')">표지<i id="cntCovers"></i></button>
@@ -977,6 +986,7 @@ function renderSummary() {
   setCnt('cntReports',  (DB.reports || []).length, true);
   setCnt('cntPhotos',   (DB.avatars || []).length, false);
   setCnt('cntCovers',   COVERS ? COVERS.length : 0, false);
+  setCnt('cntNotices',  NOTICES ? NOTICES.filter(noticeLive).length : 0, false);
 }
 
 function renderPanel() {
@@ -993,8 +1003,78 @@ function renderPanel() {
   if (tab === 'reports')  return el.innerHTML = viewReports();
   if (tab === 'photos')   return el.innerHTML = viewPhotos();
   if (tab === 'covers')   return el.innerHTML = viewCovers();
+  if (tab === 'notices')  return el.innerHTML = viewNotices();
   if (tab === 'report')   return el.innerHTML = viewReport();
   el.innerHTML = viewCharges();
+}
+
+// ── 공지 (홈의 「📢 공지」) ─────────────────────────────────
+// 운영진이 쓰면 청소년·끗짱 홈 맨 위에 한 줄로 보인다 (migration-125). 푸시는 선택 — 체크하면 기존 「알림 보내기」 예약(지금 시각)에 넣는다
+let NOTICES = null;
+const noticeLive = n => new Date(n.starts_at) <= new Date() && (!n.ends_at || new Date(n.ends_at) > new Date());
+async function loadNotices() {
+  if (!LIVE) { NOTICES = [{ id: 1, title: '10월 공유회 안내', body: '10월 20일 오후 3시 서울숲에서 만나요.', starts_at: '2026-10-10T00:00:00Z', ends_at: null, created_at: '2026-10-10T00:00:00Z' }]; return; }
+  const { data, error } = await sb.from('notices').select('*').order('created_at', { ascending: false }).limit(50);
+  NOTICES = error ? [] : (data || []);
+  if (error) alert('공지를 불러오지 못했어요. 마이그레이션 125를 돌렸는지 확인해 주세요.\n' + (error.message || ''));
+}
+function viewNotices() {
+  if (NOTICES === null) {
+    loadNotices().then(() => { renderSummary(); if (tab === 'notices') renderPanel(); });
+    return `<div class="empty">불러오는 중…</div>`;
+  }
+  const live = NOTICES.filter(noticeLive), past = NOTICES.filter(n => !noticeLive(n));
+  const fmt = n => `${fmtDate(n.created_at)} 올림 · ${n.ends_at ? fmtDate(n.ends_at) + '까지' : '내릴 때까지'}`;
+  const row = (n, on) => `<div class="nt-r"><b>${esc(n.title)}</b> <span class="muted">${fmt(n)}</span>
+      <p>${esc(n.body)}</p>
+      ${on ? `<div class="kk-a"><button class="btn btn-line" onclick="endNotice(${n.id})">내리기</button></div>` : ''}</div>`;
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">공지</div>
+    <div class="panel-d">올리면 청소년과 끗짱의 <b>홈 맨 위</b>에 「📢 공지」 한 줄로 보여요. 누르면 본문이 열려요.
+      가장 최근 공지가 한 줄에 나와요. <b>푸시</b>는 체크했을 때만 나가요(알림을 켜 둔 사람에게, 최대 5분 안에).</div></div>
+  </div>
+  <div class="nt-f">
+    <div><label>제목 (80자까지)</label><input type="text" id="ntTitle" maxlength="80" placeholder="예) 10월 공유회 안내"></div>
+    <div><label>본문</label><textarea id="ntBody" rows="5" maxlength="2000" placeholder="청소년이 읽을 내용을 적어 주세요."></textarea></div>
+    <div><label>보이는 기간</label>
+      <select id="ntDays"><option value="7">7일</option><option value="14">14일</option><option value="30">30일</option><option value="0">내릴 때까지 계속</option></select></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);font-weight:600;">
+      <input type="checkbox" id="ntPush" style="width:16px;height:16px;"> 푸시 알림도 보내기 <span class="muted">(알림을 켜 둔 모든 사람에게)</span></label>
+    <div><button class="btn btn-dark" onclick="postNotice()">공지 올리기</button></div>
+  </div>
+  <div class="panel-t" style="margin:6px 20px 10px;font-size:14px;">지금 보이는 공지 ${live.length}개</div>
+  ${live.length ? live.map(n => row(n, true)).join('') : `<div class="empty" style="padding:18px;">지금 보이는 공지가 없어요.</div>`}
+  ${past.length ? `<div class="panel-t" style="margin:22px 20px 10px;font-size:14px;">지난 공지 ${past.length}개</div>${past.map(n => row(n, false)).join('')}` : ''}`;
+}
+async function postNotice() {
+  const title = document.getElementById('ntTitle').value.trim();
+  const body  = document.getElementById('ntBody').value.trim();
+  const days  = parseInt(document.getElementById('ntDays').value, 10);
+  const push  = document.getElementById('ntPush').checked;
+  if (!title) return alert('제목을 적어 주세요.');
+  if (!body)  return alert('본문을 적어 주세요.');
+  if (!confirm(`공지를 올릴까요?\n\n제목: ${title}\n보이는 기간: ${days ? days + '일' : '내릴 때까지'}\n푸시 알림: ${push ? '함께 보내요 (알림을 켜 둔 모든 사람)' : '보내지 않아요'}`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const ends = days ? new Date(Date.now() + days * 864e5).toISOString() : null;
+  const { error } = await sb.from('notices').insert({ title, body, ends_at: ends, created_by: MY_UID });
+  if (error) return alert('올리지 못했어요: ' + error.message + '\n(마이그레이션 125를 돌렸는지 확인해 주세요)');
+  let pushMsg = '';
+  if (push) {
+    const { error: pe } = await sb.from('scheduled_notifications').insert({
+      title: '📢 ' + title, body: body.length > 80 ? body.slice(0, 80) + '…' : body, target: 'all', send_at: new Date().toISOString(), created_by: MY_UID });
+    pushMsg = pe ? '\n\n⚠️ 푸시를 예약하지 못했어요: ' + pe.message : '\n\n푸시는 5분 안에 나가요.';
+  }
+  NOTICES = null; await loadNotices(); render();
+  alert('공지를 올렸어요.' + pushMsg);
+}
+async function endNotice(id) {
+  const n = (NOTICES || []).find(x => x.id === id); if (!n) return;
+  if (!confirm(`「${n.title}」 공지를 내릴까요?\n\n홈에서 바로 사라져요. 지난 공지에 기록으로 남아요.`)) return;
+  if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
+  const { error } = await sb.from('notices').update({ ends_at: new Date().toISOString() }).eq('id', id);
+  if (error) return alert('내리지 못했어요: ' + error.message);
+  NOTICES = null; await loadNotices(); render();
 }
 
 // ── 책 표지 ────────────────────────────────────────────────
@@ -3838,7 +3918,7 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'reports', 'photos', 'covers', 'report'],
+const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'notices', 'reports', 'photos', 'covers', 'report'],
                  money: ['pending', 'settled', 'stores', 'charges'],
                  inbox: ['inbox'] };
 const groupOf = t => GROUPS.money.includes(t) ? 'money' : t === 'inbox' ? 'inbox' : 'ops';

@@ -1302,6 +1302,19 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .pg-n { font-size:12.5px; color:var(--ink-3); margin-top:7px; }
 .pg-n b { color:var(--blue); font-weight:800; }
 .ct-card { background:linear-gradient(160deg,#F7FAF0,#FFFFFF); }
+/* 홈 공지 한 줄 */
+.nt-bar { display:flex; align-items:center; gap:8px; width:100%; text-align:left; font-family:inherit; cursor:pointer; margin-bottom:10px;
+  background:#FFF8EA; border:1px solid #F1DFB8; border-radius:14px; padding:10px 14px; }
+.nt-bar:active { opacity:.7; }
+.nt-t { font-size:12.5px; font-weight:800; color:#9A6A12; flex:none; }
+.nt-s { flex:1; min-width:0; font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nt-dot { width:8px; height:8px; border-radius:50%; background:#E5484D; flex:none; }
+.nt-bar > i.ti { color:var(--ink-3); font-size:15px; flex:none; }
+.nt-i { padding:14px 2px; border-top:1px solid var(--line); }
+.nt-i:first-child { border-top:none; }
+.nt-it { font-size:15px; font-weight:800; }
+.nt-id { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
+.nt-ib { font-size:13.5px; line-height:1.7; margin-top:8px; white-space:pre-wrap; }
 /* 홈의 한 줄 버튼. 누르면 시트가 열린다 */
 .ct-bar { display:block; width:100%; text-align:left; font-family:inherit; cursor:pointer; margin-bottom:12px;
   background:linear-gradient(160deg,#F7FAF0,#FFFFFF); border:1px solid #E4EDD0; border-radius:16px; padding:11px 14px 12px; }
@@ -2048,6 +2061,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
 <!-- 서점 한 곳 (아래에서 올라오는 시트) -->
 <!-- 청소년 확인 서류. 도서기금은 청소년에게 쓰는 돈이라 책을 받기 전에 한 번 확인한다 -->
+<!-- 공지 (홈의 「📢 공지」 줄을 누르면 올라온다) -->
+<div class="sheet" id="shNotice" onclick="if(event.target===this)closeSheet('shNotice')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;"><div class="sheet-t">공지</div></div>
+      <button class="sheet-x" onclick="closeSheet('shNotice')" aria-label="닫기">✕</button>
+    </div>
+    <div id="shNoticeBody"></div>
+  </div>
+</div>
+
 <!-- 함께 짓는 한끗 책의 도시 (홈의 한 줄 버튼을 누르면 올라온다) -->
 <div class="sheet" id="shCity" onclick="if(event.target===this)closeSheet('shCity')">
   <div class="sheet-in">
@@ -2370,7 +2395,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-let state = { routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null, routinePages:{} };
+let state = { notices:[], routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null, routinePages:{} };
 let tab = 'home';
 // 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
@@ -3277,7 +3302,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg, nc] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3299,7 +3324,10 @@ async function loadAll() {
     sb.rpc('dokseo_pages_summary'),
     // 루틴마다 함께 읽은 쪽수. 마이그레이션 115 가 아직이면 오류가 와도 비워 둔다
     sb.rpc('dokseo_routine_pages'),
+    // 홈 공지. 마이그레이션 125 가 아직이면 오류가 와도 비워 둔다 (RLS 가 지금 보이는 것만 준다)
+    sb.from('notices').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(20),
   ]);
+  state.notices = nc.error ? [] : (nc.data || []);
   state.exchanges = ex.error ? [] : (ex.data || []);
   state.likes = lk.error ? [] : (lk.data || []);
   state.finishes = fn.error ? [] : (fn.data || []);
@@ -4418,7 +4446,7 @@ function viewHome() {
     // 【전에는 어른 끗짱에게 감췄다】 「고를 수도 없는 목록」이라고 봤는데,
     //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 루틴을 어떻게 여는지가
     //   제 루틴을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
-    return cityCard() + h + pickSection() + (others.length ? recruitSection(others) : '');
+    return noticeBar() + cityCard() + h + pickSection() + (others.length ? recruitSection(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
@@ -4461,7 +4489,7 @@ function viewHome() {
         끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
     </div>`;
   }
-  return cityCard() + h + pickSection() + recruit;
+  return noticeBar() + cityCard() + h + pickSection() + recruit;
 }
 
 // ── 홈의 책방 추천 ─────────────────────────────────────
@@ -6194,6 +6222,32 @@ function cityMilestone(total) {
            pct: next ? Math.min(100, Math.round((n - prevAt) / (next.at - prevAt) * 100)) : 100,
            done: !next };
 }
+// ── 공지 ───────────────────────────────────────────────
+// 홈 맨 위에 최신 공지 한 줄. 누르면 아래에서 올라오는 창에 지금 보이는 공지가 다 나온다 (2026-10-13 사용자).
+// 읽었는지는 이 폰에만 적는다 (안 읽은 공지가 있으면 작은 점). 운영진이 쓰고 내린다 — migration-125
+const noticeSeen = () => { try { return Number(localStorage.getItem('hk-notice-seen')) || 0; } catch (e) { return 0; } };
+function noticeBar() {
+  const list = (state.notices || []);
+  if (!list.length || isGuest()) return '';
+  const n = list[0], fresh = n.id > noticeSeen();
+  return `<button class="nt-bar" onclick="openNotices()">
+    <span class="nt-ico">📢</span><b class="nt-t">공지</b>
+    <span class="nt-s">${esc(n.title)}</span>${fresh ? '<i class="nt-dot"></i>' : ''}
+    <i class="ti ti-chevron-right"></i></button>`;
+}
+function openNotices() {
+  const list = state.notices || [];
+  const day = iso => String(iso || '').slice(0, 10).replace(/-/g, '.');
+  $('shNoticeBody').innerHTML = list.length
+    ? list.map(n => `<div class="nt-i"><div class="nt-it">${esc(n.title)}</div>
+        <div class="nt-id">${day(n.created_at)}</div>
+        <div class="nt-ib">${esc(n.body)}</div></div>`).join('')
+    : '<div class="empty">지금 올라온 공지가 없어요.</div>';
+  try { if (list.length) localStorage.setItem('hk-notice-seen', String(Math.max(...list.map(n => n.id)))); } catch (e) {}
+  showLayer('shNotice');
+  if (tab === 'home') render();         // 안 읽은 점을 끈다
+}
+
 // 홈에서는 한 줄 버튼만 보이고, 누르면 아래에서 올라오는 창에 큰 카드가 열린다 (2026-10-12 사용자).
 // 버튼에도 막대와 쪽수를 둔다 — 이름만 있으면 눌러 볼 이유가 없어 도시가 잊힌다
 function cityCard() {
