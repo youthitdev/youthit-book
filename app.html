@@ -4438,11 +4438,7 @@ function viewHome() {
   if (mine.length) {
     h += mine.map(todayCard).join('');
     const p = myPoints();
-    h += `<div class="tc-pt">
-      <b>${won(p.points)}P</b>
-      <span>${p.left > 0 ? `🎫 쓸 수 있는 교환권 ${p.left}장` : `다음 책까지 ${won(p.to_next)}P`}</span>
-      <i class="ti ti-chevron-right" onclick="go('my')"></i>
-    </div>`;
+    // 홈의 「23P 다음 책까지 150P」 줄은 뺐다 (2026-10-13 사용자). 포인트는 MY 의 「내 독서 포인트」에서 본다
     // 7일 루틴을 다 해도 135P 라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
     // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
     if (p.left === 0 && mine.some(routineEnded))
