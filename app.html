@@ -5248,6 +5248,13 @@ function kkutStats() {
                 + (state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : 0) };
 }
 
+function myRecStats() {
+  const mine = (state.certs || []).filter(c => me && c.user_id === me.id);
+  return { pages: state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : 0,
+           days: new Set(mine.map(c => c.cert_date)).size,
+           books: new Set(mine.filter(c => c.book_title).map(c => loose(c.book_title))).size };
+}
+
 async function buildRecordCard(kind, coverUrl) {
   const W = 1080, H = 1350, PAD = 84;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -5275,10 +5282,8 @@ async function buildRecordCard(kind, coverUrl) {
     x.fillText(k.days ? `${won(k.days)}일 동안 책을 읽었어요` : '책을 읽을 준비를 하고 있어요', PAD, 690);
     cells = [[k.books, '권', '함께 읽은 책'], [k.pages, '쪽', '함께 읽은 쪽'], [k.routines, '개', '맡은 루틴']];
   } else {
-    const pg = state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : 0;
+    const { pages: pg, days, books } = myRecStats();
     const m = personalMetaphor(pg);
-    const days = new Set((state.certs || []).filter(c => c.user_id === me.id).map(c => c.cert_date)).size;
-    const books = new Set((state.certs || []).filter(c => c.user_id === me.id && c.book_title).map(c => loose(c.book_title))).size;
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
     wrapText(x, recName() === '나' ? '나의 책 높이' : `${recName()}님의 책 높이`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
     setFont(x, 'bold', 140); x.fillText(m.cur ? m.cur.ico : '📖', PAD, 490);
@@ -5995,23 +6000,39 @@ function kkutStatBlock() {
 }
 
 // MY 에 놓는 기록 카드 이미지. 같은 내용이면 다시 만들지 않는다 (MY 를 열 때마다 서점 표지를 받아 오지 않게)
-const kkutRecImg = { key: '', url: '' };
-async function paintKkutRecordImg() {
-  if (!me || !canLead() || tab !== 'my') return;
-  const box = $('kkutRecBox'); if (!box) return;
-  const cover = recordCoverChoices('kkut')[0] || null;
-  const key = JSON.stringify([kkutStats(), recName(), cover]);
-  if (kkutRecImg.key === key && kkutRecImg.url) return;     // 이미 그려져 있다
+const kkutRecImg = { key: '', url: '' }, myRecImg = { key: '', url: '' };
+async function paintRecordImg(kind) {
+  const isK = kind === 'kkut';
+  if (!me || tab !== 'my' || (isK ? !canLead() : canLead())) return;
+  const box = $(isK ? 'kkutRecBox' : 'myRecBox'); if (!box) return;
+  const cache = isK ? kkutRecImg : myRecImg;
+  const cover = recordCoverChoices(kind)[0] || null;
+  const key = JSON.stringify([kind, isK ? kkutStats() : myRecStats(), recName(), cover]);
+  if (cache.key === key && cache.url) return;               // 이미 그려져 있다
   try {
-    const blob = await buildRecordCard('kkut', cover);
-    if (kkutRecImg.url) URL.revokeObjectURL(kkutRecImg.url);
-    kkutRecImg.key = key; kkutRecImg.url = URL.createObjectURL(blob);
-    const again = $('kkutRecBox');
+    const blob = await buildRecordCard(kind, cover);
+    if (cache.url) URL.revokeObjectURL(cache.url);
+    cache.key = key; cache.url = URL.createObjectURL(blob);
+    const again = $(isK ? 'kkutRecBox' : 'myRecBox');
     if (again) {
       again.style.padding = '10px';
-      again.innerHTML = `<img src="${kkutRecImg.url}" alt="함께 쌓은 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`;
+      again.innerHTML = `<img src="${cache.url}" alt="기록 카드" onclick="openRecordCard('${kind}')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`;
     }
   } catch (e) { /* 줄글이 그대로 남는다 */ }
+}
+const paintKkutRecordImg = () => paintRecordImg('kkut');
+
+// 청소년 MY — 프로필·포인트 아래에 「나의 독서 기록」을 이미지로 (끗짱 MY 와 같은 모양). 첫 인증 전에는 놓지 않는다
+function myRecordBlock() {
+  if (!me || isGuest() || canLead() || kkutPending()) return '';
+  const st = myRecStats();
+  if (!st.days && !st.pages) return '';
+  setTimeout(() => paintRecordImg('me'), 0);
+  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">나의 독서 기록
+      <button class="rc-share" style="position:static;" onclick="openRecordCard('me')">공유</button></div>
+    <div class="card kstat" id="myRecBox" style="padding:${myRecImg.url ? '10px' : '16px'};">${myRecImg.url
+      ? `<img src="${myRecImg.url}" alt="나의 독서 기록" onclick="openRecordCard('me')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`
+      : `<b>${won(st.days)}일</b> 인증했고, 책 <b>${won(st.books)}권</b>, <b>${won(st.pages)}쪽</b>을 읽었어요.`}</div>`;
 }
 
 // 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
@@ -6320,17 +6341,11 @@ function viewMy() {
       ${waiting ? '' : verifyLine()}
     </div>
     ${waiting ? kkutCard() : ''}
-    ${waiting ? '' : levelCard()}
     ${(isYouth() && !waiting) ? balanceBlock() : ''}
     ${noRoutineBlock()}
+    ${myRecordBlock()}
     ${/* 읽은 날마다 책값이 간다는 안내는 잠시 내려둔다 (2026-10-08). 다시 쓰려면 creditBlock() */''}
     ${kkutStatBlock()}
-    ${/* 끗짱은 「함께 쌓은 기록」 줄글이 있어 세 칸을 빼고, 「참여 루틴 0」 같은 어긋난 숫자도 없앤다 (2026-10-12 사용자) */''}
-    ${!canLead() ? `<div class="card mstat">
-      <div><em>📸</em><b>${total}</b><i>내 인증</i></div>
-      <div><em>📚</em><b>${joined}</b><i>참여 루틴</i></div>
-      <div><em>📖</em><b>${books.length}</b><i>읽은 책</i></div>
-    </div>` : ''}
     ${calBlock()}
     ${myBooksBlock()}
     ${pastBlock()}
