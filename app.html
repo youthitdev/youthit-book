@@ -1034,6 +1034,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 }
 /* 레벨 카드 — 지나온 칸과 앞에 올 칸을 같이 보여준다 */
 .lv-card { padding:16px; }
+/* 내 기록 카드 공유 단추 */
+.rc-share { position:absolute; top:12px; right:12px; border:1px solid var(--line); background:#fff; color:var(--ink-2);
+  font-family:inherit; font-size:12px; font-weight:700; border-radius:99px; padding:5px 12px; cursor:pointer; }
+.rc-share:active { opacity:.6; }
 .lv-top { display:flex; align-items:center; gap:12px; }
 .lv-ico { width:46px; height:46px; flex:none; border-radius:14px; background:var(--bg);
   display:flex; align-items:center; justify-content:center; font-size:23px; }
@@ -2165,8 +2169,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-grip"></div>
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
-        <div class="sheet-t">우리의 기록 카드</div>
-        <div class="sheet-s">이름 없이 숫자만 담겨 있어서 마음 놓고 나눠도 돼요.</div>
+        <div class="sheet-t" id="wrapT">우리의 기록 카드</div>
+        <div class="sheet-s" id="wrapS">이름 없이 숫자만 담겨 있어서 마음 놓고 나눠도 돼요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shWrap')" aria-label="닫기">✕</button>
     </div>
@@ -5149,6 +5153,8 @@ async function buildWrapCard(r) {
 
 async function openWrap(rid) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
+  $('wrapT').textContent = '우리의 기록 카드';
+  $('wrapS').textContent = '이름 없이 숫자만 담겨 있어서 마음 놓고 나눠도 돼요.';
   $('wrapBody').innerHTML = '<div class="hint">카드를 만드는 중이에요…</div>';
   $('wrapShare').style.display = 'none';
   showLayer('shWrap');
@@ -5157,6 +5163,132 @@ async function openWrap(rid) {
     if (!wrapBlob) throw new Error('카드를 만들지 못했어요');
     wrapName = `한끗독서_${String(r.title || '루틴').replace(/\s+/g, '')}_마무리.png`;
     $('wrapBody').innerHTML = `<img src="${URL.createObjectURL(wrapBlob)}" alt="우리의 기록 카드"
+      style="width:100%;max-width:340px;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);">`;
+    $('wrapShare').style.display = '';
+  } catch (e) {
+    $('wrapBody').innerHTML = `<div class="hint">${esc(e.message || '카드를 만들지 못했어요')}</div>`;
+  }
+}
+
+// ── 내 기록 카드 ───────────────────────────────────────
+// 청소년은 「내 책 높이」, 끗짱은 「함께 쌓은 기록」을 한 장으로 만든다. 밖으로 나가는 그림이라서
+//   · 이름은 **닉네임만** (없으면 「나」). 실명·학교·지역·사진은 넣지 않는다.
+//   · 책 표지는 **검색해서 고른 공식 표지만** — 직접 찍어 올린 사진은 쓰지 않는다.
+//   · 공유 전에 미리보기를 먼저 보여 준다 (시트가 열리면 그림이 보이고, 그다음에 「저장하고 공유하기」).
+// 표지는 다른 서버의 그림이라 캔버스가 막을 수 있다. 불러오지 못한 표지는 조용히 뺀다.
+const recName = () => (me && me.nick && String(me.nick).trim()) || '나';
+function loadCover(url) {
+  return new Promise(ok => {
+    const im = new Image(); im.crossOrigin = 'anonymous';
+    const t = setTimeout(() => ok(null), 4000);
+    im.onload = () => { clearTimeout(t); ok(im); };
+    im.onerror = () => { clearTimeout(t); ok(null); };
+    im.src = url;
+  });
+}
+// 내가 읽은 책 중 공식 표지가 있는 것 (최근 순, 같은 책은 한 번)
+function myOfficialCovers(max) {
+  const seen = new Set(), out = [];
+  [...(state.rbooks || [])].filter(b => me && b.user_id === me.id && b.found_cover_url)
+    .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
+    .forEach(b => { const k = loose(b.title || ''); if (k && !seen.has(k) && out.length < max) { seen.add(k); out.push(b.found_cover_url); } });
+  return out;
+}
+function kkutStats() {
+  const led   = state.routines.filter(r => r.led_by === me.id);
+  const ids   = led.map(r => r.id);
+  const kids  = new Set((state.parts || []).filter(p => ids.includes(p.routine_id) && p.status === 'approved' && p.user_id !== me.id).map(p => p.user_id));
+  const certs = (state.certs || []).filter(c => ids.includes(c.routine_id) && c.user_id !== me.id);
+  return { routines: led.length, kids: kids.size,
+           days: new Set(certs.map(c => c.user_id + '|' + c.cert_date)).size,
+           books: new Set(certs.filter(c => c.book_title).map(c => loose(c.book_title))).size,
+           pages: state.pages && typeof state.pages.kids === 'number' ? state.pages.kids : 0 };
+}
+
+async function buildRecordCard(kind) {
+  const W = 1080, H = 1350, PAD = 84;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const lead = kind === 'kkut';
+  const g = x.createLinearGradient(0, 0, W, H);
+  if (lead) { g.addColorStop(0, '#9A3F06'); g.addColorStop(1, '#C4580C'); }
+  else      { g.addColorStop(0, '#1F4E46'); g.addColorStop(1, '#2F6B4F'); }
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.fillStyle = 'rgba(255,255,255,.06)';
+  x.beginPath(); x.arc(W - 120, 160, 300, 0, Math.PI * 2); x.fill();
+  x.beginPath(); x.arc(100, H - 80, 260, 0, Math.PI * 2); x.fill();
+  setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.75)'; x.fillText('한끗독서', PAD, 130);
+
+  let big, bigSub, cells, covers = [];
+  if (lead) {
+    const k = kkutStats();
+    setFont(x, 'bold', 64); x.fillStyle = '#fff';
+    wrapText(x, `${recName()}님과 함께`, W - PAD * 2, 1).forEach(l => x.fillText(l, PAD, 300));
+    setFont(x, 'bold', 130); x.fillText('💪', PAD, 480);
+    setFont(x, 'bold', 78); x.fillText(k.kids ? `${won(k.kids)}명의 청소년이` : '청소년과 함께', PAD, 610);
+    setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)';
+    x.fillText(k.days ? `${won(k.days)}일 동안 책을 읽었어요` : '책을 읽을 준비를 하고 있어요', PAD, 690);
+    cells = [[k.books, '권', '함께 읽은 책'], [k.pages, '쪽', '함께 읽은 쪽'], [k.routines, '개', '맡은 루틴']];
+  } else {
+    const pg = state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : 0;
+    const m = personalMetaphor(pg);
+    const days = new Set((state.certs || []).filter(c => c.user_id === me.id).map(c => c.cert_date)).size;
+    const books = new Set((state.certs || []).filter(c => c.user_id === me.id && c.book_title).map(c => loose(c.book_title))).size;
+    setFont(x, 'bold', 64); x.fillStyle = '#fff';
+    wrapText(x, `${recName()}님의 책 높이`, W - PAD * 2, 1).forEach(l => x.fillText(l, PAD, 300));
+    setFont(x, 'bold', 140); x.fillText(m.cur ? m.cur.ico : '📖', PAD, 490);
+    setFont(x, 'bold', 78); x.fillText(m.cur ? m.cur.name : '쌓기 시작했어요', PAD, 620);
+    setFont(x, 'normal', 48); x.fillStyle = 'rgba(255,255,255,.85)';
+    x.fillText(`${won(pg)}쪽 · 책으로 쌓으면 ${m.height}`, PAD, 694);
+    cells = [[days, '일', '인증한 날'], [books, '권', '읽은 책'], [pg, '쪽', '읽은 쪽']];
+    covers = (await Promise.all(myOfficialCovers(4).map(loadCover))).filter(Boolean);
+  }
+
+  // 숫자 칸 셋
+  const cw = (W - PAD * 2 - 40) / 3, cy = 770, ch = 230;
+  cells.forEach(([n, u, l], i) => {
+    const cx = PAD + i * (cw + 20);
+    x.fillStyle = 'rgba(255,255,255,.12)';
+    x.beginPath(); x.roundRect ? x.roundRect(cx, cy, cw, ch, 28) : x.rect(cx, cy, cw, ch); x.fill();
+    x.fillStyle = '#fff'; setFont(x, 'bold', 90);
+    const nw = x.measureText(won(n)).width;
+    setFont(x, 'bold', 38); const uw = x.measureText(u).width;
+    const sx = cx + (cw - (nw + 6 + uw)) / 2;
+    setFont(x, 'bold', 90); x.fillText(won(n), sx, cy + 120);
+    setFont(x, 'bold', 38); x.fillText(u, sx + nw + 6, cy + 120);
+    setFont(x, 'normal', 30); x.fillStyle = 'rgba(255,255,255,.75)'; x.textAlign = 'center';
+    x.fillText(l, cx + cw / 2, cy + 184); x.textAlign = 'left';
+  });
+
+  // 공식 표지 (청소년). 불러온 것만, 가운데 줄 세운다
+  if (covers.length) {
+    const ch2 = 270, cw2 = 192, gap = 28, total = covers.length * cw2 + (covers.length - 1) * gap;
+    let px = (W - total) / 2; const py = cy + ch + 56;
+    covers.forEach(im => {
+      x.save(); x.beginPath(); x.roundRect ? x.roundRect(px, py, cw2, ch2, 14) : x.rect(px, py, cw2, ch2); x.clip();
+      x.drawImage(im, px, py, cw2, ch2); x.restore(); px += cw2 + gap;
+    });
+  }
+
+  const d = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '.');
+  setFont(x, 'normal', 34); x.fillStyle = 'rgba(255,255,255,.7)'; x.fillText(d, PAD, H - 110);
+  setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.85)'; x.textAlign = 'right';
+  x.fillText('book.youthvoice.or.kr', W - PAD, H - 110); x.textAlign = 'left';
+
+  return new Promise((ok, no) => { try { cv.toBlob(b => b ? ok(b) : no(new Error('카드를 만들지 못했어요')), 'image/png'); } catch (e) { no(e); } });
+}
+
+async function openRecordCard(kind) {
+  if (!me || isGuest()) return;
+  $('wrapT').textContent = kind === 'kkut' ? '함께 쌓은 기록 카드' : '내 책 높이 카드';
+  $('wrapS').textContent = '닉네임과 숫자만 담겨 있어요. 실명·사진·지역은 들어가지 않아요. 확인하고 공유해 주세요.';
+  $('wrapBody').innerHTML = '<div class="hint">카드를 만드는 중이에요…</div>';
+  $('wrapShare').style.display = 'none';
+  showLayer('shWrap');
+  try {
+    wrapBlob = await buildRecordCard(kind);
+    wrapName = `한끗독서_${kind === 'kkut' ? '함께쌓은기록' : '내책높이'}.png`;
+    $('wrapBody').innerHTML = `<img src="${URL.createObjectURL(wrapBlob)}" alt="내 기록 카드"
       style="width:100%;max-width:340px;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);">`;
     $('wrapShare').style.display = '';
   } catch (e) {
@@ -5752,7 +5884,8 @@ function kkutStatBlock() {
        <b>${won(days)}일</b> 동안 책을 읽었어요.
        <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>${kidPages ? `, 읽은 쪽수는 <b>${won(kidPages)}쪽</b>` : ''},
        맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`;
-  return `<div class="sec-t">함께 쌓은 기록</div>
+  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">함께 쌓은 기록
+      <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')">공유</button></div>
     <div class="card kstat">${body}</div>`;
 }
 
@@ -5973,7 +6106,8 @@ function levelCard() {
   const sub   = have ? `${won(m.pages)}쪽 읽었어요 · 책으로 쌓으면 ${m.height}`
               : cnt  ? '읽은 쪽을 적으면 책 높이가 쌓여요'
                      : '첫 인증을 하면 책 높이가 올라가기 시작해요 🌱';
-  return `<div class="card lv-card">
+  return `<div class="card lv-card" style="position:relative;">
+      <button class="rc-share" onclick="openRecordCard('me')">공유</button>
       <div class="lv-top">
         <div class="lv-ico">${have ? (m.cur ? m.cur.ico : '📖') : '🌱'}</div>
         <div class="lv-txt">
