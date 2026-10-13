@@ -5269,7 +5269,7 @@ async function buildRecordCard(kind, coverUrl) {
     const k = kkutStats();
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
     wrapText(x, recName() === '나' ? '나와 함께' : `${recName()}님과 함께`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
-    setFont(x, 'bold', 130); x.fillText('💪', PAD, 480);
+    setFont(x, 'bold', 130); x.fillText('📖', PAD, 480);
     setFont(x, 'bold', 78); x.fillText(k.kids ? `${won(k.kids)}명의 청소년이` : '청소년과 함께', PAD, 610);
     setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)';
     x.fillText(k.days ? `${won(k.days)}일 동안 책을 읽었어요` : '책을 읽을 준비를 하고 있어요', PAD, 690);
