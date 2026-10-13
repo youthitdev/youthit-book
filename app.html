@@ -4489,7 +4489,8 @@ function viewHome() {
         끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
     </div>`;
   }
-  return noticeBar() + cityCard() + h + pickSection() + recruit;
+  // 청소년 홈에서는 「함께 짓는 한끗 책의 도시」 줄을 뺀다 (2026-10-13 사용자). 끗짱 홈에는 그대로 있다
+  return noticeBar() + h + pickSection() + recruit;
 }
 
 // ── 홈의 책방 추천 ─────────────────────────────────────
