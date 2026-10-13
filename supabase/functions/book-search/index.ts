@@ -72,11 +72,31 @@ Deno.serve(async (req) => {
   // 키를 아직 안 넣었어도 앱이 멈추면 안 된다. 빈 목록으로 조용히 돌려보낸다
   if (!key) return json(200, { books: [], note: "KAKAO_REST_KEY 미설정" });
 
-  let b: { q?: string; store_key?: string };
+  let b: { q?: string; store_key?: string; img?: string };
   try { b = await req.json(); } catch { return json(400, { error: "JSON 본문이 필요해요" }); }
 
   // 로그인한 회원이거나, 맞는 책방 열쇠를 가진 사장님만
   if (!isUser(req) && !(await storeKeyOk(req, b.store_key))) return json(403, { error: "로그인이 필요해요" });
+
+  // 【표지 그림 중계】 앱이 「내 기록 카드」 이미지를 만들 때, 서점 표지를 그림판(canvas)에 올려야 한다.
+  //   카카오 서버는 다른 사이트가 그림판에 쓰는 것을 허락하는 표식(CORS)을 주지 않아서 직접은 못 쓴다.
+  //   그래서 여기서 대신 받아 글자(data URL)로 돌려준다. 아무 주소나 받으면 안 되니 카카오·다음의 그림 서버만 받는다.
+  if (b.img) {
+    let u: URL;
+    try { u = new URL(String(b.img)); } catch { return json(400, { error: "주소가 올바르지 않아요" }); }
+    const okHost = u.protocol === "https:" && /(^|\.)(kakaocdn\.net|daumcdn\.net)$/.test(u.hostname);
+    if (!okHost) return json(400, { error: "허용하지 않는 주소예요" });
+    try {
+      const r = await fetch(u.toString());
+      const ct = r.headers.get("content-type") ?? "";
+      if (!r.ok || !ct.startsWith("image/")) return json(200, { data_url: null });
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.length > 1_500_000) return json(200, { data_url: null });
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+      return json(200, { data_url: `data:${ct};base64,${btoa(bin)}` });
+    } catch { return json(200, { data_url: null }); }
+  }
 
   const q = (b.q ?? "").trim();
   if (q.length < 2) return json(200, { books: [] });
