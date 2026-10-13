@@ -5265,7 +5265,7 @@ async function buildRecordCard(kind, coverUrl) {
   if (lead) {
     const k = kkutStats();
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
-    wrapText(x, `${recName()}님과 함께`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
+    wrapText(x, recName() === '나' ? '나와 함께' : `${recName()}님과 함께`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
     setFont(x, 'bold', 130); x.fillText('💪', PAD, 480);
     setFont(x, 'bold', 78); x.fillText(k.kids ? `${won(k.kids)}명의 청소년이` : '청소년과 함께', PAD, 610);
     setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)';
@@ -5277,7 +5277,7 @@ async function buildRecordCard(kind, coverUrl) {
     const days = new Set((state.certs || []).filter(c => c.user_id === me.id).map(c => c.cert_date)).size;
     const books = new Set((state.certs || []).filter(c => c.user_id === me.id && c.book_title).map(c => loose(c.book_title))).size;
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
-    wrapText(x, `${recName()}님의 책 높이`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
+    wrapText(x, recName() === '나' ? '나의 책 높이' : `${recName()}님의 책 높이`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
     setFont(x, 'bold', 140); x.fillText(m.cur ? m.cur.ico : '📖', PAD, 490);
     setFont(x, 'bold', 70); x.fillText(m.cur ? passedTxt(m.cur.name) : '쌓기 시작했어요', PAD, 620);
     setFont(x, 'normal', 48); x.fillStyle = 'rgba(255,255,255,.85)';
@@ -5978,9 +5978,34 @@ function kkutStatBlock() {
        <b>${won(days)}일</b> 동안 책을 읽었어요.
        <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>${kidPages ? `, 읽은 쪽수는 <b>${won(kidPages)}쪽</b>` : ''},
        맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`;
-  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">함께 쌓은 기록
+  // 줄글 카드 대신 「기록 카드」 이미지를 그대로 보여 준다. 만드는 동안과 실패했을 때는 줄글을 보인다.
+  // 공유 단추는 여기 하나뿐이다 (같은 화면에 두 개가 있던 것을 없앴다)
+  setTimeout(paintKkutRecordImg, 0);
+  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">나의 독서 기록
       <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')">공유</button></div>
-    <div class="card kstat">${body}</div>`;
+    <div class="card kstat" id="kkutRecBox" style="padding:${kkutRecImg.url ? '10px' : '16px'};">${kkutRecImg.url
+      ? `<img src="${kkutRecImg.url}" alt="나의 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`
+      : body}</div>`;
+}
+
+// MY 에 놓는 기록 카드 이미지. 같은 내용이면 다시 만들지 않는다 (MY 를 열 때마다 서점 표지를 받아 오지 않게)
+const kkutRecImg = { key: '', url: '' };
+async function paintKkutRecordImg() {
+  if (!me || !canLead() || tab !== 'my') return;
+  const box = $('kkutRecBox'); if (!box) return;
+  const cover = recordCoverChoices('kkut')[0] || null;
+  const key = JSON.stringify([kkutStats(), recName(), cover]);
+  if (kkutRecImg.key === key && kkutRecImg.url) return;     // 이미 그려져 있다
+  try {
+    const blob = await buildRecordCard('kkut', cover);
+    if (kkutRecImg.url) URL.revokeObjectURL(kkutRecImg.url);
+    kkutRecImg.key = key; kkutRecImg.url = URL.createObjectURL(blob);
+    const again = $('kkutRecBox');
+    if (again) {
+      again.style.padding = '10px';
+      again.innerHTML = `<img src="${kkutRecImg.url}" alt="나의 독서 기록" onclick="openRecordCard('kkut')" style="width:100%;display:block;border-radius:12px;cursor:pointer;">`;
+    }
+  } catch (e) { /* 줄글이 그대로 남는다 */ }
 }
 
 // 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
@@ -6188,6 +6213,7 @@ function cityFull() {
 //   꾸준함(인증 횟수)은 작은 한 줄로 남긴다. 함께 읽는 글은 쪽수를 선택으로 적는다 (migration-113).
 function levelCard() {
   if (!me || isGuest()) return '';
+  if (canLead()) return '';   // 끗짱 MY 는 「나의 독서 기록」 이미지 하나로 보인다 (2026-10-13 사용자)
   const cnt  = myCertCount();
   const mine = state.pages && typeof state.pages.mine === 'number' ? state.pages.mine : null;   // 112 가 아직이면 null
   const m    = personalMetaphor(mine || 0);
