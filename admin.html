@@ -500,24 +500,34 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
   <!-- 탭이 열 개가 되니 한 줄로는 눈이 못 훑는다. 하는 일로 가른다 —
        운영은 거의 매일, 정산은 돈이 움직일 때만 본다 -->
+  <!-- 하는 일 기준 다섯 묶음 (2026-10-13 사용자). 묶음 단추에는 처리할 일 수가 붙는다 -->
   <div class="grp">
-    <button class="grp-b on" data-grp="ops"   onclick="switchGroup('ops')">운영</button>
-    <button class="grp-b"    data-grp="money" onclick="switchGroup('money')">정산</button>
-    <button class="grp-b"    data-grp="inbox" onclick="switchGroup('inbox')">알림<i id="cntInbox"></i></button>
-    <!-- 이 기기로 푸시 알림 켜기. 한 번 켜면 다시 볼 일이 거의 없어 이 줄 오른쪽 끝에 작게 둔다 -->
+    <button class="grp-b on" data-grp="members"  onclick="switchGroup('members')">회원<i id="cntGMembers"></i></button>
+    <button class="grp-b"    data-grp="routines" onclick="switchGroup('routines')">루틴<i id="cntGRoutines"></i></button>
+    <button class="grp-b"    data-grp="msgs"     onclick="switchGroup('msgs')">알림<i id="cntInboxG"></i></button>
+    <button class="grp-b"    data-grp="site"     onclick="switchGroup('site')">홈페이지</button>
+    <button class="grp-b"    data-grp="money"    onclick="switchGroup('money')">정산<i id="cntGMoney"></i></button>
+  </div>
+  <div class="tabs" id="tabsMembers">
+    <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
+    <button class="tab" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
+    <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필 사진<i id="cntPhotos"></i></button>
+  </div>
+  <div class="tabs" id="tabsRoutines" style="display:none;">
+    <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
+    <button class="tab" data-tab="reports" onclick="switchTab('reports')">인증 신고<i id="cntReports"></i></button>
+  </div>
+  <div class="tabs" id="tabsMsgs" style="display:none;">
+    <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">받은 알림<i id="cntInbox"></i></button>
+    <button class="tab" data-tab="notices" onclick="switchTab('notices')">공지<i id="cntNotices"></i></button>
+    <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림 보내기<i id="cntNotify"></i></button>
+    <!-- 이 기기로 푸시 알림 켜기. 알림을 다루는 묶음 안, 줄 오른쪽 끝에 작게 둔다 -->
     <span class="grp-r" id="pushPill"></span>
   </div>
-  <div class="tabs" id="tabsOps">
-    <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년<i id="cntVerify"></i></button>
-    <button class="tab" data-tab="kkut" onclick="switchTab('kkut')">끗짱<i id="cntKkut"></i></button>
-    <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
-    <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장<i id="cntQuotes"></i></button>
-    <button class="tab" data-tab="notify" onclick="switchTab('notify')">알림<i id="cntNotify"></i></button>
-    <button class="tab" data-tab="notices" onclick="switchTab('notices')">공지<i id="cntNotices"></i></button>
-    <button class="tab" data-tab="reports" onclick="switchTab('reports')">신고<i id="cntReports"></i></button>
-    <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필<i id="cntPhotos"></i></button>
-    <button class="tab" data-tab="covers" onclick="switchTab('covers')">표지<i id="cntCovers"></i></button>
-    <button class="tab" data-tab="report" onclick="switchTab('report')">월간</button>
+  <div class="tabs" id="tabsSite" style="display:none;">
+    <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
+    <button class="tab" data-tab="covers" onclick="switchTab('covers')">책 표지<i id="cntCovers"></i></button>
+    <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
@@ -962,7 +972,8 @@ function renderSummary() {
   const waitK = (DB.kkutApps || []).filter(a => a.status === 'pending').length;
   const waitR = (DB.routines || []).filter(r => r.status === 'pending').length;
 
-  document.getElementById('summary').innerHTML = grp === 'ops'
+  // 정산 묶음에서만 돈 숫자를 보이고, 나머지 묶음에서는 처리할 일을 보인다
+  document.getElementById('summary').innerHTML = grp !== 'money'
     ? todoCard('청소년', waitV, '명', '서류를 낸 사람')
       + todoCard('끗짱',   waitK, '건', '신청서를 낸 분')
       + todoCard('루틴',   waitR, '건', '승인을 기다리는')
@@ -979,6 +990,7 @@ function renderSummary() {
     el.style.display = (todo && !n) ? 'none' : '';
   };
   setCnt('cntInbox',    inboxUnread(), true);
+  setCnt('cntInboxG',   inboxUnread(), true);
   setCnt('cntVerify',   waitV, true);
   setCnt('cntKkut',     waitK, true);
   setCnt('cntRoutines', waitR, true);
@@ -989,6 +1001,10 @@ function renderSummary() {
   setCnt('cntQuotes',   (DB.quotes || []).filter(q => q.quote_public).length, false);
   setCnt('cntNotify',   (DB.scheduled || []).filter(n => !n.sent_at).length, false);
   setCnt('cntReports',  (DB.reports || []).length, true);
+  // 묶음 단추의 숫자는 그 안의 처리할 일을 합한 것
+  setCnt('cntGMembers',  waitV + waitK, true);
+  setCnt('cntGRoutines', waitR + (DB.reports || []).length, true);
+  setCnt('cntGMoney',    p.pending, true);
   setCnt('cntPhotos',   (DB.avatars || []).length, false);
   setCnt('cntCovers',   COVERS ? COVERS.length : 0, false);
   setCnt('cntNotices',  NOTICES ? NOTICES.filter(noticeLive).length : 0, false);
@@ -3969,18 +3985,20 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { ops:   ['verify', 'kkut', 'routines', 'quotes', 'notify', 'notices', 'reports', 'photos', 'covers', 'report'],
-                 money: ['pending', 'settled', 'stores', 'charges'],
-                 inbox: ['inbox'] };
-const groupOf = t => GROUPS.money.includes(t) ? 'money' : t === 'inbox' ? 'inbox' : 'ops';
-let grp = 'ops';
+const GROUPS = { members:  ['verify', 'kkut', 'photos'],
+                 routines: ['routines', 'reports'],
+                 msgs:     ['inbox', 'notices', 'notify'],
+                 site:     ['quotes', 'covers', 'report'],
+                 money:    ['pending', 'settled', 'stores', 'charges'] };
+const GROUP_ROW = { members: 'tabsMembers', routines: 'tabsRoutines', msgs: 'tabsMsgs', site: 'tabsSite', money: 'tabsMoney' };
+const groupOf = t => Object.keys(GROUPS).find(g => GROUPS[g].includes(t)) || 'members';
+let grp = 'members';
 
 function switchGroup(g) {
   grp = g;
   document.querySelectorAll('.grp-b').forEach(b => b.classList.toggle('on', b.dataset.grp === g));
-  document.getElementById('tabsOps').style.display   = g === 'ops'   ? '' : 'none';
-  document.getElementById('tabsMoney').style.display = g === 'money' ? '' : 'none';
-  // 갈래를 바꾸면 그 갈래의 첫 탭으로. 안 그러면 빈 탭 줄 아래에 남의 화면이 남는다
+  Object.entries(GROUP_ROW).forEach(([k, id]) => { const el = document.getElementById(id); if (el) el.style.display = k === g ? '' : 'none'; });
+  // 묶음을 바꾸면 그 묶음의 첫 탭으로. 안 그러면 빈 탭 줄 아래에 남의 화면이 남는다
   if (groupOf(tab) !== g) switchTab(GROUPS[g][0]);
   else renderSummary();
 }
@@ -4071,8 +4089,10 @@ async function loadInbox() {
 }
 const inboxUnread = () => INBOX.filter(n => !n.read).length;
 function paintInboxCount() {
-  const el = document.getElementById('cntInbox');
-  if (el) { const n = inboxUnread(); el.className = 'todo'; el.textContent = n ? String(n) : ''; el.style.display = n ? '' : 'none'; }
+  ['cntInbox', 'cntInboxG'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const n = inboxUnread(); el.className = 'todo'; el.textContent = n ? String(n) : ''; el.style.display = n ? '' : 'none'; }
+  });
   document.title = (inboxUnread() ? `(${inboxUnread()}) ` : '') + document.title.replace(/^\(\d+\)\s*/, '');
   syncAppBadge();
 }
