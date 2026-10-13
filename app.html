@@ -1307,14 +1307,22 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   background:#FFF8EA; border:1px solid #F1DFB8; border-radius:14px; padding:10px 14px; }
 .nt-bar:active { opacity:.7; }
 .nt-t { font-size:12.5px; font-weight:800; color:#9A6A12; flex:none; }
-.nt-s { flex:1; min-width:0; font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nt-roll { flex:1; min-width:0; height:20px; overflow:hidden; }
+.nt-roll-in { display:block; }
+.nt-roll-in > span { display:block; height:20px; line-height:20px; font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .nt-dot { width:8px; height:8px; border-radius:50%; background:#E5484D; flex:none; }
 .nt-bar > i.ti { color:var(--ink-3); font-size:15px; flex:none; }
-.nt-i { padding:14px 2px; border-top:1px solid var(--line); }
+.nt-i { padding:14px 2px; border-top:1px solid var(--line); cursor:pointer; }
 .nt-i:first-child { border-top:none; }
 .nt-it { font-size:15px; font-weight:800; }
 .nt-id { font-size:11.5px; color:var(--ink-3); margin-top:3px; }
-.nt-ib { font-size:13.5px; line-height:1.7; margin-top:8px; white-space:pre-wrap; }
+.nt-ih { display:flex; align-items:center; gap:8px; }
+.nt-ih .nt-it { flex:1; min-width:0; }
+.nt-ix { color:var(--ink-3); font-size:18px; transition:transform .15s; }
+.nt-i.open .nt-ix { transform:rotate(90deg); }
+.nt-ib { font-size:13.5px; line-height:1.7; margin-top:8px; white-space:pre-wrap; color:var(--ink-2);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.nt-i.open .nt-ib { display:block; -webkit-line-clamp:unset; overflow:visible; color:var(--ink); }
 /* 홈의 한 줄 버튼. 누르면 시트가 열린다 */
 .ct-bar { display:block; width:100%; text-align:left; font-family:inherit; cursor:pointer; margin-bottom:12px;
   background:linear-gradient(160deg,#F7FAF0,#FFFFFF); border:1px solid #E4EDD0; border-radius:16px; padding:11px 14px 12px; }
@@ -6228,20 +6236,51 @@ function cityMilestone(total) {
 // 홈 맨 위에 최신 공지 한 줄. 누르면 아래에서 올라오는 창에 지금 보이는 공지가 다 나온다 (2026-10-13 사용자).
 // 읽었는지는 이 폰에만 적는다 (안 읽은 공지가 있으면 작은 점). 운영진이 쓰고 내린다 — migration-125
 const noticeSeen = () => { try { return Number(localStorage.getItem('hk-notice-seen')) || 0; } catch (e) { return 0; } };
+// 공지가 여럿이면 제목이 아래에서 위로 돌아가며 보인다 (최근 5개까지, 3.5초마다). 한 개면 가만히 있다 (2026-10-13 사용자)
+const NT_LINE = 20, NT_ROLL = 5;
+let ntTimer = null, ntIdx = 0, ntCount = 0;
 function noticeBar() {
-  const list = (state.notices || []);
+  const list = (state.notices || []).slice(0, NT_ROLL);
   if (!list.length || isGuest()) return '';
-  const n = list[0], fresh = n.id > noticeSeen();
+  const fresh = (state.notices[0]).id > noticeSeen();
+  // 마지막에 첫 제목을 한 번 더 붙여, 끝에서 처음으로 끊김 없이 이어지게 한다
+  const items = list.length > 1 ? [...list, list[0]] : list;
+  setTimeout(ntStart, 0);
   return `<button class="nt-bar" onclick="openNotices()">
     <span class="nt-ico">📢</span><b class="nt-t">공지</b>
-    <span class="nt-s">${esc(n.title)}</span>${fresh ? '<i class="nt-dot"></i>' : ''}
+    <span class="nt-roll"><span class="nt-roll-in">${items.map(n => `<span>${esc(n.title)}</span>`).join('')}</span></span>
+    ${fresh ? '<i class="nt-dot"></i>' : ''}
     <i class="ti ti-chevron-right"></i></button>`;
+}
+function ntStart() {
+  clearInterval(ntTimer);
+  const el = document.querySelector('.nt-roll-in');
+  ntIdx = 0; ntCount = el ? Math.max(el.children.length - 1, 0) : 0;
+  if (!el || ntCount < 2) { ntCount = el ? 1 : 0; return; }
+  ntTimer = setInterval(() => {
+    const e = document.querySelector('.nt-roll-in');
+    if (!e) { clearInterval(ntTimer); return; }
+    ntIdx++;
+    e.style.transition = 'transform .5s ease';
+    e.style.transform = `translateY(-${ntIdx * NT_LINE}px)`;
+    if (ntIdx >= ntCount) setTimeout(() => { e.style.transition = 'none'; e.style.transform = 'translateY(0)'; ntIdx = 0; }, 520);
+  }, 3500);
+}
+// 공지 창 — 제목과 두 줄 미리보기만 보이고, 누르면 그 공지가 펼쳐진다. 처음에는 홈에서 보던 공지(없으면 최신)가 펼쳐져 있다
+let ntOpenIds = new Set();
+function ntItemToggle(id) {
+  if (ntOpenIds.has(id)) ntOpenIds.delete(id); else ntOpenIds.add(id);
+  const el = document.getElementById('nti-' + id); if (el) el.classList.toggle('open', ntOpenIds.has(id));
 }
 function openNotices() {
   const list = state.notices || [];
   const day = iso => String(iso || '').slice(0, 10).replace(/-/g, '.');
+  // 홈 줄에서 지금 돌고 있던 공지를 펼쳐 둔다
+  const cur = ntCount > 1 ? (ntIdx % ntCount) : 0;
+  ntOpenIds = new Set(list[cur] ? [list[cur].id] : []);
   $('shNoticeBody').innerHTML = list.length
-    ? list.map(n => `<div class="nt-i"><div class="nt-it">${esc(n.title)}</div>
+    ? list.map(n => `<div class="nt-i${ntOpenIds.has(n.id) ? ' open' : ''}" id="nti-${n.id}" onclick="ntItemToggle(${n.id})">
+        <div class="nt-ih"><div class="nt-it">${esc(n.title)}</div><span class="nt-ix">›</span></div>
         <div class="nt-id">${day(n.created_at)}</div>
         <div class="nt-ib">${esc(n.body)}</div></div>`).join('')
     : '<div class="empty">지금 올라온 공지가 없어요.</div>';
