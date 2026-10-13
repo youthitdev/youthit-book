@@ -5310,10 +5310,14 @@ async function buildRecordCard(kind, coverUrl) {
     x.fillText(l, cx + cw / 2, cy + 184); x.textAlign = 'left';
   });
 
+  // 아래: 왼쪽에 유스보이스 흰색 로고, 오른쪽에 날짜와 주소 (2026-10-13 사용자)
   const d = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, '.');
-  setFont(x, 'normal', 34); x.fillStyle = 'rgba(255,255,255,.7)'; x.fillText(d, PAD, H - 110);
-  setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.85)'; x.textAlign = 'right';
-  x.fillText('book.youthvoice.or.kr', W - PAD, H - 110); x.textAlign = 'left';
+  const logo = await loadImg('logo-yv-white.png', false);
+  if (logo) { const lw = 280, lh = lw * logo.height / logo.width; x.drawImage(logo, PAD, H - 96 - lh, lw, lh); }
+  setFont(x, 'normal', 34); x.fillStyle = 'rgba(255,255,255,.7)'; x.textAlign = 'right';
+  x.fillText(d, W - PAD, H - 150);
+  setFont(x, 'bold', 34); x.fillStyle = 'rgba(255,255,255,.85)';
+  x.fillText('book.youthvoice.or.kr', W - PAD, H - 104); x.textAlign = 'left';
 
   return new Promise((ok, no) => { try { cv.toBlob(b => b ? ok(b) : no(new Error('카드를 만들지 못했어요')), 'image/png'); } catch (e) { no(e); } });
 }
