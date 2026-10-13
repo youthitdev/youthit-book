@@ -4446,7 +4446,8 @@ function viewHome() {
     // 【전에는 어른 끗짱에게 감췄다】 「고를 수도 없는 목록」이라고 봤는데,
     //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 루틴을 어떻게 여는지가
     //   제 루틴을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
-    return noticeBar() + cityCard() + h + pickSection() + (others.length ? recruitSection(others) : '');
+    // 끗짱 홈에서도 「함께 짓는 한끗 책의 도시」 줄을 뺀다 (2026-10-13 사용자)
+    return noticeBar() + h + pickSection() + (others.length ? recruitSection(others) : '');
   }
 
   // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
