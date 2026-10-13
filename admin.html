@@ -197,7 +197,12 @@ tr:hover td { background:#fcfcfd; }
 .nt-r { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin:0 20px 10px; }
 .nt-r b { font-size:14.5px; }
 .nt-r .muted { font-size:12px; }
-.nt-r p { margin:8px 0 0; font-size:13px; line-height:1.65; white-space:pre-wrap; color:var(--ink-2); }
+.nt-r p { margin:8px 0 0; font-size:13px; line-height:1.65; white-space:pre-wrap; color:var(--ink-2); cursor:pointer;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.nt-r.open p { display:block; -webkit-line-clamp:unset; overflow:visible; }
+.nt-h { cursor:pointer; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.nt-x { margin-left:auto; color:var(--ink-3); font-size:16px; transition:transform .15s; }
+.nt-r.open .nt-x { transform:rotate(90deg); }
 .nt-r .kk-a { margin-top:10px; }
 .ct-bk { background:#F7F4EE; border-radius:12px; padding:12px 14px; margin-bottom:14px; font-size:13px; line-height:1.7; }
 .ct-bk b { font-size:13.5px; }
@@ -1011,6 +1016,11 @@ function renderPanel() {
 // ── 공지 (홈의 「📢 공지」) ─────────────────────────────────
 // 운영진이 쓰면 청소년·끗짱 홈 맨 위에 한 줄로 보인다 (migration-125). 푸시는 선택 — 체크하면 기존 「알림 보내기」 예약(지금 시각)에 넣는다
 let NOTICES = null, NOTICE_EDIT = null;
+const NT_OPEN = new Set();
+function ntToggle(id) {
+  if (NT_OPEN.has(id)) NT_OPEN.delete(id); else NT_OPEN.add(id);
+  const el = document.getElementById('ntr-' + id); if (el) el.classList.toggle('open', NT_OPEN.has(id));
+}
 const noticeLive = n => new Date(n.starts_at) <= new Date() && (!n.ends_at || new Date(n.ends_at) > new Date());
 async function loadNotices() {
   if (!LIVE) { NOTICES = [{ id: 1, title: '10월 공유회 안내', body: '10월 20일 오후 3시 서울숲에서 만나요.', starts_at: '2026-10-10T00:00:00Z', ends_at: null, created_at: '2026-10-10T00:00:00Z' }]; return; }
@@ -1025,8 +1035,11 @@ function viewNotices() {
   }
   const live = NOTICES.filter(noticeLive), past = NOTICES.filter(n => !noticeLive(n));
   const fmt = n => `${fmtDate(n.created_at)} 올림 · ${n.ends_at ? fmtDate(n.ends_at) + '까지' : '내릴 때까지'}`;
-  const row = (n, on) => `<div class="nt-r"><b>${esc(n.title)}</b> <span class="muted">${fmt(n)}</span>
-      <p>${esc(n.body)}</p>
+  // 본문은 기본으로 두 줄만 보이고, 제목이나 본문을 누르면 전부 펼쳐진다 (2026-10-13 사용자)
+  const row = (n, on) => `<div class="nt-r${NT_OPEN.has(n.id) ? ' open' : ''}" id="ntr-${n.id}">
+      <div class="nt-h" onclick="ntToggle(${n.id})"><b>${esc(n.title)}</b> <span class="muted">${fmt(n)}</span>
+        <span class="nt-x">›</span></div>
+      <p onclick="ntToggle(${n.id})">${esc(n.body)}</p>
       <div class="kk-a">
         <button class="btn btn-line" onclick="editNotice(${n.id})">${on ? '수정' : '수정 · 다시 올리기'}</button>
         ${on ? `<button class="btn btn-line" onclick="endNotice(${n.id})">내리기</button>` : ''}
