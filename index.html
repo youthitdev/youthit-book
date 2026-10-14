@@ -80,7 +80,7 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 /* ── 후원자 화면에서 옮겨온 것 ───────────────────────
    후원자 로그인이 없어 sponsor.html 은 사실상 공개 소개 화면이었다.
    같은 숫자를 두 곳에서 관리하면 반드시 어긋난다 */
-.pool{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:20px}
+.pool{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:22px}
 @media (min-width:640px){.pool{grid-template-columns:repeat(4,1fr);gap:14px}}
 .pool.two{grid-template-columns:repeat(2,1fr)}
 .pool-item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 12px 12px 14px;
@@ -358,7 +358,6 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   <div class="wrap">
     <div class="sec-label">지금까지</div>
     <h2>함께 만든 것</h2>
-    <p class="sec-lead">청소년과 끗짱이 지금까지 함께 쌓은 기록이에요.</p>
     <div class="pool" id="poolGrid"></div>
   </div>
 </section>
