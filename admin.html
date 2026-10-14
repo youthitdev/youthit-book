@@ -1149,7 +1149,7 @@ function viewStats() {
   const routineDonut = stDonut(routineItems).replace(/명 ·/g, '개 ·');
 
   const act = rows.filter(r => r.status === 'active');
-  const prog = act.length ? act.map(r => `<div class="st-prog"><b>${esc(r.title)}</b>
+  const prog = act.length ? act.map(r => `<div class="st-prog"><b><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></b>
       <span>참여 ${r.people}명 · 오늘 인증 ${r.today || 0}명</span>
       <div class="st-pb"><i style="width:${r.people ? Math.round((r.today || 0) / r.people * 100) : 0}%"></i></div></div>`).join('')
     : '<div class="empty">진행 중인 루틴이 없어요</div>';
