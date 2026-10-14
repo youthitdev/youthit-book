@@ -581,8 +581,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 <div class="overlay" id="photoOverlay">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-t">후원자 화면에 올릴 책인증</div>
-      <div class="modal-d">청소년이 공개에 동의한 책인증이에요. 눈으로 확인하고 올려주세요.</div>
+      <div class="modal-t">랜딩에 올릴 책인증</div>
+      <div class="modal-d">청소년이 공개에 동의한 책인증이에요. 눈으로 확인한 것만 로그인 없이 누구나 보는 랜딩에 나가요.</div>
     </div>
     <div class="modal-bd">
       <img id="phImg" alt="" style="width:100%;height:auto;max-height:52vh;object-fit:contain;
@@ -597,7 +597,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     </div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('photoOverlay')">닫기</button>
-      <button class="btn btn-pink" id="phGo" onclick="confirmPhoto()">확인했어요 · 공개하기</button>
+      <button class="btn btn-pink" id="phGo" onclick="confirmPhoto()">확인했어요 · 랜딩에 올리기</button>
     </div>
   </div>
 </div>
@@ -3416,7 +3416,7 @@ function viewPending() {
   </div>
   ${overdueBanner(rows)}
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>후원자 공개</th><th class="right">정산</th></tr>
+    <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>랜딩 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b></td>
@@ -3520,12 +3520,12 @@ async function storeGuide(id) {
 //   책인증(비공개)   아이가 책 받고 찍은 것. dokseo-proofs, 늘 있다.
 //                    운영진이 확인하는 건 이것 — 서명 URL 로 연다
 //   책인증(공개본)   같은 사진의 사본. 아이가 공개에 동의했을 때만 cert-photos 에
-//                    한 장 더 올라간다. 후원자 화면에 나가는 건 이쪽이다
+//                    한 장 더 올라간다. 랜딩에 나가는 건 이쪽 중 운영진이 「랜딩에 올리기」를 한 것뿐이다 (landing_ok)
 //   영수증           서점이 보낸 것을 운영진이 정산할 때 올린다. dokseo-receipts.
 //                    전에는 올리기만 하고 볼 방법이 없었다
 function photoCell(g) {
   const a = g.photo_path
-    ? `<div class="thumb" style="cursor:pointer;" onclick="viewProof('${esc(g.photo_path)}')" title="청소년이 책 받고 찍은 사진">책인증</div>`
+    ? `<div class="thumb" style="cursor:pointer;" onclick="${/^https?:/.test(g.photo_path) ? `window.open('${esc(g.photo_path)}','_blank','noopener')` : `viewProof('${esc(g.photo_path)}')`}" title="청소년이 책 받고 찍은 사진">책인증</div>`
     : `<div class="thumb">책인증</div>`;
   const b = g.receipt
     ? `<div class="thumb" style="cursor:pointer;" onclick="viewReceipt('${esc(g.receipt)}')" title="서점이 보낸 영수증">영수증</div>`
@@ -3533,20 +3533,23 @@ function photoCell(g) {
   return a + b;
 }
 
+// 랜딩에 나가는 사진은 아이가 동의하고(photo_public 또는 옛 공개본) 운영진이 보고 올린(landing_ok) 것뿐이다.
+// 새 흐름의 사진은 proof_photo_url 에 공개 주소로, 옛 흐름은 book_photo_url 에 들어 있다 (migration-126)
+const landingPhoto = g => g.book_photo || (/^https?:/.test(g.photo_path || '') ? g.photo_path : null);
 function sharePhotoCell(g) {
-  if (!g.book_photo) return `<span class="muted">동의 안 함</span>`;
-  return `<button class="btn ${g.photo_public ? 'btn-line' : 'btn-pink'}"
-    onclick="${g.photo_public ? `togglePhoto(${g.id}, false)` : `openPhoto(${g.id})`}"
-    >${g.photo_public ? '공개 중 · 내리기' : '확인하고 공개'}</button>`;
+  if (!landingPhoto(g) || !(g.photo_public || g.book_photo)) return `<span class="muted">동의 안 함</span>`;
+  return `<button class="btn ${g.landing_ok ? 'btn-line' : 'btn-pink'}"
+    onclick="${g.landing_ok ? `togglePhoto(${g.id}, false)` : `openPhoto(${g.id})`}"
+    >${g.landing_ok ? '랜딩 공개 중 · 내리기' : '확인하고 랜딩에 올리기'}</button>`;
 }
 
 // 보지 않고는 못 켠다. 예/아니오 창은 사진을 안 봐도 눌러진다
 let phCtx = null;
 function openPhoto(id, viewOnly) {
-  const g = DB.purchases.find(x => x.id === id); if (!g || !g.book_photo) return;
+  const g = DB.purchases.find(x => x.id === id); if (!g || !landingPhoto(g)) return;
   phCtx = g;
-  document.getElementById('phImg').src = g.book_photo;
-  document.getElementById('phGo').style.display = (viewOnly || g.photo_public) ? 'none' : '';
+  document.getElementById('phImg').src = landingPhoto(g);
+  document.getElementById('phGo').style.display = (viewOnly || g.landing_ok) ? 'none' : '';
   document.getElementById('photoOverlay').classList.add('on');
 }
 
@@ -3558,12 +3561,12 @@ function confirmPhoto() {
 
 async function togglePhoto(id, next) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
-  if (!next && !confirm('후원자 화면에서 이 사진을 내릴까요?')) return;
+  if (!next && !confirm('랜딩(로그인 전 화면)에서 이 사진을 내릴까요?\n앱 안의 「책 교환 인증」에는 그대로 남아요.')) return;
   if (LIVE) {
-    const { error } = await sb.from('book_purchases').update({ photo_public: next }).eq('id', id);
+    const { error } = await sb.from('book_purchases').update({ landing_ok: next }).eq('id', id);
     if (error) return alert('바꾸지 못했어요: ' + error.message);
   }
-  g.photo_public = next;
+  g.landing_ok = next;
   render();
 }
 
@@ -3609,7 +3612,7 @@ function viewSettled() {
 
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>사진</th><th>청소년</th><th>서점</th><th class="right">책값</th><th>정산일</th>
-        <th>후원자 공개</th><th>입금</th><th class="right"></th></tr>
+        <th>랜딩 공개</th><th>입금</th><th class="right"></th></tr>
     ${rows.map(g => g.status === 'void' ? `<tr class="voided">
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b><div class="muted">${esc(g.routine)}</div></td>
@@ -3922,7 +3925,7 @@ async function loadLive() {
     routine: p.routines?.title || '-',
     bookstore: p.bookstores?.name || '-', status: p.status, created_at: p.created_at,
     settled_at: p.settled_at, paid_at: p.paid_at, amount: p.amount, photo_path: p.proof_photo_url || null,
-    book_photo: p.book_photo_url || null, photo_public: !!p.photo_public,
+    book_photo: p.book_photo_url || null, photo_public: !!p.photo_public, landing_ok: !!p.landing_ok,
     code_ok: !!p.code_ok,
     receipt: p.receipt_url || null,
     // 책방이 직접 올린 것 (migration-85). 금액은 제안이고 확정은 amount 다
