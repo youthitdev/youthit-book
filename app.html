@@ -1184,6 +1184,16 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rec-c b { display:block; font-size:22px; font-weight:800; letter-spacing:-.6px; line-height:1.15; color:var(--ink); }
 .rec-c b small { font-size:12px; font-weight:700; margin-left:1px; color:var(--green-d); }
 .rec-c span { display:block; margin-top:3px; font-size:11.5px; color:var(--ink-3); font-weight:600; }
+/* 루틴 화면의 「함께 읽는 친구들」 — 닉네임과 공식 표지만 (migration-129) */
+.mem-row { display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; margin:0 -2px; -webkit-overflow-scrolling:touch; }
+.mem-t { flex:none; width:74px; text-align:center; }
+.mem-c { width:74px; height:104px; border-radius:8px; overflow:hidden; background:#EFEBE1; display:flex; align-items:center; justify-content:center;
+  font-size:26px; box-shadow:0 2px 8px rgba(60,50,30,.16); }
+.mem-c img { width:100%; height:100%; object-fit:cover; display:block; }
+.mem-t b { display:block; margin-top:7px; font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mem-t i { display:block; font-style:normal; font-size:10.5px; color:var(--ink-3); line-height:1.3; margin-top:1px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; }
+.mem-n { font-size:12.5px; font-weight:700; color:var(--ink-3); margin-left:6px; }
 .rec-hint { margin-top:8px; font-size:12px; color:var(--ink-3); text-align:center; line-height:1.5; }
 
 /* 끗짱 출석부. 이름을 세로로 쌓으면 화면을 다 먹어서 칩으로 흘린다 */
@@ -6586,6 +6596,36 @@ async function saveProfile() {
 
 // ── 루틴 상세 ──────────────────────────────────────────
 let curRid = null;   // 지금 열려 있는 루틴. 머리의 공유 단추가 쓴다
+// 함께 읽는 친구들 — 닉네임과 공식 표지만 (migration-129). 청소년 확인이 끝난 회원·끗짱·운영진에게만 보인다.
+// 참여 여부와 상관없이 신청 전에도 본다. 못 불러오면 조용히 숨긴다
+const MEMBERS = {};
+const membersAllowed = () => !!me && !isGuest() && (me.verify_status === 'approved' || canLead());
+function membersHtml(rid) {
+  const list = MEMBERS[rid];
+  if (!list || !list.length) return '';
+  const tile = m => {
+    const books = Array.isArray(m.books) ? m.books : [];
+    const b = books.find(x => x.c) || books[0] || null;
+    return `<div class="mem-t"><div class="mem-c">${b && b.c ? `<img src="${esc(b.c)}" alt="" loading="lazy">` : (b ? '📖' : '🌱')}</div>
+      <b>${esc(m.nick)}</b>${b && !b.c ? `<i>${esc(b.t)}</i>` : ''}</div>`;
+  };
+  return `<div class="sec-t">함께 읽는 친구들<span class="mem-n">${list.length}명</span></div>
+    <div class="mem-row">${list.map(tile).join('')}</div>`;
+}
+async function loadMembers(rid) {
+  if (!membersAllowed()) return;
+  if (DEMO) {
+    MEMBERS[rid] = [{ nick: '하늘', books: [{ t: '노 피플 존', c: null }] }, { nick: '다온', books: [{ t: '어떤 어른', c: null }] }, { nick: '바다', books: [] }];
+  } else {
+    try {
+      const { data, error } = await sb.rpc('routine_members', { p_routine: rid });
+      if (error) return;                       // 129 가 아직이면 조용히 숨긴다
+      MEMBERS[rid] = data || [];
+    } catch (e) { return; }
+  }
+  if (curRid === rid) { const box = $('rmBox'); if (box) box.innerHTML = membersHtml(rid); }
+}
+
 function openRoutine(id) {
   const r = state.routines.find(x => x.id === id); if (!r) return;
   curRid = id;
@@ -6605,6 +6645,7 @@ function openRoutine(id) {
       ${CMT_P() ? `<div><span>댓글 1회당</span><b class="pt">${won(CMT_P())}N</b>
         ${CMT_CAP() ? `<i>하루 ${CMT_CAP()}개까지</i>` : ''}</div>` : ''}
     </div>
+    <div id="rmBox">${membersHtml(id)}</div>
     ${isShared(r) && (p?.status === 'approved' || leadsIt(r))
       ? `<div class="sec-t">함께 읽는 글</div>${postCard(r)}` : ''}
     ${(() => {
@@ -6707,7 +6748,7 @@ function openRoutine(id) {
     + routineFeed(r);
   applyBook = null; delete bookPick['applyBookTitle'];
   drawApplyBook(); checkApply();
-  openOv('ovRoutine');
+  loadMembers(id); openOv('ovRoutine');
 }
 
 let applyBook = null;
