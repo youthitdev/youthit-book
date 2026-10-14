@@ -5218,6 +5218,7 @@ async function openWrap(rid) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
   $('wrapT').textContent = '우리의 기록 카드';
   $('wrapS').textContent = '이름 없이 숫자만 담겨 있어서 마음 놓고 나눠도 돼요.';
+  $('wrapS').style.display = '';
   $('rcFindBox').style.display = 'none';
   $('wrapBody').innerHTML = '<div class="hint">카드를 만드는 중이에요…</div>';
   $('wrapShare').style.display = 'none';
@@ -5392,7 +5393,7 @@ async function openRecordCard(kind) {
   recKind = kind; recChoices = recordCoverChoices(kind); recCover = recChoices[0] || null;
   $('rcFindBox').style.display = 'none'; $('rcFindIn').value = ''; $('rcFindRes').innerHTML = '';
   $('wrapT').textContent = kind === 'kkut' ? '함께 쌓은 기록 카드' : '내 책 높이 카드';
-  $('wrapS').textContent = '닉네임과 숫자만 담겨 있어요. 실명·사진·지역은 들어가지 않아요. 확인하고 공유해 주세요.';
+  $('wrapS').style.display = 'none';          // 안내 문장은 뺐다 (2026-10-14 사용자)
   $('wrapBody').innerHTML = '<div class="hint">카드를 만드는 중이에요…</div>';
   $('wrapShare').style.display = 'none';
   showLayer('shWrap');
