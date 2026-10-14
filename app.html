@@ -428,6 +428,9 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .bk-got { display:flex; align-items:center; gap:6px; margin-top:7px;
   font-size:12.5px; color:var(--green-d); font-weight:700; }
 .bk-got i { font-size:14px; }
+.bk-got.has-cv { align-items:center; gap:12px; background:#F6F9EC; border:1px solid #DCEBC0; border-radius:12px; padding:9px 12px; }
+.bk-got.has-cv img { width:44px; height:62px; border-radius:5px; object-fit:cover; box-shadow:0 1px 5px rgba(0,0,0,.2); flex:none; }
+.bk-got.has-cv small { display:block; margin-top:3px; font-size:11.5px; font-weight:600; color:var(--ink-3); }
 /* 후기 — 쓸 수 있는 것 */
 .rv-todo { display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;
            background:#FDF6F4; border:1px solid #F5E0DA; }
@@ -6727,14 +6730,14 @@ function openRoutine(id) {
                </div>
                <div class="hint">이 책으로 인증해요. 없으면 도서관이나 책방에서 구해 주세요.</div>`
             : `<div class="field-label">내가 읽을 책 <span class="req">* 필수</span></div>
-               <div id="apBookBox"></div>
-               <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
-               <div class="hint">시작할 책의 표지를 <b>세로로</b> 찍어주세요. 집에 있는 책, 빌린 책 다 괜찮아요.</div>
-               <div class="field-label" style="margin-top:16px;">책 제목 <span class="req">* 필수</span></div>
-               <input type="text" id="applyBookTitle" placeholder="예) 시간자결권" maxlength="60"
+               <input type="text" id="applyBookTitle" placeholder="책 제목 · 예) 시간자결권" maxlength="60"
                       autocomplete="off" oninput="bookFind('applyBookTitle','apFind',checkApply)">
                <div id="apFind"></div><div id="apFindGot"></div>
-               <div class="hint">적다 보면 책을 찾아줘요. <b>못 찾으면 그냥 적어도 돼요.</b></div>`}
+               <div class="hint">제목을 적으면 책을 찾아줘요. <b>골라 주면 표지가 함께 보여요.</b> 못 찾으면 그냥 적어도 돼요.</div>
+               <div class="field-label" style="margin-top:16px;">내 책 사진 <span class="opt">선택</span></div>
+               <div id="apBookBox"></div>
+               <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
+               <div class="hint">내가 가진 책을 <b>세로로</b> 찍어 올려도 좋아요. 안 올려도 돼요.</div>`}
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
           <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
           ${rewardBox(r)}
@@ -6762,10 +6765,10 @@ function drawApplyBook() {
            <button type="button" class="bp-x" title="다시 고르기"
              onclick="applyBook=null;drawApplyBook();checkApply()">×</button>
          </div>
-         <div class="bp-note">홈 화면에 이렇게 보여요</div>
+         <div class="bp-note">내 책 사진 · 끗짱과 운영진에게 보여요</div>
        </div>`
     : `<div class="cover-pick" onclick="document.getElementById('apBookInput').click()">
-         <i class="ti ti-book" style="font-size:22px;"></i>책 사진 고르기</div>`;
+         <i class="ti ti-camera" style="font-size:22px;"></i>사진 올리기</div>`;
 }
 
 async function pickApplyBook(e) {
@@ -6782,7 +6785,7 @@ function checkApply() {
   // 공유회가 걸린 루틴은 약속을 확인해야 단추가 켜진다
   const meetOk = !$('apMeet') || $('apMeet').checked;
   b.disabled = !meetOk || ($('applyBookTitle')
-    ? !(applyBook && $('applyBookTitle').value.trim() && note)
+    ? !($('applyBookTitle').value.trim() && note)
     : !note);
 }
 
@@ -6797,7 +6800,6 @@ async function apply(rid) {
   // 함께 읽는 책이면 끗짱이 정한 한 권으로 간다. 고르는 칸 자체가 없다
   const title = noBook ? null
               : one ? (r0?.kkut_book_title || '') : ($('applyBookTitle')?.value.trim() || '');
-  if (!noBook && !one && !applyBook) return toast('읽을 책 사진을 올려주세요');
   if (!noBook && !title) return toast(one ? '끗짱이 아직 책을 정하지 않았어요' : '읽을 책 제목을 적어주세요');
   if (!note) return toast('참여 각오를 적어주세요');
   if ($('apMeet') && !$('apMeet').checked) return toast('공유회에 갈 수 있는지 확인해주세요');
@@ -6922,8 +6924,11 @@ const bookSub = b => [b.authors, b.publisher, b.year].filter(Boolean).join(' · 
 function drawBookGot(inputId, boxId) {
   const got = $(boxId + 'Got'); if (!got) return;
   const b = bookPick[inputId];
-  got.innerHTML = b && bookSub(b)
-    ? `<div class="bk-got"><i class="ti ti-check"></i>${esc(bookSub(b))}</div>` : '';
+  // 고른 책의 공식 표지를 보여 준다 — 「이 책이 맞다」를 눈으로 확인하고, 사진이 없어도 이 표지가 붙는다
+  got.innerHTML = !b ? ''
+    : `<div class="bk-got has-cv">${b.thumbnail ? `<img src="${esc(b.thumbnail)}" alt="">` : ''}
+         <div><span><i class="ti ti-check"></i>${esc(bookSub(b) || '이 책으로 해요')}</span>
+         ${b.thumbnail ? '<small>이 표지가 책으로 보여요</small>' : ''}</div></div>`;
 }
 
 // 저장할 때 붙여 보낼 값.
@@ -7554,7 +7559,7 @@ function drawSbCover() {
     ? `<div class="book-prev"><div class="bp-wrap">
          <div class="bp-frame"><img src="${esc(sbCover)}" alt=""></div>
          <button type="button" class="bp-x" onclick="sbCover=null;drawSbCover()">×</button>
-       </div><div class="bp-note">홈 화면에 이렇게 보여요</div></div>`
+       </div><div class="bp-note">내 책 사진 · 끗짱과 운영진에게 보여요</div></div>`
     : `<div class="cover-pick" onclick="document.getElementById('sbCoverInput').click()">
          <i class="ti ti-book" style="font-size:20px;"></i>표지 사진 고르기</div>`;
 }
