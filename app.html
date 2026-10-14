@@ -1040,7 +1040,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .lv-card { padding:16px; }
 /* 내 기록 카드 공유 단추 */
 .rc-share { position:absolute; top:12px; right:12px; border:1px solid var(--line); background:#fff; color:var(--ink-2);
-  font-family:inherit; font-size:12px; font-weight:700; border-radius:99px; padding:5px 12px; cursor:pointer; }
+  font-family:inherit; font-size:15px; line-height:1; font-weight:700; border-radius:99px; padding:7px 11px; cursor:pointer; }
 .rc-share:active { opacity:.6; }
 .rc-pick { margin-top:14px; text-align:left; }
 .rc-pick-t { font-size:12.5px; font-weight:700; margin-bottom:8px; }
@@ -6039,7 +6039,7 @@ function kkutStatBlock() {
     ? `<div class="rec-strip">${recCell(kids.size, '명', '함께한 청소년')}${recCell(kbooks.size, '권', '함께 읽은 책')}${recCell(kidPages, '쪽', '함께 읽은 쪽')}</div>`
     : `<div class="card kstat" style="padding:16px;">${body}</div>`;
   return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">함께 쌓은 독서 기록
-      <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')">공유</button></div>
+      <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')" aria-label="공유하기" title="공유하기">📤</button></div>
     ${strip}`;
 }
 
@@ -6051,7 +6051,7 @@ function myRecordBlock() {
   const st = myRecStats();
   if (!st.days && !st.pages) return '';
   return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">나의 독서 기록
-      <button class="rc-share" style="position:static;" onclick="openRecordCard('me')">공유</button></div>
+      <button class="rc-share" style="position:static;" onclick="openRecordCard('me')" aria-label="공유하기" title="공유하기">📤</button></div>
     <div class="rec-strip">${recCell(st.days, '일', '인증한 날')}${recCell(st.books, '권', '읽은 책')}${recCell(st.pages, '쪽', '읽은 쪽')}</div>`;
 }
 
@@ -6334,7 +6334,7 @@ function levelCard() {
               : cnt  ? '읽은 쪽을 적으면 책 높이가 쌓여요'
                      : '첫 인증을 하면 책 높이가 올라가기 시작해요 🌱';
   return `<div class="card lv-card" style="position:relative;">
-      <button class="rc-share" onclick="openRecordCard('me')">공유</button>
+      <button class="rc-share" onclick="openRecordCard('me')" aria-label="공유하기" title="공유하기">📤</button>
       <div class="lv-top">
         <div class="lv-ico">${have ? (m.cur ? m.cur.ico : '📖') : '🌱'}</div>
         <div class="lv-txt">
