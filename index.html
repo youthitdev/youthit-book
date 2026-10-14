@@ -326,23 +326,26 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   *{scroll-behavior:auto !important}
 }
 
-/* 앱 소개 — 왼쪽 글, 오른쪽 폰 화면이 번갈아 나온다. 화면은 데모 계정(가짜 이름·가짜 기록)에서 찍은 실제 앱이다 */
-.apps{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.feat{display:grid;gap:64px;margin-top:48px}
-.feat-row{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center}
-.feat-row.rev .feat-ph{order:-1}
-.feat-no{font-size:12.5px;font-weight:800;color:var(--green-d);letter-spacing:1.3px}
-.feat-t{font-size:clamp(20px,3.4vw,26px);line-height:1.4;font-weight:800;letter-spacing:-.8px;margin-top:8px}
-.feat-p{margin-top:12px;color:var(--ink-2);font-size:15px;line-height:1.8}
-.feat-ph{display:flex;justify-content:center}
-.phone{width:min(250px,68vw);border-radius:38px;padding:8px;background:#1C1A17;
-  box-shadow:0 30px 60px -24px rgba(40,50,30,.5),0 6px 16px rgba(0,0,0,.12)}
-.phone img{display:block;width:100%;height:auto;aspect-ratio:390/844;object-fit:cover;border-radius:30px;background:#F1EEE6}
+/* 앱 소개 — 작은 카드 다섯 장. 컴퓨터에서는 두 줄로 놓고, 폰에서는 옆으로 밀어 본다 (공간을 덜 차지하게 · 2026-10-14 사용자).
+   화면은 데모 계정(가짜 이름·가짜 기록)에서 찍은 실제 앱이다 */
+.apps{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:56px 0}
+.feat{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:34px}
+.feat-row{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:20px 24px}
+.feat-row:last-child{grid-column:1/-1;width:calc(50% - 9px);justify-self:center}
+.feat-ph{order:-1;display:flex;justify-content:center}
+.feat-no{font-size:11.5px;font-weight:800;color:var(--green-d);letter-spacing:1.2px}
+.feat-t{font-size:17.5px;line-height:1.4;font-weight:800;letter-spacing:-.6px;margin-top:6px}
+.feat-p{margin-top:8px;color:var(--ink-2);font-size:13.5px;line-height:1.7}
+.phone{width:128px;border-radius:26px;padding:5px;background:#1C1A17;
+  box-shadow:0 16px 32px -16px rgba(40,50,30,.5),0 3px 8px rgba(0,0,0,.1)}
+.phone img{display:block;width:100%;height:auto;aspect-ratio:390/844;object-fit:cover;border-radius:21px;background:#F1EEE6}
+@media(max-width:860px){.feat-row{grid-template-columns:1fr;text-align:center;gap:16px}.feat-row .feat-ph{order:-1}}
 @media(max-width:720px){
-  .feat{gap:54px;margin-top:38px}
-  .feat-row{grid-template-columns:1fr;gap:24px}
-  .feat-row.rev .feat-ph{order:0}
-  .feat-txt{text-align:center}
+  .apps{padding:44px 0}
+  .feat{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:28px -22px 0;padding:4px 22px 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .feat::-webkit-scrollbar{display:none}
+  .feat-row,.feat-row:last-child{flex:none;width:76vw;max-width:290px;scroll-snap-align:center;padding:20px 18px;justify-self:auto}
+  .phone{width:140px}
 }
 </style>
 </head>
@@ -873,7 +876,7 @@ const DONATE_URL = 'https://secure.donus.org/youthvoice/pay/step1_direct?dontype
       // 히어로는 순서대로 떠오른다
       document.querySelectorAll('.hero > *').forEach(function (el, i) { tag(el, i * 110); });
       // 제목류
-      document.querySelectorAll('.sec-label, .wrap h2, .sec-lead, .finding, .pisa, .gift-h, .report, .split-note, .live, .links, .feat-row')
+      document.querySelectorAll('.sec-label, .wrap h2, .sec-lead, .finding, .pisa, .gift-h, .report, .split-note, .live, .links')
         .forEach(function (el) { if (!el.closest('.hero')) tag(el, 0); });
       // 묶음의 자식은 차례로
       document.querySelectorAll('.steps,.flow,.gift-pair,.pool,.grid,.stores,.jny,.nope,.photos').forEach(function (g) {
