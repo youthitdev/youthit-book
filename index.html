@@ -50,6 +50,9 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.9);backdrop
 .hd-btns{display:flex;gap:8px;align-items:center}
 .hd-btns a{font-size:13px;font-weight:700;text-decoration:none;padding:9px 15px;border-radius:11px;white-space:nowrap}
 .hd-ghost{color:var(--ink-2);border:1px solid var(--line);background:#fff}
+.hd-btns a.hd-link{color:var(--ink-2);padding:9px 6px;background:none}
+.hd-btns a.hd-link:hover{color:var(--ink)}
+@media(max-width:380px){.hd-btns{gap:4px}.hd-btns a.hd-link{padding:9px 4px;font-size:12.5px}.hd-btns a.hd-cta{padding:9px 12px}}
 .hd-cta{color:#fff;background:var(--blue)}
 @media(max-width:520px){.hd-ghost{display:none}}
 
@@ -330,6 +333,8 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   <div class="hd">
     <div class="logo" onclick="window.scrollTo({top:0,behavior:'smooth'});if(location.hash)history.replaceState(null,'',location.pathname+location.search)" style="cursor:pointer" title="맨 위로">한끗<span>독서</span></div>
     <div class="hd-btns">
+      <a class="hd-link" href="store-invite.html">책방 안내</a>
+      <a class="hd-link" href="kkut-guide.html">끗짱 안내</a>
       <a class="hd-ghost" href="app.html">참여하기</a>
       <a class="hd-cta" href="https://secure.donus.org/youthvoice/pay/step1_direct?dontype=25&period=pledge" target="_blank" rel="noopener">후원하기</a>
     </div>
