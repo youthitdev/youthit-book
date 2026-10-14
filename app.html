@@ -5278,6 +5278,8 @@ function recordCoverChoices(kind) {
   }
   return out;
 }
+// 카드의 이름 — ‘김유스’님 처럼 따옴표로 묶어 이름이 어디까지인지 보이게 한다 (2026-10-14 사용자)
+const recQuoted = () => `‘${recName()}’님`;
 function kkutStats() {
   const led   = state.routines.filter(r => r.led_by === me.id);
   const ids   = led.map(r => r.id);
@@ -5319,7 +5321,7 @@ async function buildRecordCard(kind, coverUrl) {
   if (lead) {
     const k = kkutStats();
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
-    wrapText(x, recName() === '나' ? '나와 함께' : `${recName()}님과 함께`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
+    wrapText(x, recName() === '나' ? '나와 함께' : `${recQuoted()}과 함께`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
     setFont(x, 'bold', 130); x.fillText('📖', PAD, 480);
     setFont(x, 'bold', 78); x.fillText(k.kids ? `${won(k.kids)}명의 청소년이` : '청소년과 함께', PAD, 610);
     setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)';
@@ -5329,11 +5331,20 @@ async function buildRecordCard(kind, coverUrl) {
     const { pages: pg, days, books } = myRecStats();
     const m = personalMetaphor(pg);
     setFont(x, 'bold', 64); x.fillStyle = '#fff';
-    wrapText(x, recName() === '나' ? '나의 책 높이' : `${recName()}님의 책 높이`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
-    setFont(x, 'bold', 140); x.fillText(m.cur ? m.cur.ico : '📖', PAD, 490);
-    setFont(x, 'bold', 70); x.fillText(m.cur ? passedTxt(m.cur.name) : '쌓기 시작했어요', PAD, 620);
-    setFont(x, 'normal', 48); x.fillStyle = 'rgba(255,255,255,.85)';
-    x.fillText(`${won(pg)}쪽 · 책으로 쌓으면 ${m.height}`, PAD, 694);
+    wrapText(x, recName() === '나' ? '나의 책 높이' : `${recQuoted()}의 책 높이`, TW, 1).forEach(l => x.fillText(l, PAD, 300));
+    // 높이와 단계 이모지를 한 줄에 나란히 (2026-10-14 사용자). 「약」은 작게 — 쪽수로 어림한 값이라서
+    const ico = m.cur ? m.cur.ico : '📖', hs = m.height.replace(/^약 /, '');
+    setFont(x, 'bold', 120); x.fillStyle = '#fff'; x.fillText(ico, PAD, 470);
+    let hx = PAD + x.measureText(ico).width + 36;
+    setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)'; x.fillText('약', hx, 468);
+    hx += x.measureText('약').width + 14;
+    setFont(x, 'bold', 130); x.fillStyle = '#fff'; x.fillText(hs, hx, 470);
+    setFont(x, 'bold', 64); x.fillText(m.cur ? passedTxt(m.cur.name) : '쌓기 시작했어요', PAD, 582);
+    // 다음 단계 — 한 줄에 안 들어가면 글자를 줄여 맞춘다
+    const nx = m.next ? `다음은 ${m.next.name}까지 ${won(m.left)}쪽 남았어요` : '가장 높은 곳까지 왔어요 🎉';
+    let fs = 46; setFont(x, 'normal', fs);
+    while (fs > 32 && x.measureText(nx).width > W - PAD * 2) { fs -= 2; setFont(x, 'normal', fs); }
+    x.fillStyle = 'rgba(255,255,255,.88)'; x.fillText(nx, PAD, 676);
     cells = [[days, '일', '인증한 날'], [books, '권', '읽은 책'], [pg, '쪽', '읽은 쪽']];
   }
 
