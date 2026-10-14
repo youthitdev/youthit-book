@@ -118,11 +118,6 @@ h2+.sec-lead{margin-top:14px}
 .ask em{font-style:normal;font-weight:700;color:#F3C87E}
 @media(max-width:560px){.ask br{display:none}}   /* 좁은 화면에선 줄을 손으로 끊지 않는다 */
 
-/* 「없는 것」은 띠 하나로 줄였다 */
-.nope{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px}
-.nope span{font-size:12.5px;font-weight:700;color:var(--ink-2);background:var(--card);
-  border:1px solid var(--line);border-radius:99px;padding:8px 14px}
-
 /* 돈 */
 .money{background:var(--green-l)}
 .pay{margin-top:28px;background:var(--card);border:1px solid #dcecc0;border-radius:18px;padding:26px 24px;text-align:center}
@@ -332,15 +327,6 @@ html.fx .bar{animation:barUp .7s cubic-bezier(.2,.7,.2,1) .5s both}
       <div class="fl"><i>🧾</i><b>금액·영수증</b><span>책방 화면에 올리기</span></div>
       <div class="fl"><i>✅</i><b>확인</b><span>운영진 확인</span></div>
       <div class="fl"><i>💸</i><b>입금</b><span>15일-말일</span></div>
-    </div>
-    <p class="sec-lead" style="margin-top:20px">
-      동네책방이 이런 제안에서 가장 걱정하는 건 계약이 아니라 <b>외상 기간</b>이라고 들었습니다.
-      그래서 저희는 입금 날짜를 약속으로 걸었습니다.
-      그 밖에 <b>이런 건 없습니다.</b>
-    </p>
-    <div class="nope">
-      <span>계약서</span><span>앱 설치·가입</span><span>할인</span>
-      <span>재고 준비</span><span>선입금</span><span>상담·수업</span>
     </div>
   </div>
 </section>
@@ -610,7 +596,6 @@ document.getElementById('contactLine').innerHTML =
       kids('.stores', 70, 'pop');
       kids('.qa', 55);
       kids('.nums', 100, 'pop');
-      kids('.nope', 70, 'pop');
       // 숫자 칸의 큰 글씨
       document.querySelectorAll('.num b').forEach(function (n) {
         if (n.dataset.fx) return; n.dataset.fx = '1'; n.setAttribute('data-count', ''); io.observe(n);
