@@ -2926,7 +2926,7 @@ async function deleteKkutApp(userId) {
   if (!confirm(`${a.name} 님의 끗짱 신청을 삭제할까요?\n\n· 신청서 기록(연락처·소개 포함)이 지워져요\n· 회원 계정은 그대로예요\n· 되돌릴 수 없어요`)) return;
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
   const { error } = await sb.rpc('admin_delete_kkut_app', { p_user: userId });
-  if (error) return alert('삭제하지 못했어요: ' + error.message + '\n(마이그레이션 123을 돌렸는지 확인해 주세요)');
+  if (error) return alert('삭제하지 못했어요: ' + error.message + '\n(마이그레이션 123·128을 돌렸는지 확인해 주세요)');
   KK_OPEN.delete(userId);
   await loadLive(); await loadKkutApps(); render();
 }
@@ -2937,7 +2937,7 @@ async function withdrawMember(userId) {
   const pt = (DB.points || {})[userId];
   const warn = pt && pt.remain ? `\n⚠️ 아직 쓰지 않은 교환권이 ${pt.remain}장 있어요. 탈퇴 처리하면 쓸 수 없게 돼요.\n` : '';
   const typed = prompt(`${r.name} 님을 삭제(탈퇴 처리)해요.\n${warn}\n`
-    + `지워지는 것\n· 이름·닉네임·지역·휴대폰·생년월일·이메일·프로필 사진·서류\n· 올린 인증 사진·글·문장, 댓글·후기 내용\n· 로그인 (같은 이메일로 다시 가입은 가능)\n\n`
+    + `지워지는 것\n· 이름·닉네임·지역·휴대폰·생년월일·이메일·프로필 사진·서류\n· 올린 인증 사진·글·문장, 책 받은 사진·고른 이유, 댓글·후기 내용\n· 로그인 (같은 이메일로 다시 가입은 가능)\n\n`
     + `남는 것\n· 인증 날짜·쪽수·나다움과 책 교환·정산 기록 — 「탈퇴한 회원」으로 이름 없이\n\n`
     + `되돌릴 수 없어요. 계속하려면 「삭제」를 입력해 주세요.`);
   if (typed === null) return;
@@ -2945,7 +2945,7 @@ async function withdrawMember(userId) {
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
 
   const { data, error } = await sb.rpc('admin_withdraw_member', { p_user: userId });
-  if (error) return alert('탈퇴 처리하지 못했어요: ' + error.message + '\n(마이그레이션 123을 돌렸는지 확인해 주세요)');
+  if (error) return alert('탈퇴 처리하지 못했어요: ' + error.message + '\n(마이그레이션 123·128을 돌렸는지 확인해 주세요)');
 
   // 저장소의 파일도 지운다. 주소에서 저장소 이름과 경로를 나눈다. 권한이 없어 일부 실패해도 주소는 이미 끊겼다
   const byBucket = {};
@@ -2954,6 +2954,8 @@ async function withdrawMember(userId) {
     if (m) (byBucket[m[1]] = byBucket[m[1]] || []).push(decodeURIComponent(m[2]));
     else if (/^[0-9a-f-]{36}\//.test(String(u))) (byBucket['dokseo-verify'] = byBucket['dokseo-verify'] || []).push(u);   // 서류는 경로 그대로 저장돼 있다
   });
+  // 옛 방식의 책 받은 사진은 비공개 저장소(dokseo-proofs)에 경로로 들어 있다 (migration-128)
+  (data?.proofs || []).forEach(pth => { (byBucket['dokseo-proofs'] = byBucket['dokseo-proofs'] || []).push(String(pth)); });
   let failed = 0;
   for (const [bk, paths] of Object.entries(byBucket)) {
     const { error: e } = await sb.storage.from(bk).remove(paths);
