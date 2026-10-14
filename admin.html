@@ -466,6 +466,43 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .pb{width:44px;text-align:center}
 .pb img,.pb .pb-ph{width:44px;height:62px;border-radius:5px;object-fit:cover;display:flex;align-items:center;justify-content:center;background:#EFEBE1;font-size:17px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .pb i{display:block;font-style:normal;font-size:10px;color:var(--ink-3);line-height:1.25;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* 통계 (migration-133) */
+.st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+.st-c { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px; }
+.st-c.hl { border-color:#F0DFBF; background:#FFFAF0; }
+.st-l { font-size:12.5px; color:var(--ink-3); font-weight:600; }
+.st-v { font-size:30px; font-weight:800; letter-spacing:-1px; margin-top:4px; line-height:1.15; }
+.st-v small { font-size:15px; font-weight:700; margin-left:2px; }
+.st-s { font-size:11.5px; color:var(--ink-3); margin-top:4px; line-height:1.5; }
+.st-box { background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px 18px; margin-bottom:14px; }
+.st-box h3 { font-size:14px; font-weight:800; margin:0 0 12px; }
+.st-box h3 small { font-size:11.5px; font-weight:600; color:var(--ink-3); margin-left:6px; }
+.st-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:14px; }
+@media (max-width:900px){ .st-grid { grid-template-columns:1fr; } }
+.st-grid .st-box { margin:0; }
+.st-bar { display:flex; align-items:center; gap:10px; margin:7px 0; font-size:12.5px; }
+.st-bar > span:first-child { width:96px; flex:none; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.st-bar i { display:block; height:14px; border-radius:7px; background:var(--blue, #2F33B8); min-width:3px; }
+.st-bar em { font-style:normal; font-weight:700; color:var(--ink-2); }
+.st-bt { flex:1; min-width:0; }
+.st-don { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.st-don svg { width:120px; height:120px; flex:none; }
+.st-lg { font-size:12.5px; line-height:1.9; }
+.st-lg b { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:7px; vertical-align:-1px; }
+.st-lg em { font-style:normal; color:var(--ink-3); margin-left:5px; }
+.st-prog { display:flex; align-items:center; gap:12px; padding:9px 0; border-top:1px solid var(--line); font-size:13px; }
+.st-prog:first-of-type { border-top:0; }
+.st-prog > b { flex:1.4; min-width:0; }
+.st-prog > span { flex:1; color:var(--ink-3); font-size:12px; }
+.st-pb { flex:1.2; height:9px; border-radius:6px; background:#EEE9DD; overflow:hidden; }
+.st-pb i { display:block; height:100%; background:var(--green, #83CA00); border-radius:6px; }
+.st-tbl { width:100%; border-collapse:collapse; font-size:13px; }
+.st-tbl th { text-align:left; font-size:12px; color:var(--ink-3); font-weight:700; padding:10px 10px; background:#F7F4EC; }
+.st-tbl td { padding:11px 10px; border-top:1px solid var(--line); }
+.st-tbl .r { text-align:right; }
+.st-note { font-size:12px; color:var(--ink-3); line-height:1.6; margin-top:10px; }
+.sch-out { background:#FBF3E3; color:#A8680C; font-weight:700; padding:1px 7px; border-radius:6px; font-style:normal; }
 </style>
 </head>
 <body>
@@ -513,6 +550,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="grp-b"    data-grp="msgs"     onclick="switchGroup('msgs')">알림<i id="cntInboxG"></i></button>
     <button class="grp-b"    data-grp="site"     onclick="switchGroup('site')">홈페이지</button>
     <button class="grp-b"    data-grp="money"    onclick="switchGroup('money')">정산<i id="cntGMoney"></i></button>
+    <button class="grp-b"    data-grp="stats"    onclick="switchGroup('stats')">통계</button>
   </div>
   <div class="tabs" id="tabsMembers">
     <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
@@ -534,6 +572,9 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="covers" onclick="switchTab('covers')">책 표지<i id="cntCovers"></i></button>
     <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
+  </div>
+  <div class="tabs" id="tabsStats" style="display:none;">
+    <button class="tab" data-tab="stats" onclick="switchTab('stats')">통계</button>
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
@@ -987,6 +1028,7 @@ function renderSummary() {
       + card('정산 대기', p.pending, '건', p.pending,
              (n => n ? `⚠️ ${CLAIM_WARN_DAYS}일↑ ${n}건` : '')((DB.purchases || []).filter(overdue).length))
       + card('서점 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
+  if (grp === 'stats') document.getElementById('summary').innerHTML = '';   // 통계 화면은 자기 카드를 쓴다
   // 손대야 하는 건(todo)은 분홍 표시로, 그냥 개수는 회색 숫자로.
   // 할 일이 0 이면 아무것도 안 그린다 — 0 을 띄워두면 1 이 안 보인다
   const setCnt = (id, n, todo) => {
@@ -1032,7 +1074,121 @@ function renderPanel() {
   if (tab === 'covers')   return el.innerHTML = viewCovers();
   if (tab === 'notices')  return el.innerHTML = viewNotices();
   if (tab === 'report')   return el.innerHTML = viewReport();
+  if (tab === 'stats')    return el.innerHTML = viewStats();
   el.innerHTML = viewCharges();
+}
+
+// ── 통계 (migration-133) ────────────────────────────────────
+// 한끗루틴 관리자의 통계처럼: 숫자 카드, 지역·재학 상태·루틴 상태 그림, 루틴별 완주율 표(체크한 것만 CSV).
+// 숫자는 서버가 한 번에 세어 준다(admin_stats). 완주 = 그 루틴 기간의 80% 이상 인증한 날이 있는 참여자
+let STATS = null, STATS_ERR = '';
+const ST_PCT = 80, ST_SEL = new Set();
+const ST_SCHOOL_COLOR = { '학교밖': '#E8A33D', '재학': '#83CA00', '졸업': '#5B9BD5', '기타': '#9A948A', '미입력': '#D9D5CA' };
+async function loadStats() {
+  STATS_ERR = '';
+  if (!LIVE) {
+    STATS = { pct: ST_PCT, youth: { total: 30, verified: 27, school: { '학교밖': 21, '재학': 7, '졸업': 1, '미입력': 1 },
+                region: [{ r: '서울', n: 10 }, { r: '경기', n: 9 }, { r: '대구', n: 2 }, { r: '인천', n: 1 }] },
+              kkut: { total: 9, pending: 2 }, routines: { recruit: 1, active: 1, done: 3, other: 0 },
+              withdrawn: { total: 3, recent: 0 },
+              rows: [{ id: 1, title: '[데모] 하루 10장 독서 루틴', status: 'active', start: '2026-10-07', end: '2026-10-21', days: 15, people: 4, done: 0, today: 2 },
+                     { id: 2, title: '[데모] 오늘의 한 끼 기록', status: 'done', start: '2026-09-07', end: '2026-09-15', days: 9, people: 4, done: 3 }] };
+    return;
+  }
+  const { data, error } = await sb.rpc('admin_stats', { p_pct: ST_PCT });
+  if (error) { STATS = null; STATS_ERR = error.message || '알 수 없는 오류'; return; }
+  STATS = data;
+}
+function stDonut(items) {
+  const rows = items.filter(i => i.n > 0), tot = rows.reduce((a, b) => a + b.n, 0);
+  if (!tot) return '<div class="empty">아직 자료가 없어요</div>';
+  const R = 42, C = 2 * Math.PI * R; let off = 0;
+  const arcs = rows.map(i => { const len = C * i.n / tot;
+    const a = `<circle r="${R}" cx="60" cy="60" fill="none" stroke="${i.color}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 60 60)"></circle>`;
+    off += len; return a; }).join('');
+  return `<div class="st-don"><svg viewBox="0 0 120 120" aria-hidden="true">${arcs}</svg>
+    <div class="st-lg">${rows.map(i => `<div><b style="background:${i.color}"></b>${esc(i.label)}<em>${won(i.n)}명 · ${Math.round(i.n / tot * 100)}%</em></div>`).join('')}</div></div>`;
+}
+function stRows() { return (STATS && STATS.rows) || []; }
+function stRate(r) { return r.status === 'done' && r.people ? Math.round(r.done / r.people * 100) : null; }
+function stToggle(id) { if (ST_SEL.has(id)) ST_SEL.delete(id); else ST_SEL.add(id); }
+function stToggleAll(on) { stRows().forEach(r => on ? ST_SEL.add(r.id) : ST_SEL.delete(r.id)); renderPanel(); }
+function stCsv() {
+  const all = stRows(), pick = all.filter(r => ST_SEL.has(r.id)), rows = pick.length ? pick : all;
+  if (!rows.length) return alert('내려받을 루틴이 없어요.');
+  downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '참여인원', '완주인원', '완주율(%)'],
+    rows.map(r => [r.title, { recruit: '모집 중', active: '진행 중', done: '완료' }[r.status] || r.status, r.start, r.end, r.days, r.people, r.status === 'done' ? r.done : '', stRate(r) ?? '']));
+}
+function viewStats() {
+  if (!STATS) {
+    if (STATS_ERR) return `<div class="empty">통계를 불러오지 못했어요.<br>마이그레이션 133을 돌렸는지 확인해 주세요.<br><span class="muted">${esc(STATS_ERR)}</span></div>`;
+    loadStats().then(() => { if (tab === 'stats') renderPanel(); });
+    return `<div class="empty">불러오는 중…</div>`;
+  }
+  const S = STATS, y = S.youth || {}, k = S.kkut || {}, ro = S.routines || {}, w = S.withdrawn || {}, sc = y.school || {};
+  const rows = stRows();
+  const doneRows = rows.filter(r => r.status === 'done' && r.people > 0);
+  const dn = doneRows.reduce((a, r) => a + r.done, 0), pn = doneRows.reduce((a, r) => a + r.people, 0);
+  const overall = pn ? Math.round(dn / pn * 100) : null;
+  const out = sc['학교밖'] || 0;
+  const card = (l, v, u, sub, hl) => `<div class="st-c${hl ? ' hl' : ''}"><div class="st-l">${l}</div><div class="st-v num">${v}<small>${u}</small></div><div class="st-s">${sub}</div></div>`;
+
+  const regs = (y.region || []), top = regs.slice(0, 12), rest = regs.slice(12).reduce((a, b) => a + b.n, 0), mx = Math.max(1, ...top.map(x => x.n));
+  const bars = top.length ? top.map(x => `<div class="st-bar"><span title="${esc(x.r)}">${esc(x.r)}</span><div class="st-bt"><i style="width:${Math.round(x.n / mx * 100)}%"></i></div><em>${x.n}</em></div>`).join('')
+      + (rest ? `<div class="st-note">그 밖의 지역 ${rest}명</div>` : '') : '<div class="empty">아직 자료가 없어요</div>';
+
+  const schoolOrder = ['학교밖', '재학', '졸업', '기타', '미입력'];
+  const schoolItems = [...schoolOrder.filter(x => sc[x]), ...Object.keys(sc).filter(x => !schoolOrder.includes(x))]
+    .map(x => ({ label: x === '학교밖' ? '학교 밖' : x, n: sc[x], color: ST_SCHOOL_COLOR[x] || '#B7B0A0' }));
+  const routineItems = [{ label: '모집 중', n: ro.recruit || 0, color: '#F2C94C' }, { label: '진행 중', n: ro.active || 0, color: '#2F33B8' },
+                        { label: '완료', n: ro.done || 0, color: '#83CA00' }, { label: '그 밖', n: ro.other || 0, color: '#D9D5CA' }]
+    .map(x => ({ ...x }));
+  // 루틴 그림은 「개」 단위라 donut 의 「명」을 바꿔 쓴다
+  const routineDonut = stDonut(routineItems).replace(/명 ·/g, '개 ·');
+
+  const act = rows.filter(r => r.status === 'active');
+  const prog = act.length ? act.map(r => `<div class="st-prog"><b>${esc(r.title)}</b>
+      <span>참여 ${r.people}명 · 오늘 인증 ${r.today || 0}명</span>
+      <div class="st-pb"><i style="width:${r.people ? Math.round((r.today || 0) / r.people * 100) : 0}%"></i></div></div>`).join('')
+    : '<div class="empty">진행 중인 루틴이 없어요</div>';
+
+  const allOn = rows.length && rows.every(r => ST_SEL.has(r.id));
+  const stLabel = { recruit: '모집 중', active: '진행 중', done: '완료' };
+  const tbl = rows.length ? `<table class="st-tbl"><tr>
+      <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
+      <th>루틴</th><th>상태</th><th>기간</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
+    ${rows.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
+      <td>${esc(r.title)}</td><td>${stLabel[r.status] || r.status}</td>
+      <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
+      <td class="num r">${r.people}명</td>
+      <td class="num r">${r.status === 'done' ? r.done + '명' : '—'}</td>
+      <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td></tr>`).join('')}</table>`
+    : '<div class="empty">아직 루틴이 없어요</div>';
+
+  return `
+  <div class="st-cards">
+    ${card('청소년', won(y.total || 0), '명', `확인 완료 ${won(y.verified || 0)}명`)}
+    ${card('학교 밖 청소년', won(out), '명', y.total ? `전체의 ${Math.round(out / y.total * 100)}% · 가입할 때 고른 값` : '', true)}
+    ${card('끗짱', won(k.total || 0), '명', `승인 대기 ${won(k.pending || 0)}건`)}
+    ${card('진행 중 루틴', won(ro.active || 0), '개', `완료 ${won(ro.done || 0)}개 · 모집 중 ${won(ro.recruit || 0)}개`)}
+    ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `완료 루틴 ${doneRows.length}개 기준`)}
+    ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
+  </div>
+  <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
+  <div class="st-grid">
+    <div class="st-box"><h3>지역별 청소년 분포</h3>${bars}</div>
+    <div class="st-box"><h3>재학 상태 비율<small>가입할 때 고른 값</small></h3>${stDonut(schoolItems)}</div>
+    <div class="st-box"><h3>루틴 상태 분포</h3>${routineDonut}</div>
+  </div>
+  <div class="st-box">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+      <h3 style="margin:0;">루틴별 완주율</h3>
+      <button class="btn btn-dark" onclick="stCsv()">📥 ${ST_SEL.size ? '체크한 루틴 CSV' : '전체 루틴 CSV'}</button>
+    </div>
+    <div style="overflow-x:auto;">${tbl}</div>
+    <div class="st-note">완주 = 그 루틴 기간 중 <b>${S.pct || ST_PCT}% 이상</b> 인증한 날이 있는 참여자예요. 인증은 하루에 한 번만 세요.
+      완주율은 <b>끝난 루틴</b>만 계산해요. 진행 중인 루틴은 아직 끝나지 않았어요.</div>
+  </div>`;
 }
 
 // ── 공지 (홈의 「📢 공지」) ─────────────────────────────────
@@ -1289,7 +1445,7 @@ function vqCard(r) {
     <div class="kr-r" onclick="vqToggle('${r.user_id}')">
       <span><span class="vq-st st-${st.key}">${st.label}</span></span>
       <span class="kr-n"><b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? `<i>${esc(r.nick)}</i>` : ''}</span>
-      <span class="kr-m">${ageTxt ? `<span${r.birth_date ? '' : ' style="color:#8E3527;"'}>${ageTxt}</span> · ` : ''}${esc(r.region || (adult ? '' : '지역 없음'))}${r.can_lead ? ' · 끗짱' : ''}</span>
+      <span class="kr-m">${ageTxt ? `<span${r.birth_date ? '' : ' style="color:#8E3527;"'}>${ageTxt}</span> · ` : ''}${esc(r.region || (adult ? '' : '지역 없음'))}${r.school && !adult ? ` · ${r.school === '학교밖' ? '<i class="sch-out">학교밖</i>' : esc(r.school)}` : ''}${r.can_lead ? ' · 끗짱' : ''}</span>
       <span class="kr-c">${r.phone ? esc(phoneKo(r.phone)) : '<span class="muted">번호 없음</span>'}</span>
       <span class="kr-w">${esc(joined)}</span>
       <span class="kr-i">${esc(ptTxt)}</span>
@@ -1310,6 +1466,7 @@ function vqCard(r) {
         <div><b>이름·닉네임</b><span>${esc(r.name)}${r.nick && r.nick !== r.name ? ' · ' + esc(r.nick) : ''}</span></div>
         <div><b>나이</b><span>${r.birth_date ? `만 ${r.age}세 · ${esc(r.birth_date)}` : '생년월일 없음'}</span></div>
         <div><b>지역</b><span>${esc(r.region || '-')}</span></div>
+        ${adult ? '' : `<div><b>재학 상태</b><span>${r.school === '학교밖' ? '<i class="sch-out">학교밖</i>' : esc(r.school || '적지 않았어요')} <span class="muted">· 가입할 때 본인이 고른 값</span></span></div>`}
         <div><b>가입·접속</b><span>${when(r)}</span></div>
         ${ptTxt ? `<div><b>나다움</b><span>${esc(ptTxt)}${pt && pt.used ? ` (${pt.used}장 썼어요)` : ''}</span></div>` : ''}
         ${done && r.verify_kind ? `<div><b>확인 방법</b><span>${esc(r.verify_kind)}로 확인</span></div>` : ''}
@@ -2999,18 +3156,18 @@ function exportVerify() {
   const rows = vqPool();
   if (!rows.length) return alert('내려받을 명단이 없어요.');
   downloadCsv(`청소년명단_${todayStamp()}.csv`,
-    ['확인 상태', '이름', '닉네임', '구분', '나이', '생년월일', '지역', '연락처', '이메일', '가입일', '마지막 접속',
+    ['확인 상태', '이름', '닉네임', '구분', '나이', '생년월일', '지역', '재학 상태', '연락처', '이메일', '가입일', '마지막 접속',
      '마지막 인증일', '인증 횟수', '나다움', '교환권 남음', '확인 방법', '반려 사유', '끗짱'],
     rows.map(r => {
       const pt = (DB.points || {})[r.user_id] || {};
       return [vqState(r).label, r.name, r.nick, r.role === 'adult' ? '어른' : '청소년',
-        r.birth_date ? r.age : '', r.birth_date, r.region, r.phone ? phoneKo(r.phone) : '', r.email,
+        r.birth_date ? r.age : '', r.birth_date, r.region, r.school || '', r.phone ? phoneKo(r.phone) : '', r.email,
         r.joined_at ? fmtDate(r.joined_at) : '', r.last_seen_at ? fmtDate(r.last_seen_at) : '',
         r.last_cert_on ? fmtDate(r.last_cert_on) : '', r.cert_count || 0,
         r.role === 'adult' ? '' : (pt.points ?? ''), r.role === 'adult' ? '' : (pt.remain ?? ''),
         r.verify_kind, r.reason, r.can_lead ? '예' : ''];
     }),
-    [7]);   // 연락처 칸
+    [8]);   // 연락처 칸
 }
 
 // 반려한 신청을 재심사로 심사 대기에 올린다 (migration-122)
@@ -4021,8 +4178,9 @@ const GROUPS = { members:  ['verify', 'kkut', 'photos'],
                  routines: ['routines', 'reports'],
                  msgs:     ['inbox', 'notices', 'notify'],
                  site:     ['quotes', 'covers', 'report'],
-                 money:    ['pending', 'settled', 'stores', 'charges'] };
-const GROUP_ROW = { members: 'tabsMembers', routines: 'tabsRoutines', msgs: 'tabsMsgs', site: 'tabsSite', money: 'tabsMoney' };
+                 money:    ['pending', 'settled', 'stores', 'charges'],
+                 stats:    ['stats'] };
+const GROUP_ROW = { members: 'tabsMembers', routines: 'tabsRoutines', msgs: 'tabsMsgs', site: 'tabsSite', money: 'tabsMoney', stats: 'tabsStats' };
 const groupOf = t => Object.keys(GROUPS).find(g => GROUPS[g].includes(t)) || 'members';
 let grp = 'members';
 
