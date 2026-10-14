@@ -9,9 +9,9 @@
 -- 【청소년으로 세는 사람】 역할이 청소년이고 끗짱이 아니며, 운영진이 아니고, 탈퇴하지 않았고, 끗짱 신청서가 없는 사람.
 --   (어른은 가입하면 끗짱 신청서가 생기므로(132) 청소년 숫자에 섞이지 않는다)
 --
--- 【완주의 기준】 그 루틴 기간(시작일~종료일) 일수의 p_pct %(기본 80%) 이상 인증한 날이 있으면 완주다.
+-- 【완주의 기준】 그 루틴 기간(시작일~종료일) 일수의 p_pct %(기본 70%) 이상 인증한 날이 있으면 완주다.
 --   인증은 하루에 한 번만 세고, 승인되어 참여한 청소년만 센다. 완주율은 **끝난(done) 루틴**만 합쳐 낸다 —
---   아직 진행 중인 루틴은 끝나지 않았으니 완주를 말할 수 없다. 기준을 바꾸려면 아래 함수의 기본값(80)을 고친다.
+--   아직 진행 중인 루틴은 끝나지 않았으니 완주를 말할 수 없다. 기준을 바꾸려면 아래 함수의 기본값(70)을 고친다.
 --
 -- ── B. verify_queue() — 명단에 재학 상태(school) 칸을 보탠다 ─────────
 --   가입할 때 고른 「재학 · 학교밖 · 졸업 · 기타」다. 본인이 고른 값이라 운영진이 서류로 확인한 것은 아니다.
@@ -72,9 +72,9 @@ REVOKE EXECUTE ON FUNCTION verify_queue() FROM PUBLIC, anon;
 GRANT  EXECUTE ON FUNCTION verify_queue() TO authenticated;
 
 -- ── A ──────────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION admin_stats(p_pct int DEFAULT 80) RETURNS jsonb AS $$
+CREATE OR REPLACE FUNCTION admin_stats(p_pct int DEFAULT 70) RETURNS jsonb AS $$
 DECLARE
-  v_pct   int := LEAST(GREATEST(COALESCE(p_pct, 80), 1), 100);
+  v_pct   int := LEAST(GREATEST(COALESCE(p_pct, 70), 1), 100);
   v_today date := (now() AT TIME ZONE 'Asia/Seoul')::date;
   r jsonb;
 BEGIN

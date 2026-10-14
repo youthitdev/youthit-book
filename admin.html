@@ -1080,9 +1080,9 @@ function renderPanel() {
 
 // ── 통계 (migration-133) ────────────────────────────────────
 // 한끗루틴 관리자의 통계처럼: 숫자 카드, 지역·재학 상태·루틴 상태 그림, 루틴별 완주율 표(체크한 것만 CSV).
-// 숫자는 서버가 한 번에 세어 준다(admin_stats). 완주 = 그 루틴 기간의 80% 이상 인증한 날이 있는 참여자
+// 숫자는 서버가 한 번에 세어 준다(admin_stats). 완주 = 그 루틴 기간의 70% 이상 인증한 날이 있는 참여자
 let STATS = null, STATS_ERR = '';
-const ST_PCT = 80, ST_SEL = new Set();
+const ST_PCT = 70, ST_SEL = new Set();
 const ST_SCHOOL_COLOR = { '학교밖': '#E8A33D', '재학': '#83CA00', '졸업': '#5B9BD5', '기타': '#9A948A', '미입력': '#D9D5CA' };
 async function loadStats() {
   STATS_ERR = '';
