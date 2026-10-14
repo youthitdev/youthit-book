@@ -501,6 +501,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .st-tbl th { text-align:left; font-size:12px; color:var(--ink-3); font-weight:700; padding:10px 10px; background:#F7F4EC; }
 .st-tbl td { padding:11px 10px; border-top:1px solid var(--line); }
 .st-tbl .r { text-align:right; }
+.st-link { background:none; border:0; padding:0; font:inherit; color:inherit; text-align:left; cursor:pointer; text-decoration:underline; text-decoration-color:#CFC8B8; text-underline-offset:3px; }
+.st-link:hover { color:var(--blue, #2F33B8); text-decoration-color:currentColor; }
 .st-note { font-size:12px; color:var(--ink-3); line-height:1.6; margin-top:10px; }
 .sch-out { background:#FBF3E3; color:#A8680C; font-weight:700; padding:1px 7px; border-radius:6px; font-style:normal; }
 </style>
@@ -1158,7 +1160,7 @@ function viewStats() {
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
       <th>루틴</th><th>상태</th><th>기간</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
     ${rows.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
-      <td>${esc(r.title)}</td><td>${stLabel[r.status] || r.status}</td>
+      <td><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></td><td>${stLabel[r.status] || r.status}</td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' ? r.done + '명' : '—'}</td>
