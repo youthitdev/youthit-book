@@ -297,7 +297,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 
 .card { background:var(--card); border-radius:16px; padding:18px; margin-bottom:12px; }
 .sec-t { font-size:15px; font-weight:800; margin:22px 0 10px; letter-spacing:-.3px; }
-/* 포인트 — 큰 숫자 옆에 교환권을 나란히. 그러면 「이 숫자가 뭔지」를
+/* 나다움 — 큰 숫자 옆에 교환권을 나란히. 그러면 「이 숫자가 뭔지」를
    따로 설명할 일이 없다 */
 .bal-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
 .vch-n { flex:none; font-size:12px; font-weight:700; color:var(--ink-3);
@@ -434,7 +434,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .rv-r { flex-shrink:0; display:flex; align-items:center; gap:7px; }
 .rv-p { font-size:13px; font-weight:800; color:var(--pink);
         background:#fff; border:1px solid #F5E0DA; border-radius:99px; padding:6px 11px; }
-/* 남은 날. 이틀 안쪽이면 붉게 — 지나면 30P 가 사라지기 때문에 */
+/* 남은 날. 이틀 안쪽이면 붉게 — 지나면 30N이 사라지기 때문에 */
 .rv-d { font-size:11.5px; font-weight:800; color:var(--ink-3); }
 .rv-d.hot { color:#A8432F; }
 /* 홈 위의 알림 줄 */
@@ -641,7 +641,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 /* 인증 탭 한 줄 요약 */
 .cline { font-size:13px; color:var(--ink-3); margin:-4px 0 12px; }
 .cline b { color:var(--ink); font-weight:800; font-size:15px; }
-/* 포인트 한 줄 */
+/* 나다움 한 줄 */
 .tc-pt { display:flex; align-items:center; gap:10px; background:#f7fbf0; border:1px solid #d8ebb8;
          border-radius:14px; padding:13px 16px; margin-bottom:20px; cursor:pointer; }
 .tc-pt b { font-size:17px; font-weight:800; color:var(--green-d); }
@@ -1524,7 +1524,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 <!-- 로그인 -->
 <div class="auth" id="authScr">
   <h1>매일 한 장,<br>책과 가까워지는 습관</h1>
-  <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 포인트가 쌓여요</div>
+  <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 나다움이 쌓여요</div>
   <button type="button" class="au-back" id="auBack" style="display:none;" onclick="authBack()">← 뒤로</button>
 
   <div class="role-row" id="authTabs">
@@ -1538,7 +1538,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="pick">
       <button type="button" class="pick-c" onclick="pickRole('youth')">
         <b>🌱 청소년</b>
-        <span>함께 책을 읽고 인증해서 포인트를 모아요.
+        <span>함께 책을 읽고 인증해서 나다움을 모아요.
           모이면 동네책방에서 책 한 권과 바꿔요.</span>
         <i>혼자 읽기 어려운 날에도 곁에 함께하는 사람이 있어요 · 만 14~20세</i>
       </button>
@@ -1636,7 +1636,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       · 회원 가입 및 관리: 회원 식별, 만 14세 이상 확인, 부정 이용 방지<br>
       · 독서루틴 제공: 참여 신청·승인, 끗짱 배정, 청소년 여부 확인을 위한 서류 심사,
         독서 인증(사진·문장·쪽수) 저장, 같은 루틴 안에서의 인증 열람·응원<br>
-      · 포인트와 교환권: 인증으로 쌓인 포인트를 도서 교환권으로 바꾸고,
+      · 나다움과 교환권: 인증으로 쌓인 나다움을 도서 교환권으로 바꾸고,
         파트너 동네책방에서 책으로 바꾼 뒤 책방에 정산하는 일.
         이때 책방 화면에는 <b>닉네임(없으면 이름)과 만 나이, 교환한 시각</b>만 보이고
         생년월일·연락처는 보이지 않습니다<br>
@@ -1889,7 +1889,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <input type="checkbox" id="mMeet" style="width:17px;height:17px;" onchange="toggleMeetFields()">
         오프라인 공유회 함께하기
       </label>
-      <div class="hint">체크하면 <b>공유회에 온 청소년만</b> 책을 받아요. 참석하면 포인트도 더 드려요</div>
+      <div class="hint">체크하면 <b>공유회에 온 청소년만</b> 책을 받아요. 참석하면 나다움도 더 드려요</div>
       <div id="mMeetWrap" style="display:none;margin-top:12px;">
         <div class="field-label">언제 모이나요 <span class="req">* 필수</span></div>
         <div style="display:flex;gap:10px;">
@@ -1933,7 +1933,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div style="margin-top:16px;">
       <!-- 【「후기」가 아니다 · 2026-10-07 사용자와 정함】 받은 그 자리에서는
            아직 안 읽었다. 「어땠어?」를 물으면 쓸 말이 없다. 「왜 골랐어요?」는
-           그날 가장 쓰기 쉬운 말이고, 다 읽고 쓰는 책인증후기(+30P)는 그대로 남는다 -->
+           그날 가장 쓰기 쉬운 말이고, 다 읽고 쓰는 책인증후기(+30N)는 그대로 남는다 -->
       <div class="field-label">왜 이 책을 골랐어요? <span class="opt">선택</span></div>
       <textarea id="gotReason" rows="3" maxlength="200"
         placeholder="표지가 예뻐서, 제목이 마음에 들어서, 전부터 읽고 싶어서…"></textarea>
@@ -1957,7 +1957,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="ov-b">
     <div id="buyBal"></div>
     <!-- 【무슨 말을 할지 적어 준다 · 2026-10-07 사용자】 여기서 제일 어려운 건
-         포인트도 번호도 아니고 **모르는 어른에게 말 거는 일**이다. 통째로 읽으면
+         나다움도 번호도 아니고 **모르는 어른에게 말 거는 일**이다. 통째로 읽으면
          되는 한 문장을 주면 그 턱이 낮아진다 -->
     <div class="buy-say">
       <div class="buy-say-h">💬 책방 사장님께 이렇게 말해요</div>
@@ -2099,7 +2099,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">청소년 확인</div>
-        <div class="sheet-s">책을 받을 때 한 번만 확인해요. 읽고 포인트 모으는 건 지금도 돼요.</div>
+        <div class="sheet-s">책을 받을 때 한 번만 확인해요. 읽고 나다움 모으는 건 지금도 돼요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shVerify')" aria-label="닫기">✕</button>
     </div>
@@ -2652,7 +2652,7 @@ function setJoinRole(r) {
   const k = r === 'kkut';
   $('roleHint').innerHTML = k
     ? '<b>💪 끗짱</b>으로 함께해요 · 청소년 곁에서 같이 읽어요'
-    : '<b>🌱 청소년</b>으로 함께해요 · 읽고 인증해서 포인트를 모아요';
+    : '<b>🌱 청소년</b>으로 함께해요 · 읽고 인증해서 나다움을 모아요';
   const bh = $('auBirthHint');
   if (bh) bh.textContent = k
     ? '만 14세부터 함께할 수 있어요. 나이 확인에만 써요'
@@ -3375,7 +3375,7 @@ const peopleOf = rid => state.counts[rid] ?? partsOf(rid).length;
 const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
 const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
 // 역할은 두 축이다.
-//   isYouth  포인트·교환권·책을 받는 사람인가
+//   isYouth  나다움·교환권·책을 받는 사람인가
 //   canLead  루틴을 만들 수 있는가 (끗짱)
 // 청소년 끗짱은 둘 다 참이다 — 계속 읽고, 루틴도 만든다
 // 만 나이. 생일이 지났는지까지 본다
@@ -3884,7 +3884,7 @@ const allDoneToday = rid => booksOf(rid).length
   : didToday(rid);
 
 // 잔액 = (내 인증 수 × 인증당 적립액) − 정산 완료된 구매 합계
-// 서버 dokseo_points() 와 같은 식. 포인트는 루틴을 가리지 않고 계정에 쌓인다.
+// 서버 dokseo_points() 와 같은 식. 나다움은 루틴을 가리지 않고 계정에 쌓인다.
 // 정산 대기 중인 구매도 교환권을 이미 쓴 것으로 센다 (중복 사용 방지)
 function myPoints() {
   const per = state.settings.points_per_voucher || 150;
@@ -3901,7 +3901,7 @@ function myPoints() {
 
   // 하루에 한 번이다. 같은 날 세 권을 읽어도 그날치 한 번 — 서버
   // dokseo_points() 와 같은 식이어야 한다. 행 수를 세면 병렬독서 하는
-  // 아이의 화면에만 포인트가 부풀어 보인다
+  // 아이의 화면에만 나다움이 부풀어 보인다
   const mine = state.certs.filter(c => c.user_id === me.id);
   // 읽은 날은 읽은 날이다. 이정표는 공유회와 상관없이 센다
   const cert_count = new Set(mine.map(c => c.cert_date)).size;
@@ -4076,7 +4076,7 @@ function routineCard(r) {
       ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
       ${routineTags(r).length ? `<div class="r-tags">
         ${routineTags(r).map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
-      ${mine && r.points_per_cert ? `<div class="r-mine">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}P</div>` : ''}
+      ${mine && r.points_per_cert ? `<div class="r-mine">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}N</div>` : ''}
     </div>
   </div>`;
 }
@@ -4182,7 +4182,7 @@ function todayCard(r) {
 
   const action = ended
     ? `<div class="tc-done">🌱 끝까지 함께해줘서 고마워요</div>
-       ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}P</button>`}
+       ${rv ? '' : `<button class="btn btn-primary" onclick="openReview('routine', ${r.id})">후기 쓰고 +${RV_PR()}N</button>`}
        ${certsOf(r.id).length ? `<button class="btn btn-line" style="margin-top:8px;" onclick="openWrap(${r.id})">🎁 우리의 기록 카드</button>` : ''}
        `
     : d?.notYet
@@ -4397,7 +4397,7 @@ function viewHome() {
     return `<div class="card" style="background:linear-gradient(160deg,#265C52,#173A34);color:#fff;">
         <div style="font-size:17px;font-weight:800;letter-spacing:-.4px;line-height:1.45;">매일 한 장,<br>끗짱과 함께 읽어요</div>
         <div style="font-size:13px;color:rgba(255,255,255,.78);margin-top:8px;line-height:1.6;">
-          읽은 만큼 포인트가 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
+          읽은 만큼 나다움이 쌓이고, 모이면 동네책방에서 책 한 권과 바꿔요.</div>
         <button class="btn" style="background:#fff;color:var(--blue);margin-top:16px;" onclick="showAuth('signup')">시작하기</button>
       </div>` + cityCard() + pickSection() + recruit;
   }
@@ -4458,7 +4458,7 @@ function viewHome() {
     return noticeBar() + h + pickSection() + (others.length ? recruitSection(others) : '');
   }
 
-  // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30P 가 사라지므로 먼저 알린다.
+  // 청소년 — 기한이 걸린 후기가 맨 위. 지나면 30N이 사라지므로 먼저 알린다.
   // 진짜 알림(푸시·문자)은 아직 없다. 앱을 열었을 때만 보인다
   const due = reviewTodos().filter(t => t.left !== null && t.left !== undefined && t.left <= 7);
   if (due.length) {
@@ -4466,7 +4466,7 @@ function viewHome() {
     h += `<div class="rv-alert" onclick="go('feed')">
       <div style="min-width:0;">
         <b>${t.left === 0 ? '오늘까지예요' : `후기 쓸 수 있는 날이 ${t.left}일 남았어요`}</b>
-        <span>${t.emoji} ${esc(t.title)} · 지나면 +${RV_PR()}P를 못 받아요</span>
+        <span>${t.emoji} ${esc(t.title)} · 지나면 +${RV_PR()}N을 못 받아요</span>
       </div>
       <i class="ti ti-chevron-right"></i>
     </div>`;
@@ -4475,11 +4475,11 @@ function viewHome() {
   if (mine.length) {
     h += mine.map(todayCard).join('');
     const p = myPoints();
-    // 홈의 「23P 다음 책까지 150P」 줄은 뺐다 (2026-10-13 사용자). 포인트는 MY 의 「내 독서 포인트」에서 본다
-    // 7일 루틴을 다 해도 135P 라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
+    // 홈의 「23N 다음 책까지 150N」 줄은 뺐다 (2026-10-13 사용자). 나다움은 MY 의 「내 독서 나다움」에서 본다
+    // 7일 루틴을 다 해도 135N이라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
     // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
     if (p.left === 0 && mine.some(routineEnded))
-      h += `<div class="tc-keep">포인트는 사라지지 않아요. 다음 루틴에서 이어서 채워져요.</div>`;
+      h += `<div class="tc-keep">나다움은 사라지지 않아요. 다음 루틴에서 이어서 채워져요.</div>`;
   } else if (kkutPending()) {
     // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
     // 「루틴을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
@@ -4495,7 +4495,7 @@ function viewHome() {
       <div style="font-size:30px;">📚</div>
       <div style="font-size:15.5px;font-weight:800;margin-top:10px;">첫 루틴을 골라볼까요?</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;">
-        끗짱과 매일 한 장씩. 읽은 만큼 포인트가 쌓여요.</div>
+        끗짱과 매일 한 장씩. 읽은 만큼 나다움이 쌓여요.</div>
     </div>`;
   }
   // 청소년 홈에서는 「함께 짓는 한끗 책의 도시」 줄을 뺀다 (2026-10-13 사용자). 끗짱 홈에는 그대로 있다
@@ -4859,14 +4859,14 @@ function balanceBlock() {
   const cap = won(state.settings.voucher_max_amount || 20000);
   const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
   const mile = p.next_milestone
-    ? `${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}P`
+    ? `${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}N`
     : null;
 
   return `<div class="bal">
       <div class="bal-top">
         <div>
-          <div class="bal-l">📚 내 독서 포인트</div>
-          <div class="bal-n">${won(p.balance)}<small>P</small></div>
+          <div class="bal-l">📚 내 독서 나다움</div>
+          <div class="bal-n">${won(p.balance)}<small>N</small></div>
         </div>
         <div class="vch-n ${p.left ? 'on' : ''}">🎫 교환권 <b>${p.left}</b>장</div>
       </div>
@@ -4874,8 +4874,8 @@ function balanceBlock() {
       <div class="bal-bar"><i style="width:${pct}%"></i></div>
       <div class="bal-goal">
         <span>${p.left > 0 ? `${cap}원 이하 책 한 권과 바꿔요`
-                           : `다음 교환권까지 <b>${won(p.to_next)}P</b>`}</span>
-        <span class="bal-goal-r">${won(p.into)} / ${won(p.per)}P</span>
+                           : `다음 교환권까지 <b>${won(p.to_next)}N</b>`}</span>
+        <span class="bal-goal-r">${won(p.into)} / ${won(p.per)}N</span>
       </div>
 
       <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
@@ -5447,10 +5447,10 @@ async function shareWrap() {
 
 // '모두' 탭 — 루틴을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
 // ── 후기 ───────────────────────────────────────────────
-// 루틴 후기 30P · 책인증후기 30P. 15일 완주 235P 에 후기 30P 가 붙어야
+// 루틴 후기 30N · 책인증후기 30N. 15일 완주 235N 에 후기 30N이 붙어야
 // 문턱을 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
 const RV_PR = () => state.settings.points_per_review ?? 30;
-// 댓글 포인트. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20P 를 기다린다
+// 댓글 나다움. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20N을 기다린다
 const MEET_P  = () => state.settings.points_per_meetup ?? 50;
 const CMT_P   = () => state.settings.points_per_comment ?? 1;
 const CMT_CAP = () => state.settings.comment_daily_cap ?? 5;
@@ -5536,7 +5536,7 @@ function viewFeed() {
       <div class="rv-r">
         ${t.left !== null && t.left !== undefined
           ? `<span class="rv-d${t.left <= 2 ? ' hot' : ''}">${t.left === 0 ? '오늘까지' : `D-${t.left}`}</span>` : ''}
-        <span class="rv-p">+${t.kind === 'routine' ? RV_PR() : RV_PB()}P</span>
+        <span class="rv-p">+${t.kind === 'routine' ? RV_PR() : RV_PB()}N</span>
       </div>
     </div>`).join('')}` : '';
 
@@ -5578,11 +5578,11 @@ function openReview(kind, id) {
   $('ovRvLabel').textContent = isBook ? '책인증후기' : '루틴 후기';
   $('ovRvTitle').textContent = existing ? '후기 고치기' : '후기 쓰기';
   $('rvIntro').innerHTML = isBook
-    ? `받은 책을 읽고 어땠는지 적어주세요. 올리면 <b>+${RV_PB()}P</b>예요.<br>
+    ? `받은 책을 읽고 어땠는지 적어주세요. 올리면 <b>+${RV_PB()}N</b>이에요.<br>
        <span style="color:var(--ink-3);">같은 루틴 친구들에게만 보여요.</span>`
     : `<b>${esc(r ? r.title : '')}</b> 어땠나요?<br>
        처음과 지금이 뭐가 달라졌는지, 어떤 날이 기억에 남는지 적어주세요.
-       올리면 <b>+${RV_PR()}P</b>예요.${existing ? '' : rvDueLine(r)}`;
+       올리면 <b>+${RV_PR()}N</b>이에요.${existing ? '' : rvDueLine(r)}`;
 
   $('rvBookWrap').style.display = isBook ? '' : 'none';
   $('rvBook').value = existing?.book_title || '';
@@ -5637,12 +5637,12 @@ async function saveReview() {
   closeOv('ovReview');
   await loadAll();
   render();
-  toast(rvCtx.review ? '후기를 고쳤어요' : `후기 고마워요 · +${isBook ? RV_PB() : RV_PR()}P`);
+  toast(rvCtx.review ? '후기를 고쳤어요' : `후기 고마워요 · +${isBook ? RV_PB() : RV_PR()}N`);
 }
 
 async function deleteReview() {
   if (!rvCtx?.review) return;
-  if (!confirm('후기를 지울까요? 받은 포인트도 같이 빠져요.')) return;
+  if (!confirm('후기를 지울까요? 받은 나다움도 같이 빠져요.')) return;
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
   const { error } = await sb.from('reviews').delete().eq('id', rvCtx.review.id);
   if (error) return toast(error.message || '지우지 못했어요');
@@ -5808,7 +5808,7 @@ function verifyNote() {
     <div class="vf-t">
       <b>${st === 'rejected' ? '서류를 다시 내주세요' : '책을 받으려면 청소년 확인이 필요해요'}</b>
       <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
-        : '지금 참여해서 읽는 건 돼요. 포인트가 모이기 전에만 끝내면 됩니다.'}</span>
+        : '지금 참여해서 읽는 건 돼요. 나다움이 모이기 전에만 끝내면 됩니다.'}</span>
       <button class="btn btn-line" style="margin-top:10px;" onclick="openVerify()">확인하러 가기</button>
     </div>
   </div>`;
@@ -5891,7 +5891,7 @@ function kkutCard() {
       <div style="font-weight:700;">📖 끗짱을 신청할 수 있어요</div>
       <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.6;">
         ${el.days ? `${el.days}일을 읽었어요. ` : ''}직접 루틴을 열고 함께 읽을 사람을 모을 수 있어요.<br>
-        <span style="color:var(--ink-3);">끗짱이 되어도 지금처럼 읽고 포인트를 모을 수 있어요.</span></div>
+        <span style="color:var(--ink-3);">끗짱이 되어도 지금처럼 읽고 나다움을 모을 수 있어요.</span></div>
     </div>`;
 }
 
@@ -6056,7 +6056,7 @@ async function paintRecordImg(kind) {
 }
 const paintKkutRecordImg = () => paintRecordImg('kkut');
 
-// 청소년 MY — 프로필·포인트 아래에 「나의 독서 기록」을 이미지로 (끗짱 MY 와 같은 모양). 첫 인증 전에는 놓지 않는다
+// 청소년 MY — 프로필·나다움 아래에 「나의 독서 기록」을 이미지로 (끗짱 MY 와 같은 모양). 첫 인증 전에는 놓지 않는다
 function myRecordBlock() {
   if (!me || isGuest() || canLead() || kkutPending()) return '';
   const st = myRecStats();
@@ -6599,9 +6599,9 @@ function openRoutine(id) {
     <div class="card rinfo">
       <div><span>기간</span><b>${fmtPeriod(r.start_date, r.end_date)}</b></div>
       <div><span>참여</span><b>${people} / ${r.max_people}명</b></div>
-      ${r.points_per_cert ? `<div><span>인증 1회당</span><b class="pt">${won(r.points_per_cert)}P</b></div>` : ''}
-      ${needsMeet(r) ? `<div><span>공유회 참석</span><b class="pt">${won(MEET_P())}P</b></div>` : ''}
-      ${CMT_P() ? `<div><span>댓글 1회당</span><b class="pt">${won(CMT_P())}P</b>
+      ${r.points_per_cert ? `<div><span>인증 1회당</span><b class="pt">${won(r.points_per_cert)}N</b></div>` : ''}
+      ${needsMeet(r) ? `<div><span>공유회 참석</span><b class="pt">${won(MEET_P())}N</b></div>` : ''}
+      ${CMT_P() ? `<div><span>댓글 1회당</span><b class="pt">${won(CMT_P())}N</b>
         ${CMT_CAP() ? `<i>하루 ${CMT_CAP()}개까지</i>` : ''}</div>` : ''}
     </div>
     ${isShared(r) && (p?.status === 'approved' || leadsIt(r))
@@ -6699,7 +6699,7 @@ function openRoutine(id) {
           ${needsMeet(r) ? `<label class="meet-agree">
             <input type="checkbox" id="apMeet" onchange="checkApply()">
             <span>이 루틴은 <b>공유회에 참석해야</b> 책을 받아요.
-              안 오면 모은 포인트가 사라져요.<br>
+              안 오면 모은 나다움이 사라져요.<br>
               ${meetWhen(r)}${r.meetup_place ? ` · ${esc(r.meetup_place)}` : ''}
               <i>갈 수 있는지 확인했어요</i></span></label>` : ''}
           <button class="btn btn-primary" id="apSubmit" style="margin-top:12px;" disabled onclick="apply(${r.id})">참여하기</button></div>`}`
@@ -6979,7 +6979,7 @@ const meetMapUrl = r => (r?.meetup_lat && r?.meetup_lng)
 
 // ── 루틴 만들기 (끗짱) ──────────────────────────────────
 // 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는다.
-// 인증 1회당 포인트는 끗짱이 고르지 않는다 — dokseo_settings.points_per_cert 를
+// 인증 1회당 나다움은 끗짱이 고르지 않는다 — dokseo_settings.points_per_cert 를
 // 서버 트리거가 자동으로 붙인다.
 let makeId = null;
 
@@ -7564,12 +7564,12 @@ async function addBook() {
   toast('책을 더했어요');
 }
 
-// 목록에서만 뺀다. 이미 쌓은 인증과 포인트는 그대로 남는다
+// 목록에서만 뺀다. 이미 쌓은 인증과 나다움은 그대로 남는다
 async function dropBook(title) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
   const n = pageOf(sbRid, title);
   if (!confirm(`「${title}」을(를) 목록에서 뺄까요?\n` +
-    (n ? `지금까지 ${won(n)}쪽까지 읽은 기록과 포인트는 그대로 남아요.`
+    (n ? `지금까지 ${won(n)}쪽까지 읽은 기록과 나다움은 그대로 남아요.`
        : '기록은 그대로 남아요.'))) return;
   const { error } = await sb.from('routine_books').delete()
     .eq('routine_id', sbRid).eq('user_id', me.id).eq('title', title);
@@ -7604,9 +7604,9 @@ function drawBookChips() {
 
   if (books.length >= BOOK_MAX)
     h += `<span class="bk-full">한 번에 ${BOOK_MAX}권까지예요</span>`;
-  // 두 권째부터는 포인트가 안 붙는다. 올리고 나서 알면 속은 기분이 든다
+  // 두 권째부터는 나다움이 안 붙는다. 올리고 나서 알면 속은 기분이 든다
   if (done.length)
-    h += `<span class="bk-full">오늘 ${done.length}권 올렸어요 · <b>포인트는 하루에 한 번이에요</b></span>`;
+    h += `<span class="bk-full">오늘 ${done.length}권 올렸어요 · <b>나다움은 하루에 한 번이에요</b></span>`;
   box.innerHTML = h;
 }
 
@@ -7724,7 +7724,7 @@ async function delCert(id) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
   const c = state.certs.find(x => x.id === id);
   if (!c || c.user_id !== me.id) return;
-  if (!confirm('이 인증을 삭제할까요?\n쌓인 포인트도 같이 줄어들어요.')) return;
+  if (!confirm('이 인증을 삭제할까요?\n쌓인 나다움도 같이 줄어들어요.')) return;
   const { error } = await sb.from('certifications').delete().eq('id', id);
   if (error) return toast('지우지 못했어요: ' + error.message);
   await loadAll(); render(); refreshOpenOv(c.routine_id, id);
@@ -7747,15 +7747,15 @@ function rewardBox(r) {
   const st  = storeOf(r);
   return `<div class="rw-box">
     <b>🎁 책은 이렇게 받아요</b>
-    <li><em>${per}P</em>를 모으면 ${st ? `<em>${esc(st.name)}</em>에서 ` : '함께하는 책방에서 '}
+    <li><em>${per}N</em>을 모으면 ${st ? `<em>${esc(st.name)}</em>에서 ` : '함께하는 책방에서 '}
       원하는 책 한 권(${cap}원 이하)을 <em>무료로</em> 받아요.</li>
-    <li>하루 한 번 인증하면 ${won(r.points_per_cert || 10)}P${
-      needsMeet(r) ? `, 공유회에 다녀오면 ${won(MEET_P())}P` : ''}가 쌓여요.</li>
+    <li>하루 한 번 인증하면 ${won(r.points_per_cert || 10)}N${
+      needsMeet(r) ? `, 공유회에 다녀오면 ${won(MEET_P())}N` : ''}이 쌓여요.</li>
     ${needsMeet(r)
       ? `<li><em>공유회 당일에만</em> 교환권을 사용할 수 있어요.
            그날 책방에서 바로 받아가면 돼요.</li>
-         <li>공유회에 참석하면 <em>+${won(MEET_P())}P</em>를 적립해드려요!</li>
-         <li>공유회에 <em>안 오면</em> 이 루틴에서 모은 포인트는 사라져요.</li>`
+         <li>공유회에 참석하면 <em>+${won(MEET_P())}N</em>을 적립해드려요!</li>
+         <li>공유회에 <em>안 오면</em> 이 루틴에서 모은 나다움은 사라져요.</li>`
       : `<li>모으면 아무 때나 함께하는 책방에 가서 받으면 돼요.</li>`}
   </div>`;
 }
@@ -7812,7 +7812,7 @@ async function nativeShare() {
 }
 
 // 공유회 시각이 지났는데 참석 표시가 없다. 그 루틴에서 모은 건 못 쓴다.
-// 끗짱이 뒤늦게 체크하면 거짓으로 돌아오고 포인트도 같이 돌아온다
+// 끗짱이 뒤늦게 체크하면 거짓으로 돌아오고 나다움도 같이 돌아온다
 const meetMissed = r => !!(r?.meetup_required && r.meetup_at
   && new Date(r.meetup_at) < new Date() && !myPart(r.id)?.met_at);
 
@@ -7852,18 +7852,18 @@ function meetCard(r) {
           <i>${ack ? '다시 누르면 지워져요' : '누르면 끗짱이 알아요'}</i></button>`;
       })() : ''}
       <div class="meet-f">${met
-        ? `다녀왔으니 <b>+${won(MEET_P())}P</b> 들어갔어요. 교환권을 쓸 수 있어요.`
+        ? `다녀왔으니 <b>+${won(MEET_P())}N</b> 들어갔어요. 교환권을 쓸 수 있어요.`
         : meetMissed(r)
-          ? `공유회에 오지 않아 이 루틴에서 모은 포인트는 <b>쓸 수 없게</b> 됐어요.
+          ? `공유회에 오지 않아 이 루틴에서 모은 나다움은 <b>쓸 수 없게</b> 됐어요.
              끗짱이 참석을 늦게 표시하면 돌아와요.`
         : myPart(r.id)?.status === 'approved'
           ? `<b>공유회 당일에만</b> 교환권을 사용할 수 있어요.
-             공유회에 참석하면 <b>+${won(MEET_P())}P</b>를 적립해드려요!<br>
-             <b>안 오면</b> 이 루틴에서 모은 포인트는 사라져요.`
+             공유회에 참석하면 <b>+${won(MEET_P())}N</b>을 적립해드려요!<br>
+             <b>안 오면</b> 이 루틴에서 모은 나다움은 사라져요.`
           : `이 루틴은 <b>공유회에 참석해야 하는</b> 루틴이에요.<br>
              <b>공유회 당일에만</b> 교환권을 사용할 수 있고, 참석하면
-             <b>+${won(MEET_P())}P</b>를 적립해드려요!
-             <b>안 오면 모은 포인트가 사라져요.</b>`}</div>
+             <b>+${won(MEET_P())}N</b>을 적립해드려요!
+             <b>안 오면 모은 나다움이 사라져요.</b>`}</div>
     </div>`;
 }
 
@@ -8029,14 +8029,14 @@ async function savePost() {
 //
 // 【1.6초면 충분하다】 매일 보는 것이라 길면 방해가 된다. 아무 데나 누르면
 //   바로 걷힌다. 기다리게 하는 축하는 축하가 아니다.
-// 【숫자는 오늘 것만】 「며칠째」와 「+10P」만 말한다. 누적이나 순위는 안 꺼낸다
+// 【숫자는 오늘 것만】 「며칠째」와 「+10N」만 말한다. 누적이나 순위는 안 꺼낸다
 let stampT = null;
 
 function showStamp(day, pts, pg) {
   const el = $('stamp'); if (!el) return;
   // 도장 안에 이미 「오늘 한 장」이 있다. 기간이 없는 루틴이면 이 줄은 비운다
   $('stampDay').textContent = day ? `${won(day)}일째` : '';
-  $('stampPt').textContent  = pts ? `+${pts}P` : '';
+  $('stampPt').textContent  = pts ? `+${pts}N` : '';
   const box = $('stampPg');
   if (pg) {
     box.innerHTML = stampPagesHtml(pg); box.style.display = '';
@@ -8144,7 +8144,7 @@ async function submitCert() {
 function storeGoal() {
   if (isGuest()) return `<div class="sg">
       <b>교환권으로 책을 바꾸는 동네책방이에요</b>
-      <span>매일 읽고 포인트를 모으면 여기서 책 한 권을 골라요.</span>
+      <span>매일 읽고 나다움을 모으면 여기서 책 한 권을 골라요.</span>
     </div>`;
   if (!isYouth()) return `<div class="sg">
       <b>아이들이 책을 받으러 가는 곳이에요</b>
@@ -8160,9 +8160,9 @@ function storeGoal() {
 
   const pct = Math.min(100, Math.round((p.points % p.per) / Math.max(p.per, 1) * 100));
   return `<div class="sg">
-      <b>${won(p.to_next)}P만 더 모으면 여기서 책을 골라요</b>
+      <b>${won(p.to_next)}N만 더 모으면 여기서 책을 골라요</b>
       <div class="bal-bar" style="background:#EBE5DA;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
-      <span>오늘 인증하면 ${state.settings.points_per_cert ?? 10}P 쌓여요.</span>
+      <span>오늘 인증하면 ${state.settings.points_per_cert ?? 10}N 쌓여요.</span>
     </div>`;
 }
 
