@@ -1184,6 +1184,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rec-c b { display:block; font-size:22px; font-weight:800; letter-spacing:-.6px; line-height:1.15; color:var(--ink); }
 .rec-c b small { font-size:12px; font-weight:700; margin-left:1px; color:var(--green-d); }
 .rec-c span { display:block; margin-top:3px; font-size:11.5px; color:var(--ink-3); font-weight:600; }
+.rec-hint { margin-top:8px; font-size:12px; color:var(--ink-3); text-align:center; line-height:1.5; }
 
 /* 끗짱 출석부. 이름을 세로로 쌓으면 화면을 다 먹어서 칩으로 흘린다 */
 .kroll { display:flex; flex-wrap:wrap; gap:6px; }
@@ -6047,7 +6048,8 @@ function kkutStatBlock() {
   // 숫자 세 칸만 보인다. 카드 그림은 「공유」를 누르면 나온다 (그림이 MY 의 자리를 너무 차지해서 · 2026-10-14 사용자).
   // 아직 함께한 청소년이 없거나 한 장도 안 올렸으면 위 줄글을 그대로 보인다
   const strip = kids.size && days
-    ? `<div class="rec-strip">${recCell(kids.size, '명', '함께한 청소년', '🌱')}${recCell(kbooks.size, '권', '함께 읽은 책', '📚')}${recCell(kidPages, '쪽', '함께 읽은 쪽', '📖')}</div>`
+    ? `<div class="rec-strip">${recCell(kids.size, '명', '함께한 청소년', '🌱')}${recCell(kbooks.size, '권', '함께 읽은 책', '📚')}${recCell(kidPages, '쪽', '함께 읽은 쪽', '📖')}</div>
+       <div class="rec-hint">📤를 누르면 함께 쌓은 기록을 이미지로 저장해서 나눌 수 있어요</div>`
     : `<div class="card kstat" style="padding:16px;">${body}</div>`;
   return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">함께 쌓은 독서 기록
       <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')" aria-label="공유하기" title="공유하기">📤</button></div>
@@ -6063,7 +6065,8 @@ function myRecordBlock() {
   if (!st.days && !st.pages) return '';
   return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">나의 독서 기록
       <button class="rc-share" style="position:static;" onclick="openRecordCard('me')" aria-label="공유하기" title="공유하기">📤</button></div>
-    <div class="rec-strip">${recCell(st.days, '일', '인증한 날', '📅')}${recCell(st.books, '권', '읽은 책', '📚')}${recCell(st.pages, '쪽', '읽은 쪽', '📖')}</div>`;
+    <div class="rec-strip">${recCell(st.days, '일', '인증한 날', '📅')}${recCell(st.books, '권', '읽은 책', '📚')}${recCell(st.pages, '쪽', '읽은 쪽', '📖')}</div>
+    <div class="rec-hint">📤를 누르면 내 기록 카드를 이미지로 저장해서 자랑할 수 있어요</div>`;
 }
 
 // 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
