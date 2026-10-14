@@ -35,7 +35,7 @@ section{padding:62px 0}
 @media(max-width:640px){section{padding:44px 0}}
 
 header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
-.hd{max-width:760px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hd{max-width:860px;margin:0 auto;padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .logo{font-size:17px;font-weight:800;letter-spacing:-.4px}
 .logo span{color:var(--green-d)}
 /* 누구를 위한 화면인지 제목 옆에 붙인다. 앱·관리자와 같은 모양: 작은 회색 글씨 (청소년 · 끗짱 · 관리자 · 책방) */
@@ -45,9 +45,10 @@ header{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.92);backdro
 .hd-r{display:flex;align-items:center;gap:8px}
 /* 홈페이지 윗줄의 「책방 안내 · 끗짱 안내」와 같다. 지금 보는 쪽은 진하게 */
 .hd .logo{background:none;color:inherit;padding:0;border-radius:0;font-size:17px}
+.hd .logo span{color:#4E7A1C}   /* 홈페이지·끗짱 안내와 같은 초록 (이 페이지의 주황과 다르다) */
 .hd .hd-nav{background:none;color:var(--ink-2);padding:9px 6px;font-weight:700}
 .hd .hd-nav.on{color:var(--ink)}
-@media(max-width:560px){.hd .hd-nav.on{display:none}.hd .logo i{display:none}.hd-r{gap:4px}.hd .hd-nav{padding:9px 5px;font-size:12.5px}.hd .hd-login{padding:9px 5px}}
+@media(max-width:560px){.hd .hd-nav.on{display:none}.hd-r{gap:4px}.hd .hd-nav{padding:9px 5px;font-size:12.5px}.hd .hd-login{padding:9px 5px}}
 /* 로그인은 신청하기와 다투지 않게 글자로만 둔다 */
 .hd .hd-login{background:none;color:var(--ink-2);padding:9px 8px;font-weight:600}
 /* 로그인한 폰의 띠. 청구 화면으로 바로 간다 */
@@ -217,7 +218,7 @@ html.fx .bar{animation:barUp .7s cubic-bezier(.2,.7,.2,1) .5s both}
 <header>
   <div class="hd">
     <!-- 【홈으로 돌아오는 길 · 2026-10-14 사용자】 홈페이지 윗줄과 같은 모양으로 둔다. 로고는 홈으로 간다 -->
-    <a class="logo" href="index.html" title="한끗독서 홈">한끗<span>독서</span><i>책방</i></a>
+    <a class="logo" href="index.html" title="한끗독서 홈">한끗<span>독서</span></a>
     <div class="hd-r">
       <a href="store-invite.html" class="hd-nav on" aria-current="page">책방 안내</a>
       <a href="kkut-guide.html" class="hd-nav">끗짱 안내</a>
