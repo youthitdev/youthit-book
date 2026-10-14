@@ -6607,7 +6607,7 @@ function membersHtml(rid) {
     const books = Array.isArray(m.books) ? m.books : [];
     const b = books.find(x => x.c) || books[0] || null;
     return `<div class="mem-t"><div class="mem-c">${b && b.c ? `<img src="${esc(b.c)}" alt="" loading="lazy">` : (b ? '📖' : '🌱')}</div>
-      <b>${esc(m.nick)}</b>${b && !b.c ? `<i>${esc(b.t)}</i>` : ''}</div>`;
+      <b>${esc(m.nick)}</b>${b ? `<i>${esc(b.t)}</i>` : ''}</div>`;
   };
   return `<div class="sec-t">함께 읽는 친구들<span class="mem-n">${list.length}명</span></div>
     <div class="mem-row">${list.map(tile).join('')}</div>`;
