@@ -80,23 +80,24 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 /* ── 후원자 화면에서 옮겨온 것 ───────────────────────
    후원자 로그인이 없어 sponsor.html 은 사실상 공개 소개 화면이었다.
    같은 숫자를 두 곳에서 관리하면 반드시 어긋난다 */
-.pool{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:30px}
-@media (min-width:640px){.pool{grid-template-columns:repeat(4,1fr);gap:16px}}
+.pool{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:20px}
+@media (min-width:640px){.pool{grid-template-columns:repeat(4,1fr);gap:14px}}
 .pool.two{grid-template-columns:repeat(2,1fr)}
-.pool-item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px 12px 20px;text-align:center;
-  box-shadow:0 1px 2px rgba(60,50,30,.04),0 10px 26px -14px rgba(60,50,30,.18);overflow:hidden}
-.pool-item::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--tone,var(--green))}
-.pool-ico{width:48px;height:48px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;
-  font-size:23px;background:var(--tone-l,var(--green-l))}
-.pool-num{font-size:36px;font-weight:800;letter-spacing:-1.4px;line-height:1.1;color:var(--ink)}
-.pool-num small{font-size:15px;font-weight:700;margin-left:2px;color:var(--tone-d,var(--green-d))}
-.pool-label{font-size:13px;color:var(--ink-2);margin-top:8px;font-weight:600}
+.pool-item{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 12px 12px 14px;
+  display:flex;align-items:center;gap:10px;text-align:left;
+  box-shadow:0 1px 2px rgba(60,50,30,.04),0 8px 20px -14px rgba(60,50,30,.18);overflow:hidden}
+.pool-item::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--tone,var(--green))}
+.pool-ico{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:18px;background:var(--tone-l,var(--green-l))}
+.pool-txt{min-width:0}
+.pool-num{font-size:24px;font-weight:800;letter-spacing:-.8px;line-height:1.1;color:var(--ink)}
+.pool-num small{font-size:12px;font-weight:700;margin-left:2px;color:var(--tone-d,var(--green-d))}
+.pool-label{font-size:12px;color:var(--ink-2);margin-top:2px;font-weight:600;white-space:nowrap}
 .pool-item.t1{--tone:#83CA00;--tone-l:#F2F7E6;--tone-d:#4E7A1C}
 .pool-item.t2{--tone:#E8A33D;--tone-l:#FCF3E1;--tone-d:#A8680C}
 .pool-item.t3{--tone:#5B9BD5;--tone-l:#E9F2FB;--tone-d:#2E6AA3}
 .pool-item.t4{--tone:#C2533F;--tone-l:#FBEDE9;--tone-d:#A8432F}
-@media(max-width:380px){.pool-num{font-size:32px}}
-#nowSec{background:linear-gradient(180deg,var(--paper) 0%,#F6F9EC 50%,var(--paper) 100%)}
+#nowSec{padding:48px 0;background:linear-gradient(180deg,var(--paper) 0%,#F6F9EC 50%,var(--paper) 100%)}
 .today{text-align:center;padding:26px 20px 22px}
 .today-big{font-size:30px;font-weight:800;letter-spacing:-1px}
 .today-big span{color:var(--green)}
@@ -684,13 +685,13 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
     const SHOW_FROM_YOUTH = 10;
     const cell = (v, u, label, ico, t) =>
       `<div class="pool-item t${t}"><div class="pool-ico">${ico}</div>
-       <div class="pool-num">${won(v)}<small>${u}</small></div>
-       <div class="pool-label">${label}</div></div>`;
+       <div class="pool-txt"><div class="pool-num">${won(v)}<small>${u}</small></div>
+       <div class="pool-label">${label}</div></div></div>`;
     if (tot && tot.youth >= SHOW_FROM_YOUTH) {
       document.getElementById('poolGrid').innerHTML = [
         cell(tot.youth, '명', '참여 청소년', '🌱', 1),
         cell(tot.kkut,  '명', '끗짱',        '🤝', 2),
-        cell(tot.certs, '번', '인증',        '✍️', 3),
+        cell(tot.certs, '번', '독서 기록',   '✍️', 3),
         cell(tot.books, '권', '읽은 책',      '📚', 4),
       ].join('');
       document.getElementById('nowSec').style.display = '';
