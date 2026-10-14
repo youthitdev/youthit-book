@@ -326,20 +326,24 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   *{scroll-behavior:auto !important}
 }
 
-/* 앱 소개 — 폰 화면 다섯 장이 가로 한 줄로 천천히 흘러간다 (2026-10-14 사용자). 만지거나 올리면 멈추고, 손가락으로 밀 수 있다.
-   화면은 데모 계정(가짜 이름·가짜 기록)에서 찍은 실제 앱이다 */
-.apps{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:56px 0 60px}
-.roll{overflow-x:auto;overflow-y:hidden;margin-top:34px;scrollbar-width:none;-webkit-overflow-scrolling:touch;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%)}
-.roll::-webkit-scrollbar{display:none}
-.roll-track{display:flex;width:max-content;padding:6px 0 10px}
-.roll-i{flex:none;width:200px;margin:0 28px 0 0;text-align:center}
-.phone{border-radius:34px;padding:7px;background:#1C1A17;box-shadow:0 24px 44px -20px rgba(40,50,30,.5),0 4px 12px rgba(0,0,0,.1)}
-.phone img{display:block;width:100%;height:auto;aspect-ratio:390/844;object-fit:cover;border-radius:27px;background:#F1EEE6}
-.roll-no{margin-top:16px;font-size:11.5px;font-weight:800;color:var(--green-d);letter-spacing:1.3px}
-.roll-t{margin-top:3px;font-size:15.5px;font-weight:800;letter-spacing:-.4px;line-height:1.4}
-@media(max-width:720px){.apps{padding:44px 0 48px}.roll{margin-top:26px}.roll-i{width:176px;margin-right:20px}}
+/* 앱 소개 — 왼쪽 글, 오른쪽 폰 화면이 번갈아 나온다. 화면은 데모 계정(가짜 이름·가짜 기록)에서 찍은 실제 앱이다 */
+.apps{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.feat{display:grid;gap:64px;margin-top:48px}
+.feat-row{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:center}
+.feat-row.rev .feat-ph{order:-1}
+.feat-no{font-size:12.5px;font-weight:800;color:var(--green-d);letter-spacing:1.3px}
+.feat-t{font-size:clamp(20px,3.4vw,26px);line-height:1.4;font-weight:800;letter-spacing:-.8px;margin-top:8px}
+.feat-p{margin-top:12px;color:var(--ink-2);font-size:15px;line-height:1.8}
+.feat-ph{display:flex;justify-content:center}
+.phone{width:min(250px,68vw);border-radius:38px;padding:8px;background:#1C1A17;
+  box-shadow:0 30px 60px -24px rgba(40,50,30,.5),0 6px 16px rgba(0,0,0,.12)}
+.phone img{display:block;width:100%;height:auto;aspect-ratio:390/844;object-fit:cover;border-radius:30px;background:#F1EEE6}
+@media(max-width:720px){
+  .feat{gap:54px;margin-top:38px}
+  .feat-row{grid-template-columns:1fr;gap:24px}
+  .feat-row.rev .feat-ph{order:0}
+  .feat-txt{text-align:center}
+}
 </style>
 </head>
 <body>
@@ -501,55 +505,57 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
     <div class="sec-label">앱 소개</div>
     <h2>읽고, 모으고, 책으로 받는 길이<br>한 앱에 담겨 있어요</h2>
     <p class="sec-lead">한끗독서 앱을 열면 이렇게 보여요. 가입하고 바로 시작할 수 있어요.</p>
-  </div>
 
-  <div class="roll" id="appRoll" aria-label="한끗독서 앱 화면">
-    <div class="roll-track">
-        <figure class="roll-i">
-          <div class="phone"><img src="app-shots/app-1-stamp.jpg" alt="인증하면 도장이 찍히고 나다움 +10N이 쌓이는 화면"></div>
-          <div class="roll-no">01 · 매일 인증</div><div class="roll-t">하루 한 장 인증하기</div>
-        </figure>
-        <figure class="roll-i">
-          <div class="phone"><img src="app-shots/app-2-friends.jpg" alt="루틴에서 함께 읽는 친구들의 닉네임과 책 표지가 보이는 화면"></div>
-          <div class="roll-no">02 · 함께 읽기</div><div class="roll-t">친구들과 함께 읽기</div>
-        </figure>
-        <figure class="roll-i">
-          <div class="phone"><img src="app-shots/app-3-nadaum.jpg" alt="내 독서 나다움과 교환권까지 남은 양이 보이는 화면"></div>
-          <div class="roll-no">03 · 나다움 모으기</div><div class="roll-t">읽은 만큼 나다움 쌓기</div>
-        </figure>
-        <figure class="roll-i">
-          <div class="phone"><img src="app-shots/app-4-qr.jpg" alt="책방 사장님께 보여 주는 교환 QR 화면"></div>
-          <div class="roll-no">04 · 책방에서 책 받기</div><div class="roll-t">동네책방에서 책 받기</div>
-        </figure>
-        <figure class="roll-i">
-          <div class="phone"><img src="app-shots/app-5-card.jpg" alt="읽은 쪽수를 책 높이로 보여 주는 기록 카드 화면"></div>
-          <div class="roll-no">05 · 내 독서 기록</div><div class="roll-t">책 높이 기록 카드</div>
-        </figure>
-        <figure class="roll-i" aria-hidden="true">
-          <div class="phone"><img src="app-shots/app-1-stamp.jpg" alt=""></div>
-          <div class="roll-no">01 · 매일 인증</div><div class="roll-t">하루 한 장 인증하기</div>
-        </figure>
-        <figure class="roll-i" aria-hidden="true">
-          <div class="phone"><img src="app-shots/app-2-friends.jpg" alt=""></div>
-          <div class="roll-no">02 · 함께 읽기</div><div class="roll-t">친구들과 함께 읽기</div>
-        </figure>
-        <figure class="roll-i" aria-hidden="true">
-          <div class="phone"><img src="app-shots/app-3-nadaum.jpg" alt=""></div>
-          <div class="roll-no">03 · 나다움 모으기</div><div class="roll-t">읽은 만큼 나다움 쌓기</div>
-        </figure>
-        <figure class="roll-i" aria-hidden="true">
-          <div class="phone"><img src="app-shots/app-4-qr.jpg" alt=""></div>
-          <div class="roll-no">04 · 책방에서 책 받기</div><div class="roll-t">동네책방에서 책 받기</div>
-        </figure>
-        <figure class="roll-i" aria-hidden="true">
-          <div class="phone"><img src="app-shots/app-5-card.jpg" alt=""></div>
-          <div class="roll-no">05 · 내 독서 기록</div><div class="roll-t">책 높이 기록 카드</div>
-        </figure>
+    <div class="feat">
+      <div class="feat-row">
+        <div class="feat-txt">
+          <div class="feat-no">01 · 매일 인증</div>
+          <div class="feat-t">하루 한 장,<br>읽는 모습을 사진으로 남겨요</div>
+          <p class="feat-p">읽은 자리를 사진 한 장으로 올리면 오늘의 도장이 찍히고 나다움이 쌓여요. 길게 쓰지 않아도, 한 장이면 오늘 몫은 끝이에요.</p>
+        </div>
+        <div class="feat-ph"><div class="phone"><img src="app-shots/app-1-stamp.jpg" alt="인증하면 도장이 찍히고 나다움 +10N이 쌓이는 화면" loading="lazy"></div></div>
+      </div>
+
+      <div class="feat-row rev">
+        <div class="feat-txt">
+          <div class="feat-no">02 · 함께 읽기</div>
+          <div class="feat-t">혼자가 아니라<br>친구들과 함께 읽어요</div>
+          <p class="feat-p">같은 루틴에서 읽는 친구들의 닉네임과 책 표지가 보여요. 서로의 기록에 댓글과 좋아요로 응원을 건네요.</p>
+        </div>
+        <div class="feat-ph"><div class="phone"><img src="app-shots/app-2-friends.jpg" alt="루틴에서 함께 읽는 친구들의 닉네임과 책 표지가 보이는 화면" loading="lazy"></div></div>
+      </div>
+
+      <div class="feat-row">
+        <div class="feat-txt">
+          <div class="feat-no">03 · 나다움 모으기</div>
+          <div class="feat-t">읽은 만큼<br>나다움이 쌓여요</div>
+          <p class="feat-p">인증하고, 친구에게 댓글을 남기고, 공유회에 참석하면 나다움이 쌓여요. 150N이 모이면 교환권이 한 장 생겨요.</p>
+        </div>
+        <div class="feat-ph"><div class="phone"><img src="app-shots/app-3-nadaum.jpg" alt="내 독서 나다움과 교환권까지 남은 양이 보이는 화면" loading="lazy"></div></div>
+      </div>
+
+      <div class="feat-row rev">
+        <div class="feat-txt">
+          <div class="feat-no">04 · 책방에서 책 받기</div>
+          <div class="feat-t">동네책방에서<br>내가 고른 책 한 권을 받아요</div>
+          <p class="feat-p">교환권으로 2만 원 이하의 책 한 권을 직접 골라요. 책방 사장님께 QR을 보여 드리면 끝이에요. 돈은 내지 않아요.</p>
+        </div>
+        <div class="feat-ph"><div class="phone"><img src="app-shots/app-4-qr.jpg" alt="책방 사장님께 보여 주는 교환 QR 화면" loading="lazy"></div></div>
+      </div>
+
+      <div class="feat-row">
+        <div class="feat-txt">
+          <div class="feat-no">05 · 내 독서 기록</div>
+          <div class="feat-t">내가 쌓은 책 높이를<br>카드로 남겨요</div>
+          <p class="feat-p">읽은 쪽수가 연필 굵기, 손가락 한 마디처럼 책 높이로 바뀌어 보여요. 다음 단계까지 남은 쪽수도 알려 주고, 카드는 이미지로 저장해 자랑할 수 있어요.</p>
+        </div>
+        <div class="feat-ph"><div class="phone"><img src="app-shots/app-5-card.jpg" alt="읽은 쪽수를 책 높이로 보여 주는 기록 카드 화면" loading="lazy"></div></div>
+      </div>
     </div>
-  </div>
 
-  <div class="wrap" style="text-align:center;margin-top:34px">
-    <a class="btn btn-green" href="app.html">청소년 참여하기</a>
+    <div style="text-align:center;margin-top:52px">
+      <a class="btn btn-green" href="app.html">청소년 참여하기</a>
+    </div>
   </div>
 </section>
 
@@ -867,7 +873,7 @@ const DONATE_URL = 'https://secure.donus.org/youthvoice/pay/step1_direct?dontype
       // 히어로는 순서대로 떠오른다
       document.querySelectorAll('.hero > *').forEach(function (el, i) { tag(el, i * 110); });
       // 제목류
-      document.querySelectorAll('.sec-label, .wrap h2, .sec-lead, .finding, .pisa, .gift-h, .report, .split-note, .live, .links')
+      document.querySelectorAll('.sec-label, .wrap h2, .sec-lead, .finding, .pisa, .gift-h, .report, .split-note, .live, .links, .feat-row')
         .forEach(function (el) { if (!el.closest('.hero')) tag(el, 0); });
       // 묶음의 자식은 차례로
       document.querySelectorAll('.steps,.flow,.gift-pair,.pool,.grid,.stores,.jny,.nope,.photos').forEach(function (g) {
@@ -893,37 +899,6 @@ const DONATE_URL = 'https://secure.donus.org/youthvoice/pay/step1_direct?dontype
     new MutationObserver(function () { clearTimeout(timer); timer = setTimeout(scan, 80); })
       .observe(document.body, { childList: true, subtree: true });
   } catch (e) { root.classList.remove('fx'); }
-})();
-</script>
-<script>
-// 앱 소개: 폰 화면이 천천히 흘러간다. 올리거나 만지면 멈추고, 손을 떼면 잠시 뒤 다시 흐른다. 움직임을 줄이는 기기에서는 흐르지 않는다
-(function () {
-  var roll = document.getElementById('appRoll'); if (!roll) return;
-  var track = roll.firstElementChild;
-  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var paused = false, visible = false, timer = null, pos = 0;
-  var half = function () { return track.scrollWidth / 2; };
-  function pause() { paused = true; clearTimeout(timer); }
-  function resume(ms) { clearTimeout(timer); timer = setTimeout(function () { pos = roll.scrollLeft; paused = false; }, ms); }
-  ['pointerenter', 'touchstart', 'focusin'].forEach(function (e) { roll.addEventListener(e, pause, { passive: true }); });
-  ['pointerleave', 'touchend', 'touchcancel'].forEach(function (e) { roll.addEventListener(e, function () { resume(1600); }, { passive: true }); });
-  roll.addEventListener('wheel', function () { pause(); resume(2200); }, { passive: true });
-  roll.addEventListener('scroll', function () {
-    if (paused) pos = roll.scrollLeft;
-    var h = half();                     // 같은 그림을 두 벌 놓았으니, 반을 넘으면 처음으로 이어 붙인다
-    if (roll.scrollLeft >= h) { roll.scrollLeft -= h; pos = roll.scrollLeft; }
-    else if (roll.scrollLeft <= 0) { roll.scrollLeft += h; pos = roll.scrollLeft; }
-  }, { passive: true });
-  if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(roll);
-  else visible = true;
-  roll.scrollLeft = 2; pos = 2;
-  if (reduce) return;
-  var last = 0;
-  (function step(ts) {                  // 화면 갱신 속도(60·120Hz)와 상관없이 초당 30px 쯤
-    var dt = last ? Math.min(ts - last, 60) : 0; last = ts;
-    if (!paused && visible && !document.hidden) { pos += 0.03 * dt; roll.scrollLeft = pos; }
-    requestAnimationFrame(step);
-  })(0);
 })();
 </script>
 </body>
