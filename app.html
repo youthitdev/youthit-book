@@ -1026,7 +1026,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .sg-b { flex:1; height:9px; border-radius:99px; background:#EBE5DA; overflow:hidden; }
 .sg-f { display:block; height:100%; border-radius:99px; background:var(--green); transition:width 1.3s cubic-bezier(.2,.8,.2,1); }
 .sg-n { margin-top:11px; font-size:12.5px; line-height:1.6; color:var(--ink-2); }
-.stamp-p { font-size:13.5px; font-weight:700; color:var(--green); margin-top:4px; }
+.stamp-p { display:inline-block; margin-top:10px; padding:7px 18px; border-radius:999px; background:#fff; color:var(--green-d);
+  font-size:20px; font-weight:800; letter-spacing:-.4px; box-shadow:0 6px 18px rgba(0,0,0,.22);
+  animation:ptPop .5s .35s cubic-bezier(.2,1.6,.4,1) both; }
+.stamp-p small { font-size:12px; font-weight:700; color:var(--ink-2); margin-right:7px; letter-spacing:0; }
+@keyframes ptPop { from { transform:scale(.4); opacity:0; } to { transform:none; opacity:1; } }
 @keyframes stampIn {
   0%   { transform:scale(1.7) rotate(-14deg); opacity:0; }
   55%  { transform:scale(.94) rotate(3deg);   opacity:1; }
@@ -8036,7 +8040,8 @@ function showStamp(day, pts, pg) {
   const el = $('stamp'); if (!el) return;
   // 도장 안에 이미 「오늘 한 장」이 있다. 기간이 없는 루틴이면 이 줄은 비운다
   $('stampDay').textContent = day ? `${won(day)}일째` : '';
-  $('stampPt').textContent  = pts ? `+${pts}N` : '';
+  $('stampPt').innerHTML    = pts ? `<small>나다움</small>+${pts}N` : '';
+  $('stampPt').style.display = pts ? '' : 'none';
   const box = $('stampPg');
   if (pg) {
     box.innerHTML = stampPagesHtml(pg); box.style.display = '';
@@ -8047,7 +8052,7 @@ function showStamp(day, pts, pg) {
   void el.offsetWidth;                 // 연달아 인증해도 다시 처음부터 찍히게
   el.classList.add('on');
   clearTimeout(stampT);
-  stampT = setTimeout(hideStamp, pg ? 4800 : 1600);
+  stampT = setTimeout(hideStamp, pg ? 4800 : 2600);
 }
 
 // 인증 직후: 오늘 읽은 쪽이 「내 책 높이」와 「함께 짓는 책의 도시」에 더해진다.
