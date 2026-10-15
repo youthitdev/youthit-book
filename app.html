@@ -4612,7 +4612,7 @@ function certListHtml(all) {
     let status = '', meta = routineLine(r, d);
     // 끝난 루틴은 「내 결과」를 보인다 (2026-10-15 사용자). 완주 = 기간의 70% 이상 인증한 날 (관리자 통계와 같은 기준).
     //   완주하지 못했으면 인증한 날까지만 말한다. 끗짱은 함께한 청소년 수와 완주한 수
-    if (over && d && !d.notYet && r.status !== 'pending') {
+    if (over && !r.canceled && d && !d.notYet && r.status !== 'pending') {
       const need = Math.ceil(d.total * 0.7);
       const days = uid => new Set(certsOf(r.id).filter(c => c.user_id === uid).map(c => c.cert_date)).size;
       meta = '';
@@ -4635,6 +4635,14 @@ function certListHtml(all) {
         status = `<span class="rl-s${ok ? ' on' : ''}">${ok ? '✓ 오늘 인증했어요' : '오늘 인증 전'}</span>`;
       }
     }
+    // 폐강한 루틴(migration-136)은 열리지 못한 것이라 기록 화면이 없다. 결과 문구도 말하지 않고 부드럽게 알린다
+    if (r.canceled) return `<div class="rl-c" style="cursor:default;">
+      <div class="rl-b">
+        <div class="rl-t">${esc(r.emoji || '📚')} ${esc(r.title)}</div>
+        <div class="rl-m">${range}</div>
+        <span class="rl-s">이번에는 인원이 모이지 않아 열리지 못했어요</span>
+      </div>
+    </div>`;
     return `<button class="rl-c" onclick="go('cert', ${r.id})">
       <div class="rl-b">
         <div class="rl-t">${esc(r.emoji || '📚')} ${esc(r.title)}${lead ? ' <i class="pr-led">맡음</i>' : ''}</div>
@@ -6715,11 +6723,11 @@ function openRoutine(id) {
     })()}
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
     ${needsMeet(r) ? meetCard(r) : ''}
-    ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
+    ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
       : p && p.status==='approved' ? (
           r.status === 'done'
-            ? `<div class="card" style="text-align:center;color:var(--ink-3);">끝난 루틴이에요. 함께해줘서 고마워요 🌱</div>`
+            ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '이번에는 인원이 모이지 않아 열리지 못했어요. 다음 루틴에서 만나요 🌱' : '끝난 루틴이에요. 함께해줘서 고마워요 🌱'}</div>`
             : routineDay(r)?.notYet
               ? recruitBlock(r)   /* 아직 안 연 루틴이다. 첫날부터 세야 「15일」이 15일이다 */
             : !didToday(r.id)
@@ -6733,7 +6741,7 @@ function openRoutine(id) {
       : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#8A5A16;font-weight:700;">확인 중이에요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : !isYouth() ? ''
-      : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">종료된 루틴이에요</div>`
+      : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : `<div>
           ${me.verify_status !== 'approved' ? verifyNote() : ''}
