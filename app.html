@@ -4609,7 +4609,22 @@ function certListHtml(all) {
     const d = routineDay(r), lead = r.led_by === me.id, over = isOver(r);
     const range = (r.start_date && r.end_date)
       ? `${r.start_date.slice(5).replace('-', '.')} – ${r.end_date.slice(5).replace('-', '.')}` : '';
-    let status = '';
+    let status = '', meta = routineLine(r, d);
+    // 끝난 루틴은 「내 결과」를 보인다 (2026-10-15 사용자). 완주 = 기간의 70% 이상 인증한 날 (관리자 통계와 같은 기준).
+    //   완주하지 못했으면 인증한 날까지만 말한다. 끗짱은 함께한 청소년 수와 완주한 수
+    if (over && d && !d.notYet && r.status !== 'pending') {
+      const need = Math.ceil(d.total * 0.7);
+      const days = uid => new Set(certsOf(r.id).filter(c => c.user_id === uid).map(c => c.cert_date)).size;
+      meta = '';
+      if (lead) {
+        const ps = partsOf(r.id).filter(p => p.user_id !== me.id);
+        const ok = ps.filter(p => days(p.user_id) >= need).length;
+        status = `<span class="rl-s${ok ? ' on' : ''}">함께한 청소년 ${ps.length}명 · 완주 ${ok}명</span>`;
+      } else {
+        const n = days(me.id), ok = n >= need;
+        status = `<span class="rl-s${ok ? ' on' : ''}">${d.total}일 중 ${n}일 인증${ok ? ' · 🎉 완주' : ''}</span>`;
+      }
+    }
     if (!over && !(d && d.notYet) && r.status !== 'pending') {
       if (lead) {
         const total = partsOf(r.id).length + 1;
@@ -4623,7 +4638,7 @@ function certListHtml(all) {
     return `<button class="rl-c" onclick="go('cert', ${r.id})">
       <div class="rl-b">
         <div class="rl-t">${esc(r.emoji || '📚')} ${esc(r.title)}${lead ? ' <i class="pr-led">맡음</i>' : ''}</div>
-        <div class="rl-m">${range ? range + ' · ' : ''}${routineLine(r, d)}</div>
+        <div class="rl-m">${range}${range && meta ? ' · ' : ''}${meta}</div>
         ${status}
       </div>
       <i class="ti ti-chevron-right"></i>
