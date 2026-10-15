@@ -1913,13 +1913,8 @@ function viewReport() {
     ${num(d.books, '권', '전해진 책')}
     ${num(d.new_readers, '명', '처음 인증한 사람')}
     ${num(d.joins, '건', '루틴 참여')}
-    ${num(d.book_spent, '원', '책값')}
-    <!-- ⏸ 후원을 앱에 넣지 않으므로 늘 0 이다 (2026-10-07) -->
+    <!-- 「책값」 칸은 뺐다 (2026-10-15 사용자) -->
   </div>
-
-  ${RP.credit && RP.credit.amount ? `<div class="rp-warn" style="background:#FFF4F8;border-color:#EDC6BC;color:#8A0040;">
-    끗짱 ${RP.credit.kkuts}명이 ${won(RP.credit.days)}일을 함께해
-    <b>${won(RP.credit.amount)}원</b>이 책값으로 나갔어요. 유스보이스가 낸 몫이에요.</div>` : ''}
 
   ${d.books_waiting ? `<div class="rp-warn">정산을 기다리는 책이 <b>${d.books_waiting}권</b> 있어요.
     정산하지 않으면 「전해진 책」에 안 잡혀요.</div>` : ''}
