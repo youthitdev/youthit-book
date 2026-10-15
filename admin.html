@@ -305,6 +305,7 @@ tr:hover td { background:#fcfcfd; }
 .rp-q { margin:0 20px 8px; border-left:3px solid var(--ink); background:#fafafc;
   border-radius:3px 10px 10px 3px; padding:12px 14px; }
 .rp-q p { font-size:13.5px; line-height:1.7; }
+.rp-use { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12px; font-weight:700; color:#4E7A1C; cursor:pointer; }
 .rp-q cite { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3); margin-top:7px; }
 .rp-empty { padding:0 20px; font-size:12.5px; color:var(--ink-3); }
 .rp-text { display:block; width:calc(100% - 40px); margin:0 20px; border:1px solid var(--line);
@@ -1879,7 +1880,7 @@ function viewNotify() {
 // 매달 손으로 쿼리 여러 개를 돌려 숫자를 옮겨 적으면 반드시 틀린다.
 // dokseo_monthly_report() 하나가 다 모아주고, 여기서는 읽어서 보여주고
 // 문자 본문까지 만들어 복사시킨다. 보내는 건 아직 사람이 한다
-let RP = { y: 0, m: 0, data: null, credit: null, loading: false };
+let RP = { y: 0, m: 0, data: null, credit: null, loading: false, pick: { rv: [], qt: [] } };   // pick = 인포그래픽에 넣을 후기·문장 (순번, 각 2개까지)
 
 function viewReport() {
   if (!RP.y) {
@@ -1931,21 +1932,25 @@ function viewReport() {
 
   <div class="rp-sec">아이들의 후기 <i>${(d.reviews || []).length}</i>
     <small>공개로 켠 것만</small></div>
-  <div>${list(d.reviews,
-    r => `<div class="rp-q"><p>${esc(r.content)}</p>
-            <cite>${r.kind === 'book' ? '📗 ' + esc(r.book_title || '') : '📚 루틴 후기'}</cite></div>`,
+  <div>${(d.reviews || []).length ? d.reviews.map((r, i) => `<div class="rp-q"><p>${esc(r.content)}</p>
+            <cite>${r.kind === 'book' ? '📗 ' + esc(r.book_title || '') : '📚 루틴 후기'}</cite>
+            <label class="rp-use"><input type="checkbox" ${RP.pick.rv.includes(i) ? 'checked' : ''} onchange="rpPick('rv', ${i}, this)"> 인포그래픽에 넣기</label></div>`).join('') : ''}${(d.reviews || []).length ? '' : list(d.reviews,
+    r => '',
     '공개로 켠 후기가 없어요. 「문장 고르기」 탭에서 골라주세요.')}</div>
 
   <div class="rp-sec">옮겨 적은 문장 <i>${(d.quotes || []).length}</i>
     <small>공개로 켠 것만</small></div>
-  <div>${list(d.quotes,
-    q => `<div class="rp-q"><p>“${esc(q.quote)}”</p>
-            <cite>${esc(q.book_title || '')}</cite></div>`,
+  <div>${(d.quotes || []).length ? d.quotes.map((q, i) => `<div class="rp-q"><p>“${esc(q.quote)}”</p>
+            <cite>${esc(q.book_title || '')}</cite>
+            <label class="rp-use"><input type="checkbox" ${RP.pick.qt.includes(i) ? 'checked' : ''} onchange="rpPick('qt', ${i}, this)"> 인포그래픽에 넣기</label></div>`).join('') : ''}${(d.quotes || []).length ? '' : list(d.quotes,
+    q => '',
     '공개로 켠 문장이 없어요.')}</div>
 
   <div class="rp-sec">인포그래픽 <small>후원자에게 보낼 한 장짜리 PDF</small></div>
   <button class="btn-s go" onclick="rpPdf()">📄 인포그래픽 PDF로 저장</button>
-  <div class="rp-note">눌러서 열리는 창에서 <b>인쇄 → 대상을 「PDF로 저장」</b>으로 고르면 한 장짜리 A4 PDF가 돼요. 청소년 이름은 담기지 않아요.</div>
+  <div class="rp-note">눌러서 열리는 창에서 <b>인쇄 → 대상을 「PDF로 저장」</b>으로 고르면 한 장짜리 A4 PDF가 돼요. 청소년 이름은 담기지 않아요.<br>
+    아래 <b>후기·문장</b> 목록에서 <b>「인포그래픽에 넣기」</b>를 체크한 것이 들어가요. 각각 2개까지 고를 수 있어요.
+    ${rpNewStores(d).length ? `이달에 새로 함께한 책방 <b>${rpNewStores(d).map(x => esc(x.name)).join(', ')}</b>도 들어가요.` : ''}</div>
 
   <div class="rp-sec">보낼 문자</div>
   <textarea id="rpText" class="rp-text" rows="14">${esc(rpMessage(d))}</textarea>
@@ -1971,12 +1976,30 @@ async function rpLoad() {
   if (rep.error) { RP.data = null; render(); return alert('불러오지 못했어요: ' + rep.error.message); }
   RP.data = rep.data;
   RP.credit = cr.data || null;
+  // 기본은 첫 번째 하나씩. 관리자가 아래 목록에서 바꾼다 (각 2개까지)
+  RP.pick = { rv: (rep.data && (rep.data.reviews || []).length) ? [0] : [], qt: (rep.data && (rep.data.quotes || []).length) ? [0] : [] };
   render();
 }
 
 // ── 월간 보고 인포그래픽 (A4 한 장 · 인쇄 → PDF로 저장) ────────────────
 // 불러온 숫자(RP.data)를 한 장짜리 그림으로 만든다. 청소년 이름은 어디에도 담지 않는다 — 책 제목·책방 이름·익명의 한 줄만.
 // 책값·정산·수신거부 같은 줄은 뺐다 (2026-10-15 사용자).
+// 인포그래픽에 넣을 후기·문장을 고른다 (각각 2개까지)
+function rpPick(kind, i, el) {
+  const a = RP.pick[kind];
+  if (el.checked) {
+    if (a.length >= 2) { el.checked = false; return alert('2개까지 고를 수 있어요. 하나를 먼저 빼 주세요.'); }
+    a.push(i); a.sort((x, y) => x - y);
+  } else { const k = a.indexOf(i); if (k >= 0) a.splice(k, 1); }
+}
+// 이달에 새로 함께하게 된 책방 — 책방을 올린 날(created_at)이 그 달(한국 시간)인 것
+function rpNewStores(d) {
+  return (DB.bookstores || []).filter(b => {
+    if (b.active === false || !b.created_at) return false;
+    const k = new Date(new Date(b.created_at).getTime() + 9 * 3600e3);
+    return k.getUTCFullYear() === d.year && k.getUTCMonth() + 1 === d.month;
+  }).map(b => ({ name: b.name, region: b.region || '' }));
+}
 function rpInfographicHtml(d) {
   const e = esc, w = won;
   const y = d.year, m = d.month;
@@ -1987,10 +2010,12 @@ function rpInfographicHtml(d) {
   const stats = [stat('🌱', d.readers || 0, '명', '읽은 청소년', 1), stat('✍️', d.certs || 0, '번', '독서 기록', 2),
                  stat('📚', d.books || 0, '권', '전해진 책', 3), stat('✨', d.new_readers || 0, '명', '처음 인증한 사람', 4),
                  stat('🤝', d.joins || 0, '건', '루틴 참여', 5)].join('');
-  const books = (d.books_read || []).slice(0, 14);
+  const books = (d.books_read || []).slice(0, 12);
   const stores = (d.stores || []).slice(0, 6), smax = Math.max(1, ...stores.map(x => x.books || 0));
-  const quotes = [...(d.reviews || []).map(r => ({ t: r.content, c: r.kind === 'book' ? (r.book_title || '') : '루틴 후기' })),
-                  ...(d.quotes || []).map(q => ({ t: q.quote, c: q.book_title || '' }))].filter(x => x.t).slice(0, 2);
+  // 관리자가 골라 둔 후기·문장 (월간 보고의 「인포그래픽에 넣기」) — 각각 2개까지
+  const pickRv = ((RP.pick && RP.pick.rv) || []).map(i => (d.reviews || [])[i]).filter(Boolean).slice(0, 2);
+  const pickQt = ((RP.pick && RP.pick.qt) || []).map(i => (d.quotes || [])[i]).filter(Boolean).slice(0, 2);
+  const newStores = rpNewStores(d);
   const cut = (t, n) => { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
 
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
@@ -2003,13 +2028,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .bar{position:sticky;top:0;z-index:5;background:#1C1A17;color:#fff;padding:10px 16px;font-size:13px;display:flex;gap:12px;align-items:center;justify-content:center}
 .bar button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:7px 14px;background:#83CA00;color:#10210A;cursor:pointer}
 .page{width:210mm;height:297mm;margin:16px auto;background:#FAF8F3;position:relative;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,.18)}
-.hd{background:linear-gradient(135deg,#1F4E46 0%,#2F6B4F 100%);color:#fff;padding:15mm 14mm 12mm;position:relative;overflow:hidden;height:64mm}
+.hd{background:linear-gradient(135deg,#1F4E46 0%,#2F6B4F 100%);color:#fff;padding:13mm 14mm 10mm;position:relative;overflow:hidden;height:58mm}
 .hd::before{content:"";position:absolute;right:-18mm;top:-22mm;width:80mm;height:80mm;border-radius:50%;background:rgba(255,255,255,.07)}
 .hd::after{content:"";position:absolute;right:30mm;bottom:-30mm;width:50mm;height:50mm;border-radius:50%;background:rgba(131,202,0,.18)}
 .hd small{font-size:10pt;letter-spacing:.14em;opacity:.8;font-weight:700}
 .hd h1{font-size:25pt;letter-spacing:-.04em;margin-top:2mm;line-height:1.2}
 .hd p{font-size:10.5pt;opacity:.85;margin-top:3mm}
-.ym{position:absolute;right:14mm;top:13mm;text-align:right;z-index:1}
+.ym{position:absolute;right:14mm;top:11mm;text-align:right;z-index:1}
 .ym b{display:block;font-size:34pt;letter-spacing:-.03em;line-height:1}
 .ym span{font-size:10pt;opacity:.8}
 .hero{padding:12mm 14mm 5mm;font-size:18pt;font-weight:800;letter-spacing:-.04em;line-height:1.5}
@@ -2022,7 +2047,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .c b small{font-size:9.5pt;margin-left:.5mm;color:var(--d)}
 .c span{display:block;font-size:8.6pt;color:#5D574E;margin-top:2mm;font-weight:600}
 .t1{--t:#83CA00;--d:#4E7A1C}.t2{--t:#5B9BD5;--d:#2E6AA3}.t3{--t:#C2533F;--d:#A8432F}.t4{--t:#E8A33D;--d:#A8680C}.t5{--t:#7B5EA7;--d:#5C418A}
-.two{display:grid;grid-template-columns:1.15fr 1fr;gap:7mm;padding:13mm 14mm 0}
+.two{display:grid;grid-template-columns:1.15fr 1fr;gap:7mm;padding:10mm 14mm 0}
 .sec h2{font-size:13pt;letter-spacing:-.03em;display:flex;align-items:center;gap:2mm}
 .sec h2 em{font-style:normal;font-size:8.5pt;color:#9A948A;font-weight:600}
 .chips{display:flex;flex-wrap:wrap;gap:2mm;margin-top:3.5mm}
@@ -2034,11 +2059,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .st .bb{flex:1;height:3.4mm;border-radius:2mm;background:#EDE8DD;overflow:hidden}
 .st .bb i{display:block;height:100%;border-radius:2mm;background:linear-gradient(90deg,#83CA00,#4E7A1C)}
 .st em{font-style:normal;font-weight:800;color:#4E7A1C;width:9mm;text-align:right}
-.say{padding:13mm 14mm 0}
-.say .qs{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin-top:3.5mm}
-.q{background:#fff;border:.3mm solid #E3DCCE;border-radius:4mm;padding:6mm 6mm 5mm;position:relative}
+.say{padding:10mm 14mm 0;display:grid;gap:7mm}
+.say.both{grid-template-columns:1fr 1fr}.say.solo{grid-template-columns:1fr}
+.qs1{display:grid;gap:3.5mm;margin-top:3.5mm}
+.say.solo .qs1{grid-template-columns:1fr 1fr}
+.tight .hero{padding:8mm 14mm 3mm}.tight .c{padding:4mm 2mm 3mm}.tight .two,.tight .say{padding-top:7mm}.tight .hd{height:50mm;padding-top:10mm}
+.c3 .q p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.c2 .q p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ns{margin-top:4mm;padding-top:3.5mm;border-top:.3mm dashed #D9D3C5;font-size:8.8pt}
+.ns b{display:block;font-size:9pt;margin-bottom:2mm}
+.ns span{display:inline-block;background:#F2F7E6;border:.3mm solid #D8EBB8;border-radius:99px;padding:1.2mm 3mm;margin:0 1.5mm 1.5mm 0;font-weight:700}
+.ns span i{font-style:normal;color:#4E7A1C;margin-left:1.5mm;font-weight:600;font-size:8pt}
+.q{background:#fff;border:.3mm solid #E3DCCE;border-radius:4mm;padding:5.5mm 5mm 4.5mm;position:relative}
 .q::before{content:"\\201C";position:absolute;left:4mm;top:1mm;font-size:30pt;color:#CFE6A8;font-weight:800;line-height:1}
-.q p{font-size:10.4pt;line-height:1.7;margin-top:4mm;padding-left:1mm}
+.q p{font-size:9.6pt;line-height:1.65;margin-top:3.5mm;padding-left:1mm}
 .q cite{display:block;font-style:normal;font-size:8pt;color:#9A948A;margin-top:2.5mm}
 .empty{font-size:9pt;color:#9A948A;margin-top:3.5mm}
 .ft{position:absolute;left:0;right:0;bottom:0;padding:5mm 14mm;background:#1F4E46;color:#fff;display:flex;justify-content:space-between;align-items:center;font-size:8.5pt}
@@ -2059,16 +2093,46 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   <div class="stats">${stats}</div>
   <div class="two">
     <div class="sec"><h2>📖 아이들이 읽은 책 <em>${books.length}권</em></h2>
-      ${books.length ? `<div class="chips">${books.map(b => `<span>${e(cut(b.title, 22))}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('')}</div>` : `<div class="empty">이 달에 적힌 책 제목이 없어요.</div>`}
+      ${books.length ? `<div class="chips">${books.map(b => `<span>${e(cut(b.title, 18))}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('')}</div>` : `<div class="empty">이 달에 적힌 책 제목이 없어요.</div>`}
     </div>
     <div class="sec"><h2>🏪 책을 고른 동네책방 <em>${stores.length}곳</em></h2>
       ${stores.length ? `<div class="st">${stores.map(x => `<div><span>${e(x.name)}</span><span class="bb"><i style="width:${Math.round((x.books || 0) / smax * 100)}%"></i></span><em>${x.books}권</em></div>`).join('')}</div>` : `<div class="empty">이 달에 책을 받은 책방이 없어요.</div>`}
+      ${newStores.length ? `<div class="ns"><b>🌱 이달에 새로 함께한 책방</b>${newStores.map(x => `<span>${e(x.name)}${x.region ? `<i>${e(x.region)}</i>` : ''}</span>`).join('')}</div>` : ''}
     </div>
   </div>
-  ${quotes.length ? `<div class="say"><div class="sec"><h2>💬 아이들이 남긴 말</h2></div>
-    <div class="qs">${quotes.map(q => `<div class="q"><p>${e(cut(q.t, 120))}</p>${q.c ? `<cite>${e(q.c)}</cite>` : ''}</div>`).join('')}</div></div>` : ''}
+  ${(pickQt.length || pickRv.length) ? `<div class="say ${pickQt.length && pickRv.length ? 'both' : 'solo'}">
+    ${pickQt.length ? `<div class="sec"><h2>💬 아이들이 고른 문장</h2><div class="qs1">${pickQt.map(q => `<div class="q"><p>${e(cut(q.quote, 90))}</p>${q.book_title ? `<cite>${e(q.book_title)}</cite>` : ''}</div>`).join('')}</div></div>` : ''}
+    ${pickRv.length ? `<div class="sec"><h2>📝 아이들의 후기</h2><div class="qs1">${pickRv.map(r => `<div class="q"><p>${e(cut(r.content, 110))}</p><cite>${r.kind === 'book' ? e(r.book_title || '') : '루틴 후기'}</cite></div>`).join('')}</div></div>` : ''}
+  </div>` : ''}
   <div class="ft"><img src="${SITE}/logo-yv-white.png" alt="YouthVoice"><span>book.youthvoice.or.kr<br>청소년 개인정보는 담기지 않았습니다</span></div>
 </div>
+<script>
+// 내용이 많아 아래띠와 겹치면, 덜 중요한 것부터 줄여서 한 장에 맞춘다 (책 이름 → 새 책방 → 책방 막대)
+function fit() {
+  var ft = document.querySelector('.ft'), page = document.querySelector('.page');
+  var lim = function () { return ft.getBoundingClientRect().top - 6; };
+  var bottom = function () { var k = [].slice.call(page.children).filter(function (x) { return x !== ft; }); return k[k.length - 1].getBoundingClientRect().bottom; };
+  var cut = 0, guard = 80, stage = 0;
+  var squeeze = function () {                 // 목록을 더 못 줄이면 여백과 글 줄 수를 줄인다
+    stage++;
+    if (stage === 1) page.className += ' tight';
+    else if (stage === 2) page.className += ' c3';
+    else if (stage === 3) page.className += ' c2';
+    else return false;
+    return true;
+  };
+  while (bottom() > lim() && guard--) {
+    var chips = document.querySelectorAll('.chips span:not(.more)'), ns = document.querySelectorAll('.ns span'), bars = document.querySelectorAll('.st div');
+    if (chips.length > 6) { chips[chips.length - 1].remove(); cut++; }
+    else if (ns.length > 2) ns[ns.length - 1].remove();
+    else if (bars.length > 4) bars[bars.length - 1].remove();
+    else if (chips.length > 3) { chips[chips.length - 1].remove(); cut++; }
+    else if (!squeeze()) break;
+  }
+  if (cut) { var box = document.querySelector('.chips'); var m = document.createElement('span'); m.className = 'more'; m.textContent = '외 ' + (cut) + '권'; box.appendChild(m); }
+}
+window.addEventListener('load', fit);
+<\/script>
 </body></html>`;
 }
 
