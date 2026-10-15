@@ -1943,6 +1943,10 @@ function viewReport() {
             <cite>${esc(q.book_title || '')}</cite></div>`,
     '공개로 켠 문장이 없어요.')}</div>
 
+  <div class="rp-sec">인포그래픽 <small>후원자에게 보낼 한 장짜리 PDF</small></div>
+  <button class="btn-s go" onclick="rpPdf()">📄 인포그래픽 PDF로 저장</button>
+  <div class="rp-note">눌러서 열리는 창에서 <b>인쇄 → 대상을 「PDF로 저장」</b>으로 고르면 한 장짜리 A4 PDF가 돼요. 청소년 이름은 담기지 않아요.</div>
+
   <div class="rp-sec">보낼 문자</div>
   <textarea id="rpText" class="rp-text" rows="14">${esc(rpMessage(d))}</textarea>
   <button class="btn-s go" style="margin-top:10px;" onclick="rpCopy()">문자 본문 복사하기</button>
@@ -1968,6 +1972,113 @@ async function rpLoad() {
   RP.data = rep.data;
   RP.credit = cr.data || null;
   render();
+}
+
+// ── 월간 보고 인포그래픽 (A4 한 장 · 인쇄 → PDF로 저장) ────────────────
+// 불러온 숫자(RP.data)를 한 장짜리 그림으로 만든다. 청소년 이름은 어디에도 담지 않는다 — 책 제목·책방 이름·익명의 한 줄만.
+// 책값·정산·수신거부 같은 줄은 뺐다 (2026-10-15 사용자).
+function rpInfographicHtml(d) {
+  const e = esc, w = won;
+  const y = d.year, m = d.month;
+  const hero = d.readers
+    ? `이번 달 청소년 <b>${w(d.readers)}명</b>이 <b>${w(d.certs)}번</b> 읽고 기록했어요`
+    : `이번 달에도 청소년들이 읽는 습관을 쌓고 있어요`;
+  const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${w(v)}<small>${u}</small></b><span>${label}</span></div>`;
+  const stats = [stat('🌱', d.readers || 0, '명', '읽은 청소년', 1), stat('✍️', d.certs || 0, '번', '독서 기록', 2),
+                 stat('📚', d.books || 0, '권', '전해진 책', 3), stat('✨', d.new_readers || 0, '명', '처음 인증한 사람', 4),
+                 stat('🤝', d.joins || 0, '건', '루틴 참여', 5)].join('');
+  const books = (d.books_read || []).slice(0, 14);
+  const stores = (d.stores || []).slice(0, 6), smax = Math.max(1, ...stores.map(x => x.books || 0));
+  const quotes = [...(d.reviews || []).map(r => ({ t: r.content, c: r.kind === 'book' ? (r.book_title || '') : '루틴 후기' })),
+                  ...(d.quotes || []).map(q => ({ t: q.quote, c: q.book_title || '' }))].filter(x => x.t).slice(0, 2);
+  const cut = (t, n) => { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>한끗독서 월간 리포트 ${y}-${String(m).padStart(2, '0')}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Segoe UI',sans-serif;background:#E9E5DC;color:#1C1A17;word-break:keep-all}
+.bar{position:sticky;top:0;z-index:5;background:#1C1A17;color:#fff;padding:10px 16px;font-size:13px;display:flex;gap:12px;align-items:center;justify-content:center}
+.bar button{font:inherit;font-weight:700;border:0;border-radius:8px;padding:7px 14px;background:#83CA00;color:#10210A;cursor:pointer}
+.page{width:210mm;height:297mm;margin:16px auto;background:#FAF8F3;position:relative;overflow:hidden;box-shadow:0 6px 30px rgba(0,0,0,.18)}
+.hd{background:linear-gradient(135deg,#1F4E46 0%,#2F6B4F 100%);color:#fff;padding:15mm 14mm 12mm;position:relative;overflow:hidden;height:64mm}
+.hd::before{content:"";position:absolute;right:-18mm;top:-22mm;width:80mm;height:80mm;border-radius:50%;background:rgba(255,255,255,.07)}
+.hd::after{content:"";position:absolute;right:30mm;bottom:-30mm;width:50mm;height:50mm;border-radius:50%;background:rgba(131,202,0,.18)}
+.hd small{font-size:10pt;letter-spacing:.14em;opacity:.8;font-weight:700}
+.hd h1{font-size:25pt;letter-spacing:-.04em;margin-top:2mm;line-height:1.2}
+.hd p{font-size:10.5pt;opacity:.85;margin-top:3mm}
+.ym{position:absolute;right:14mm;top:13mm;text-align:right;z-index:1}
+.ym b{display:block;font-size:34pt;letter-spacing:-.03em;line-height:1}
+.ym span{font-size:10pt;opacity:.8}
+.hero{padding:12mm 14mm 5mm;font-size:18pt;font-weight:800;letter-spacing:-.04em;line-height:1.5}
+.hero b{color:#4E7A1C;font-size:23pt}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:3mm;padding:4mm 14mm 0}
+.c{background:#fff;border:.3mm solid #E3DCCE;border-radius:4mm;padding:6mm 2mm 5mm;text-align:center;position:relative;overflow:hidden}
+.c::before{content:"";position:absolute;left:0;right:0;top:0;height:1.2mm;background:var(--t)}
+.c i{display:block;font-style:normal;font-size:19pt;line-height:1}
+.c b{display:block;font-size:25pt;letter-spacing:-.04em;margin-top:2.5mm;line-height:1.1}
+.c b small{font-size:9.5pt;margin-left:.5mm;color:var(--d)}
+.c span{display:block;font-size:8.6pt;color:#5D574E;margin-top:2mm;font-weight:600}
+.t1{--t:#83CA00;--d:#4E7A1C}.t2{--t:#5B9BD5;--d:#2E6AA3}.t3{--t:#C2533F;--d:#A8432F}.t4{--t:#E8A33D;--d:#A8680C}.t5{--t:#7B5EA7;--d:#5C418A}
+.two{display:grid;grid-template-columns:1.15fr 1fr;gap:7mm;padding:13mm 14mm 0}
+.sec h2{font-size:13pt;letter-spacing:-.03em;display:flex;align-items:center;gap:2mm}
+.sec h2 em{font-style:normal;font-size:8.5pt;color:#9A948A;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:2mm;margin-top:3.5mm}
+.chips span{background:#fff;border:.3mm solid #E3DCCE;border-radius:99px;padding:1.7mm 3.4mm;font-size:9.4pt;font-weight:700}
+.chips span i{font-style:normal;color:#4E7A1C;margin-left:1.2mm;font-size:8pt}
+.st{margin-top:3.5mm}
+.st div{display:flex;align-items:center;gap:2.5mm;margin-bottom:3mm;font-size:9.6pt}
+.st span:first-child{width:27mm;flex:none;font-weight:700;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.st .bb{flex:1;height:3.4mm;border-radius:2mm;background:#EDE8DD;overflow:hidden}
+.st .bb i{display:block;height:100%;border-radius:2mm;background:linear-gradient(90deg,#83CA00,#4E7A1C)}
+.st em{font-style:normal;font-weight:800;color:#4E7A1C;width:9mm;text-align:right}
+.say{padding:13mm 14mm 0}
+.say .qs{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin-top:3.5mm}
+.q{background:#fff;border:.3mm solid #E3DCCE;border-radius:4mm;padding:6mm 6mm 5mm;position:relative}
+.q::before{content:"\\201C";position:absolute;left:4mm;top:1mm;font-size:30pt;color:#CFE6A8;font-weight:800;line-height:1}
+.q p{font-size:10.4pt;line-height:1.7;margin-top:4mm;padding-left:1mm}
+.q cite{display:block;font-style:normal;font-size:8pt;color:#9A948A;margin-top:2.5mm}
+.empty{font-size:9pt;color:#9A948A;margin-top:3.5mm}
+.ft{position:absolute;left:0;right:0;bottom:0;padding:5mm 14mm;background:#1F4E46;color:#fff;display:flex;justify-content:space-between;align-items:center;font-size:8.5pt}
+.ft img{height:6.5mm}
+.ft span{opacity:.85;text-align:right;line-height:1.6}
+@page{size:A4;margin:0}
+@media print{body{background:none}.bar{display:none}.page{margin:0;box-shadow:none}}
+</style></head><body>
+<div class="bar"><span>인쇄 창에서 <b>대상을 「PDF로 저장」</b>으로 고르면 A4 한 장 PDF가 돼요.</span><button onclick="window.print()">다시 인쇄</button></div>
+<div class="page">
+  <div class="hd">
+    <small>한끗독서 · 월간 리포트</small>
+    <h1>청소년이 매일 한 장,<br>책을 읽은 한 달</h1>
+    <p>사단법인 유스보이스 한끗독서</p>
+    <div class="ym"><b>${y}.${String(m).padStart(2, '0')}</b><span>${y}년 ${m}월</span></div>
+  </div>
+  <div class="hero">${hero}</div>
+  <div class="stats">${stats}</div>
+  <div class="two">
+    <div class="sec"><h2>📖 아이들이 읽은 책 <em>${books.length}권</em></h2>
+      ${books.length ? `<div class="chips">${books.map(b => `<span>${e(cut(b.title, 22))}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('')}</div>` : `<div class="empty">이 달에 적힌 책 제목이 없어요.</div>`}
+    </div>
+    <div class="sec"><h2>🏪 책을 고른 동네책방 <em>${stores.length}곳</em></h2>
+      ${stores.length ? `<div class="st">${stores.map(x => `<div><span>${e(x.name)}</span><span class="bb"><i style="width:${Math.round((x.books || 0) / smax * 100)}%"></i></span><em>${x.books}권</em></div>`).join('')}</div>` : `<div class="empty">이 달에 책을 받은 책방이 없어요.</div>`}
+    </div>
+  </div>
+  ${quotes.length ? `<div class="say"><div class="sec"><h2>💬 아이들이 남긴 말</h2></div>
+    <div class="qs">${quotes.map(q => `<div class="q"><p>${e(cut(q.t, 120))}</p>${q.c ? `<cite>${e(q.c)}</cite>` : ''}</div>`).join('')}</div></div>` : ''}
+  <div class="ft"><img src="${SITE}/logo-yv-white.png" alt="YouthVoice"><span>book.youthvoice.or.kr<br>청소년 개인정보는 담기지 않았습니다</span></div>
+</div>
+</body></html>`;
+}
+
+function rpPdf() {
+  const d = RP.data; if (!d) return alert('먼저 월을 고르고 「불러오기」를 눌러 주세요.');
+  const win = window.open('', '_blank');
+  if (!win) return alert('새 창이 막혀 있어요. 주소창 옆의 팝업 허용을 켜고 다시 눌러 주세요.');
+  win.document.open(); win.document.write(rpInfographicHtml(d)); win.document.close();
+  // 그림(로고)이 다 뜬 뒤에 인쇄 창을 연다
+  win.addEventListener('load', () => setTimeout(() => { try { win.focus(); win.print(); } catch (e) {} }, 400));
 }
 
 // 문자 본문. 숫자가 0 인 줄은 아예 빼서 "아무 일도 없었다" 로 읽히지 않게 한다
