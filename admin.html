@@ -306,6 +306,8 @@ tr:hover td { background:#fcfcfd; }
   border-radius:3px 10px 10px 3px; padding:12px 14px; }
 .rp-q p { font-size:13.5px; line-height:1.7; }
 .rp-use { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12px; font-weight:700; color:#4E7A1C; cursor:pointer; }
+.rp-use { justify-content:flex-start; }
+.rp-use input { width:auto; height:auto; margin:0; padding:0; flex:none; }
 .rp-q cite { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3); margin-top:7px; }
 .rp-empty { padding:0 20px; font-size:12.5px; color:var(--ink-3); }
 .rp-text { display:block; width:calc(100% - 40px); margin:0 20px; border:1px solid var(--line);
@@ -646,6 +648,19 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 </div>
 
 <!-- 루틴 참여자 -->
+<div class="overlay" id="rtOverlay">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-hd">
+      <div class="modal-t" id="rtTitle">루틴 결과 리포트</div>
+      <div class="modal-d">후원 기업·외부에 공유하는 A4 한 장짜리예요. 청소년 이름·사진·지역·금액은 담기지 않아요.</div>
+    </div>
+    <div class="modal-bd" id="rtBody"><div class="empty">불러오는 중…</div></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('rtOverlay')">닫기</button>
+      <button class="btn btn-dark" id="rtGo" onclick="rtPdf()" disabled>📄 PDF로 저장</button>
+    </div>
+  </div>
+</div>
 <div class="overlay" id="photoOverlay">
   <div class="modal">
     <div class="modal-hd">
@@ -1192,14 +1207,15 @@ function viewStats() {
   const stLabel = { recruit: '모집 중', active: '진행 중', done: '종료' };
   const tbl = shown.length ? `<table class="st-tbl"><tr>
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
-      <th>루틴</th><th>상태</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
+      <th>루틴</th><th>상태</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th><th></th></tr>
     ${shown.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
       <td><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></td><td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
       <td class="num r">${stCerts(r.id)}건</td>
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
-      <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td></tr>`).join('')}</table>`
+      <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td>
+      <td class="r">${r.canceled || r.status === 'recruit' ? '' : `<button class="btn btn-line" onclick="rtOpen(${r.id})" title="후원 기업·외부에 공유하는 한 장짜리 결과 리포트">📄 리포트</button>`}</td></tr>`).join('')}</table>`
     : `<div class="empty">${rows.length ? '이 상태의 루틴이 없어요' : '아직 루틴이 없어요'}</div>`;
 
   return `<div class="st-wrap">
@@ -2013,6 +2029,123 @@ async function rpLoad() {
   render();
 }
 
+// ── 루틴별 결과 리포트 (후원 기업·외부 공유용 · A4 한 장 · migration-138) ────────
+// 통계의 루틴별 표에서 「📄 리포트」를 누르면 그 루틴의 성과를 모아 보여 주고, 문장·후기를 2개씩 고른 뒤 PDF 로 저장한다.
+let RT = { id: 0, data: null, pick: { rv: [], qt: [] } };
+async function rtOpen(id) {
+  RT = { id, data: null, pick: { rv: [], qt: [] } };
+  document.getElementById('rtBody').innerHTML = '<div class="empty">불러오는 중…</div>';
+  document.getElementById('rtGo').disabled = true;
+  document.getElementById('rtOverlay').classList.add('on');
+  if (!LIVE) { document.getElementById('rtBody').innerHTML = '<div class="empty">데모 모드에서는 불러올 수 없어요.</div>'; return; }
+  const { data, error } = await sb.rpc('admin_routine_report', { p_routine: id, p_pct: ST_PCT });
+  if (error) { document.getElementById('rtBody').innerHTML = `<div class="empty">불러오지 못했어요.<br>마이그레이션 138을 돌렸는지 확인해 주세요.<br><span class="muted">${esc(error.message)}</span></div>`; return; }
+  RT.data = data;
+  RT.pick = { rv: (data.reviews || []).length ? [0] : [], qt: (data.quotes || []).length ? [0] : [] };
+  rtRender();
+}
+function rtRender() {
+  const d = RT.data; if (!d) return;
+  const r = d.routine;
+  document.getElementById('rtTitle').textContent = `${r.emoji || '📚'} ${r.title} — 결과 리포트`;
+  const ended = r.status === 'done';
+  const num = (v, u, l) => `<div class="rp-n"><b>${won(v)}<small>${u}</small></b><span>${l}</span></div>`;
+  const li = (arr, key, kind) => (arr || []).length ? arr.map((x, i) => `<div class="rp-q"><p>${kind === 'qt' ? '“' + esc(x.quote) + '”' : esc(x.content)}</p>
+        <cite>${kind === 'qt' ? esc(x.book_title || '') : (x.kind === 'book' ? '📗 ' + esc(x.book_title || '') : '📚 루틴 후기')}</cite>
+        <label class="rp-use"><input type="checkbox" ${RT.pick[kind].includes(i) ? 'checked' : ''} onchange="rtPick('${kind}', ${i}, this)"> 리포트에 넣기</label></div>`).join('')
+    : '<div class="rp-empty">공개로 켠 것이 없어요. 「문장 고르기」 탭에서 골라 주세요.</div>';
+  document.getElementById('rtBody').innerHTML = `
+    <div class="rp-grid" style="margin:0 0 14px;">
+      ${num(d.people, '명', '참여 청소년')}${num(ended ? d.done : 0, '명', ended ? `완주 (${d.people ? Math.round(d.done / d.people * 100) : 0}%)` : '완주 · 종료 후 확정')}
+      ${num(d.certs, '번', '독서 기록')}${num(d.avg_days, '일', '한 명당 인증한 날')}
+    </div>
+    ${ended ? '' : '<div class="rp-warn">아직 진행 중인 루틴이에요. 지금까지의 결과로 만들어지고, 완주 인원은 빠져요.</div>'}
+    <div class="rp-sec">💬 문장 <i>${(d.quotes || []).length}</i><small>공개로 켠 것 · 2개까지</small></div>${li(d.quotes, 'qt', 'qt')}
+    <div class="rp-sec">📝 후기 <i>${(d.reviews || []).length}</i><small>공개로 켠 것 · 2개까지</small></div>${li(d.reviews, 'rv', 'rv')}`;
+  document.getElementById('rtGo').disabled = false;
+}
+function rtPick(kind, i, el) {
+  const a = RT.pick[kind];
+  if (el.checked) {
+    if (a.length >= 2) { el.checked = false; return alert('2개까지 고를 수 있어요. 하나를 먼저 빼 주세요.'); }
+    a.push(i); a.sort((x, y) => x - y);
+  } else { const k = a.indexOf(i); if (k >= 0) a.splice(k, 1); }
+}
+function rtPdf() {
+  if (!RT.data) return;
+  const win = window.open('', '_blank');
+  if (!win) return alert('새 창이 막혀 있어요. 주소창 옆의 팝업 허용을 켜고 다시 눌러 주세요.');
+  win.document.open(); win.document.write(rtInfographicHtml(RT.data)); win.document.close();
+  win.addEventListener('load', () => setTimeout(() => { try { win.focus(); win.print(); } catch (e) {} }, 400));
+}
+const RT_CSS = `
+.rt-day{padding:9mm 14mm 0}
+.dc{display:flex;align-items:flex-end;gap:.9mm;height:32mm;margin-top:4mm;padding:0 1mm;border-bottom:.3mm solid #CFC8B8}
+.dc div{flex:1;min-width:0;position:relative;border-radius:1mm 1mm 0 0;background:linear-gradient(180deg,#83CA00,#4E7A1C)}
+.dc div.z{background:#E3DCCE;height:.8mm !important}
+.dc div b{position:absolute;left:0;right:0;top:-4mm;text-align:center;font-size:6.8pt;font-weight:800;color:#4E7A1C}
+.dl{display:flex;justify-content:space-between;font-size:7.6pt;color:#9A948A;margin-top:1.6mm;padding:0 1mm}
+.tight .dc{height:24mm}
+.sm{display:grid;gap:3mm;margin-top:3.5mm}
+.sm div{display:flex;align-items:center;gap:3mm;background:#fff;border:.3mm solid #E3DCCE;border-radius:3.5mm;padding:3.2mm 4mm;font-size:9.6pt}
+.sm div i{font-style:normal;font-size:13pt}.sm div b{font-size:12.5pt;color:#4E7A1C;letter-spacing:-.03em}.sm div span{color:#5D574E;font-weight:600}
+.ln{display:flex;flex-wrap:wrap;gap:2mm 4mm;font-size:9.6pt;opacity:.92;margin-top:3mm}
+`;
+function rtInfographicHtml(d) {
+  const e = esc, w = won, r = d.routine;
+  const ended = r.status === 'done';
+  const dt = x => String(x || '').slice(0, 10).replace(/-/g, '.');
+  const hero = d.people
+    ? `청소년 <b>${w(d.people)}명</b>이 <b>${w(r.days)}일</b> 동안 <b>${w(d.certs)}번</b> 읽고 기록했어요`
+    : `이 루틴은 아직 기록이 쌓이는 중이에요`;
+  const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${v}<small>${u}</small></b><span>${label}</span></div>`;
+  const rate = d.people ? Math.round(d.done / d.people * 100) : 0;
+  const stats = [stat('🌱', w(d.people), '명', '참여 청소년', 1),
+                 stat('🏁', ended ? w(d.done) : '—', ended ? '명' : '', ended ? `완주 · ${rate}%` : '완주 · 종료 후 확정', 2),
+                 stat('✍️', w(d.certs), '번', '독서 기록', 3), stat('📅', d.avg_days, '일', '한 명이 인증한 날', 4),
+                 stat('📚', w((d.books || []).length), '권', '함께 읽은 책', 5)].join('');
+  const daily = d.daily || [], mx = Math.max(1, ...daily.map(x => x.n));
+  const showN = daily.length <= 21;
+  const bars = daily.map(x => `<div class="${x.n ? '' : 'z'}" style="height:${x.n ? Math.max(6, Math.round(x.n / mx * 100)) : 3}%" title="${e(x.d)}">${showN && x.n ? `<b>${x.n}</b>` : ''}</div>`).join('');
+  const lbl = daily.length ? `<span>${e(dt(daily[0].d).slice(5))}</span>${daily.length > 8 ? `<span>${e(dt(daily[Math.floor(daily.length / 2)].d).slice(5))}</span>` : ''}<span>${e(dt(daily[daily.length - 1].d).slice(5))}</span>` : '';
+  const books = (d.books || []).slice(0, 12);
+  const cut = (t, n) => { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+  const pickRv = ((RT.pick && RT.pick.rv) || []).map(i => (d.reviews || [])[i]).filter(Boolean).slice(0, 2);
+  const pickQt = ((RT.pick && RT.pick.qt) || []).map(i => (d.quotes || [])[i]).filter(Boolean).slice(0, 2);
+  const meta = [r.lead ? `끗짱 ${e(r.lead)}` : '', r.store ? `책방 ${e(r.store)}` : '', r.sponsor ? `후원 ${e(r.sponsor)}` : ''].filter(Boolean);
+  const side = [`<div><i>💬</i><b>${w(d.comments)}</b><span>개의 응원 댓글</span></div>`, `<div><i>❤️</i><b>${w(d.likes)}</b><span>번의 좋아요</span></div>`,
+                d.meetup ? `<div><i>🤝</i><b>${w(d.meetup.attended)}/${w(d.meetup.people)}명</b><span>공유회 참석</span></div>` : ''].join('');
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>한끗독서 루틴 리포트 ${e(r.title)}</title>
+<style>${INFO_CSS}${RT_CSS}</style></head><body>
+<div class="bar"><span>인쇄 창에서 <b>대상을 「PDF로 저장」</b>으로 고르면 A4 한 장 PDF가 돼요.</span><button onclick="window.print()">다시 인쇄</button></div>
+<div class="page">
+  <div class="hd">
+    <small>한끗독서 · 루틴 결과 리포트</small>
+    <h1>${e(r.emoji || '📚')} ${e(r.title)}</h1>
+    <p>${e(dt(r.start))} – ${e(dt(r.end))}${ended ? '' : ' · 진행 중 (지금까지)'}</p>
+    ${meta.length ? `<div class="ln">${meta.map(x => `<span>${x}</span>`).join('')}</div>` : ''}
+    <div class="ym"><b>${w(r.days)}일</b><span>함께한 기간</span></div>
+  </div>
+  <div class="hero">${hero}</div>
+  <div class="stats">${stats}</div>
+  ${daily.length ? `<div class="rt-day sec"><h2>📈 하루하루의 독서 기록 <em>날짜별 인증한 청소년 수</em></h2><div class="dc">${bars}</div><div class="dl">${lbl}</div></div>` : ''}
+  <div class="two">
+    <div class="sec"><h2>📖 아이들이 읽은 책 <em>${books.length}권</em></h2>
+      ${books.length ? `<div class="chips">${books.map(b => `<span>${e(cut(b.title, 18))}${b.readers > 1 ? `<i>${b.readers}명</i>` : ''}</span>`).join('')}</div>` : `<div class="empty">적힌 책 제목이 없어요.</div>`}
+    </div>
+    <div class="sec"><h2>🤝 서로 건넨 응원</h2><div class="sm">${side}</div></div>
+  </div>
+  ${(pickQt.length || pickRv.length) ? `<div class="say ${pickQt.length && pickRv.length ? 'both' : 'solo'}">
+    ${pickQt.length ? `<div class="sec"><h2>💬 아이들이 고른 문장</h2><div class="qs1">${pickQt.map(q => `<div class="q"><p>${e(cut(q.quote, 90))}</p>${q.book_title ? `<cite>${e(q.book_title)}</cite>` : ''}</div>`).join('')}</div></div>` : ''}
+    ${pickRv.length ? `<div class="sec"><h2>📝 아이들의 후기</h2><div class="qs1">${pickRv.map(v => `<div class="q"><p>${e(cut(v.content, 110))}</p><cite>${v.kind === 'book' ? e(v.book_title || '') : '루틴 후기'}</cite></div>`).join('')}</div></div>` : ''}
+  </div>` : ''}
+  <div class="ft"><img src="${SITE}/logo-yv-white.png" alt="YouthVoice"><span>사단법인 유스보이스 · book.youthvoice.or.kr<br>청소년 개인정보는 담기지 않았습니다</span></div>
+</div>
+${INFO_FIT}
+</body></html>`;
+}
+
 // ── 월간 보고 인포그래픽 (A4 한 장 · 인쇄 → PDF로 저장) ────────────────
 // 불러온 숫자(RP.data)를 한 장짜리 그림으로 만든다. 청소년 이름은 어디에도 담지 않는다 — 책 제목·책방 이름·익명의 한 줄만.
 // 책값·정산·수신거부 같은 줄은 뺐다 (2026-10-15 사용자).
@@ -2032,29 +2165,7 @@ function rpNewStores(d) {
     return k.getUTCFullYear() === d.year && k.getUTCMonth() + 1 === d.month;
   }).map(b => ({ name: b.name, region: b.region || '' }));
 }
-function rpInfographicHtml(d) {
-  const e = esc, w = won;
-  const y = d.year, m = d.month;
-  const hero = d.readers
-    ? `이번 달 청소년 <b>${w(d.readers)}명</b>이 <b>${w(d.certs)}번</b> 읽고 기록했어요`
-    : `이번 달에도 청소년들이 읽는 습관을 쌓고 있어요`;
-  const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${w(v)}<small>${u}</small></b><span>${label}</span></div>`;
-  const stats = [stat('🌱', d.readers || 0, '명', '읽은 청소년', 1), stat('✍️', d.certs || 0, '번', '독서 기록', 2),
-                 stat('📚', d.books || 0, '권', '전해진 책', 3), stat('✨', d.new_readers || 0, '명', '처음 인증한 사람', 4),
-                 stat('🤝', d.joins || 0, '건', '루틴 참여', 5)].join('');
-  const books = (d.books_read || []).slice(0, 12);
-  const stores = (d.stores || []).slice(0, 6), smax = Math.max(1, ...stores.map(x => x.books || 0));
-  // 관리자가 골라 둔 후기·문장 (월간 보고의 「인포그래픽에 넣기」) — 각각 2개까지
-  const pickRv = ((RP.pick && RP.pick.rv) || []).map(i => (d.reviews || [])[i]).filter(Boolean).slice(0, 2);
-  const pickQt = ((RP.pick && RP.pick.qt) || []).map(i => (d.quotes || [])[i]).filter(Boolean).slice(0, 2);
-  const newStores = rpNewStores(d);
-  const cut = (t, n) => { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
-
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>한끗독서 월간 리포트 ${y}-${String(m).padStart(2, '0')}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
+const INFO_CSS = `*{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR','Segoe UI',sans-serif;background:#E9E5DC;color:#1C1A17;word-break:keep-all}
 .bar{position:sticky;top:0;z-index:5;background:#1C1A17;color:#fff;padding:10px 16px;font-size:13px;display:flex;gap:12px;align-items:center;justify-content:center}
@@ -2112,7 +2223,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
 .ft span{opacity:.85;text-align:right;line-height:1.6}
 @page{size:A4;margin:0}
 @media print{body{background:none}.bar{display:none}.page{margin:0;box-shadow:none}}
-</style></head><body>
+`;
+const INFO_FIT = `<script>
+// 내용이 많아 아래띠와 겹치면, 덜 중요한 것부터 줄여서 한 장에 맞춘다 (책 이름 → 새 책방 → 책방 막대)
+function fit() {
+  var ft = document.querySelector('.ft'), page = document.querySelector('.page');
+  var lim = function () { return ft.getBoundingClientRect().top - 6; };
+  var bottom = function () { var k = [].slice.call(page.children).filter(function (x) { return x !== ft; }); return k[k.length - 1].getBoundingClientRect().bottom; };
+  var cut = 0, guard = 80, stage = 0;
+  var squeeze = function () {                 // 목록을 더 못 줄이면 여백과 글 줄 수를 줄인다
+    stage++;
+    if (stage === 1) page.className += ' tight';
+    else if (stage === 2) page.className += ' c3';
+    else if (stage === 3) page.className += ' c2';
+    else return false;
+    return true;
+  };
+  while (bottom() > lim() && guard--) {
+    var chips = document.querySelectorAll('.chips span:not(.more)'), ns = document.querySelectorAll('.ns span'), bars = document.querySelectorAll('.st div');
+    if (chips.length > 6) { chips[chips.length - 1].remove(); cut++; }
+    else if (ns.length > 2) ns[ns.length - 1].remove();
+    else if (bars.length > 4) bars[bars.length - 1].remove();
+    else if (squeeze()) { /* 여백·줄 수를 먼저 줄여 본다 */ }
+    else if (chips.length > 3) { chips[chips.length - 1].remove(); cut++; }
+    else break;
+  }
+  if (cut) { var box = document.querySelector('.chips'); var m = document.createElement('span'); m.className = 'more'; m.textContent = '외 ' + (cut) + '권'; box.appendChild(m); }
+}
+window.addEventListener('load', fit);
+<\/script>`;
+
+function rpInfographicHtml(d) {
+  const e = esc, w = won;
+  const y = d.year, m = d.month;
+  const hero = d.readers
+    ? `이번 달 청소년 <b>${w(d.readers)}명</b>이 <b>${w(d.certs)}번</b> 읽고 기록했어요`
+    : `이번 달에도 청소년들이 읽는 습관을 쌓고 있어요`;
+  const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${w(v)}<small>${u}</small></b><span>${label}</span></div>`;
+  const stats = [stat('🌱', d.readers || 0, '명', '읽은 청소년', 1), stat('✍️', d.certs || 0, '번', '독서 기록', 2),
+                 stat('📚', d.books || 0, '권', '전해진 책', 3), stat('✨', d.new_readers || 0, '명', '처음 인증한 사람', 4),
+                 stat('🤝', d.joins || 0, '건', '루틴 참여', 5)].join('');
+  const books = (d.books_read || []).slice(0, 12);
+  const stores = (d.stores || []).slice(0, 6), smax = Math.max(1, ...stores.map(x => x.books || 0));
+  // 관리자가 골라 둔 후기·문장 (월간 보고의 「인포그래픽에 넣기」) — 각각 2개까지
+  const pickRv = ((RP.pick && RP.pick.rv) || []).map(i => (d.reviews || [])[i]).filter(Boolean).slice(0, 2);
+  const pickQt = ((RP.pick && RP.pick.qt) || []).map(i => (d.quotes || [])[i]).filter(Boolean).slice(0, 2);
+  const newStores = rpNewStores(d);
+  const cut = (t, n) => { t = String(t); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>한끗독서 월간 리포트 ${y}-${String(m).padStart(2, '0')}</title>
+<style>${INFO_CSS}</style></head><body>
 <div class="bar"><span>인쇄 창에서 <b>대상을 「PDF로 저장」</b>으로 고르면 A4 한 장 PDF가 돼요.</span><button onclick="window.print()">다시 인쇄</button></div>
 <div class="page">
   <div class="hd">
@@ -2138,33 +2300,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sa
   </div>` : ''}
   <div class="ft"><img src="${SITE}/logo-yv-white.png" alt="YouthVoice"><span>book.youthvoice.or.kr<br>청소년 개인정보는 담기지 않았습니다</span></div>
 </div>
-<script>
-// 내용이 많아 아래띠와 겹치면, 덜 중요한 것부터 줄여서 한 장에 맞춘다 (책 이름 → 새 책방 → 책방 막대)
-function fit() {
-  var ft = document.querySelector('.ft'), page = document.querySelector('.page');
-  var lim = function () { return ft.getBoundingClientRect().top - 6; };
-  var bottom = function () { var k = [].slice.call(page.children).filter(function (x) { return x !== ft; }); return k[k.length - 1].getBoundingClientRect().bottom; };
-  var cut = 0, guard = 80, stage = 0;
-  var squeeze = function () {                 // 목록을 더 못 줄이면 여백과 글 줄 수를 줄인다
-    stage++;
-    if (stage === 1) page.className += ' tight';
-    else if (stage === 2) page.className += ' c3';
-    else if (stage === 3) page.className += ' c2';
-    else return false;
-    return true;
-  };
-  while (bottom() > lim() && guard--) {
-    var chips = document.querySelectorAll('.chips span:not(.more)'), ns = document.querySelectorAll('.ns span'), bars = document.querySelectorAll('.st div');
-    if (chips.length > 6) { chips[chips.length - 1].remove(); cut++; }
-    else if (ns.length > 2) ns[ns.length - 1].remove();
-    else if (bars.length > 4) bars[bars.length - 1].remove();
-    else if (chips.length > 3) { chips[chips.length - 1].remove(); cut++; }
-    else if (!squeeze()) break;
-  }
-  if (cut) { var box = document.querySelector('.chips'); var m = document.createElement('span'); m.className = 'more'; m.textContent = '외 ' + (cut) + '권'; box.appendChild(m); }
-}
-window.addEventListener('load', fit);
-<\/script>
+${INFO_FIT}
 </body></html>`;
 }
 
