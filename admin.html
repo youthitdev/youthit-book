@@ -503,6 +503,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .st-tbl .r { text-align:right; }
 .st-link { background:none; border:0; padding:0; font:inherit; color:inherit; text-align:left; cursor:pointer; text-decoration:underline; text-decoration-color:#CFC8B8; text-underline-offset:3px; }
 .st-link:hover { color:var(--blue, #2F33B8); text-decoration-color:currentColor; }
+.st-pl { display:inline-block; font-size:12px; font-weight:800; padding:3px 11px; border-radius:99px; white-space:nowrap; }
+.st-pl.recruit { background:#FFF3C9; color:#8A6A00; }
+.st-pl.active { background:#E4E6FA; color:#2F33B8; }
+.st-pl.done { background:#E4F3CC; color:#3F7A00; }
+.st-pl.canceled { background:#ECE8E0; color:#7A7467; }
 .st-note { font-size:12px; color:var(--ink-3); line-height:1.6; margin-top:10px; }
 .sch-out { background:#FBF3E3; color:#A8680C; font-weight:700; padding:1px 7px; border-radius:6px; font-style:normal; }
 </style>
@@ -1161,7 +1166,7 @@ function viewStats() {
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
       <th>루틴</th><th>상태</th><th>기간</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
     ${rows.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
-      <td><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></td><td>${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</td>
+      <td><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></td><td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
