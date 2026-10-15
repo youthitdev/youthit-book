@@ -469,6 +469,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .pb i{display:block;font-style:normal;font-size:10px;color:var(--ink-3);line-height:1.25;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* 통계 (migration-133) */
+.st-wrap { padding:18px 20px 8px; }
 .st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
 .st-cards.c4 { grid-template-columns:repeat(4,1fr); }
 .st-cards.c3 { grid-template-columns:repeat(3,1fr); }
@@ -1181,7 +1182,7 @@ function viewStats() {
       <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td></tr>`).join('')}</table>`
     : '<div class="empty">아직 루틴이 없어요</div>';
 
-  return `
+  return `<div class="st-wrap">
   <div class="st-gl">회원</div>
   <div class="st-cards c4">
     ${card('청소년', won(y.total || 0), '명', `확인 완료 ${won(y.verified || 0)}명`)}
@@ -1209,6 +1210,7 @@ function viewStats() {
     <div style="overflow-x:auto;">${tbl}</div>
     <div class="st-note">완주 = 그 루틴 기간 중 <b>${S.pct || ST_PCT}% 이상</b> 인증한 날이 있는 참여자예요. 끗짱은 빼고 청소년만 세요. 인증은 하루에 한 번만 세요.
       완주율은 <b>종료된 루틴</b>만 계산해요. 진행 중인 루틴은 아직 끝나지 않았고, <b>폐강한 루틴</b>은 열리지 못했으니 뺐어요.</div>
+  </div>
   </div>`;
 }
 
