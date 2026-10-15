@@ -473,6 +473,14 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
 .st-cards.c4 { grid-template-columns:repeat(4,1fr); }
 .st-cards.c3 { grid-template-columns:repeat(3,1fr); }
+.st-c.go { cursor:pointer; transition:box-shadow .15s, transform .15s; }
+.st-c.go:hover { box-shadow:0 6px 18px -10px rgba(40,50,30,.35); transform:translateY(-1px); }
+.st-go { font-size:11px; font-weight:700; color:#2F33B8; margin-left:4px; }
+.st-fl { display:flex; gap:6px; flex-wrap:wrap; }
+.st-f { border:1px solid var(--line); background:#fff; border-radius:99px; padding:5px 11px; font:inherit; font-size:12px; font-weight:700; color:var(--ink-2); cursor:pointer; }
+.st-f i { font-style:normal; margin-left:5px; color:var(--ink-3); font-weight:600; }
+.st-f.on { background:var(--ink); border-color:var(--ink); color:#fff; }
+.st-f.on i { color:#d8d5cc; }
 .st-gl { font-size:12.5px; font-weight:800; color:var(--ink-3); letter-spacing:.04em; margin:4px 2px 8px; }
 @media (max-width:760px){ .st-cards.c4, .st-cards.c3 { grid-template-columns:repeat(2,1fr); } }
 .st-c { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px; }
@@ -1096,6 +1104,14 @@ function renderPanel() {
 // 숫자는 서버가 한 번에 세어 준다(admin_stats). 완주 = 그 루틴 기간의 70% 이상 인증한 날이 있는 참여자
 let STATS = null, STATS_ERR = '';
 const ST_PCT = 70, ST_SEL = new Set();
+// 루틴별 표의 상태 걸러보기. 카드(진행 중·종료된 루틴)를 누르면 그 상태로 걸러서 표로 내려간다
+let ST_FILTER = 'all';
+const stKey = r => r.canceled ? 'canceled' : r.status;
+function stVisible() { const rows = stRows(); return ST_FILTER === 'all' ? rows : rows.filter(r => stKey(r) === ST_FILTER); }
+function stSetFilter(f, jump) {
+  ST_FILTER = f; renderPanel();
+  if (jump) { const el = document.getElementById('stTbl'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
 const ST_SCHOOL_COLOR = { '학교밖': '#E8A33D', '재학': '#83CA00', '졸업': '#5B9BD5', '기타': '#9A948A', '미입력': '#D9D5CA' };
 async function loadStats() {
   STATS_ERR = '';
@@ -1127,9 +1143,9 @@ const stCerts = id => (DB.certs || []).filter(c => c.routine_id === id).length;
 function stRows() { return (STATS && STATS.rows) || []; }
 function stRate(r) { return r.status === 'done' && !r.canceled && r.people ? Math.round(r.done / r.people * 100) : null; }
 function stToggle(id) { if (ST_SEL.has(id)) ST_SEL.delete(id); else ST_SEL.add(id); }
-function stToggleAll(on) { stRows().forEach(r => on ? ST_SEL.add(r.id) : ST_SEL.delete(r.id)); renderPanel(); }
+function stToggleAll(on) { stVisible().forEach(r => on ? ST_SEL.add(r.id) : ST_SEL.delete(r.id)); renderPanel(); }
 function stCsv() {
-  const all = stRows(), pick = all.filter(r => ST_SEL.has(r.id)), rows = pick.length ? pick : all;
+  const all = stVisible(), pick = all.filter(r => ST_SEL.has(r.id)), rows = pick.length ? pick : all;
   if (!rows.length) return alert('내려받을 루틴이 없어요.');
   downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '전체 인증', '참여인원', '완주인원', '완주율(%)'],
     rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '종료' }[r.status] || r.status)), r.start, r.end, r.days, stCerts(r.id), r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
@@ -1146,7 +1162,7 @@ function viewStats() {
   const dn = doneRows.reduce((a, r) => a + r.done, 0), pn = doneRows.reduce((a, r) => a + r.people, 0);
   const overall = pn ? Math.round(dn / pn * 100) : null;
   const out = sc['학교밖'] || 0;
-  const card = (l, v, u, sub, hl) => `<div class="st-c${hl ? ' hl' : ''}"><div class="st-l">${l}</div><div class="st-v num">${v}<small>${u}</small></div><div class="st-s">${sub}</div></div>`;
+  const card = (l, v, u, sub, hl, go) => `<div class="st-c${hl ? ' hl' : ''}${go ? ' go' : ''}"${go ? ` role="button" tabindex="0" onclick="${go}" title="루틴 목록 보기"` : ''}><div class="st-l">${l}${go ? ' <span class="st-go">목록 ›</span>' : ''}</div><div class="st-v num">${v}<small>${u}</small></div><div class="st-s">${sub}</div></div>`;
 
   const regs = (y.region || []), top = regs.slice(0, 12), rest = regs.slice(12).reduce((a, b) => a + b.n, 0), mx = Math.max(1, ...top.map(x => x.n));
   const bars = top.length ? top.map(x => `<div class="st-bar"><span title="${esc(x.r)}">${esc(x.r)}</span><div class="st-bt"><i style="width:${Math.round(x.n / mx * 100)}%"></i></div><em>${x.n}</em></div>`).join('')
@@ -1168,19 +1184,23 @@ function viewStats() {
       <div class="st-pb"><i style="width:${r.people ? Math.round((r.today || 0) / r.people * 100) : 0}%"></i></div></div>`).join('')
     : '<div class="empty">진행 중인 루틴이 없어요</div>';
 
-  const allOn = rows.length && rows.every(r => ST_SEL.has(r.id));
+  const shown = stVisible();
+  const cnt = k2 => k2 === 'all' ? rows.length : rows.filter(r => stKey(r) === k2).length;
+  const fl = [['all', '전체'], ['recruit', '모집 중'], ['active', '진행 중'], ['done', '종료'], ['canceled', '폐강']]
+    .map(([k2, t]) => `<button type="button" class="st-f${ST_FILTER === k2 ? ' on' : ''}" onclick="stSetFilter('${k2}')">${t}<i>${cnt(k2)}</i></button>`).join('');
+  const allOn = shown.length && shown.every(r => ST_SEL.has(r.id));
   const stLabel = { recruit: '모집 중', active: '진행 중', done: '종료' };
-  const tbl = rows.length ? `<table class="st-tbl"><tr>
+  const tbl = shown.length ? `<table class="st-tbl"><tr>
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
       <th>루틴</th><th>상태</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
-    ${rows.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
+    ${shown.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
       <td><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></td><td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
       <td class="num r">${stCerts(r.id)}건</td>
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
       <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td></tr>`).join('')}</table>`
-    : '<div class="empty">아직 루틴이 없어요</div>';
+    : `<div class="empty">${rows.length ? '이 상태의 루틴이 없어요' : '아직 루틴이 없어요'}</div>`;
 
   return `<div class="st-wrap">
   <div class="st-gl">회원</div>
@@ -1193,8 +1213,8 @@ function viewStats() {
   <div class="st-gl">활동</div>
   <div class="st-cards c4">
     ${card('전체 인증', won((S.certs || {}).total || 0), '건', `하루 한 번 기준 ${won((S.certs || {}).days || 0)}번 · 이번 달 ${won((S.certs || {}).month || 0)}건`)}
-    ${card('진행 중 루틴', won(ro.active || 0), '개', `모집 중 ${won(ro.recruit || 0)}개`)}
-    ${card('종료된 루틴', won(ro.done || 0), '개', ro.canceled ? `폐강 ${won(ro.canceled)}개는 따로 세요` : '끝까지 진행한 루틴')}
+    ${card('진행 중 루틴', won(ro.active || 0), '개', `모집 중 ${won(ro.recruit || 0)}개`, false, "stSetFilter('active', true)")}
+    ${card('종료된 루틴', won(ro.done || 0), '개', ro.canceled ? `폐강 ${won(ro.canceled)}개는 따로 세요` : '끝까지 진행한 루틴', false, "stSetFilter('done', true)")}
     ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
   </div>
   <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
@@ -1203,9 +1223,10 @@ function viewStats() {
     <div class="st-box"><h3>재학 상태 비율<small>가입할 때 고른 값</small></h3>${stDonut(schoolItems)}</div>
     <div class="st-box"><h3>루틴 상태 분포</h3>${routineDonut}</div>
   </div>
-  <div class="st-box">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;">
+  <div class="st-box" id="stTbl">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
       <h3 style="margin:0;">루틴별 완주율</h3>
+      <div class="st-fl">${fl}</div>
       <button class="btn btn-dark" onclick="stCsv()">📥 ${ST_SEL.size ? '체크한 루틴 CSV' : '전체 루틴 CSV'}</button>
     </div>
     <div style="overflow-x:auto;">${tbl}</div>
