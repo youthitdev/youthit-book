@@ -470,6 +470,10 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 
 /* 통계 (migration-133) */
 .st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+.st-cards.c4 { grid-template-columns:repeat(4,1fr); }
+.st-cards.c3 { grid-template-columns:repeat(3,1fr); }
+.st-gl { font-size:12.5px; font-weight:800; color:var(--ink-3); letter-spacing:.04em; margin:4px 2px 8px; }
+@media (max-width:760px){ .st-cards.c4, .st-cards.c3 { grid-template-columns:repeat(2,1fr); } }
 .st-c { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 16px; }
 .st-c.hl { border-color:#F0DFBF; background:#FFFAF0; }
 .st-l { font-size:12.5px; color:var(--ink-3); font-weight:600; }
@@ -1178,14 +1182,18 @@ function viewStats() {
     : '<div class="empty">아직 루틴이 없어요</div>';
 
   return `
-  <div class="st-cards">
+  <div class="st-gl">회원</div>
+  <div class="st-cards c4">
     ${card('청소년', won(y.total || 0), '명', `확인 완료 ${won(y.verified || 0)}명`)}
     ${card('학교 밖 청소년', won(out), '명', y.total ? `전체의 ${Math.round(out / y.total * 100)}% · 가입할 때 고른 값` : '', true)}
     ${card('끗짱', won(k.total || 0), '명', `승인 대기 ${won(k.pending || 0)}건`)}
+    ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
+  </div>
+  <div class="st-gl">활동</div>
+  <div class="st-cards c3">
     ${card('전체 인증', won((S.certs || {}).total || 0), '건', `하루 한 번 기준 ${won((S.certs || {}).days || 0)}번 · 이번 달 ${won((S.certs || {}).month || 0)}건`)}
     ${card('진행 중 루틴', won(ro.active || 0), '개', `종료 ${won(ro.done || 0)}개 · 모집 중 ${won(ro.recruit || 0)}개${ro.canceled ? ` · 폐강 ${won(ro.canceled)}개` : ''}`)}
     ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
-    ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
   </div>
   <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
   <div class="st-grid">
