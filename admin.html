@@ -1116,6 +1116,8 @@ function stDonut(items) {
   return `<div class="st-don"><svg viewBox="0 0 120 120" aria-hidden="true">${arcs}</svg>
     <div class="st-lg">${rows.map(i => `<div><b style="background:${i.color}"></b>${esc(i.label)}<em>${won(i.n)}명 · ${Math.round(i.n / tot * 100)}%</em></div>`).join('')}</div></div>`;
 }
+// 루틴 하나에 올라온 인증 전체(청소년·끗짱 모두) — 루틴 탭의 「인증」 숫자와 같다
+const stCerts = id => (DB.certs || []).filter(c => c.routine_id === id).length;
 function stRows() { return (STATS && STATS.rows) || []; }
 function stRate(r) { return r.status === 'done' && !r.canceled && r.people ? Math.round(r.done / r.people * 100) : null; }
 function stToggle(id) { if (ST_SEL.has(id)) ST_SEL.delete(id); else ST_SEL.add(id); }
@@ -1123,8 +1125,8 @@ function stToggleAll(on) { stRows().forEach(r => on ? ST_SEL.add(r.id) : ST_SEL.
 function stCsv() {
   const all = stRows(), pick = all.filter(r => ST_SEL.has(r.id)), rows = pick.length ? pick : all;
   if (!rows.length) return alert('내려받을 루틴이 없어요.');
-  downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '참여인원', '완주인원', '완주율(%)'],
-    rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '종료' }[r.status] || r.status)), r.start, r.end, r.days, r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
+  downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '전체 인증', '참여인원', '완주인원', '완주율(%)'],
+    rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '종료' }[r.status] || r.status)), r.start, r.end, r.days, stCerts(r.id), r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
 }
 function viewStats() {
   if (!STATS) {
@@ -1164,10 +1166,11 @@ function viewStats() {
   const stLabel = { recruit: '모집 중', active: '진행 중', done: '종료' };
   const tbl = rows.length ? `<table class="st-tbl"><tr>
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
-      <th>루틴</th><th>상태</th><th>기간</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
+      <th>루틴</th><th>상태</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
     ${rows.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
       <td><button type="button" class="st-link" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">${esc(r.title)}</button></td><td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
+      <td class="num r">${stCerts(r.id)}건</td>
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
       <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td></tr>`).join('')}</table>`
