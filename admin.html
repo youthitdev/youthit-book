@@ -307,6 +307,9 @@ tr:hover td { background:#fcfcfd; }
 .rp-q p { font-size:13.5px; line-height:1.7; }
 .rp-use { display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12px; font-weight:700; color:#4E7A1C; cursor:pointer; }
 .rp-use { justify-content:flex-start; }
+.rp-opt { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:0 0 12px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:13px; font-weight:700; cursor:pointer; }
+.rp-opt input { width:auto; height:auto; margin:0; flex:none; }
+.rp-opt small { flex-basis:100%; color:var(--ink-3); font-weight:500; font-size:11.5px; margin-left:22px; }
 .rp-use input { width:auto; height:auto; margin:0; padding:0; flex:none; }
 .rp-q cite { display:block; font-style:normal; font-size:11.5px; color:var(--ink-3); margin-top:7px; }
 .rp-empty { padding:0 20px; font-size:12.5px; color:var(--ink-3); }
@@ -2031,9 +2034,9 @@ async function rpLoad() {
 
 // ── 루틴별 결과 리포트 (후원 기업·외부 공유용 · A4 한 장 · migration-138) ────────
 // 통계의 루틴별 표에서 「📄 리포트」를 누르면 그 루틴의 성과를 모아 보여 주고, 문장·후기를 2개씩 고른 뒤 PDF 로 저장한다.
-let RT = { id: 0, data: null, pick: { rv: [], qt: [] } };
+let RT = { id: 0, data: null, pick: { rv: [], qt: [] }, showDone: true };   // showDone = 리포트에 완주 숫자를 넣을지
 async function rtOpen(id) {
-  RT = { id, data: null, pick: { rv: [], qt: [] } };
+  RT = { id, data: null, pick: { rv: [], qt: [] }, showDone: true };
   document.getElementById('rtBody').innerHTML = '<div class="empty">불러오는 중…</div>';
   document.getElementById('rtGo').disabled = true;
   document.getElementById('rtOverlay').classList.add('on');
@@ -2056,9 +2059,11 @@ function rtRender() {
     : '<div class="rp-empty">공개로 켠 것이 없어요. 「문장 고르기」 탭에서 골라 주세요.</div>';
   document.getElementById('rtBody').innerHTML = `
     <div class="rp-grid" style="margin:0 0 14px;">
-      ${num(d.people, '명', '참여 청소년')}${num(ended ? d.done : 0, '명', ended ? `완주 (${d.people ? Math.round(d.done / d.people * 100) : 0}%)` : '완주 · 종료 후 확정')}
+      ${num(d.people, '명', '참여 청소년')}${RT.showDone ? num(ended ? d.done : 0, '명', ended ? `완주 (${d.people ? Math.round(d.done / d.people * 100) : 0}%)` : '완주 · 종료 후 확정') : num(d.cert_days, '일', '인증한 날 합계')}
       ${num(d.certs, '번', '독서 기록')}${num(d.avg_days, '일', '한 명당 인증한 날')}
     </div>
+    <label class="rp-opt"><input type="checkbox" ${RT.showDone ? 'checked' : ''} onchange="RT.showDone = this.checked; rtRender()"> 리포트에 <b>완주 숫자</b>(완주 인원·비율) 넣기
+      <small>끄면 그 자리에 「인증한 날 합계」가 들어가요</small></label>
     ${ended ? '' : '<div class="rp-warn">아직 진행 중인 루틴이에요. 지금까지의 결과로 만들어지고, 완주 인원은 빠져요.</div>'}
     <div class="rp-sec">💬 문장 <i>${(d.quotes || []).length}</i><small>공개로 켠 것 · 2개까지</small></div>${li(d.quotes, 'qt', 'qt')}
     <div class="rp-sec">📝 후기 <i>${(d.reviews || []).length}</i><small>공개로 켠 것 · 2개까지</small></div>${li(d.reviews, 'rv', 'rv')}`;
@@ -2101,7 +2106,8 @@ function rtInfographicHtml(d) {
   const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${v}<small>${u}</small></b><span>${label}</span></div>`;
   const rate = d.people ? Math.round(d.done / d.people * 100) : 0;
   const stats = [stat('🌱', w(d.people), '명', '참여 청소년', 1),
-                 stat('🏁', ended ? w(d.done) : '—', ended ? '명' : '', ended ? `완주 · ${rate}%` : '완주 · 종료 후 확정', 2),
+                 (RT.showDone ? stat('🏁', ended ? w(d.done) : '—', ended ? '명' : '', ended ? `완주 · ${rate}%` : '완주 · 종료 후 확정', 2)
+                              : stat('🗓️', w(d.cert_days), '일', '인증한 날 합계', 2)),
                  stat('✍️', w(d.certs), '번', '독서 기록', 3), stat('📅', d.avg_days, '일', '한 명이 인증한 날', 4),
                  stat('📚', w((d.books || []).length), '권', '함께 읽은 책', 5)].join('');
   const daily = d.daily || [], mx = Math.max(1, ...daily.map(x => x.n));
