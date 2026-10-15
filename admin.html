@@ -1124,7 +1124,7 @@ function stCsv() {
   const all = stRows(), pick = all.filter(r => ST_SEL.has(r.id)), rows = pick.length ? pick : all;
   if (!rows.length) return alert('내려받을 루틴이 없어요.');
   downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '참여인원', '완주인원', '완주율(%)'],
-    rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '완료' }[r.status] || r.status)), r.start, r.end, r.days, r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
+    rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '종료' }[r.status] || r.status)), r.start, r.end, r.days, r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
 }
 function viewStats() {
   if (!STATS) {
@@ -1148,7 +1148,7 @@ function viewStats() {
   const schoolItems = [...schoolOrder.filter(x => sc[x]), ...Object.keys(sc).filter(x => !schoolOrder.includes(x))]
     .map(x => ({ label: x === '학교밖' ? '학교 밖' : x, n: sc[x], color: ST_SCHOOL_COLOR[x] || '#B7B0A0' }));
   const routineItems = [{ label: '모집 중', n: ro.recruit || 0, color: '#F2C94C' }, { label: '진행 중', n: ro.active || 0, color: '#2F33B8' },
-                        { label: '완료', n: ro.done || 0, color: '#83CA00' }, { label: '폐강', n: ro.canceled || 0, color: '#B9B2A3' },
+                        { label: '종료', n: ro.done || 0, color: '#83CA00' }, { label: '폐강', n: ro.canceled || 0, color: '#B9B2A3' },
                         { label: '그 밖', n: ro.other || 0, color: '#D9D5CA' }]
     .map(x => ({ ...x }));
   // 루틴 그림은 「개」 단위라 donut 의 「명」을 바꿔 쓴다
@@ -1161,7 +1161,7 @@ function viewStats() {
     : '<div class="empty">진행 중인 루틴이 없어요</div>';
 
   const allOn = rows.length && rows.every(r => ST_SEL.has(r.id));
-  const stLabel = { recruit: '모집 중', active: '진행 중', done: '완료' };
+  const stLabel = { recruit: '모집 중', active: '진행 중', done: '종료' };
   const tbl = rows.length ? `<table class="st-tbl"><tr>
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
       <th>루틴</th><th>상태</th><th>기간</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th></tr>
@@ -1178,8 +1178,8 @@ function viewStats() {
     ${card('청소년', won(y.total || 0), '명', `확인 완료 ${won(y.verified || 0)}명`)}
     ${card('학교 밖 청소년', won(out), '명', y.total ? `전체의 ${Math.round(out / y.total * 100)}% · 가입할 때 고른 값` : '', true)}
     ${card('끗짱', won(k.total || 0), '명', `승인 대기 ${won(k.pending || 0)}건`)}
-    ${card('진행 중 루틴', won(ro.active || 0), '개', `완료 ${won(ro.done || 0)}개 · 모집 중 ${won(ro.recruit || 0)}개${ro.canceled ? ` · 폐강 ${won(ro.canceled)}개` : ''}`)}
-    ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `완료 루틴 ${doneRows.length}개 기준`)}
+    ${card('진행 중 루틴', won(ro.active || 0), '개', `종료 ${won(ro.done || 0)}개 · 모집 중 ${won(ro.recruit || 0)}개${ro.canceled ? ` · 폐강 ${won(ro.canceled)}개` : ''}`)}
+    ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
     ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
   </div>
   <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
@@ -1195,7 +1195,7 @@ function viewStats() {
     </div>
     <div style="overflow-x:auto;">${tbl}</div>
     <div class="st-note">완주 = 그 루틴 기간 중 <b>${S.pct || ST_PCT}% 이상</b> 인증한 날이 있는 참여자예요. 끗짱은 빼고 청소년만 세요. 인증은 하루에 한 번만 세요.
-      완주율은 <b>끝난 루틴</b>만 계산해요. 진행 중인 루틴은 아직 끝나지 않았고, <b>폐강한 루틴</b>은 열리지 못했으니 뺐어요.</div>
+      완주율은 <b>종료된 루틴</b>만 계산해요. 진행 중인 루틴은 아직 끝나지 않았고, <b>폐강한 루틴</b>은 열리지 못했으니 뺐어요.</div>
   </div>`;
 }
 
