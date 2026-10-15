@@ -1191,9 +1191,10 @@ function viewStats() {
     ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
   </div>
   <div class="st-gl">활동</div>
-  <div class="st-cards c3">
+  <div class="st-cards c4">
     ${card('전체 인증', won((S.certs || {}).total || 0), '건', `하루 한 번 기준 ${won((S.certs || {}).days || 0)}번 · 이번 달 ${won((S.certs || {}).month || 0)}건`)}
-    ${card('진행 중 루틴', won(ro.active || 0), '개', `종료 ${won(ro.done || 0)}개 · 모집 중 ${won(ro.recruit || 0)}개${ro.canceled ? ` · 폐강 ${won(ro.canceled)}개` : ''}`)}
+    ${card('진행 중 루틴', won(ro.active || 0), '개', `모집 중 ${won(ro.recruit || 0)}개`)}
+    ${card('종료된 루틴', won(ro.done || 0), '개', ro.canceled ? `폐강 ${won(ro.canceled)}개는 따로 세요` : '끝까지 진행한 루틴')}
     ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
   </div>
   <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
