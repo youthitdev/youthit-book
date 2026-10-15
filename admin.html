@@ -578,10 +578,10 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="tabs" id="tabsSite" style="display:none;">
     <button class="tab" data-tab="quotes" onclick="switchTab('quotes')">문장 고르기<i id="cntQuotes"></i></button>
     <button class="tab" data-tab="covers" onclick="switchTab('covers')">책 표지<i id="cntCovers"></i></button>
-    <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
   <div class="tabs" id="tabsStats" style="display:none;">
     <button class="tab" data-tab="stats" onclick="switchTab('stats')">통계</button>
+    <button class="tab" data-tab="report" onclick="switchTab('report')">월간 보고</button>
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
@@ -1096,7 +1096,7 @@ async function loadStats() {
   if (!LIVE) {
     STATS = { pct: ST_PCT, youth: { total: 30, verified: 27, school: { '학교밖': 21, '재학': 7, '졸업': 1, '미입력': 1 },
                 region: [{ r: '서울', n: 10 }, { r: '경기', n: 9 }, { r: '대구', n: 2 }, { r: '인천', n: 1 }] },
-              kkut: { total: 9, pending: 2 }, routines: { recruit: 1, active: 1, done: 3, other: 0 },
+              kkut: { total: 9, pending: 2 }, certs: { total: 54, days: 48, kkut: 9, month: 31 }, routines: { recruit: 1, active: 1, done: 3, other: 0 },
               withdrawn: { total: 3, recent: 0 },
               rows: [{ id: 1, title: '[데모] 하루 10장 독서 루틴', status: 'active', start: '2026-10-07', end: '2026-10-21', days: 15, people: 4, done: 0, today: 2 },
                      { id: 2, title: '[데모] 오늘의 한 끼 기록', status: 'done', start: '2026-09-07', end: '2026-09-15', days: 9, people: 4, done: 3 }] };
@@ -1178,6 +1178,7 @@ function viewStats() {
     ${card('청소년', won(y.total || 0), '명', `확인 완료 ${won(y.verified || 0)}명`)}
     ${card('학교 밖 청소년', won(out), '명', y.total ? `전체의 ${Math.round(out / y.total * 100)}% · 가입할 때 고른 값` : '', true)}
     ${card('끗짱', won(k.total || 0), '명', `승인 대기 ${won(k.pending || 0)}건`)}
+    ${card('전체 인증', won((S.certs || {}).total || 0), '건', `하루 한 번 기준 ${won((S.certs || {}).days || 0)}번 · 이번 달 ${won((S.certs || {}).month || 0)}건`)}
     ${card('진행 중 루틴', won(ro.active || 0), '개', `종료 ${won(ro.done || 0)}개 · 모집 중 ${won(ro.recruit || 0)}개${ro.canceled ? ` · 폐강 ${won(ro.canceled)}개` : ''}`)}
     ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
     ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
@@ -4200,9 +4201,9 @@ const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 const GROUPS = { members:  ['verify', 'kkut', 'photos'],
                  routines: ['routines', 'reports'],
                  msgs:     ['inbox', 'notices', 'notify'],
-                 site:     ['quotes', 'covers', 'report'],
+                 site:     ['quotes', 'covers'],
                  money:    ['pending', 'settled', 'stores', 'charges'],
-                 stats:    ['stats'] };
+                 stats:    ['stats', 'report'] };
 const GROUP_ROW = { members: 'tabsMembers', routines: 'tabsRoutines', msgs: 'tabsMsgs', site: 'tabsSite', money: 'tabsMoney', stats: 'tabsStats' };
 const groupOf = t => Object.keys(GROUPS).find(g => GROUPS[g].includes(t)) || 'members';
 let grp = 'members';
