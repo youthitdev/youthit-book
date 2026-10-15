@@ -4589,9 +4589,11 @@ function viewCert() {
              : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`;
 
   // 「우리 기록 보기」나 목록의 카드를 눌러 들어왔으면 그 루틴. 하나뿐이어도 그 루틴.
-  const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 ? all[0] : null);
+  // 【끝난 루틴 하나뿐이면 바로 열지 않는다 · 2026-10-15 사용자】 인증 탭은 「오늘 인증」을 하러 오는 곳이라, 끝난 루틴의 기록이
+  //   바로 열리면 어색하다. 끝났으면 「지난 루틴」 목록을 먼저 보이고, 누르면 그 루틴의 기록이 열린다
+  const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 && !isOver(all[0]) ? all[0] : null);
   if (one) {
-    const back = all.length > 1 ? `<button class="only-one" onclick="go('cert')">
+    const back = (all.length > 1 || isOver(one)) ? `<button class="only-one" onclick="go('cert')">
         <i class="ti ti-arrow-left"></i>루틴 목록</button>` : '';
     return back + (one.led_by === me.id ? kkutCertBlock([one]) : youthCertBlock([one]));
   }
@@ -4627,8 +4629,11 @@ function certListHtml(all) {
       <i class="ti ti-chevron-right"></i>
     </button>`;
   };
+  // 진행 중인 루틴이 없는 청소년은 다음 할 일이 없다 — 홈의 모집 중 루틴으로 이어 준다
+  const findNew = !active.length && !canLead()
+    ? `<button class="btn btn-primary" style="margin-top:16px;" onclick="go('home')">새 루틴 찾아보기</button>` : '';
   return (active.length ? `<div class="sec-t" style="margin-top:0;">내 루틴 <span class="sec-n">${active.length}</span></div>${active.map(card).join('')}` : '')
-       + (past.length ? `<div class="sec-t"${active.length ? '' : ' style="margin-top:0;"'}>지난 루틴 <span class="sec-n">${past.length}</span></div>${past.map(card).join('')}` : '');
+       + (past.length ? `<div class="sec-t"${active.length ? '' : ' style="margin-top:0;"'}>지난 루틴 <span class="sec-n">${past.length}</span></div>${past.map(card).join('')}` : '') + findNew;
 }
 
 // 참여자 한 명 — 동그란 프로필 + 닉네임. 오늘 인증했으면 색이 살고 ✓, 아직이면 회색.
