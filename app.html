@@ -4035,10 +4035,16 @@ function routineTags(r) {
 // 「지금 고를 수 있는 것」이라 다른 자리와 바탕을 달리해 띠로 세운다.
 // 흰 카드가 연한 초록 위에 얹히면 저절로 앞으로 나온다
 function recruitSection(list) {
-  const n = list.length;
+  // 모집이 끝나고 달리는 루틴(진행 중)도 보이게 한다 — 구경은 하되 들어갈 수는 없다 (2026-10-16 사용자).
+  // 모집 중인 것이 위, 진행 중인 것은 아래 따로
+  const open = list.filter(r => r.status !== 'active'), run = list.filter(r => r.status === 'active');
+  const n = open.length;
   return `<div class="recruit-h"><b>지금 모집 중인 루틴</b>${n ? `<i>${n}</i>` : ''}</div>
-    ${n ? routineGrid(list)
-        : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}`;
+    ${n ? routineGrid(open)
+        : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}
+    ${run.length ? `<div class="recruit-h"><b>진행 중인 루틴</b><i>${run.length}</i></div>
+      <div class="hint" style="margin:-4px 0 10px;">모집이 끝나서 새로 들어갈 수는 없어요.</div>
+      ${routineGrid(run)}` : ''}`;
 }
 
 function routineCard(r) {
@@ -4092,6 +4098,7 @@ function routineCard(r) {
       <div class="r-over">
         <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}/${r.max_people}명</span>
         ${waiting ? `<span class="r-who c-wait">확인 중</span>` : ''}
+        ${r.status === 'active' && !mine && !waiting ? `<span class="r-who" style="background:#ECE8DD;color:var(--ink-3);">모집 마감</span>` : ''}
       </div>
     </div>
     <div class="r-body">
@@ -4424,7 +4431,7 @@ function viewHome() {
   // 운영진이 열어준 것만 고를 수 있다. done 만 걸러내면 승인 전(pending)
   // 루틴까지 「지금 모집 중인 루틴」에 끼어든다
   const others = state.routines.filter(r => !mine.includes(r)
-    && r.status === 'recruit');   // 시작해서 모집이 끝난 루틴(진행 중)은 들어갈 수 없다 (2026-10-16 사용자)
+    && (r.status === 'recruit' || r.status === 'active'));   // 진행 중인 루틴은 보이되, 들어갈 수는 없다 (recruitSection 이 따로 모은다 · 2026-10-16 사용자)
   const recruit = recruitSection(others);
 
   if (isGuest()) {
