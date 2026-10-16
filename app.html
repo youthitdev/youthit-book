@@ -6789,7 +6789,8 @@ function openRoutine(id) {
                <input type="text" id="applyBookTitle" placeholder="책 제목 · 예) 시간자결권" maxlength="60"
                       autocomplete="off" oninput="bookFind('applyBookTitle','apFind',checkApply)">
                <div id="apFind"></div><div id="apFindGot"></div>
-               <div class="hint">제목을 적으면 책을 찾아줘요. <b>골라 주면 표지가 함께 보여요.</b> 못 찾으면 그냥 적어도 돼요.</div>
+               <div id="apNeed" class="hint" style="color:#B5532F;font-weight:700;"></div>
+               <div class="hint">제목을 적으면 책을 찾아줘요. <b>목록에서 책을 꼭 골라 주세요.</b> 표지가 함께 보여요. 검색에 없는 책일 때만 적은 그대로 신청할 수 있어요.</div>
                <div class="field-label" style="margin-top:16px;">내 책 사진 <span class="opt">선택</span></div>
                <div id="apBookBox"></div>
                <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
@@ -6835,14 +6836,22 @@ async function pickApplyBook(e) {
 
 // 셋 다 채워야 참여할 수 있다. 서버에도 같은 검사가 걸려 있다.
 // 함께 읽는 책이면 책 칸이 아예 없다 — 각오만 받는다
+// 신청할 책은 검색 결과에서 골라야 한다 (2026-10-16 사용자). 손으로 적은 제목은 표지가 없어 「함께 읽는 친구들」·랜딩에서 빠지고,
+// 같은 책이 갈라진다. 검색해도 나오지 않은 책(독립출판·절판 등)만 적은 그대로 신청할 수 있다
+function applyBookOk() {
+  const el = $('applyBookTitle'); if (!el) return true;
+  const t = el.value.trim();
+  return !!t && (!!bookPick['applyBookTitle'] || bookNone['applyBookTitle'] === loose(t));
+}
 function checkApply() {
   const b = $('apSubmit'); if (!b) return;
   const note = $('applyNote')?.value.trim();
   // 공유회가 걸린 루틴은 약속을 확인해야 단추가 켜진다
   const meetOk = !$('apMeet') || $('apMeet').checked;
-  b.disabled = !meetOk || ($('applyBookTitle')
-    ? !($('applyBookTitle').value.trim() && note)
-    : !note);
+  const hasTitle = !$('applyBookTitle') || !!$('applyBookTitle').value.trim();
+  b.disabled = !meetOk || !note || !hasTitle || !applyBookOk();
+  const need = $('apNeed');
+  if (need) need.textContent = $('applyBookTitle')?.value.trim() && !applyBookOk() ? '위 목록에서 책을 눌러 골라 주세요' : '';
 }
 
 async function apply(rid) {
@@ -6857,6 +6866,7 @@ async function apply(rid) {
   const title = noBook ? null
               : one ? (r0?.kkut_book_title || '') : ($('applyBookTitle')?.value.trim() || '');
   if (!noBook && !title) return toast(one ? '끗짱이 아직 책을 정하지 않았어요' : '읽을 책 제목을 적어주세요');
+  if (!noBook && !one && !applyBookOk()) return toast('목록에서 책을 골라 주세요');
   if (!note) return toast('참여 각오를 적어주세요');
   if ($('apMeet') && !$('apMeet').checked) return toast('공유회에 갈 수 있는지 확인해주세요');
 
@@ -6914,6 +6924,8 @@ async function decide(rid, uid, status) {
 
 // 고른 책. 입력칸 id 를 키로 둔다 — 신청 화면과 책 시트가 같은 데지털을 쓴다
 const bookPick = {}, bookFound = {};
+// 검색해도 나오지 않은 제목(느슨하게 줄인 꼴). 신청에서 「검색 결과를 꼭 골라야」 하되, 검색에 없는 책만 손으로 적게 열어 두는 데 쓴다
+const bookNone = {};
 let bookFindT = null, bookFindSeq = 0;
 
 // 공백·문장부호를 지운 제목. 중복 검사를 조금 느슨하게 하려는 것이다 —
@@ -6949,6 +6961,8 @@ async function runBookFind(inputId, boxId, q) {
   if (!books.length) {
     box.innerHTML = `<div class="bk-none">검색에 없는 책이에요.
       <b>적으신 제목 그대로</b> 저장돼요.</div>`;
+    bookNone[inputId] = loose(q);
+    if (inputId === 'applyBookTitle') checkApply();   // 이제 손으로 적은 제목으로도 신청할 수 있다
     return;
   }
 
