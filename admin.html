@@ -1224,7 +1224,7 @@ function viewStats() {
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
       <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td>
-      <td class="r">${r.canceled || r.status === 'recruit' ? '' : `<button class="btn btn-line" onclick="rtOpen(${r.id})" title="후원 기업·외부에 공유하는 한 장짜리 결과 리포트">📄 리포트</button>`}</td></tr>`).join('')}</table>`
+      <td class="r" style="white-space:nowrap;"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">참여자</button>${r.canceled || r.status === 'recruit' ? '' : ` <button class="btn btn-line" onclick="rtOpen(${r.id})" title="후원 기업·외부에 공유하는 한 장짜리 결과 리포트">📄 리포트</button>`}</td></tr>`).join('')}</table>`
     : `<div class="empty">${rows.length ? '이 상태의 루틴이 없어요' : '아직 루틴이 없어요'}</div>`;
 
   return `<div class="st-wrap">
