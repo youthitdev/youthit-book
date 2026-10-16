@@ -1168,11 +1168,12 @@ function stCsv() {
   downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '전체 인증', '참여인원', '완주인원', '완주율(%)'],
     rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '종료' }[r.status] || r.status)), r.start, r.end, r.days, stCerts(r.id), r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
 }
-// 루틴 제목 링크: 모집 중이면 앱의 모집 페이지, 아니면 인증 보기 (루틴 탭과 같은 규칙)
-function stTitleLink(r) {
-  return r.status === 'recruit' && !r.canceled
-    ? `<a class="st-link" href="app.html?routine=${r.id}" target="_blank" rel="noopener" title="모집 페이지 열기 (청소년 앱)">${esc(r.title)}</a>`
-    : `<button type="button" class="st-link" onclick="openRoutineCerts(${r.id})" title="인증 보기">${esc(r.title)}</button>`;
+// 루틴 제목 링크: 청소년 앱의 실제 화면으로 간다. 모집 중이면 모집 페이지, 진행 중·종료는 그 루틴의 인증 화면 (새 탭).
+// 폐강한 루틴은 인증 화면이 없어서 소개 화면(「열리지 못했어요」)으로 간다
+function stTitleLink(r, emoji) {
+  const q = (r.status === 'recruit' || r.canceled) ? `routine=${r.id}` : `tab=cert&routine=${r.id}`;
+  const t = (r.status === 'recruit' && !r.canceled) ? '모집 페이지 열기 (청소년 앱)' : '인증 페이지 열기 (청소년 앱)';
+  return `<a class="st-link" href="app.html?${q}" target="_blank" rel="noopener" title="${t}">${emoji ? emoji + ' ' : ''}${esc(r.title)}</a>`;
 }
 function viewStats() {
   if (!STATS) {
@@ -2473,9 +2474,7 @@ function viewRoutines() {
   ${rows.length ? `<div class="tbl wide"><table>
     <tr><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>상태</th><th>함께하는 책방</th><th>후원 기업</th><th class="right"></th></tr>
     ${rows.map(r => `<tr>
-      <td><b>${r.status === 'recruit' && !r.canceled
-          ? `<a class="st-link" href="app.html?routine=${r.id}" target="_blank" rel="noopener" title="모집 페이지 열기 (청소년 앱)">${r.emoji || '📚'} ${esc(r.title)}</a>`
-          : `<button type="button" class="st-link" onclick="openRoutineCerts(${r.id})" title="인증 보기">${r.emoji || '📚'} ${esc(r.title)}</button>`}</b>
+      <td><b>${stTitleLink(r, r.emoji || '📚')}</b>
           ${rOverdue(r) ? `<div class="muted" style="color:#8E3527;">종료일이 지났어요</div>` : ''}</td>
       <td class="muted"><button class="vq-quiet" onclick="openKkut('${r.led_by}')"
         title="끗짱 정보 보기">${esc(rName(r.led_by))}</button></td>
