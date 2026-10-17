@@ -1217,9 +1217,9 @@ function viewStats() {
   const stLabel = { recruit: '모집 중', active: '진행 중', done: '종료' };
   const tbl = shown.length ? `<table class="st-tbl"><tr>
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
-      <th>루틴</th><th>상태</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th><th></th></tr>
+      <th>상태</th><th>루틴</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th><th></th></tr>
     ${shown.map(r => `<tr><td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td>
-      <td>${stTitleLink(r)}</td><td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td>
+      <td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td><td>${stTitleLink(r)}</td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
       <td class="num r">${stCerts(r.id)}건</td>
       <td class="num r">${r.people}명</td>
