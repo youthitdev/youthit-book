@@ -799,7 +799,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
           <input type="checkbox" id="sActive" checked style="width:16px;height:16px;">
           현재 파트너 서점
         </label>
-        <div class="hint">체크를 풀면 새 루틴을 만들 때 목록에서 빠져요. 기존 루틴은 그대로 유지돼요.</div>
+        <div class="hint">체크를 풀면(숨김) 청소년 앱의 책방 목록과 새 루틴의 책방 선택에서 빠져요. 기존 루틴은 그대로 유지돼요. 표의 「숨기기」 단추와 같은 값이에요.</div>
       </div>
     </div>
     <div class="modal-ft">
@@ -3805,7 +3805,7 @@ function viewStores() {
   </div>
   ${rows.length ? `<div class="tbl"><table>
     <tr><th>서점</th><th class="num">확인 번호</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
-    ${rows.map(s => `<tr>
+    ${rows.map(s => `<tr${s.active ? '' : ' style="opacity:.55;"'}>
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}${s.pick_title
         ? `<div class="muted" style="margin-top:4px;">💛 『${esc(s.pick_title)}』${s.pick_line ? ` ${esc(s.pick_line)}` : ''}
              <a href="#" onclick="clearStorePick(${s.id});return false;" style="margin-left:4px;">지우기</a></div>` : ''}</td>
@@ -3814,11 +3814,12 @@ function viewStores() {
       <td class="muted">${esc(s.address) || '-'}</td>
       <td class="muted">${esc(s.hours) || '-'}${s.closed_days ? `<div>${esc(s.closed_days)}</div>` : ''}</td>
       <td class="num">${(DB.purchaseCounts || {})[s.id] || 0}건</td>
-      <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">비활성</span>'}</td>
+      <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">숨김</span>'}</td>
       <td class="right" style="white-space:nowrap;">
         <button class="btn btn-line" onclick="storeLink(${s.id}, this)">책방 주소</button>
         <button class="btn btn-line" onclick="storeGuide(${s.id})">안내문</button>
-        <button class="btn btn-line" onclick="openStore(${s.id})">수정</button></td>
+        <button class="btn btn-line" onclick="openStore(${s.id})">수정</button>
+        <button class="btn btn-line" onclick="toggleStoreActive(${s.id})" title="${s.active ? '앱의 책방 목록과 새 루틴의 책방 선택에서 뺍니다' : '다시 앱에 보이게 합니다'}">${s.active ? '숨기기' : '다시 보이기'}</button></td>
     </tr>`).join('')}
   </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
 }
@@ -3938,6 +3939,20 @@ async function deleteStore() {
     DB.bookstores = DB.bookstores.filter(x => x.id !== s.id);
   }
   closeModal('storeOverlay');
+  render();
+}
+
+// 서점을 앱에서 숨기거나 다시 보인다. 지우는 게 아니다 — 기존 루틴·정산 기록은 그대로다 (「현재 파트너 서점」 체크와 같은 값)
+async function toggleStoreActive(id) {
+  const st = (DB.bookstores || []).find(x => x.id === id); if (!st) return;
+  const to = !st.active;
+  if (!confirm(to ? `「${st.name}」을 다시 앱에 보이게 할까요?`
+                  : `「${st.name}」을 숨길까요?\n\n청소년 앱의 책방 목록과 새 루틴의 책방 선택에서 빠져요.\n이미 연결된 루틴과 정산 기록은 그대로예요.`)) return;
+  if (LIVE) {
+    const { error } = await sb.from('bookstores').update({ active: to }).eq('id', id);
+    if (error) return alert('바꾸지 못했어요: ' + error.message);
+    await loadLive();
+  } else st.active = to;
   render();
 }
 
