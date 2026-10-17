@@ -284,6 +284,14 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .store{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 14px;text-align:center}
 .store b{display:block;font-size:14px;font-weight:800}
 .store span{font-size:11.5px;color:var(--ink-3)}
+/* 서점 사진이 있는 카드: 사진을 깔고 어둡게 눌러 흰 글씨를 올린다. 사진이 없는 카드는 위 기본 모양 그대로 */
+.store{aspect-ratio:5/4;display:flex;flex-direction:column;justify-content:center}
+.store.has-img{position:relative;overflow:hidden;border-color:transparent;justify-content:flex-end;padding-bottom:14px;
+  background-color:#2b2b28;background-size:cover;background-position:center}
+/* 사진 속 간판 글씨와 겹치지 않게 이름은 아래에 두고, 아래쪽만 어둡게 눌러 흰 글씨를 읽히게 한다 */
+.store.has-img::before{content:"";position:absolute;inset:0;background:linear-gradient(rgba(20,20,18,0) 42%,rgba(20,20,18,.78))}
+.store.has-img b,.store.has-img span{position:relative;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.store.has-img span{opacity:.9}
 
 /* 마무리 */
 .final{text-align:center}
@@ -651,12 +659,12 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
     <h2>청소년이 직접 책을 고르러<br>찾아가는 동네책방</h2>
     <p class="sec-lead">교환권으로 책을 바꿔 가는 곳입니다. 지역마다 파트너 서점이 있습니다.</p>
     <div class="stores">
-      <div class="store"><b>당신의강릉</b><span>강원 강릉</span></div>
+      <div class="store has-img" style="background-image:url(store-shots/danginui-gangneung.jpg)"><b>당신의강릉</b><span>강원 강릉</span></div>
       <div class="store"><b>골목책방서성이다</b><span>전남 순천</span></div>
-      <div class="store"><b>책방채움</b><span>대전 유성</span></div>
-      <div class="store"><b>초록서림</b><span>서울 성북</span></div>
+      <div class="store has-img" style="background-image:url(store-shots/chaekbang-chaeum.jpg);background-position:center 25%"><b>책방채움</b><span>대전 유성</span></div>
+      <div class="store has-img" style="background-image:url(store-shots/choroksorim.jpg);background-position:center 30%"><b>초록서림</b><span>서울 성북</span></div>
       <div class="store"><b>하우스 결</b><span>경기 수원</span></div>
-      <div class="store"><b>빈칸놀이터</b><span>경기 용인</span></div>
+      <div class="store has-img" style="background-image:url(store-shots/blank-playground.jpg);background-position:center 45%"><b>빈칸놀이터</b><span>경기 용인</span></div>
     </div>
     <p style="text-align:center;font-size:13px;color:var(--ink-3);margin-top:18px">
       파트너 서점은 매월 새로 모집합니다
