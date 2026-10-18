@@ -4557,14 +4557,26 @@ function viewHome() {
     </div>`;
   }
 
-  if (mine.length) {
-    h += mine.map(todayCard).join('');
+  // 끝난 루틴 카드는 후기를 쓸 수 있는 동안(종료 다음 날부터 7일)만 홈에 둔다 (2026-10-18 사용자). 후기를 써도 기한까지는 둔다.
+  //   기한이 지나면 홈에서 빠지고 인증 탭의 「지난 루틴」(MY 의 「지난 루틴 보기」)에서 계속 본다
+  const homeMine = mine.filter(r => !routineEnded(r) || (reviewLeft(r) ?? -1) >= 0);
+  if (homeMine.length) {
+    h += homeMine.map(todayCard).join('');
     const p = myPoints();
     // 홈의 「23N 다음 책까지 150N」 줄은 뺐다 (2026-10-13 사용자). 나다움은 MY 의 「내 독서 나다움」에서 본다
     // 7일 루틴을 다 해도 135N이라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
     // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
-    if (p.left === 0 && mine.some(routineEnded))
+    if (p.left === 0 && homeMine.some(routineEnded))
       h += `<div class="tc-keep">나다움은 사라지지 않아요. 다음 루틴에서 이어서 채워져요.</div>`;
+  } else if (mine.length) {
+    // 해 본 루틴은 있는데 지금 홈에 둘 카드가 없다 — 「첫 루틴」이 아니다. 지난 루틴이 어디 있는지 알려 준다
+    h += `<div class="card" style="text-align:center;padding:24px 20px;">
+      <div style="font-size:30px;">🌱</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">지금 하고 있는 루틴이 없어요</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.7;">
+        아래에서 새 루틴을 골라 보세요.<br>끝난 루틴의 기록은 인증 탭의 「지난 루틴」에서 볼 수 있어요.</div>
+      <button class="btn btn-line" style="margin-top:14px;" onclick="go('cert')">지난 루틴 보기</button>
+    </div>`;
   } else if (kkutPending()) {
     // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
     // 「루틴을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
