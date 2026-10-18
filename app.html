@@ -2655,7 +2655,7 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
       closeOv(top);
     } else if (tab === 'cert' && certFocus) {
       const r = state.routines.find(x => x.id === certFocus);
-      if (r && isOver(r) && (r.led_by === me.id || myPart(r.id))) { PAST_OPEN = true; go('my'); }   // 끝난 루틴의 기록은 MY 의 지난 루틴에서 왔다
+      if (r && isOver(r) && (r.led_by === me.id || myPart(r.id))) { go('my'); }   // 끝난 루틴의 기록은 MY 의 지난 루틴에서 왔다
       else go('cert');
     }
   }, { passive: true });
@@ -4578,7 +4578,7 @@ function viewHome() {
       <div style="font-size:15.5px;font-weight:800;margin-top:10px;">지금 하고 있는 루틴이 없어요</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.7;">
         아래에서 새 루틴을 골라 보세요.<br>끝난 루틴의 기록은 MY의 「지난 루틴」에서 볼 수 있어요.</div>
-      <button class="btn btn-line" style="margin-top:14px;" onclick="PAST_OPEN = true; go('my')">지난 루틴 보기</button>
+      <button class="btn btn-line" style="margin-top:14px;" onclick="go('my')">지난 루틴 보기</button>
     </div>`;
   } else if (kkutPending()) {
     // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
@@ -4683,7 +4683,7 @@ function viewCert() {
   const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 && !isOver(all[0]) && !peekList.length ? all[0] : null);
   if (one) {
     // 끝난 루틴의 기록은 MY 의 「지난 루틴」에서 들어온다 — 돌아갈 곳도 MY
-    const back = isOver(one) ? `<button class="only-one" onclick="PAST_OPEN = true; go('my')">
+    const back = isOver(one) ? `<button class="only-one" onclick="go('my')">
         <i class="ti ti-arrow-left"></i>지난 루틴</button>`
       : (all.length > 1 || peekList.length) ? `<button class="only-one" onclick="go('cert')">
         <i class="ti ti-arrow-left"></i>루틴 목록</button>` : '';
@@ -6256,9 +6256,12 @@ function pastBlock() {
 
   // 【지난 루틴은 MY 로 · 2026-10-18 사용자】 전에는 인증 탭(2026-10-10)에 모았는데, MY 가 「내 기록 보관함」이라 여기로 옮겼다.
   //   누르면 그동안 했던 루틴이 펼쳐지고, 카드마다 내가 얼마나 인증했는지(「7일 중 5일 인증 · 🎉 완주」)가 보인다. 카드를 누르면 그 루틴의 기록
-  return `<button class="store-more" onclick="togglePast()">
-      <span>지난 루틴</span><em>${past.length}개</em><i class="ti ti-chevron-${PAST_OPEN ? 'up' : 'down'}"></i></button>
-    ${PAST_OPEN ? `<div style="margin-top:10px;">${certListHtml(past, 'past')}</div>` : ''}`;
+  // 최근 3개를 먼저 보이고, 나머지는 「더 보기」로 펼친다 (2026-10-18 사용자). 눌러야 보이던 것을 바로 보이게 바꿨다
+  const shown = PAST_OPEN ? past : past.slice(0, 3);
+  return `<div class="sec-t">지난 루틴 <span class="sec-n">${past.length}</span></div>
+    ${certListHtml(shown, 'past')}
+    ${past.length > 3 ? `<button class="store-more" onclick="togglePast()">
+      <span>${PAST_OPEN ? '접기' : '더 보기'}</span>${PAST_OPEN ? '' : `<em>${past.length - 3}개</em>`}<i class="ti ti-chevron-${PAST_OPEN ? 'up' : 'down'}"></i></button>` : ''}`;
 }
 let PAST_OPEN = false;
 function togglePast() { PAST_OPEN = !PAST_OPEN; render(); }
