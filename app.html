@@ -4557,9 +4557,10 @@ function viewHome() {
     </div>`;
   }
 
-  // 끝난 루틴 카드는 후기를 쓸 수 있는 동안(종료 다음 날부터 7일)만 홈에 둔다 (2026-10-18 사용자). 후기를 써도 기한까지는 둔다.
-  //   기한이 지나면 홈에서 빠지고 인증 탭의 「지난 루틴」(MY 의 「지난 루틴 보기」)에서 계속 본다
-  const homeMine = mine.filter(r => !routineEnded(r) || (reviewLeft(r) ?? -1) >= 0);
+  // 끝난 루틴 카드는 후기를 쓸 수 있는 동안(종료 다음 날부터 7일)만 홈에 둔다 (2026-10-18 사용자).
+  //   기한 안에 후기를 쓰면 바로 빠진다. 안 써도 기한이 지나면 빠진다.
+  //   빠진 루틴은 인증 탭의 「지난 루틴」(MY 의 「지난 루틴 보기」)에서 계속 본다
+  const homeMine = mine.filter(r => !routineEnded(r) || (!myRoutineReview(r.id) && (reviewLeft(r) ?? -1) >= 0));
   if (homeMine.length) {
     h += homeMine.map(todayCard).join('');
     const p = myPoints();
