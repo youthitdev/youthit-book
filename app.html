@@ -2620,6 +2620,45 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
   }, { passive: true });
 })();
 
+// 앱 안에서 손으로 오른쪽으로 밀면 뒤로 (2026-10-18 사용자).
+//   · 겹쳐 뜬 화면(오버레이·시트)이 있으면 맨 위 것을 닫는다
+//   · 없고, 인증 탭에서 한 루틴을 열어 둔 중이면 「루틴 목록」으로 돌아간다
+// 【부딪치지 않게】 ① 왼쪽 끝 40px 는 기기의 뒤로가기(아이폰 가장자리 쓸기) 몫이다 — 거기서 시작한 건 건드리지 않는다.
+//   ② 글 칸·캔버스·가로로 밀리는 줄(함께 읽는 친구들 등) 위에서 시작한 건 무시한다.
+//   ③ 겹친 화면에 적던 글이 있으면 닫지 않는다 — 실수로 밀어 적은 걸 잃으면 안 된다.
+(function () {
+  let x0 = 0, y0 = 0, t0 = 0, live = false;
+  const xScroller = el => {
+    for (; el && el !== document.body; el = el.parentElement) {
+      if (el.scrollWidth > el.clientWidth + 4 && /(auto|scroll)/.test(getComputedStyle(el).overflowX)) return true;
+    }
+    return false;
+  };
+  document.addEventListener('touchstart', e => {
+    live = false;
+    const app = $('appScr');
+    if (!me || !app || app.style.display === 'none' || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    if (t.clientX < 40) return;
+    if (e.target.closest('input, textarea, select, canvas, [contenteditable]') || xScroller(e.target)) return;
+    x0 = t.clientX; y0 = t.clientY; t0 = Date.now(); live = true;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (!live) return; live = false;
+    const t = e.changedTouches[0];
+    if (t.clientX - x0 < 80 || Math.abs(t.clientY - y0) > 50 || Date.now() - t0 > 700) return;
+    const top = layers[layers.length - 1];
+    if (top) {
+      const el = $(top);
+      // 적던 글이 있으면 닫지 않는다
+      if (el && [...el.querySelectorAll('input:not([type=file]):not([type=checkbox]):not([type=radio]), textarea')].some(i => i.value && i.value.trim())) return;
+      closeOv(top);
+    } else if (tab === 'cert' && certFocus) {
+      go('cert');
+    }
+  }, { passive: true });
+})();
+
 // 생년월일 칸의 위·아래 끝. 비어 있으면 아이폰 고르개가 **1970년**에서 열려
 // 서른 해를 굴려야 한다. 만 14세 되는 날을 위 끝으로 두면 거기서 열리고,
 // 나이에 못 미치는 날짜는 고르개에서 아예 흐려진다
