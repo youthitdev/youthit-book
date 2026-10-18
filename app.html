@@ -4611,23 +4611,43 @@ function viewCert() {
   const peek = certFocus && !all.find(r => r.id === certFocus) && isAdminUser()
     ? state.routines.find(r => r.id === certFocus) : null;
   if (peek) {
-    return `<div class="card" style="padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2,#6B6558);">
+    return `<button class="only-one" onclick="go('cert')"><i class="ti ti-arrow-left"></i>루틴 목록</button>
+      <div class="card" style="padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2,#6B6558);">
       👀 운영진 보기 — 읽기만 할 수 있어요</div>${youthCertBlock([peek])}`;
   }
+  // 운영진 계정이면 내 루틴 말고도 진행 중인 모든 루틴의 인증글을 볼 수 있다 (2026-10-18 사용자). 읽기만 한다
+  const peekList = isAdminUser()
+    ? state.routines.filter(r => r.status === 'active' && !r.canceled && !isOver(r) && !all.some(x => x.id === r.id)) : [];
 
-  if (!all.length) return `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
+  if (!all.length) return peekList.length ? adminPeekHtml(peekList)
+    : `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
              : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`;
 
   // 「우리 기록 보기」나 목록의 카드를 눌러 들어왔으면 그 루틴. 하나뿐이어도 그 루틴.
   // 【끝난 루틴 하나뿐이면 바로 열지 않는다 · 2026-10-15 사용자】 인증 탭은 「오늘 인증」을 하러 오는 곳이라, 끝난 루틴의 기록이
   //   바로 열리면 어색하다. 끝났으면 「지난 루틴」 목록을 먼저 보이고, 누르면 그 루틴의 기록이 열린다
-  const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 && !isOver(all[0]) ? all[0] : null);
+  const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 && !isOver(all[0]) && !peekList.length ? all[0] : null);
   if (one) {
-    const back = (all.length > 1 || isOver(one)) ? `<button class="only-one" onclick="go('cert')">
+    const back = (all.length > 1 || isOver(one) || peekList.length) ? `<button class="only-one" onclick="go('cert')">
         <i class="ti ti-arrow-left"></i>루틴 목록</button>` : '';
     return back + (one.led_by === me.id ? kkutCertBlock([one]) : youthCertBlock([one]));
   }
-  return certListHtml(all);
+  return certListHtml(all) + adminPeekHtml(peekList);
+}
+
+// 운영진 보기: 내가 참여하지 않은, 진행 중인 루틴의 목록. 누르면 그 루틴의 인증 화면이 읽기 전용으로 열린다
+function adminPeekHtml(list) {
+  if (!list.length) return '';
+  const md = d => d ? d.slice(5).replace('-', '.') : '';
+  return `<div class="sec-t">👀 운영진 보기 · 진행 중인 루틴 <span class="sec-n">${list.length}</span></div>
+    ${list.map(r => {
+      const n = new Set(certsOf(r.id).filter(c => c.cert_date === todayKST()).map(c => c.user_id)).size;
+      return `<button class="rl-c" onclick="go('cert', ${r.id})">
+        <div class="rl-b"><div class="rl-t">${esc(r.emoji || '📚')} ${esc(r.title)}</div>
+          <div class="rl-m">${md(r.start_date)} – ${md(r.end_date)} · 참여 ${partsOf(r.id).length}명</div></div>
+        <div class="rl-r"><span class="rl-s${n ? ' on' : ''}">오늘 인증 ${n}명</span></div>
+        <i class="ti ti-chevron-right"></i></button>`;
+    }).join('')}`;
 }
 
 // 인증 탭의 루틴 목록. 카드는 가볍게: 이름 · 기간 · 내 오늘 인증 (끗짱은 오늘 몇 명)
@@ -6755,7 +6775,7 @@ function openRoutine(id) {
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
     ${needsMeet(r) ? meetCard(r) : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
-        : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>`
+        : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="goFromOv('ovRoutine', () => go('cert', ${r.id}))">👀 인증글 보기 (운영진)</button>` : '')}`
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
       : p && p.status==='approved' ? (
           r.status === 'done'
@@ -6774,7 +6794,7 @@ function openRoutine(id) {
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : !isYouth() ? ''
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
-      : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>`
+      : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="goFromOv('ovRoutine', () => go('cert', ${r.id}))">👀 인증글 보기 (운영진)</button>` : '')}`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : `<div>
           ${me.verify_status !== 'approved' ? verifyNote() : ''}
