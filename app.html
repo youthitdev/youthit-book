@@ -2654,7 +2654,9 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
       if (el && [...el.querySelectorAll('input:not([type=file]):not([type=checkbox]):not([type=radio]), textarea')].some(i => i.value && i.value.trim())) return;
       closeOv(top);
     } else if (tab === 'cert' && certFocus) {
-      go('cert');
+      const r = state.routines.find(x => x.id === certFocus);
+      if (r && isOver(r) && (r.led_by === me.id || myPart(r.id))) { PAST_OPEN = true; go('my'); }   // 끝난 루틴의 기록은 MY 의 지난 루틴에서 왔다
+      else go('cert');
     }
   }, { passive: true });
 })();
@@ -4559,7 +4561,7 @@ function viewHome() {
 
   // 끝난 루틴 카드는 후기를 쓸 수 있는 동안(종료 다음 날부터 7일)만 홈에 둔다 (2026-10-18 사용자).
   //   기한 안에 후기를 쓰면 바로 빠진다. 안 써도 기한이 지나면 빠진다.
-  //   빠진 루틴은 인증 탭의 「지난 루틴」(MY 의 「지난 루틴 보기」)에서 계속 본다
+  //   빠진 루틴은 MY 의 「지난 루틴」에서 계속 본다
   const homeMine = mine.filter(r => !routineEnded(r) || (!myRoutineReview(r.id) && (reviewLeft(r) ?? -1) >= 0));
   if (homeMine.length) {
     h += homeMine.map(todayCard).join('');
@@ -4575,8 +4577,8 @@ function viewHome() {
       <div style="font-size:30px;">🌱</div>
       <div style="font-size:15.5px;font-weight:800;margin-top:10px;">지금 하고 있는 루틴이 없어요</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.7;">
-        아래에서 새 루틴을 골라 보세요.<br>끝난 루틴의 기록은 인증 탭의 「지난 루틴」에서 볼 수 있어요.</div>
-      <button class="btn btn-line" style="margin-top:14px;" onclick="go('cert')">지난 루틴 보기</button>
+        아래에서 새 루틴을 골라 보세요.<br>끝난 루틴의 기록은 MY의 「지난 루틴」에서 볼 수 있어요.</div>
+      <button class="btn btn-line" style="margin-top:14px;" onclick="PAST_OPEN = true; go('my')">지난 루틴 보기</button>
     </div>`;
   } else if (kkutPending()) {
     // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
@@ -4680,7 +4682,10 @@ function viewCert() {
   //   바로 열리면 어색하다. 끝났으면 「지난 루틴」 목록을 먼저 보이고, 누르면 그 루틴의 기록이 열린다
   const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 && !isOver(all[0]) && !peekList.length ? all[0] : null);
   if (one) {
-    const back = (all.length > 1 || isOver(one) || peekList.length) ? `<button class="only-one" onclick="go('cert')">
+    // 끝난 루틴의 기록은 MY 의 「지난 루틴」에서 들어온다 — 돌아갈 곳도 MY
+    const back = isOver(one) ? `<button class="only-one" onclick="PAST_OPEN = true; go('my')">
+        <i class="ti ti-arrow-left"></i>지난 루틴</button>`
+      : (all.length > 1 || peekList.length) ? `<button class="only-one" onclick="go('cert')">
         <i class="ti ti-arrow-left"></i>루틴 목록</button>` : '';
     return back + (one.led_by === me.id ? kkutCertBlock([one]) : youthCertBlock([one]));
   }
@@ -4703,7 +4708,7 @@ function adminPeekHtml(list) {
 }
 
 // 인증 탭의 루틴 목록. 카드는 가볍게: 이름 · 기간 · 내 오늘 인증 (끗짱은 오늘 몇 명)
-function certListHtml(all) {
+function certListHtml(all, mode) {   // mode: 'past' = 끝난 루틴 카드만 (MY 의 「지난 루틴」이 쓴다), 없으면 진행 중인 것만 (인증 탭)
   const active = all.filter(r => !isOver(r));
   const past   = all.filter(r =>  isOver(r))
     .sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
@@ -4754,11 +4759,15 @@ function certListHtml(all) {
       <i class="ti ti-chevron-right"></i>
     </button>`;
   };
+  if (mode === 'past') return past.map(card).join('');
   // 진행 중인 루틴이 없는 청소년은 다음 할 일이 없다 — 홈의 모집 중 루틴으로 이어 준다
   const findNew = !active.length && !canLead()
     ? `<button class="btn btn-primary" style="margin-top:16px;" onclick="go('home')">새 루틴 찾아보기</button>` : '';
+  // 지난 루틴은 MY 로 옮겼다 (2026-10-18 사용자). 여기에는 가는 길만 둔다
+  const pastNote = past.length
+    ? `<button class="store-more" onclick="go('my')"><span>지난 루틴 ${past.length}개는 MY에서 볼 수 있어요</span><i class="ti ti-chevron-right"></i></button>` : '';
   return (active.length ? `<div class="sec-t" style="margin-top:0;">내 루틴 <span class="sec-n">${active.length}</span></div>${active.map(card).join('')}` : '')
-       + (past.length ? `<div class="sec-t"${active.length ? '' : ' style="margin-top:0;"'}>지난 루틴 <span class="sec-n">${past.length}</span></div>${past.map(card).join('')}` : '') + findNew;
+       + pastNote + findNew;
 }
 
 // 참여자 한 명 — 동그란 프로필 + 닉네임. 오늘 인증했으면 색이 살고 ✓, 아직이면 회색.
@@ -6245,11 +6254,14 @@ function pastBlock() {
   }).sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
   if (!past.length) return '';
 
-  // 【지난 루틴은 인증 탭으로 · 2026-10-10 사용자】 목록은 인증 탭의 「지난 루틴」에 모았다.
-  //   두 곳에 같은 목록이 있으면 어느 쪽이 맞는지 알 수 없다. MY 에는 가는 길만 남긴다
-  return `<button class="store-more" onclick="go('cert')">
-    <span>지난 루틴 보기</span><em>${past.length}개</em><i class="ti ti-chevron-right"></i></button>`;
+  // 【지난 루틴은 MY 로 · 2026-10-18 사용자】 전에는 인증 탭(2026-10-10)에 모았는데, MY 가 「내 기록 보관함」이라 여기로 옮겼다.
+  //   누르면 그동안 했던 루틴이 펼쳐지고, 카드마다 내가 얼마나 인증했는지(「7일 중 5일 인증 · 🎉 완주」)가 보인다. 카드를 누르면 그 루틴의 기록
+  return `<button class="store-more" onclick="togglePast()">
+      <span>지난 루틴</span><em>${past.length}개</em><i class="ti ti-chevron-${PAST_OPEN ? 'up' : 'down'}"></i></button>
+    ${PAST_OPEN ? `<div style="margin-top:10px;">${certListHtml(past, 'past')}</div>` : ''}`;
 }
+let PAST_OPEN = false;
+function togglePast() { PAST_OPEN = !PAST_OPEN; render(); }
 
 // ── 인증 달력 ──────────────────────────────────────────
 // 「며칠 읽었나」는 숫자 하나로는 안 보인다. 한 달을 펼쳐 놓으면 띄엄띄엄
