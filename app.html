@@ -1197,6 +1197,22 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .mem-t i { display:block; font-style:normal; font-size:10.5px; color:var(--ink-3); line-height:1.3; margin-top:1px;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; }
 .mem-n { font-size:12.5px; font-weight:700; color:var(--ink-3); margin-left:6px; }
+/* 첫 인증의 자기소개 칸과, 「함께 읽는 친구들」 아래의 소개 목록 */
+.intro-box { background:#F3F8EE; border:1px solid #DDE8CF; border-radius:14px; padding:14px 15px; }
+.intro-box .ib-t { font-size:14.5px; font-weight:800; letter-spacing:-.3px; }
+.intro-box .ib-d { font-size:12.5px; color:var(--ink-3); margin:3px 0 12px; line-height:1.55; }
+.intro-box .field-label { margin-top:12px; }
+.intro-box .ib-ph { width:96px; height:96px; border-radius:12px; overflow:hidden; background:#E9EFE0; position:relative; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:4px; color:#5C7348; font-size:12px; font-weight:700; cursor:pointer; }
+.intro-box .ib-ph img { width:100%; height:100%; object-fit:cover; display:block; }
+.intro-box .ib-x { position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:50%; border:0; background:rgba(0,0,0,.55); color:#fff; font-size:14px; line-height:1; cursor:pointer; }
+.intro-list { display:flex; flex-direction:column; gap:8px; margin-top:4px; }
+.intro-c { display:flex; gap:11px; align-items:center; background:#fff; border:1px solid var(--line, #E9E4D8); border-radius:14px; padding:10px; }
+.intro-c .ic-p { flex:none; width:56px; height:56px; border-radius:10px; overflow:hidden; background:#EFEBE1; }
+.intro-c .ic-p img { width:100%; height:100%; object-fit:cover; display:block; }
+.intro-c .ic-b { min-width:0; flex:1; }
+.intro-c .ic-b b { display:block; font-size:12.5px; font-weight:800; }
+.intro-c .ic-b span { display:block; font-size:13px; color:var(--ink-2, #4A453A); line-height:1.5; margin-top:2px; word-break:break-all; }
+.intro-c .ic-x { flex:none; border:0; background:none; color:var(--ink-3); font-size:11.5px; padding:4px 6px; cursor:pointer; text-decoration:underline; }
 .rec-hint { margin-top:8px; font-size:12px; color:var(--ink-3); text-align:center; line-height:1.5; }
 
 /* 끗짱 출석부. 이름을 세로로 쌓으면 화면을 다 먹어서 칩으로 흘린다 */
@@ -1765,6 +1781,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div><div class="s" id="ovCLabel">오늘의 인증</div><div class="t" id="ovCTitle"></div></div></div>
   <div class="ov-b">
     <div id="certGuide"></div>
+    <!-- 루틴의 첫 인증에서만 보인다 (2026-10-19 사용자). 자기소개(사진 + 한 줄)를 먼저 남기고, 아래 인증을 올린다 -->
+    <div id="cIntro" class="intro-box" style="display:none;">
+      <div class="ib-t">👋 먼저 나를 소개해 주세요</div>
+      <div class="ib-d">첫 인증에 한 번만 남겨요. 같은 루틴 친구들에게 보여요.</div>
+      <div class="field-label" style="margin-top:0;">요즘 내가 관심 있는 것 <span class="req">* 필수</span></div>
+      <div id="cIntroPh"></div>
+      <input type="file" id="cIntroInput" accept="image/*" style="display:none;" onchange="pickIntroPhoto(event)">
+      <div class="hint">책·물건·풍경·음식… 요즘 푹 빠진 것을 사진으로 보여 주세요. <b>얼굴·교복·집 안·주소가 보이는 사진은 피해 주세요.</b></div>
+      <div class="field-label">한 줄 소개 <span class="req">* 필수</span></div>
+      <textarea id="cIntroText" rows="2" maxlength="100" placeholder="예) 요즘 보드게임에 빠졌어요. 잘 부탁해요!" oninput="checkCert()"></textarea>
+      <div class="hint">이름·학교·나이는 적지 마세요.</div>
+    </div>
     <div>
       <div class="field-label" id="cPhLabel">책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span></div>
       <div class="ph-grid" id="phGrid"></div>
@@ -2436,7 +2464,7 @@ const ADMIN_EMAILS = ['dev@youthvoice.or.kr', 'yv@youthvoice.or.kr'];
 const isAdminUser = () => ADMIN_EMAILS.includes(AUTH_EMAIL);
 // 운영진이 남의 루틴을 구경하는 중인가 (참여자도 끗짱도 아님)
 const adminOnly = r => !!r && isAdminUser() && !!me && r.led_by !== me.id && !(myPart(r.id) && myPart(r.id).status === 'approved');
-let state = { notices:[], routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null, routinePages:{} };
+let state = { myIntros:[], introsOn:false, notices:[], routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null, routinePages:{} };
 let tab = 'home';
 // 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
@@ -3389,7 +3417,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg, nc] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg, nc, ints] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3413,7 +3441,11 @@ async function loadAll() {
     sb.rpc('dokseo_routine_pages'),
     // 홈 공지. 마이그레이션 125 가 아직이면 오류가 와도 비워 둔다 (RLS 가 지금 보이는 것만 준다)
     sb.from('notices').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(20),
+    // 첫 인증 때 남기는 자기소개 (내 것만). 마이그레이션 142 가 아직이면 오류가 오고, 그때는 자기소개 단계를 보이지 않는다
+    sb.from('routine_intros').select('routine_id').eq('user_id', me.id),
   ]);
+  state.introsOn = !ints.error;
+  state.myIntros = ints.error ? [] : (ints.data || []);
   state.notices = nc.error ? [] : (nc.data || []);
   state.exchanges = ex.error ? [] : (ex.data || []);
   state.likes = lk.error ? [] : (lk.data || []);
@@ -6758,13 +6790,32 @@ function membersHtml(rid) {
     return `<div class="mem-t"><div class="mem-c">${b && b.c ? `<img src="${esc(b.c)}" alt="" loading="lazy">` : (b ? '📖' : '🌱')}</div>
       <b>${esc(m.nick)}</b>${b ? `<i>${esc(b.t)}</i>` : ''}</div>`;
   };
+  // 첫 인증 때 남긴 자기소개 (2026-10-19). 끗짱·운영진은 부적절한 글을 내릴 수 있다
+  const r = state.routines.find(x => x.id === rid);
+  const canHide = !!me && !!r && (r.led_by === me.id || isAdminUser());
+  const intros = list.filter(m => m.intro_body && m.intro_photo);
+  const introHtml = intros.length ? `<div class="sec-t">👋 자기소개 <span class="mem-n">${intros.length}명</span></div>
+    <div class="intro-list">${intros.map(m => `<div class="intro-c">
+      <div class="ic-p"><img src="${esc(m.intro_photo)}" alt="" loading="lazy"></div>
+      <div class="ic-b"><b>${esc(m.nick)}</b><span>${esc(m.intro_body)}</span></div>
+      ${canHide && m.intro_id ? `<button class="ic-x" onclick="hideIntro(${m.intro_id}, ${rid})">내리기</button>` : ''}
+    </div>`).join('')}</div>` : '';
   return `<div class="sec-t">함께 읽는 친구들<span class="mem-n">${list.length}명</span></div>
-    <div class="mem-row">${list.map(tile).join('')}</div>`;
+    <div class="mem-row">${list.map(tile).join('')}</div>${introHtml}`;
+}
+// 끗짱·운영진이 부적절한 자기소개를 내린다. 지우지는 않고 숨긴다 (본인은 다시 쓰지 않아도 된다)
+async function hideIntro(id, rid) {
+  if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  if (!confirm('이 자기소개를 내릴까요?\n친구들에게 더는 보이지 않아요.')) return;
+  const { error } = await sb.from('routine_intros').update({ hidden: true }).eq('id', id);
+  if (error) return toast('내리지 못했어요: ' + error.message);
+  toast('내렸어요');
+  loadMembers(rid);
 }
 async function loadMembers(rid) {
   if (!membersAllowed()) return;
   if (DEMO) {
-    MEMBERS[rid] = [{ nick: '하늘', books: [{ t: '노 피플 존', c: null }] }, { nick: '다온', books: [{ t: '어떤 어른', c: null }] }, { nick: '바다', books: [] }];
+    MEMBERS[rid] = [{ nick: '하늘', books: [{ t: '노 피플 존', c: null }], intro_id: 1, intro_body: '요즘 보드게임에 빠졌어요. 잘 부탁해요!', intro_photo: 'app-shots/app-5-card.jpg' }, { nick: '다온', books: [{ t: '어떤 어른', c: null }] }, { nick: '바다', books: [] }];
   } else {
     try {
       const { data, error } = await sb.rpc('routine_members', { p_routine: rid });
@@ -7634,6 +7685,31 @@ function certFields(r) {
   $('cBookChips').style.display = one ? 'none' : '';
 }
 
+// ── 첫 인증의 자기소개 ──────────────────────────────────
+// 루틴마다 처음 인증할 때 한 번 (사진 + 한 줄). 끗짱은 받지 않는다. 이미 인증한 사람은 묻지 않는다 — 켜기 전에 시작한 루틴 때문이다
+let introPhoto = null;
+function introNeeded(rid) {
+  const r = state.routines.find(x => x.id === rid);
+  if (!r || !me || !(state.introsOn || DEMO) || certEditId) return false;
+  if (r.led_by === me.id) return false;
+  if (!(myPart(rid) && myPart(rid).status === 'approved')) return false;
+  return !myCerts(rid).length && !(state.myIntros || []).some(x => x.routine_id === rid);
+}
+function drawIntroPhoto() {
+  const box = $('cIntroPh'); if (!box) return;
+  box.innerHTML = introPhoto
+    ? `<div class="ib-ph"><img src="${esc(introPhoto)}" alt=""><button type="button" class="ib-x" title="다시 고르기" onclick="introPhoto=null;drawIntroPhoto();checkCert()">×</button></div>`
+    : `<div class="ib-ph" onclick="$('cIntroInput').click()"><i class="ti ti-photo" style="font-size:24px;"></i>사진 고르기</div>`;
+}
+async function pickIntroPhoto(e) {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { introPhoto = await resize(f, 1000, .82); drawIntroPhoto(); checkCert(); }
+  catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
+}
+// 소개 칸이 보이는 중이면 사진과 글이 둘 다 있어야 한다
+const introMissing = () => $('cIntro') && $('cIntro').style.display !== 'none'
+  && (!introPhoto || !$('cIntroText').value.trim());
+
 function openCert(rid, pickTitle) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
   // 알림·링크로도 이 창이 열린다. 시작 전 루틴에는 인증이 올라가면 안 된다 (서버도 막는다 — migration-119)
@@ -7648,6 +7724,8 @@ function openCert(rid, pickTitle) {
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
   certFields(r);
+  introPhoto = null; $('cIntroText').value = '';
+  $('cIntro').style.display = introNeeded(rid) ? '' : 'none'; drawIntroPhoto();
   const one = isOneBook(r);
   // 책 제목은 매번 다시 치지 않게 채워둔다.
   // 직전 인증에서 읽던 책 → 없으면 참여할 때 적은 책. 바뀌었으면 고쳐 쓰면 된다
@@ -7858,14 +7936,14 @@ function checkCert() {
   // 단, 오늘 글이 아직 안 올라왔으면 읽을 게 없으니 막는다
   if (sh) {
     // 고치는 중이면 오늘 글이 없어도 된다 — 어제 남긴 소감을 손보는 길이 막힌다
-    $('cSubmit').disabled = !$('cMemo').value.trim() || (!certEditId && !postOf(certRid));
+    $('cSubmit').disabled = !$('cMemo').value.trim() || (!certEditId && !postOf(certRid)) || introMissing();
     return;
   }
   const needQuote = !!r?.quote_required && !$('cQuote').value.trim();
   const needPage  = !parseInt($('cPage').value || '0', 10);
   const needBook  = !$('cBook').value.trim();   // 비면 쪽수 범위 계산이 틀어진다
   const needPhoto = keptUrls.length + photos.length === 0;
-  $('cSubmit').disabled = needPhoto || needQuote || needPage || needBook;
+  $('cSubmit').disabled = needPhoto || needQuote || needPage || needBook || introMissing();
 }
 
 // 같은 책의 직전 인증부터 오늘까지. 새 책이거나 첫 인증이면 0부터
@@ -8297,8 +8375,20 @@ async function submitCert() {
     if (!$('cBook').value.trim()) return toast('읽는 책 제목을 적어주세요');
     if (!parseInt($('cPage').value || '0', 10)) return toast('오늘까지 읽은 쪽을 적어주세요');
   }
+  if (introMissing()) return toast(!introPhoto ? '소개에 쓸 사진을 골라 주세요' : '한 줄 소개를 적어 주세요');
   const btn = $('cSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
+
+  // 첫 인증이면 자기소개부터 저장한다. 소개가 안 올라가면 인증도 올리지 않는다 (다시 누르면 처음부터)
+  if ($('cIntro').style.display !== 'none') {
+    const ipath = `${me.id}/intro_${certRid}_${Date.now()}.jpg`;
+    const up = await sb.storage.from('cert-photos').upload(ipath, toBlob(introPhoto), { contentType: 'image/jpeg', cacheControl: '31536000' });
+    if (up.error) { btn.disabled = false; btn.textContent = label; return toast('소개 사진을 올리지 못했어요: ' + up.error.message); }
+    const iurl = sb.storage.from('cert-photos').getPublicUrl(ipath).data.publicUrl;
+    const ins = await sb.from('routine_intros').insert({ routine_id: certRid, user_id: me.id, body: $('cIntroText').value.trim(), photo_url: iurl });
+    if (ins.error && ins.error.code !== '23505') { btn.disabled = false; btn.textContent = label; return toast('소개를 저장하지 못했어요: ' + ins.error.message); }
+    (state.myIntros = state.myIntros || []).push({ routine_id: certRid });
+  }
 
   const sharedNow = isShared(r0);
   const row = {
