@@ -3354,7 +3354,7 @@ async function enter() {
   paintTheme(isK);
   // 끗짱으로 가입해 놓고 신청서를 「나중에」로 닫은 사람에게 「청소년」은 틀린 말이다.
   // 아직 끗짱도 아니니 사실대로 적는다 — 승인되면 그때 「끗짱」이 된다
-  $('hdrRole').textContent = isK ? '끗짱' : (kkutPending() ? '끗짱 신청 전' : '청소년');
+  $('hdrRole').textContent = isAdminUser() ? '관리자' : isK ? '끗짱' : (kkutPending() ? '끗짱 신청 전' : '청소년');   // 운영진 계정은 청소년·끗짱이 아니라 「관리자」 (2026-10-20 사용자)
   $('hdrBtn').style.display = 'none';      // 로그아웃은 MY 맨 아래에 있다
   await loadAll();
   go('home');
@@ -4699,7 +4699,7 @@ function viewCert() {
   if (peek) {
     return `<button class="only-one" onclick="go('cert')"><i class="ti ti-arrow-left"></i>루틴 목록</button>
       <div class="card" style="padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2,#6B6558);">
-      👀 운영진 보기 — 읽기만 할 수 있어요</div>${youthCertBlock([peek])}`;
+      👀 운영진 보기 — 읽기만 할 수 있어요</div>${allPostsHtml(peek)}${youthCertBlock([peek])}`;
   }
   // 운영진 계정이면 내 루틴 말고도 진행 중인 모든 루틴의 인증글을 볼 수 있다 (2026-10-18 사용자). 읽기만 한다
   const peekList = isAdminUser()
@@ -6610,7 +6610,7 @@ function viewMy() {
   // 끗짱으로 가입해 놓고 신청서를 아직 안 낸 사람. 저장된 역할은 청소년이지만
   // 머리 배지는 「끗짱 신청 전」이다. 여기서 「청소년」이라고 하면 둘이 어긋난다
   const waiting = kkutPending();
-  const who = [canLead() ? '끗짱' : '', waiting ? '끗짱 신청 전' : (isYouth() ? '청소년' : '어른'),
+  const who = isAdminUser() ? '관리자' : [canLead() ? '끗짱' : '', waiting ? '끗짱 신청 전' : (isYouth() ? '청소년' : '어른'),
                me.school_status || '', me.region || ''].filter(Boolean).join(' · ');
   return `<div class="card">
       <div class="pf">
@@ -6846,7 +6846,8 @@ function openRoutine(id) {
         ${CMT_CAP() ? `<i>하루 ${CMT_CAP()}개까지</i>` : ''}</div>` : ''}
     </div>
     <div id="rmBox">${membersHtml(id)}</div>
-    ${isShared(r) && (p?.status === 'approved' || leadsIt(r))
+    ${isShared(r) && isAdminUser() && !(p?.status === 'approved') && !leadsIt(r) ? allPostsHtml(r)
+      : isShared(r) && (p?.status === 'approved' || leadsIt(r))
       ? `<div class="sec-t">함께 읽는 글</div>${postCard(r)}` : ''}
     ${(() => {
       // 【「익명」이던 자리 · 2026-10-08 사용자】 신청하러 들어온 아이가 제일 궁금한 건 이 사람이 누구냐다.
@@ -8231,6 +8232,19 @@ function postCard(r, forCert) {
       ${(p.photo_urls || []).length ? `<div class="post-ph">${
         p.photo_urls.map(u => `<img src="${esc(u)}" loading="lazy" alt="">`).join('')}</div>` : ''}
     </div>`;
+}
+
+// 운영진은 그 루틴의 글을 모든 날 짜별로 읽는다 (2026-10-20 사용자). 오늘 글만 보이는 청소년·끗짱 화면과 달리 지난 글도 보인다
+function allPostsHtml(r) {
+  if (!isShared(r)) return '';
+  const list = (state.posts || []).filter(p => p.routine_id === r.id).sort((a, b) => String(b.day).localeCompare(String(a.day)));
+  if (!list.length) return `<div class="sec-t">함께 읽는 글</div><div class="post-wait"><b>아직 올라온 글이 없어요</b><span>끗짱이 올리면 여기서 모두 볼 수 있어요.</span></div>`;
+  return `<div class="sec-t">함께 읽는 글 <span class="sec-n">${list.length}편</span></div>` + list.map(p => `<div class="post" style="margin-bottom:10px;">
+      <div class="post-h"><b>📖 ${esc(String(p.day).slice(5).replace('-', '.'))}</b></div>
+      ${p.title ? `<div class="post-t">${esc(p.title)}</div>` : ''}
+      <div class="post-b">${esc(p.body)}</div>
+      ${(p.photo_urls || []).length ? `<div class="post-ph">${p.photo_urls.map(u => `<img src="${esc(u)}" loading="lazy" alt="">`).join('')}</div>` : ''}
+    </div>`).join('');
 }
 
 // ── 끗짱이 글 올리기 ───────────────────────────────────

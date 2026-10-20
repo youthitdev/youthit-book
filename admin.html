@@ -2500,6 +2500,7 @@ function viewRoutines() {
         <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">수정</button>
         <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
         <button class="btn btn-line" onclick="openRoutineCerts(${r.id})">인증 보기</button>
+        ${(r.kind || 'book') === 'shared' ? `<button class="btn btn-line" onclick="openRoutinePosts(${r.id})" title="끗짱이 올린 글을 날짜별로 봅니다">글 보기</button>` : ''}
         ${r.status !== 'pending' && !r.canceled ? `<button class="btn btn-line" onclick="cancelRoutine(${r.id})" title="인원이 모이지 않아 열지 못했어요">폐강</button>` : ''}
         <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
     </tr>`).join('')}
@@ -3235,6 +3236,40 @@ async function decideRoutine(id, open) {
 //   한 루틴에 많아야 50명이고 한꺼번에 보내니 기다릴 만하다.
 // 루틴별 인증 내용·읽고 있는 책. 운영진이 「이 루틴에서 무슨 일이 일어나고 있나」를 볼 자리
 let CERTV = null;   // { id, certs, books, who }
+// 「함께 읽는 글」 루틴: 끗짱이 매일 올린 글을 날짜별로 본다. 안 올라온 날도 표시한다 (읽기만)
+async function openRoutinePosts(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  document.getElementById('certsTitle').textContent = `${r.emoji || '📚'} ${r.title} · 끗짱이 올린 글`;
+  document.getElementById('certsSub').textContent = `${md(r.start_date)}~${md(r.end_date)} · 끗짱 ${rName(r.led_by)}`;
+  document.getElementById('certsBody').innerHTML = `<div class="empty">불러오는 중…</div>`;
+  document.getElementById('certsOverlay').classList.add('on');
+  let posts = [];
+  if (LIVE) {
+    const { data, error } = await sb.from('routine_posts').select('*').eq('routine_id', id).order('day', { ascending: false });
+    if (error) { document.getElementById('certsBody').innerHTML = `<div class="empty">글을 불러오지 못했어요.<br>${esc(error.message)}</div>`; return; }
+    posts = data || [];
+  } else posts = [{ day: '2026-10-12', title: '첫 번째 문장', body: '데모 글이에요.', photo_urls: [] }];
+  const byDay = {}; posts.forEach(p => { byDay[String(p.day).slice(0, 10)] = p; });
+  // 시작일부터 오늘(또는 종료일)까지 하루씩. 아직 시작 전이면 날짜 줄이 없다
+  const days = [];
+  if (r.start_date) {
+    const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+    const last = r.end_date && r.end_date < today ? r.end_date : today;
+    for (let d = new Date(r.start_date + 'T00:00:00Z'); d.toISOString().slice(0, 10) <= last; d.setUTCDate(d.getUTCDate() + 1)) days.push(d.toISOString().slice(0, 10));
+  }
+  Object.keys(byDay).forEach(d => { if (!days.includes(d)) days.push(d); });
+  days.sort((a, b) => b.localeCompare(a));
+  const missing = days.filter(d => !byDay[d]).length;
+  document.getElementById('certsBody').innerHTML = days.length ? `
+    <div class="muted" style="margin-bottom:10px;">올라온 글 <b>${posts.length}편</b>${missing ? ` · 안 올라온 날 <b style="color:#8E3527;">${missing}일</b>` : ''}</div>
+    ${days.map(d => byDay[d] ? `<div class="preview" style="margin-bottom:10px;">
+        <div class="preview-t">${md(d)}${byDay[d].title ? ` · ${esc(byDay[d].title)}` : ''}</div>
+        <div style="white-space:pre-wrap;line-height:1.7;font-size:13.5px;">${esc(byDay[d].body)}</div>
+        ${(byDay[d].photo_urls || []).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">${byDay[d].photo_urls.map(u => `<img src="${esc(u)}" loading="lazy" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:8px;">`).join('')}</div>` : ''}
+      </div>` : `<div class="muted" style="margin-bottom:8px;padding:8px 12px;border:1px dashed #E0D9CB;border-radius:10px;">${md(d)} · 글이 올라오지 않았어요</div>`).join('')}`
+    : `<div class="empty">아직 시작 전이라 올라온 글이 없어요.</div>`;
+}
+
 async function openRoutineCerts(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   document.getElementById('certsTitle').textContent = `${r.emoji || '📚'} ${r.title}`;
