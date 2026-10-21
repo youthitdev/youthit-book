@@ -4,7 +4,7 @@
 -- 【무엇을 담나 — 숫자가 아니라 사람으로】 「어제 12건」보다 「민지가 사흘째 비었어요」가 아침에 필요한 정보다.
 --   일일(매일 오전 9시): 어제 인증(지난주 같은 요일과 비교) · 루틴별 어제 인증 · 사흘 이상 인증이 없는 청소년 ·
 --                       댓글 없이 지나간 어제 인증 · 어제 글이 안 올라온 「함께 읽는 글」 루틴 · 곧 시작하는 모집 중 루틴(신청 인원) ·
---                       처리할 것(확인·신청·열어달라는 루틴·인증 신고) · 오늘 공유회
+--                       처리할 것(확인·신청·열어달라는 루틴·교환권 있는데 청소년 확인 전인 사람·인증 신고) · 오늘 공유회
 --   주간(일요일 저녁 7시): 이번 주 인증(지난주 비교) · 루틴별 인증률·남은 날 · 완주 예상 · 많이 읽힌 책 ·
 --                         교환권이 있는데 아직 안 쓴 청소년 · 정산 기다리는 책방 · 한 달 안에 끝나는 루틴
 --
@@ -155,6 +155,19 @@ BEGIN
       || '• 청소년 확인 대기 ' || (SELECT count(*) FROM profiles WHERE verify_status = 'pending' AND withdrawn_at IS NULL) || E'건\n'
       || '• 끗짱 신청 대기 ' || (SELECT count(*) FROM kkut_applications WHERE status = 'pending') || E'건\n'
       || '• 열어달라는 루틴 ' || (SELECT count(*) FROM routines WHERE status = 'pending') || E'건\n';
+    -- 교환권이 있는데 청소년 확인이 안 된 사람 — 책을 못 받으니 확인부터 챙겨야 한다 (닉네임만)
+    v_x := ''; n := 0;
+    FOR r IN
+      SELECT report_nick(a.user_id) AS nick FROM dokseo_points_all() a JOIN profiles p ON p.id = a.user_id
+       WHERE p.withdrawn_at IS NULL AND a.remain > 0 AND COALESCE(p.verify_status, 'none') <> 'approved'
+         AND COALESCE(p.role, 'youth') = 'youth' AND NOT COALESCE(p.can_lead, false)
+         AND NOT EXISTS (SELECT 1 FROM admin_user_ids() ad WHERE ad = p.id)
+       ORDER BY 1
+    LOOP
+      n := n + 1; IF n <= 8 THEN v_x := v_x || r.nick || ', '; END IF;
+    END LOOP;
+    v_out := v_out || CASE WHEN n > 0 THEN '• ⚠️ *교환권이 있는데 청소년 확인 전* ' || n || '명 — ' || rtrim(v_x, ', ') || CASE WHEN n > 8 THEN ' 외' ELSE '' END || E'\n'
+                           ELSE E'• 교환권이 있는데 청소년 확인 전인 사람 0명\n' END;
     -- 처리 안 된 인증 신고는 아이들 안전과 닿아 있다. 있으면 가장 오래된 것의 날수와 함께 눈에 띄게
     SELECT count(*), COALESCE(max(v_today - (created_at AT TIME ZONE 'Asia/Seoul')::date), 0) INTO n, v_a FROM cert_reports WHERE status = 'open';
     v_out := v_out || CASE WHEN n > 0 THEN '• ⚠️ *인증 신고 ' || n || '건 처리 안 됨* (가장 오래된 것 ' || v_a || E'일 전)\n'
@@ -266,9 +279,10 @@ BEGIN
 
   -- 4. 교환권이 있는데 아직 안 쓴 청소년
   BEGIN
-    SELECT count(*) INTO n FROM dokseo_points_all() a JOIN profiles p ON p.id = a.user_id
-     WHERE p.withdrawn_at IS NULL AND a.remain > 0;
-    v_out := v_out || E'\n*🎫 교환권이 있는데 아직 안 쓴 청소년* ' || n || E'명\n';
+    SELECT count(*), count(*) FILTER (WHERE COALESCE(p.verify_status, 'none') <> 'approved') INTO n, v_a
+      FROM dokseo_points_all() a JOIN profiles p ON p.id = a.user_id
+     WHERE p.withdrawn_at IS NULL AND a.remain > 0 AND COALESCE(p.role, 'youth') = 'youth' AND NOT COALESCE(p.can_lead, false);
+    v_out := v_out || E'\n*🎫 교환권이 있는데 아직 안 쓴 청소년* ' || n || '명' || CASE WHEN v_a > 0 THEN ' (그중 청소년 확인 전 ' || v_a || '명 ⚠️)' ELSE '' END || E'\n';
   EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*🎫 교환권이 있는데 아직 안 쓴 청소년*\n• (못 만들었어요)\n';
   END;
 
