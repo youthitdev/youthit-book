@@ -38,13 +38,17 @@ BEGIN
 
   -- 1. 어제 인증
   BEGIN
-    SELECT count(*) INTO v_a FROM certifications WHERE cert_date = v_y;
-    SELECT count(*) INTO v_b FROM certifications WHERE cert_date = v_y - 7;
-    v_out := v_out || E'\n*어제 인증* ' || v_a || '건 (지난주 같은 요일 ' || v_b || '건)' || E'\n';
+    -- 끗짱이 올린 인증은 세지 않는다 (참여 인원도 청소년만 센다 — 「5/4명」처럼 어긋나지 않게)
+    SELECT count(*) INTO v_a FROM certifications c JOIN profiles pp ON pp.id = c.user_id
+     WHERE c.cert_date = v_y AND NOT COALESCE(pp.can_lead, false);
+    SELECT count(*) INTO v_b FROM certifications c JOIN profiles pp ON pp.id = c.user_id
+     WHERE c.cert_date = v_y - 7 AND NOT COALESCE(pp.can_lead, false);
+    v_out := v_out || E'\n*어제 청소년 인증* ' || v_a || '건 (지난주 같은 요일 ' || v_b || '건)' || E'\n';
     v_x := '';
     FOR r IN
       SELECT ro.title,
-             (SELECT count(DISTINCT c.user_id) FROM certifications c WHERE c.routine_id = ro.id AND c.cert_date = v_y) AS a,
+             (SELECT count(DISTINCT c.user_id) FROM certifications c JOIN profiles pp ON pp.id = c.user_id
+               WHERE c.routine_id = ro.id AND c.cert_date = v_y AND NOT COALESCE(pp.can_lead, false)) AS a,
              (SELECT count(*) FROM routine_participants rp JOIN profiles pp ON pp.id = rp.user_id
                WHERE rp.routine_id = ro.id AND rp.status = 'approved' AND NOT COALESCE(pp.can_lead, false)) AS p
         FROM routines ro
@@ -93,6 +97,7 @@ BEGIN
       SELECT ro.title, count(*) AS k
         FROM certifications c
         JOIN routines ro ON ro.id = c.routine_id
+        JOIN profiles pp ON pp.id = c.user_id AND NOT COALESCE(pp.can_lead, false)
        WHERE c.cert_date = v_y AND ro.status IN ('active', 'done')
          AND NOT EXISTS (SELECT 1 FROM cert_comments m WHERE m.cert_id = c.id)
        GROUP BY ro.title ORDER BY 2 DESC, 1
@@ -144,9 +149,11 @@ BEGIN
 
   -- 1. 이번 주 인증
   BEGIN
-    SELECT count(*), count(DISTINCT user_id) INTO v_a, v_u FROM certifications WHERE cert_date BETWEEN v_from AND v_today;
-    SELECT count(*) INTO v_b FROM certifications WHERE cert_date BETWEEN v_from - 7 AND v_today - 7;
-    v_out := v_out || E'\n*이번 주 인증* ' || v_a || '건 (지난주 ' || v_b || '건) · 인증한 사람 ' || v_u || E'명\n';
+    SELECT count(*), count(DISTINCT c.user_id) INTO v_a, v_u FROM certifications c JOIN profiles pp ON pp.id = c.user_id
+     WHERE c.cert_date BETWEEN v_from AND v_today AND NOT COALESCE(pp.can_lead, false);
+    SELECT count(*) INTO v_b FROM certifications c JOIN profiles pp ON pp.id = c.user_id
+     WHERE c.cert_date BETWEEN v_from - 7 AND v_today - 7 AND NOT COALESCE(pp.can_lead, false);
+    v_out := v_out || E'\n*이번 주 청소년 인증* ' || v_a || '건 (지난주 ' || v_b || '건) · 인증한 사람 ' || v_u || E'명\n';
   EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*이번 주 인증*\n• (못 만들었어요)\n';
   END;
 
