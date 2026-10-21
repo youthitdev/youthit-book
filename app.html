@@ -1767,6 +1767,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 </div>
 
 <!-- 루틴 상세 -->
+<!-- 후기 탭·MY 의 「더 보기」: 그 구역 전체를 새 화면에서. 20개씩 늘어난다 (2026-10-21 사용자) -->
+<div class="ov" id="ovFeedAll">
+  <div class="ov-h"><button onclick="closeOv('ovFeedAll')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s" id="ovFaSub">후기</div><div class="t" id="ovFaTitle"></div></div></div>
+  <div class="ov-b" id="ovFaBody"></div>
+</div>
+
 <div class="ov" id="ovRoutine">
   <div class="ov-h"><button onclick="closeOv('ovRoutine')"><i class="ti ti-arrow-left"></i></button>
     <div style="flex:1;min-width:0;"><div class="s">루틴</div><div class="t" id="ovRTitle"></div></div>
@@ -4085,6 +4092,8 @@ function render() {
   else if (tab === 'feed') b.innerHTML = viewFeed();
   else if (tab === 'store') b.innerHTML = viewStores();
   else b.innerHTML = viewMy();
+  // 「더 보기」 전체 화면이 열려 있으면 거기도 새로 그린다 (후기를 고친 뒤 바로 반영)
+  if ($('ovFeedAll') && $('ovFeedAll').classList.contains('on')) drawFeedAll();
 }
 
 function guestWall() {
@@ -5728,15 +5737,46 @@ function reviewCard(v) {
   </div>`;
 }
 
-// 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 처음에는 몇 개만 보이고 「더 보기」로 늘린다.
-//   긴 글은 여섯 줄까지만 보이고 눌러서 펼친다
-const FEED_SHOW = { rv: 3, ex: 6, qt: 5 };            // 처음에 보이는 개수
-const FEED_STEP = { rv: 5, ex: 9, qt: 10 };           // 「더 보기」를 누를 때마다 늘어나는 개수
-const feedCap = { ...FEED_SHOW };
-function feedMore(k) { feedCap[k] += FEED_STEP[k]; render(); }
+// 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 처음에는 몇 개만 보이고, 「더 보기」를 누르면 그 구역 전체가 새 화면에서 열린다.
+//   새 화면도 20개씩만 보이고 「더 보기」로 20개씩 늘어난다. 긴 글은 여섯 줄까지만 보이고 눌러서 펼친다
+const FEED_SHOW = { rv: 3, ex: 6, qt: 5 };            // 후기 탭에 처음 보이는 개수
+const FEED_PAGE = 20;                                 // 새 화면에서 한 번에 보이는 개수
+const feedCap = FEED_SHOW;
+let FA = { kind: null, cap: FEED_PAGE };
+// 이 구역의 목록과 제목. 후기 탭(rv·ex·qt)은 모두의 글, MY(mrv·mqt·mex)는 내 글이다
+function faData(kind) {
+  const exMine = () => (state.purchases || []).filter(b => b.user_id === me.id && b.status !== 'void')
+    .map(b => ({ photo_url: (b.book_photo_url || '').trim() || (/^http/.test(b.proof_photo_url || '') ? b.proof_photo_url : ''),
+                 store_name: (state.stores.find(x => x.id === b.bookstore_id) || {}).name || '' })).filter(x => x.photo_url);
+  const quote = c => `<div class="card" style="padding:15px 16px;">
+      ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title || '')}</div></div>`;
+  const D = {
+    rv:  { sub: '후기', title: '📝 루틴 후기',      list: () => state.reviews.filter(v => v.kind !== 'book'), card: reviewCard },
+    qt:  { sub: '후기', title: '💬 함께 나누고 싶은 문장', list: () => state.certs.filter(c => c.quote && c.quote.trim()), card: quote },
+    ex:  { sub: '후기', title: '📚 책 교환 인증',    list: () => state.exchanges || [], grid: true },
+    mrv: { sub: '내가 남긴 글', title: '📝 내 루틴 후기',   list: () => state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id), card: reviewCard },
+    mqt: { sub: '내가 남긴 글', title: '💬 내가 남긴 문장', list: () => state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim()), card: quote },
+    mex: { sub: '내가 남긴 글', title: '📚 내 책 교환 인증', list: exMine, grid: true, mine: true },
+  };
+  return D[kind];
+}
+function openFeedAll(kind) { FA = { kind, cap: FEED_PAGE }; drawFeedAll(); openOv('ovFeedAll'); }
+function feedAllMore() { FA.cap += FEED_PAGE; drawFeedAll(); }
+function drawFeedAll() {
+  const d = faData(FA.kind); if (!d) return;
+  const all = d.list(), shown = all.slice(0, FA.cap), left = all.length - shown.length;
+  $('ovFaSub').textContent = d.sub;
+  $('ovFaTitle').textContent = `${d.title} · ${all.length}`;
+  $('ovFaBody').innerHTML = (d.grid
+    ? `<div class="ex-g">${shown.map((x, i) => `<${d.mine ? 'div' : 'button type="button" onclick="openExchange(' + i + ')"'} class="ex-t"${d.mine ? ' style="cursor:default;"' : ''}>
+        <img src="${esc(x.photo_url)}" loading="lazy" alt="">${x.store_name ? `<span>${esc(x.store_name)}</span>` : ''}</${d.mine ? 'div' : 'button'}>`).join('')}</div>`
+    : shown.map(d.card).join(''))
+    + (left > 0 ? `<button class="store-more" onclick="feedAllMore()"><span>더 보기</span><em>${Math.min(left, FEED_PAGE)}개 더 · 남은 ${left}개</em><i class="ti ti-chevron-down"></i></button>` : '');
+}
 function feedMoreBtn(k, total) {
   const left = total - feedCap[k];
-  return left > 0 ? `<button class="store-more" onclick="feedMore('${k}')"><span>더 보기</span><em>${left}개 남음</em><i class="ti ti-chevron-down"></i></button>` : '';
+  return left > 0 ? `<button class="store-more" onclick="openFeedAll('${k}')"><span>전체 보기</span><em>${total}개</em><i class="ti ti-chevron-right"></i></button>` : '';
 }
 // 긴 글: 여섯 줄에서 자르고 「펼치기」. 짧은 글은 그대로
 function clampText(text, style) {
@@ -6168,27 +6208,16 @@ function bookTile(b) {
 const BOOKS_PREVIEW = 6;   // 3열 × 2줄
 
 // 내가 남긴 글 — 후기 탭은 모두의 글이라 길어진다. 내 후기·내 문장·내 책 교환 인증은 MY 에 모아 둔다 (2026-10-21 사용자).
-//   세 줄을 눌러 펼친다. 후기는 여기서도 고칠 수 있다
-const MYW_OPEN = {};
-function toggleMyw(k) { MYW_OPEN[k] = !MYW_OPEN[k]; render(); }
+//   세 줄 중 하나를 누르면 그 종류의 내 글이 새 화면에서 열린다 (20개씩). 후기는 거기서도 고칠 수 있다
 function myWritingsBlock() {
   if (!me || isGuest() || !isYouth()) return '';
-  const rv = state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id);
-  const qt = state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim());
-  const ex = (state.purchases || []).filter(b => b.user_id === me.id && b.status !== 'void')
-    .map(b => ({ photo: (b.book_photo_url || '').trim() || (/^http/.test(b.proof_photo_url || '') ? b.proof_photo_url : ''),
-                 store: (state.stores.find(x => x.id === b.bookstore_id) || {}).name || '' }))
-    .filter(x => x.photo);
-  if (!rv.length && !qt.length && !ex.length) return '';
-  const row = (k, label, n) => `<button class="store-more" onclick="toggleMyw('${k}')" style="margin-top:8px;">
-      <span>${label}</span><em>${n}개</em><i class="ti ti-chevron-${MYW_OPEN[k] ? 'up' : 'down'}"></i></button>`;
+  const n = k => (faData(k).list() || []).length;
+  const rv = n('mrv'), qt = n('mqt'), ex = n('mex');
+  if (!rv && !qt && !ex) return '';
+  const row = (k, label, c) => c ? `<button class="store-more" onclick="openFeedAll('${k}')" style="margin-top:8px;">
+      <span>${label}</span><em>${c}개</em><i class="ti ti-chevron-right"></i></button>` : '';
   return `<div class="sec-t">내가 남긴 글</div>
-    ${rv.length ? row('rv', '📝 내 루틴 후기', rv.length) + (MYW_OPEN.rv ? `<div style="margin-top:8px;">${rv.map(reviewCard).join('')}</div>` : '') : ''}
-    ${qt.length ? row('qt', '💬 내가 남긴 문장', qt.length) + (MYW_OPEN.qt ? `<div style="margin-top:8px;">${qt.map(c => `<div class="card" style="padding:15px 16px;">
-        ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
-        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title || '')}</div></div>`).join('')}</div>` : '') : ''}
-    ${ex.length ? row('ex', '📚 내 책 교환 인증', ex.length) + (MYW_OPEN.ex ? `<div class="ex-g" style="margin-top:8px;">${ex.map(x => `<div class="ex-t" style="cursor:default;">
-        <img src="${esc(x.photo)}" loading="lazy" alt="">${x.store ? `<span>${esc(x.store)}</span>` : ''}</div>`).join('')}</div>` : '') : ''}`;
+    ${row('mrv', '📝 내 루틴 후기', rv)}${row('mqt', '💬 내가 남긴 문장', qt)}${row('mex', '📚 내 책 교환 인증', ex)}`;
 }
 
 function myBooksBlock() {
