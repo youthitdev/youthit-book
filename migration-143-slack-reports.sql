@@ -3,8 +3,9 @@
 --
 -- 【무엇을 담나 — 숫자가 아니라 사람으로】 「어제 12건」보다 「민지가 사흘째 비었어요」가 아침에 필요한 정보다.
 --   일일(매일 오전 9시): 어제 인증(지난주 같은 요일과 비교) · 루틴별 어제 인증 · 사흘 이상 인증이 없는 청소년 ·
---                       댓글 없이 지나간 어제 인증 · 처리할 것(확인·신청·열어달라는 루틴) · 오늘 공유회
---   주간(일요일 저녁 7시): 이번 주 인증(지난주 비교) · 루틴별 인증률·남은 날 · 많이 읽힌 책 ·
+--                       댓글 없이 지나간 어제 인증 · 어제 글이 안 올라온 「함께 읽는 글」 루틴 · 곧 시작하는 모집 중 루틴(신청 인원) ·
+--                       처리할 것(확인·신청·열어달라는 루틴·인증 신고) · 오늘 공유회
+--   주간(일요일 저녁 7시): 이번 주 인증(지난주 비교) · 루틴별 인증률·남은 날 · 완주 예상 · 많이 읽힌 책 ·
 --                         교환권이 있는데 아직 안 쓴 청소년 · 정산 기다리는 책방 · 한 달 안에 끝나는 루틴
 --
 -- 【개인정보】 Slack 에는 **닉네임**만 쓴다 (이름·연락처·학교는 넣지 않는다). 연락이 필요하면 관리자 화면에서 찾는다.
@@ -108,12 +109,56 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*💬 댓글 없이 지나간 어제 인증*\n• (못 만들었어요)\n';
   END;
 
+  -- 3-2. 어제 글이 안 올라온 「함께 읽는 글」 루틴 — 글이 없으면 그날 아이들이 인증을 못 한다
+  BEGIN
+    v_x := ''; n := 0;
+    FOR r IN
+      SELECT ro.title, ro.led_by FROM routines ro
+       WHERE ro.kind = 'shared' AND ro.status = 'active' AND NOT COALESCE(ro.canceled, false)
+         AND ro.start_date <= v_y AND (ro.end_date IS NULL OR ro.end_date >= v_y)
+         AND NOT EXISTS (SELECT 1 FROM routine_posts po WHERE po.routine_id = ro.id AND po.day = v_y)
+       ORDER BY ro.start_date
+    LOOP
+      n := n + 1; v_x := v_x || '• ' || r.title || ' — 끗짱 ' || report_nick(r.led_by) || E'\n';
+    END LOOP;
+    IF n > 0 THEN
+      v_out := v_out || E'\n*✍️ 어제 글이 안 올라온 「함께 읽는 글」 루틴* ' || n || E'개\n' || v_x;
+    ELSIF EXISTS (SELECT 1 FROM routines WHERE kind = 'shared' AND status = 'active' AND NOT COALESCE(canceled, false) AND start_date <= v_y) THEN
+      v_out := v_out || E'\n*✍️ 「함께 읽는 글」 루틴* — 어제 글이 모두 올라왔어요 👍\n';
+    END IF;
+  EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*✍️ 「함께 읽는 글」 루틴*\n• (못 만들었어요)\n';
+  END;
+
+  -- 3-3. 곧 시작하는 모집 중 루틴 (7일 안) — 인원이 적으면 홍보할지 폐강할지 일찍 정한다
+  BEGIN
+    v_x := '';
+    FOR r IN
+      SELECT ro.title, ro.start_date, ro.max_people,
+             (SELECT count(*) FROM routine_participants rp JOIN profiles pp ON pp.id = rp.user_id
+               WHERE rp.routine_id = ro.id AND rp.status = 'approved' AND NOT COALESCE(pp.can_lead, false)) AS p
+        FROM routines ro
+       WHERE ro.status = 'recruit' AND NOT COALESCE(ro.canceled, false)
+         AND ro.start_date BETWEEN v_today AND v_today + 7
+       ORDER BY ro.start_date
+    LOOP
+      v_x := v_x || '• ' || r.title || ' — ' || CASE WHEN r.start_date = v_today THEN '오늘 시작' ELSE '시작 D-' || (r.start_date - v_today) END
+             || ' (' || to_char(r.start_date, 'MM/DD') || ') · 신청 ' || r.p || '/' || COALESCE(r.max_people::text, '—') || '명'
+             || CASE WHEN r.p < 3 THEN ' ⚠️' ELSE '' END || E'\n';
+    END LOOP;
+    IF v_x <> '' THEN v_out := v_out || E'\n*🌱 곧 시작하는 모집 중 루틴* (신청이 3명 미만이면 ⚠️)\n' || v_x; END IF;
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+
   -- 4. 처리할 것
   BEGIN
     v_out := v_out || E'\n*🛎️ 처리할 것*' || E'\n'
       || '• 청소년 확인 대기 ' || (SELECT count(*) FROM profiles WHERE verify_status = 'pending' AND withdrawn_at IS NULL) || E'건\n'
       || '• 끗짱 신청 대기 ' || (SELECT count(*) FROM kkut_applications WHERE status = 'pending') || E'건\n'
       || '• 열어달라는 루틴 ' || (SELECT count(*) FROM routines WHERE status = 'pending') || E'건\n';
+    -- 처리 안 된 인증 신고는 아이들 안전과 닿아 있다. 있으면 가장 오래된 것의 날수와 함께 눈에 띄게
+    SELECT count(*), COALESCE(max(v_today - (created_at AT TIME ZONE 'Asia/Seoul')::date), 0) INTO n, v_a FROM cert_reports WHERE status = 'open';
+    v_out := v_out || CASE WHEN n > 0 THEN '• ⚠️ *인증 신고 ' || n || '건 처리 안 됨* (가장 오래된 것 ' || v_a || E'일 전)\n'
+                           ELSE E'• 인증 신고 0건\n' END;
   EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*🛎️ 처리할 것*\n• (못 만들었어요)\n';
   END;
 
@@ -177,6 +222,32 @@ BEGIN
     END LOOP;
     v_out := v_out || E'\n*루틴별 이번 주 인증률*\n' || COALESCE(NULLIF(v_x, ''), E'• 진행 중인 루틴이 없어요\n');
   EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*루틴별 이번 주 인증률*\n• (못 만들었어요)\n';
+  END;
+
+  -- 2-2. 완주 예상 — 지금까지 인증한 날의 속도가 끝까지 이어지면 완주선(70%)을 넘을 사람 수 (후원 보고용)
+  BEGIN
+    v_x := '';
+    FOR r IN
+      WITH rt AS (
+        SELECT ro.id, ro.title, ro.start_date, ro.end_date,
+               GREATEST(ro.end_date - ro.start_date + 1, 1) AS total,
+               GREATEST(LEAST(v_today, ro.end_date) - ro.start_date + 1, 1) AS elapsed
+          FROM routines ro WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND ro.start_date <= v_today
+      ), pp AS (
+        SELECT rt.title, rt.total, rt.elapsed, CEIL(rt.total * 0.7)::int AS need,
+               (SELECT count(DISTINCT c.cert_date) FROM certifications c WHERE c.routine_id = rt.id AND c.user_id = rp.user_id) AS d
+          FROM rt JOIN routine_participants rp ON rp.routine_id = rt.id AND rp.status = 'approved'
+          JOIN profiles pr ON pr.id = rp.user_id AND NOT COALESCE(pr.can_lead, false) AND pr.withdrawn_at IS NULL
+      )
+      SELECT title, count(*) AS p,
+             count(*) FILTER (WHERE d >= need) AS got,
+             count(*) FILTER (WHERE d < need AND d::numeric / elapsed * total >= need) AS likely
+        FROM pp GROUP BY title ORDER BY title
+    LOOP
+      v_x := v_x || '• ' || r.title || ' — 이미 완주선 ' || r.got || '명 · 이 속도면 완주 ' || r.likely || '명 · 전체 ' || r.p || E'명\n';
+    END LOOP;
+    v_out := v_out || E'\n*🏅 완주 예상* (완주 = 루틴 일수의 70% 이상 인증)\n' || COALESCE(NULLIF(v_x, ''), E'• 진행 중인 루틴이 없어요\n');
+  EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*🏅 완주 예상*\n• (못 만들었어요)\n';
   END;
 
   -- 3. 이번 주 많이 읽힌 책 (인증에 적힌 책, 읽은 사람 수)
