@@ -1196,6 +1196,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .mem-t b { display:block; margin-top:7px; font-size:12px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .mem-t i { display:block; font-style:normal; font-size:10.5px; color:var(--ink-3); line-height:1.3; margin-top:1px;
   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; }
+.clamp6 { display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
+.clamp6.open { display:block; overflow:visible; }
+.clamp-more { display:block; margin-top:6px; font-size:12.5px; font-weight:700; color:var(--blue, #2F5D50); cursor:pointer; background:none; border:0; padding:0; }
 .mem-n { font-size:12.5px; font-weight:700; color:var(--ink-3); margin-left:6px; }
 /* 첫 인증의 자기소개 칸과, 「함께 읽는 친구들」 아래의 소개 목록 */
 .intro-box { background:#F3F8EE; border:1px solid #DDE8CF; border-radius:14px; padding:14px 15px; }
@@ -5103,12 +5106,12 @@ const exDays = d => { const n = Math.floor((new Date(todayKST()) - new Date(d)) 
 // 훑어볼 땐 사진과 책방 이름만 보인다. 누르면 닉네임·고른 이유가 나온다
 function exchangeHtml() {
   const list = state.exchanges || [];
-  return `<div class="sec-t">📚 책 교환 인증</div>` + (list.length
-    ? `<div class="ex-g">${list.map((x, i) => `
+  return `<div class="sec-t">📚 책 교환 인증${list.length ? ` <span class="sec-n">${list.length}</span>` : ''}</div>` + (list.length
+    ? `<div class="ex-g">${list.slice(0, feedCap.ex).map((x, i) => `
         <button type="button" class="ex-t" onclick="openExchange(${i})">
           <img src="${esc(x.photo_url)}" loading="lazy" alt="">
           ${x.store_name ? `<span>${esc(x.store_name)}</span>` : ''}
-        </button>`).join('')}</div>`
+        </button>`).join('')}</div>` + feedMoreBtn('ex', list.length)
     : `<div class="empty">아직 올라온 교환 인증이 없어요.<br>책을 받으면 한 장 남겨주세요.</div>`);
 }
 
@@ -5718,11 +5721,28 @@ function reviewCard(v) {
       </div>
       ${own ? `<button class="f-act" title="고치기" onclick="openReview('${v.kind}', ${isBook ? v.purchase_id : v.routine_id})">✏️</button>` : ''}
     </div>
-    <div style="font-size:14.5px;line-height:1.8;margin-top:10px;white-space:pre-wrap;">${esc(v.content)}</div>
+    ${clampText(v.content, 'font-size:14.5px;line-height:1.8;margin-top:10px;white-space:pre-wrap;')}
     <div style="font-size:11.5px;color:var(--ink-3);margin-top:9px;">
       ${isBook ? `📖 ${esc(v.book_title || '')}` : `${r ? esc(r.title) : ''}`} · ${timeAgo(v.created_at)}
     </div>
   </div>`;
+}
+
+// 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 처음에는 몇 개만 보이고 「더 보기」로 늘린다.
+//   긴 글은 여섯 줄까지만 보이고 눌러서 펼친다
+const FEED_SHOW = { rv: 3, ex: 6, qt: 5 };            // 처음에 보이는 개수
+const FEED_STEP = { rv: 5, ex: 9, qt: 10 };           // 「더 보기」를 누를 때마다 늘어나는 개수
+const feedCap = { ...FEED_SHOW };
+function feedMore(k) { feedCap[k] += FEED_STEP[k]; render(); }
+function feedMoreBtn(k, total) {
+  const left = total - feedCap[k];
+  return left > 0 ? `<button class="store-more" onclick="feedMore('${k}')"><span>더 보기</span><em>${left}개 남음</em><i class="ti ti-chevron-down"></i></button>` : '';
+}
+// 긴 글: 여섯 줄에서 자르고 「펼치기」. 짧은 글은 그대로
+function clampText(text, style) {
+  const long = String(text || '').length > 150;
+  return `<div class="${long ? 'clamp6' : ''}" style="${style || ''}">${esc(text)}</div>`
+    + (long ? `<button type="button" class="clamp-more" onclick="const d=this.previousElementSibling;d.classList.toggle('open');this.textContent=d.classList.contains('open')?'접기':'펼치기'">펼치기</button>` : '');
 }
 
 function viewFeed() {
@@ -5747,17 +5767,18 @@ function viewFeed() {
       </div>
     </div>`).join('')}` : '';
 
-  const listHtml = `<div class="sec-t">📝 루틴 후기</div>` + (list.length
-    ? list.map(reviewCard).join('')
+  const listHtml = `<div class="sec-t">📝 루틴 후기${list.length ? ` <span class="sec-n">${list.length}</span>` : ''}</div>` + (list.length
+    ? list.slice(0, feedCap.rv).map(reviewCard).join('') + feedMoreBtn('rv', list.length)
     : `<div class="empty">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
 
-  const quotes = state.certs.filter(c => c.quote && c.quote.trim()).slice(0, 30);
-  const quoteHtml = `<div class="sec-t">💬 함께 나누고 싶은 문장</div>`
+  const allQuotes = state.certs.filter(c => c.quote && c.quote.trim());
+  const quotes = allQuotes.slice(0, feedCap.qt);
+  const quoteHtml = `<div class="sec-t">💬 함께 나누고 싶은 문장${allQuotes.length ? ` <span class="sec-n">${allQuotes.length}</span>` : ''}</div>`
     + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">우리 루틴 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.</div>` + (quotes.length
     ? quotes.map(c => `<div class="card" style="padding:15px 16px;">
-        <div style="font-size:14.5px;line-height:1.75;">“${esc(c.quote)}”</div>
+        ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
-      </div>`).join('')
+      </div>`).join('') + feedMoreBtn('qt', allQuotes.length)
     : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.</div>`);
 
   return todoHtml + listHtml + exchangeHtml() + quoteHtml;
