@@ -6167,6 +6167,30 @@ function bookTile(b) {
 
 const BOOKS_PREVIEW = 6;   // 3열 × 2줄
 
+// 내가 남긴 글 — 후기 탭은 모두의 글이라 길어진다. 내 후기·내 문장·내 책 교환 인증은 MY 에 모아 둔다 (2026-10-21 사용자).
+//   세 줄을 눌러 펼친다. 후기는 여기서도 고칠 수 있다
+const MYW_OPEN = {};
+function toggleMyw(k) { MYW_OPEN[k] = !MYW_OPEN[k]; render(); }
+function myWritingsBlock() {
+  if (!me || isGuest() || !isYouth()) return '';
+  const rv = state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id);
+  const qt = state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim());
+  const ex = (state.purchases || []).filter(b => b.user_id === me.id && b.status !== 'void')
+    .map(b => ({ photo: (b.book_photo_url || '').trim() || (/^http/.test(b.proof_photo_url || '') ? b.proof_photo_url : ''),
+                 store: (state.stores.find(x => x.id === b.bookstore_id) || {}).name || '' }))
+    .filter(x => x.photo);
+  if (!rv.length && !qt.length && !ex.length) return '';
+  const row = (k, label, n) => `<button class="store-more" onclick="toggleMyw('${k}')" style="margin-top:8px;">
+      <span>${label}</span><em>${n}개</em><i class="ti ti-chevron-${MYW_OPEN[k] ? 'up' : 'down'}"></i></button>`;
+  return `<div class="sec-t">내가 남긴 글</div>
+    ${rv.length ? row('rv', '📝 내 루틴 후기', rv.length) + (MYW_OPEN.rv ? `<div style="margin-top:8px;">${rv.map(reviewCard).join('')}</div>` : '') : ''}
+    ${qt.length ? row('qt', '💬 내가 남긴 문장', qt.length) + (MYW_OPEN.qt ? `<div style="margin-top:8px;">${qt.map(c => `<div class="card" style="padding:15px 16px;">
+        ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title || '')}</div></div>`).join('')}</div>` : '') : ''}
+    ${ex.length ? row('ex', '📚 내 책 교환 인증', ex.length) + (MYW_OPEN.ex ? `<div class="ex-g" style="margin-top:8px;">${ex.map(x => `<div class="ex-t" style="cursor:default;">
+        <img src="${esc(x.photo)}" loading="lazy" alt="">${x.store ? `<span>${esc(x.store)}</span>` : ''}</div>`).join('')}</div>` : '') : ''}`;
+}
+
 function myBooksBlock() {
   const all = myBooks();
   if (!all.length) return '';
@@ -6652,6 +6676,7 @@ function viewMy() {
     ${kkutStatBlock()}
     ${calBlock()}
     ${myBooksBlock()}
+    ${myWritingsBlock()}
     ${pastBlock()}
     ${waiting ? '' : kkutCard()}
     ${/* 「함께 쌓은 것」(지금 N명이 함께 읽고 있어요 · 앉은 하루 · 책) 줄은 뺐다 (2026-10-13 사용자) */''}
