@@ -4576,8 +4576,9 @@ async function loadBoard(rid) {
     }
   } catch (e) { return; }
   finally { OB_LOADING = false; }
-  const box = $('obBox' + rid); if (box) box.innerHTML = boardHtml(rid);
+  paintBoards(rid);
 }
+function paintBoards(rid) { ['obBox', 'obBoxOv'].forEach(k => { const b = $(k + rid); if (b) b.innerHTML = boardHtml(rid); }); }
 function boardHtml(rid) {
   const list = OB[rid]; if (!list || !list.length) return '';
   const cap = OB_CAP[rid] || 12;
@@ -4585,7 +4586,7 @@ function boardHtml(rid) {
       <div class="ob-c">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
       <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i></div>`;
   return `<div class="og-board">${list.slice(0, cap).map(tile).join('')}</div>
-    ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 12) + 12; $('obBox${rid}').innerHTML = boardHtml(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
+    ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 12) + 12; paintBoards(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
 }
 async function joinOngoing(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
@@ -4595,17 +4596,23 @@ async function joinOngoing(rid) {
   await loadAll(); render();
   toast('매일 한끗에 참여했어요 🌱 오늘부터 한 장씩!');
 }
+// 연속일 · 오늘 인증 · 보드. 홈 카드와 「매일 한끗」 소개 화면이 같이 쓴다 (ov = 소개 화면 안)
+function ongoingDash(r, ov) {
+  const st = myStreak(r.id), done = didToday(r.id);
+  setTimeout(() => { if (!OB[r.id]) loadBoard(r.id); else paintBoards(r.id); }, 0);
+  return `<div class="og-s" style="margin-top:0;">${st > 0 ? `🔥 ${st}일 연속` : '오늘 첫 한 장을 남겨 볼까요'}</div>
+      ${done ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;margin:12px 0 0;">오늘 인증을 마쳤어요 🌱</div>`
+             : `<button class="btn btn-primary" onclick="${ov ? "closeOv('ovRoutine');" : ''}openCert(${r.id})">오늘 인증하기 · +${won(r.points_per_cert || 1)}N</button>`}
+      <div id="obBox${ov ? 'Ov' : ''}${r.id}">${boardHtml(r.id)}</div>`;
+}
+// 홈 카드: 참여했고 오늘 아직 인증 전일 때만 나온다. 오늘 인증을 마치면 홈에서 사라지고,
+//   「지금 모집 중인 루틴」의 고정 카드를 누르면 연속일·보드가 나온다 (2026-10-22 사용자)
 function ongoingHomeCard(r) {
   const joined = !!(myPart(r.id) && myPart(r.id).status === 'approved');
-  if (!joined) return '';   // 참여 전에는 「지금 모집 중인 루틴」의 고정 카드가 소개와 참여를 맡는다
-  const st = myStreak(r.id), done = didToday(r.id);
-  setTimeout(() => { if (!OB[r.id]) loadBoard(r.id); else { const b = $('obBox' + r.id); if (b && !b.innerHTML) b.innerHTML = boardHtml(r.id); } }, 0);
+  if (!joined || didToday(r.id)) return '';
   return `<div class="og-card">
       <div class="og-t" onclick="openRoutine(${r.id})" style="cursor:pointer;">${r.emoji || '🌱'} ${esc(r.title)}<i class="ti ti-chevron-right"></i></div>
-      <div class="og-s">${st > 0 ? `🔥 ${st}일 연속` : '오늘 첫 한 장을 남겨 볼까요'}</div>
-      ${done ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;margin:12px 0 0;">오늘 인증을 마쳤어요 🌱</div>`
-             : `<button class="btn btn-primary" onclick="openCert(${r.id})">오늘 인증하기 · +${won(r.points_per_cert || 1)}N</button>`}
-      <div id="obBox${r.id}">${boardHtml(r.id)}</div>
+      <div style="margin-top:10px;">${ongoingDash(r, false)}</div>
     </div>`;
 }
 
@@ -7016,7 +7023,7 @@ function openRoutine(id) {
   if (r.ongoing) {
     const joined = !!(myPart(id) && myPart(id).status === 'approved');
     $('ovRTitle').textContent = `${r.emoji || '🌱'} ${r.title}`;
-    $('ovRBody').innerHTML = `<div class="r-hero"><span>${r.emoji || '🌱'}</span></div>
+    $('ovRBody').innerHTML = (joined ? `<div class="og-card" style="margin-top:2px;">${ongoingDash(r, true)}</div>` : `<div class="r-hero"><span>${r.emoji || '🌱'}</span></div>`) + `
       <div class="card"><div style="font-size:14.5px;line-height:1.75;">${esc(r.description || '')}</div></div>
       <div class="card rinfo"><div><span>기간</span><b>상시 · 끝나는 날이 없어요</b></div>
         <div><span>참여</span><b>${peopleOf(r.id)}명</b></div>
@@ -7025,7 +7032,7 @@ function openRoutine(id) {
       <div class="hint" style="margin:10px 2px 14px;">다른 루틴과 함께 해도 돼요. 내 인증 사진과 글은 나만 볼 수 있고, 다른 참여자에게는 닉네임·지금 읽는 책 표지·연속 인증일만 보여요.</div>
       ${isGuest() ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`
         : !isYouth() ? ''
-        : joined ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');go('home')">홈에서 오늘 인증하기</button>`
+        : joined ? ''
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');joinOngoing(${r.id})">참여하기</button>`}`;
     openOv('ovRoutine');
     return;
