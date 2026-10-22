@@ -4139,7 +4139,9 @@ function routineTags(r) {
 function recruitSection(list) {
   // 모집이 끝나고 달리는 루틴(진행 중)도 보이게 한다 — 구경은 하되 들어갈 수는 없다 (2026-10-16 사용자).
   // 모집 중인 것이 위, 진행 중인 것은 아래 따로
-  const open = list.filter(joinOpen), run = list.filter(r => !joinOpen(r));
+  // 「매일 한끗」(상시 루틴)은 모집 중 목록 맨 앞에 늘 고정한다 (2026-10-22 사용자). 참여한 아이에게는 「참여 중」으로 보인다
+  const og = ongoingRoutine();
+  const open = [...(og ? [og] : []), ...list.filter(joinOpen)], run = list.filter(r => !joinOpen(r));
   const n = open.length;
   return `<div class="recruit-h"><b>지금 모집 중인 루틴</b>${n ? `<i>${n}</i>` : ''}</div>
     ${n ? routineGrid(open)
@@ -4150,6 +4152,21 @@ function recruitSection(list) {
 }
 
 function routineCard(r) {
+  if (r.ongoing) {
+    const joined = !!(me && myPart(r.id) && myPart(r.id).status === 'approved');
+    return `<div class="r-card" onclick="openRoutine(${r.id})">
+      <div class="r-cover">
+        <div class="r-cover-no">${r.emoji || '🌱'}</div>
+        <span class="r-badge">♾️ 상시</span>
+        <div class="r-over"><span class="r-who" style="${joined ? 'background:#E3F1D8;color:#3E6B2A;' : 'background:#fff;color:#2F5D50;'}">${joined ? '✓ 참여 중' : '언제든 참여'}</span></div>
+      </div>
+      <div class="r-body">
+        <div class="r-title">${r.emoji || '🌱'} ${esc(r.title)}</div>
+        <div class="r-meta">하루 <b>1N</b> · 다른 루틴과 함께</div>
+        <div class="r-meta" style="margin-top:2px;">내 인증은 나만 봐요</div>
+      </div>
+    </div>`;
+  }
   // 상태 뱃지는 뗐다. 위 제목이 「지금 모집 중인 루틴」이라 겹치고,
   // 진행 중인지는 아래 「시작 D-3 / 종료 D-15」가 말해 준다.
   // 그 자리는 후원 기업이 쓴다
@@ -4578,11 +4595,7 @@ async function joinOngoing(rid) {
 }
 function ongoingHomeCard(r) {
   const joined = !!(myPart(r.id) && myPart(r.id).status === 'approved');
-  if (!joined) return `<div class="og-card">
-      <div class="og-t">${r.emoji || '🌱'} ${esc(r.title)}</div>
-      <div class="og-d">루틴이 없는 날에도 매일 한 장. 하루 <b>1N</b>이 쌓이고, 다른 루틴과 함께 해도 돼요. 내 인증은 나만 봐요.</div>
-      <button class="btn btn-primary" onclick="joinOngoing(${r.id})">참여하기</button>
-    </div>`;
+  if (!joined) return '';   // 참여 전에는 「지금 모집 중인 루틴」의 고정 카드가 소개와 참여를 맡는다
   const st = myStreak(r.id), done = didToday(r.id);
   setTimeout(() => { if (!OB[r.id]) loadBoard(r.id); else { const b = $('obBox' + r.id); if (b && !b.innerHTML) b.innerHTML = boardHtml(r.id); } }, 0);
   return `<div class="og-card">
