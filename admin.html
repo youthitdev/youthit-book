@@ -1232,14 +1232,14 @@ function viewStats() {
     : `<div class="empty">${rows.length ? '이 상태의 루틴이 없어요' : '아직 루틴이 없어요'}</div>`;
 
   return `<div class="st-wrap">
-  <div class="st-gl">회원</div>
+  <div class="st-gl">👥 회원</div>
   <div class="st-cards c4">
     ${card('청소년', won(y.total || 0), '명', `확인 완료 ${won(y.verified || 0)}명`)}
     ${card('학교 밖 청소년', won(out), '명', y.total ? `전체의 ${Math.round(out / y.total * 100)}% · 가입할 때 고른 값` : '', true)}
     ${card('끗짱', won(k.total || 0), '명', `승인 대기 ${won(k.pending || 0)}건`)}
     ${card('탈퇴', won(w.total || 0), '명', `최근 30일 ${won(w.recent || 0)}명`)}
   </div>
-  <div class="st-gl">활동</div>
+  <div class="st-gl">📊 활동</div>
   <div class="st-cards c4">
     ${card('전체 인증', won((S.certs || {}).total || 0), '건', `하루 한 번 기준 ${won((S.certs || {}).days || 0)}번 · 이번 달 ${won((S.certs || {}).month || 0)}건`)}
     ${card('진행 중 루틴', won(ro.active || 0), '개', `모집 중 ${won(ro.recruit || 0)}개`, false, "stSetFilter('active', true)")}
