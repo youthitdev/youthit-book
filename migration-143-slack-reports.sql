@@ -5,7 +5,7 @@
 --   일일(매일 오전 9시): 어제 인증(지난주 같은 요일과 비교) · 루틴별 어제 인증 · 사흘 이상 인증이 없는 청소년 ·
 --                       댓글 없이 지나간 어제 인증 · 어제 글이 안 올라온 「함께 읽는 글」 루틴 · 곧 시작하는 모집 중 루틴(신청 인원) ·
 --                       처리할 것(확인·신청·열어달라는 루틴·교환권 있는데 청소년 확인 전인 사람·인증 신고) · 오늘 공유회
---   주간(일요일 저녁 7시): 이번 주 인증(지난주 비교) · 루틴별 인증률·남은 날 · 완주 예상 · 많이 읽힌 책 ·
+--   주간(일요일 저녁 7시): 이번 주 인증(지난주 비교) · 루틴별 인증률·남은 날 · 매일 한끗 한 주 · 완주 예상 · 많이 읽힌 책 ·
 --                         교환권이 있는데 아직 안 쓴 청소년 · 정산 기다리는 책방 · 한 달 안에 끝나는 루틴
 --
 -- 【개인정보】 Slack 에는 **닉네임**만 쓴다 (이름·연락처·학교는 넣지 않는다). 연락이 필요하면 관리자 화면에서 찾는다.
@@ -20,7 +20,7 @@
 --
 -- 【항목 하나가 틀려도 리포트는 나간다】 각 항목을 따로 감싸 두었다. 항목을 못 만들면 그 줄에 「못 만들었어요」만 적힌다.
 --
--- ⚠️ 40(pg_cron)·44(pg_net)·71(dokseo_points_all)·78(admin_user_ids)·133·135·145(상시 루틴 ongoing 칸) 뒤에 돌린다. 여러 번 돌려도 된다.
+-- ⚠️ 40(pg_cron)·44(pg_net)·71(dokseo_points_all)·78(admin_user_ids)·133·135·145(상시 루틴 ongoing 칸)·147(매일 한끗 숫자) 뒤에 돌린다. 여러 번 돌려도 된다.
 
 CREATE OR REPLACE FUNCTION report_nick(p_user uuid) RETURNS text AS $$
   SELECT COALESCE(NULLIF(btrim(nick), ''), '이름 없음') FROM profiles WHERE id = p_user
@@ -33,7 +33,7 @@ DECLARE
   v_y     date := (now() AT TIME ZONE 'Asia/Seoul')::date - 1;
   v_dow   text := (ARRAY['일','월','화','수','목','금','토'])[extract(dow FROM (now() AT TIME ZONE 'Asia/Seoul')::date - 1)::int + 1];
   v_out   text;
-  v_a int; v_b int; v_x text; r record; n int;
+  v_a int; v_b int; v_x text; r record; n int; j jsonb;
 BEGIN
   v_out := '*📋 한끗독서 일일 리포트* · ' || to_char(v_y, 'MM/DD') || '(' || v_dow || ') 기준' || E'\n';
 
@@ -149,6 +149,18 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN NULL;
   END;
 
+  -- 3-4. 매일 한끗(상시 루틴) — 얼마나 쓰이나 (닉네임 없이 숫자만). 기존 루틴 항목에서는 빠져 있다
+  BEGIN
+    j := ongoing_stats(v_y);
+    IF j IS NOT NULL THEN
+      v_out := v_out || E'\n*🌱 매일 한끗*\n'
+        || '• 어제 ' || (j->>'did') || '/' || (j->>'people') || E'명 인증\n'
+        || '• 연속 3일 이상 ' || (j->>'streak3') || '명 · 어제 연속이 끊긴 사람 ' || (j->>'broke') || E'명\n'
+        || '• 어제 새로 참여 ' || (j->>'new_day') || '명 · 어제 응원 ' || (j->>'cheers_day') || E'건\n';
+    END IF;
+  EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*🌱 매일 한끗*\n• (못 만들었어요)\n';
+  END;
+
   -- 4. 처리할 것
   BEGIN
     v_out := v_out || E'\n*🛎️ 처리할 것*' || E'\n'
@@ -201,7 +213,7 @@ DECLARE
   v_today date := (now() AT TIME ZONE 'Asia/Seoul')::date;
   v_from  date := (now() AT TIME ZONE 'Asia/Seoul')::date - 6;     -- 오늘을 포함한 7일
   v_out   text;
-  v_a int; v_b int; v_u int; v_x text; r record; n int;
+  v_a int; v_b int; v_u int; v_x text; r record; n int; j jsonb;
 BEGIN
   v_out := '*📊 한끗독서 주간 리포트* · ' || to_char(v_from, 'MM/DD') || ' ~ ' || to_char(v_today, 'MM/DD') || E'\n';
 
@@ -235,6 +247,18 @@ BEGIN
     END LOOP;
     v_out := v_out || E'\n*루틴별 이번 주 인증률*\n' || COALESCE(NULLIF(v_x, ''), E'• 진행 중인 루틴이 없어요\n');
   EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*루틴별 이번 주 인증률*\n• (못 만들었어요)\n';
+  END;
+
+  -- 2-1. 매일 한끗(상시 루틴) 한 주
+  BEGIN
+    j := ongoing_stats(v_today);
+    IF j IS NOT NULL THEN
+      v_out := v_out || E'\n*🌱 매일 한끗*\n'
+        || '• 이번 주 인증한 사람 ' || (j->>'week_users') || '명 (지난주 ' || (j->>'prev_week_users') || '명) · 하루 평균 ' || (j->>'week_avg') || E'명\n'
+        || '• 7일 연속을 채운 사람 ' || (j->>'seven') || '명 · 연속 3일 이상 ' || (j->>'streak3') || E'명\n'
+        || '• 이번 주 새로 참여 ' || (j->>'new_week') || '명 · 응원 ' || (j->>'cheers_week') || E'건\n';
+    END IF;
+  EXCEPTION WHEN OTHERS THEN v_out := v_out || E'\n*🌱 매일 한끗*\n• (못 만들었어요)\n';
   END;
 
   -- 2-2. 완주 예상 — 지금까지 인증한 날의 속도가 끝까지 이어지면 완주선(70%)을 넘을 사람 수 (후원 보고용)

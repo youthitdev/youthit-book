@@ -1134,7 +1134,7 @@ const ST_SCHOOL_COLOR = { '학교밖': '#E8A33D', '재학': '#83CA00', '졸업':
 async function loadStats() {
   STATS_ERR = '';
   if (!LIVE) {
-    STATS = { pct: ST_PCT, youth: { total: 30, verified: 27, school: { '학교밖': 21, '재학': 7, '졸업': 1, '미입력': 1 },
+    STATS = { ongoing: { people: 12, did: 5, streak3: 4, seven: 1, avg_streak: 3.2, broke: 1, new_day: 1, new_week: 4, week_users: 9, week_avg: 4.3, prev_week_users: 7, cheers_day: 3, cheers_week: 14 }, pct: ST_PCT, youth: { total: 30, verified: 27, school: { '학교밖': 21, '재학': 7, '졸업': 1, '미입력': 1 },
                 region: [{ r: '서울', n: 10 }, { r: '경기', n: 9 }, { r: '대구', n: 2 }, { r: '인천', n: 1 }] },
               kkut: { total: 9, pending: 2 }, certs: { total: 54, days: 48, kkut: 9, month: 31 }, routines: { recruit: 1, active: 1, done: 3, other: 0 },
               withdrawn: { total: 3, recent: 0 },
@@ -1145,6 +1145,8 @@ async function loadStats() {
   const { data, error } = await sb.rpc('admin_stats', { p_pct: ST_PCT });
   if (error) { STATS = null; STATS_ERR = error.message || '알 수 없는 오류'; return; }
   STATS = data;
+  // 매일 한끗(상시 루틴)의 숫자. 마이그레이션 147 이 아직이면 이 구역만 빠진다
+  try { const og = await sb.rpc('admin_ongoing_stats'); STATS.ongoing = og.error ? null : og.data; } catch (e) { STATS.ongoing = null; }
 }
 function stDonut(items) {
   const rows = items.filter(i => i.n > 0), tot = rows.reduce((a, b) => a + b.n, 0);
@@ -1244,6 +1246,13 @@ function viewStats() {
     ${card('종료된 루틴', won(ro.done || 0), '개', ro.canceled ? `폐강 ${won(ro.canceled)}개는 따로 세요` : '끝까지 진행한 루틴', false, "stSetFilter('done', true)")}
     ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
   </div>
+  ${S.ongoing ? `<div class="st-gl">🌱 매일 한끗</div>
+  <div class="st-cards c4">
+    ${card('참여자', won(S.ongoing.people || 0), '명', `이번 주 새로 ${won(S.ongoing.new_week || 0)}명`)}
+    ${card('오늘 인증', won(S.ongoing.did || 0), '명', S.ongoing.people ? `참여자의 ${Math.round((S.ongoing.did || 0) / S.ongoing.people * 100)}%` : '')}
+    ${card('평균 연속일', String(S.ongoing.avg_streak || 0), '일', `3일 이상 ${won(S.ongoing.streak3 || 0)}명 · 7일 이상 ${won(S.ongoing.seven || 0)}명`)}
+    ${card('이번 주 응원', won(S.ongoing.cheers_week || 0), '건', `이번 주 인증한 사람 ${won(S.ongoing.week_users || 0)}명 · 하루 평균 ${S.ongoing.week_avg || 0}명`)}
+  </div>` : ''}
   <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
   <div class="st-grid">
     <div class="st-box"><h3>지역별 청소년 분포</h3>${bars}</div>
