@@ -1201,6 +1201,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .og-card .og-d { font-size:12.5px; color:var(--ink-3); margin-top:4px; line-height:1.55; }
 .og-card .og-s { margin-top:12px; font-size:14px; font-weight:800; color:#3E6B2A; }
 .og-card .btn { margin-top:12px; }
+.og-done { font-size:11px; font-weight:700; color:#3E6B2A; background:#fff; border:1px solid #D7E6C6; padding:2px 9px; border-radius:10px; }
 .og-sum { background:#fff; border:1px solid var(--line, #E9E4D8); border-radius:16px; padding:13px 15px; margin-bottom:12px; }
 .og-sum .t { font-size:15.5px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
 .og-sum .c { font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px; background:#EEF4E7; color:#3E6B2A; }
@@ -1210,7 +1211,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .ob-c { width:100%; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#EFEBE1; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid transparent; box-sizing:border-box; }
 .ob-c img { width:100%; height:100%; object-fit:cover; display:block; }
 .ob-t.today .ob-c { border-color:#4A8A2F; box-shadow:0 0 0 2px rgba(74,138,47,.18); }
-.ob-new { position:absolute; top:-5px; right:-4px; background:#4A8A2F; color:#fff; font-size:8.5px; font-weight:800; padding:2px 5px; border-radius:7px; letter-spacing:.2px; z-index:1; }
+.ob-new { position:absolute; top:-3px; right:-3px; width:11px; height:11px; border-radius:50%; background:#E5483A; border:2px solid #fff; box-sizing:border-box; z-index:1; }
 .ob-t b { display:block; margin-top:5px; font-size:10.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ob-t i { display:block; font-style:normal; font-size:9.5px; color:var(--ink-3); margin-top:1px; }
 .clamp6 { display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
@@ -4586,7 +4587,7 @@ function paintBoards(rid) { ['obBox', 'obBoxOv'].forEach(k => { const b = $(k + 
 function boardHtml(rid) {
   const list = OB[rid]; if (!list || !list.length) return '';
   const cap = OB_CAP[rid] || 10;
-  const tile = m => `<div class="ob-t${m.today ? ' today' : ''}">${m.today ? '<span class="ob-new">NEW</span>' : ''}
+  const tile = m => `<div class="ob-t${m.today ? ' today' : ''}">${m.today ? '<span class="ob-new" title="오늘 올렸어요"></span>' : ''}
       <div class="ob-c">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
       <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i></div>`;
   return `<div class="og-board">${list.slice(0, cap).map(tile).join('')}</div>
@@ -4604,8 +4605,8 @@ async function joinOngoing(rid) {
 function ongoingDash(r, ov) {
   const st = myStreak(r.id), done = didToday(r.id);
   setTimeout(() => { if (!OB[r.id]) loadBoard(r.id); else paintBoards(r.id); }, 0);
-  return `<div class="og-s" style="margin-top:0;">${st > 0 ? `🔥 ${st}일 연속` : '오늘 첫 한 장을 남겨 볼까요'}</div>
-      ${done ? `<div class="card" style="text-align:center;color:var(--green-d);font-weight:700;margin:12px 0 0;">오늘 인증을 마쳤어요 🌱</div>`
+  return `<div class="og-s" style="margin-top:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${st > 0 ? `🔥 ${st}일 연속` : '오늘 첫 한 장을 남겨 볼까요'}${done ? `<span class="og-done">✓ 오늘 인증 완료</span>` : ''}</div>
+      ${done ? ''
              : `<button class="btn btn-primary" onclick="${ov ? "closeOv('ovRoutine');" : ''}openCert(${r.id})">오늘 인증하기 · +${won(r.points_per_cert || 1)}N</button>`}
       <div id="obBox${ov ? 'Ov' : ''}${r.id}">${boardHtml(r.id)}</div>`;
 }
