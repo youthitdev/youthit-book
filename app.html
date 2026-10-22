@@ -4158,7 +4158,9 @@ function routineCard(r) {
       <div class="r-cover">
         <div class="r-cover-no">${r.emoji || '🌱'}</div>
         <span class="r-badge">♾️ 상시</span>
-        <div class="r-over"><span class="r-who" style="${joined ? 'background:#E3F1D8;color:#3E6B2A;' : 'background:#fff;color:#2F5D50;'}">${joined ? '✓ 참여 중' : '언제든 참여'}</span></div>
+        <div class="r-over">
+          <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}명 참여</span>
+          <span class="r-who" style="${joined ? 'background:#E3F1D8;color:#3E6B2A;' : 'background:#fff;color:#2F5D50;'}">${joined ? '✓ 참여 중' : '언제든 참여'}</span></div>
       </div>
       <div class="r-body">
         <div class="r-title">${r.emoji || '🌱'} ${esc(r.title)}</div>
@@ -7017,6 +7019,7 @@ function openRoutine(id) {
     $('ovRBody').innerHTML = `<div class="r-hero"><span>${r.emoji || '🌱'}</span></div>
       <div class="card"><div style="font-size:14.5px;line-height:1.75;">${esc(r.description || '')}</div></div>
       <div class="card rinfo"><div><span>기간</span><b>상시 · 끝나는 날이 없어요</b></div>
+        <div><span>참여</span><b>${peopleOf(r.id)}명</b></div>
         <div><span>인증 1회당</span><b class="pt">${won(r.points_per_cert || 1)}N</b></div></div>
       ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
       <div class="hint" style="margin:10px 2px 14px;">다른 루틴과 함께 해도 돼요. 내 인증 사진과 글은 나만 볼 수 있고, 다른 참여자에게는 닉네임·지금 읽는 책 표지·연속 인증일만 보여요.</div>
