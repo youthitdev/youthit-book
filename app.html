@@ -4588,7 +4588,7 @@ function boardHtml(rid) {
   const list = OB[rid]; if (!list || !list.length) return '';
   const cap = OB_CAP[rid] || 10;
   const tile = m => `<div class="ob-t${m.today ? ' today' : ''}">${m.today ? '<span class="ob-new" title="오늘 올렸어요"></span>' : ''}
-      <div class="ob-c">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
+      <div class="ob-c"${m.cover ? ` data-big="${esc(m.cover)}" style="cursor:zoom-in;"` : ''}>${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
       <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i></div>`;
   return `<div class="og-board">${list.slice(0, cap).map(tile).join('')}</div>
     ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 10) + 10; paintBoards(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
@@ -5152,6 +5152,9 @@ function openPhoto(urls, i) {
 }
 function closePhoto() { closeOv('ovPhoto'); }
 document.addEventListener('click', e => {
+  // 매일 한끗 보드의 책 표지를 누르면 크게 (2026-10-22 사용자)
+  const ob = e.target.closest && e.target.closest('.ob-c[data-big]');
+  if (ob) return openPhoto([ob.getAttribute('data-big')], 0);
   const kb = e.target.closest && e.target.closest('.kb-c img');
   if (kb) return openPhoto([kb.getAttribute('src')], 0);
   const img = e.target.closest && e.target.closest('.f-photos img'); if (!img) return;
