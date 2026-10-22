@@ -20,7 +20,7 @@
 --
 -- 【항목 하나가 틀려도 리포트는 나간다】 각 항목을 따로 감싸 두었다. 항목을 못 만들면 그 줄에 「못 만들었어요」만 적힌다.
 --
--- ⚠️ 40(pg_cron)·44(pg_net)·71(dokseo_points_all)·78(admin_user_ids)·133·135 뒤에 돌린다. 여러 번 돌려도 된다.
+-- ⚠️ 40(pg_cron)·44(pg_net)·71(dokseo_points_all)·78(admin_user_ids)·133·135·145(상시 루틴 ongoing 칸) 뒤에 돌린다. 여러 번 돌려도 된다.
 
 CREATE OR REPLACE FUNCTION report_nick(p_user uuid) RETURNS text AS $$
   SELECT COALESCE(NULLIF(btrim(nick), ''), '이름 없음') FROM profiles WHERE id = p_user
@@ -53,7 +53,7 @@ BEGIN
              (SELECT count(*) FROM routine_participants rp JOIN profiles pp ON pp.id = rp.user_id
                WHERE rp.routine_id = ro.id AND rp.status = 'approved' AND NOT COALESCE(pp.can_lead, false)) AS p
         FROM routines ro
-       WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false)
+       WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND NOT COALESCE(ro.ongoing, false)
        ORDER BY ro.start_date
     LOOP
       v_x := v_x || '• ' || r.title || ' — ' || r.a || '/' || r.p || '명' || E'\n';
@@ -70,7 +70,7 @@ BEGIN
              lc.d AS last_d,
              (v_y - COALESCE(lc.d, GREATEST(ro.start_date, (rp.joined_at AT TIME ZONE 'Asia/Seoul')::date) - 1)) AS gap
         FROM routine_participants rp
-        JOIN routines ro ON ro.id = rp.routine_id AND ro.status = 'active' AND NOT COALESCE(ro.canceled, false)
+        JOIN routines ro ON ro.id = rp.routine_id AND ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND NOT COALESCE(ro.ongoing, false)
         JOIN profiles pp ON pp.id = rp.user_id
         LEFT JOIN LATERAL (SELECT max(c.cert_date) AS d FROM certifications c
                             WHERE c.routine_id = rp.routine_id AND c.user_id = rp.user_id) lc ON true
@@ -114,7 +114,7 @@ BEGIN
     v_x := ''; n := 0;
     FOR r IN
       SELECT ro.title, ro.led_by FROM routines ro
-       WHERE ro.kind = 'shared' AND ro.status = 'active' AND NOT COALESCE(ro.canceled, false)
+       WHERE ro.kind = 'shared' AND ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND NOT COALESCE(ro.ongoing, false)
          AND ro.start_date <= v_y AND (ro.end_date IS NULL OR ro.end_date >= v_y)
          AND NOT EXISTS (SELECT 1 FROM routine_posts po WHERE po.routine_id = ro.id AND po.day = v_y)
        ORDER BY ro.start_date
@@ -137,7 +137,7 @@ BEGIN
              (SELECT count(*) FROM routine_participants rp JOIN profiles pp ON pp.id = rp.user_id
                WHERE rp.routine_id = ro.id AND rp.status = 'approved' AND NOT COALESCE(pp.can_lead, false)) AS p
         FROM routines ro
-       WHERE ro.status = 'recruit' AND NOT COALESCE(ro.canceled, false)
+       WHERE ro.status = 'recruit' AND NOT COALESCE(ro.canceled, false) AND NOT COALESCE(ro.ongoing, false)
          AND ro.start_date BETWEEN v_today AND v_today + 7
        ORDER BY ro.start_date
     LOOP
@@ -226,7 +226,7 @@ BEGIN
                WHERE c.routine_id = ro.id AND c.cert_date BETWEEN v_from AND v_today AND NOT COALESCE(pp.can_lead, false)) AS done,
              (LEAST(v_today, ro.end_date) - GREATEST(v_from, ro.start_date) + 1) AS d
         FROM routines ro
-       WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false)
+       WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND NOT COALESCE(ro.ongoing, false)
        ORDER BY ro.start_date
     LOOP
       v_x := v_x || '• ' || r.title || ' — '
@@ -245,7 +245,7 @@ BEGIN
         SELECT ro.id, ro.title, ro.start_date, ro.end_date,
                GREATEST(ro.end_date - ro.start_date + 1, 1) AS total,
                GREATEST(LEAST(v_today, ro.end_date) - ro.start_date + 1, 1) AS elapsed
-          FROM routines ro WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND ro.start_date <= v_today
+          FROM routines ro WHERE ro.status = 'active' AND NOT COALESCE(ro.canceled, false) AND NOT COALESCE(ro.ongoing, false) AND ro.start_date <= v_today
       ), pp AS (
         SELECT rt.title, rt.total, rt.elapsed, CEIL(rt.total * 0.7)::int AS need,
                (SELECT count(DISTINCT c.cert_date) FROM certifications c WHERE c.routine_id = rt.id AND c.user_id = rp.user_id) AS d
@@ -305,7 +305,7 @@ BEGIN
     v_x := '';
     FOR r IN
       SELECT title, end_date FROM routines
-       WHERE status IN ('active', 'recruit') AND NOT COALESCE(canceled, false)
+       WHERE status IN ('active', 'recruit') AND NOT COALESCE(canceled, false) AND NOT COALESCE(ongoing, false)
          AND end_date BETWEEN v_today AND v_today + 30
        ORDER BY end_date
     LOOP
