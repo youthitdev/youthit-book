@@ -1201,14 +1201,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .og-card .og-d { font-size:12.5px; color:var(--ink-3); margin-top:4px; line-height:1.55; }
 .og-card .og-s { margin-top:12px; font-size:14px; font-weight:800; color:#3E6B2A; }
 .og-card .btn { margin-top:12px; }
-.og-board { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
+.og-sum { background:#fff; border:1px solid var(--line, #E9E4D8); border-radius:16px; padding:13px 15px; margin-bottom:12px; }
+.og-sum .t { font-size:15.5px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+.og-sum .c { font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px; background:#EEF4E7; color:#3E6B2A; }
+.og-sum .d { font-size:12.5px; color:var(--ink-3); line-height:1.65; margin-top:7px; }
+.og-board { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:14px; }
 .ob-t { text-align:center; position:relative; min-width:0; }
 .ob-c { width:100%; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#EFEBE1; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid transparent; box-sizing:border-box; }
 .ob-c img { width:100%; height:100%; object-fit:cover; display:block; }
 .ob-t.today .ob-c { border-color:#4A8A2F; box-shadow:0 0 0 2px rgba(74,138,47,.18); }
-.ob-new { position:absolute; top:-5px; right:-3px; background:#4A8A2F; color:#fff; font-size:9.5px; font-weight:800; padding:2px 6px; border-radius:8px; letter-spacing:.2px; }
-.ob-t b { display:block; margin-top:6px; font-size:11.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ob-t i { display:block; font-style:normal; font-size:10.5px; color:var(--ink-3); margin-top:1px; }
+.ob-new { position:absolute; top:-5px; right:-4px; background:#4A8A2F; color:#fff; font-size:8.5px; font-weight:800; padding:2px 5px; border-radius:7px; letter-spacing:.2px; z-index:1; }
+.ob-t b { display:block; margin-top:5px; font-size:10.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ob-t i { display:block; font-style:normal; font-size:9.5px; color:var(--ink-3); margin-top:1px; }
 .clamp6 { display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
 .clamp6.open { display:block; overflow:visible; }
 .clamp-more { display:block; margin-top:6px; font-size:12.5px; font-weight:700; color:var(--blue, #2F5D50); cursor:pointer; background:none; border:0; padding:0; }
@@ -4581,12 +4585,12 @@ async function loadBoard(rid) {
 function paintBoards(rid) { ['obBox', 'obBoxOv'].forEach(k => { const b = $(k + rid); if (b) b.innerHTML = boardHtml(rid); }); }
 function boardHtml(rid) {
   const list = OB[rid]; if (!list || !list.length) return '';
-  const cap = OB_CAP[rid] || 12;
+  const cap = OB_CAP[rid] || 10;
   const tile = m => `<div class="ob-t${m.today ? ' today' : ''}">${m.today ? '<span class="ob-new">NEW</span>' : ''}
       <div class="ob-c">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
       <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i></div>`;
   return `<div class="og-board">${list.slice(0, cap).map(tile).join('')}</div>
-    ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 12) + 12; paintBoards(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
+    ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 10) + 10; paintBoards(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
 }
 async function joinOngoing(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
@@ -7023,13 +7027,12 @@ function openRoutine(id) {
   if (r.ongoing) {
     const joined = !!(myPart(id) && myPart(id).status === 'approved');
     $('ovRTitle').textContent = `${r.emoji || '🌱'} ${r.title}`;
-    $('ovRBody').innerHTML = (joined ? `<div class="og-card" style="margin-top:2px;">${ongoingDash(r, true)}</div>` : `<div class="r-hero"><span>${r.emoji || '🌱'}</span></div>`) + `
-      <div class="card"><div style="font-size:14.5px;line-height:1.75;">${esc(r.description || '')}</div></div>
-      <div class="card rinfo"><div><span>기간</span><b>상시 · 끝나는 날이 없어요</b></div>
-        <div><span>참여</span><b>${peopleOf(r.id)}명</b></div>
-        <div><span>인증 1회당</span><b class="pt">${won(r.points_per_cert || 1)}N</b></div></div>
-      ${r.cert_guide ? `<div class="sec-t">🎯 이렇게 인증해 주세요</div><div class="card" style="white-space:pre-wrap;line-height:1.7;">${esc(r.cert_guide)}</div>` : ''}
-      <div class="hint" style="margin:10px 2px 14px;">다른 루틴과 함께 해도 돼요. 내 인증 사진과 글은 나만 볼 수 있고, 다른 참여자에게는 닉네임·지금 읽는 책 표지·연속 인증일만 보여요.</div>
+    // 위에는 요약(상시·참여 인원·1N·인증 방법)을 짧게, 그 아래에 내 연속일·인증과 참여한 친구들 보드 (2026-10-22 사용자)
+    $('ovRBody').innerHTML = `<div class="og-sum">
+        <div class="t">${r.emoji || '🌱'} ${esc(r.title)}<span class="c">상시</span><span class="c">참여 ${peopleOf(id)}명</span><span class="c">하루 ${won(r.points_per_cert || 1)}N</span></div>
+        <div class="d">루틴이 없는 날에도 매일 한 장. 읽는 책을 <b>그 자리에서 찍어</b> 올려요(앨범 사진은 안 돼요). 다른 루틴과 함께 해도 되고, 내 인증은 나만 봐요.</div>
+      </div>
+      ${joined ? `<div class="og-card" style="margin-top:0;">${ongoingDash(r, true)}</div>` : ''}
       ${isGuest() ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`
         : !isYouth() ? ''
         : joined ? ''
@@ -8113,6 +8116,11 @@ function useBook(title) {
 async function pickPhotos(e) {
   const files = [...e.target.files].slice(0, 3 - keptUrls.length - photos.length);
   for (const f of files) {
+    // 매일 한끗은 그 자리에서 찍은 사진만 받는다. 앨범의 오래된 사진은 파일 시각이 오래돼서 걸러진다 (카메라가 시각을 안 주는 기기는 통과)
+    const rr = state.routines.find(x => x.id === certRid);
+    if (rr && rr.ongoing && f.lastModified && Date.now() - f.lastModified > 15 * 60e3) {
+      toast('매일 한끗은 지금 찍은 사진만 올릴 수 있어요'); continue;
+    }
     try { photos.push(await resize(f, 1280, .82, true)); }
     catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
   }
