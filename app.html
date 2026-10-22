@@ -1201,6 +1201,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .og-card .og-d { font-size:12.5px; color:var(--ink-3); margin-top:4px; line-height:1.55; }
 .og-card .og-s { margin-top:12px; font-size:14px; font-weight:800; color:#3E6B2A; }
 .og-card .btn { margin-top:12px; }
+.ob-t i.ob-h { color:#D2504A; margin-top:0; }
+.ob-big { text-align:center; }
+.ob-big .pic { width:min(72%,300px); aspect-ratio:3/4; margin:6px auto 14px; border-radius:12px; overflow:hidden; background:#EFEBE1; display:flex; align-items:center; justify-content:center; font-size:56px; box-shadow:0 8px 24px rgba(0,0,0,.14); }
+.ob-big .pic img { width:100%; height:100%; object-fit:cover; display:block; }
+.ob-big .nm { font-size:17px; font-weight:800; }
+.ob-big .sub { font-size:13px; color:var(--ink-3); margin-top:4px; }
+.ob-big .btn { margin-top:18px; }
 .og-done { font-size:11px; font-weight:700; color:#3E6B2A; background:#fff; border:1px solid #D7E6C6; padding:2px 9px; border-radius:10px; }
 .og-sum { background:#fff; border:1px solid var(--line, #E9E4D8); border-radius:16px; padding:13px 15px; margin-bottom:12px; }
 .og-sum .t { font-size:15.5px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
@@ -2349,6 +2356,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="ov-h"><button onclick="closeOv('ovBooks')"><i class="ti ti-arrow-left"></i></button>
     <div><div class="s">MY</div><div class="t">내가 읽은 책</div></div></div>
   <div class="ov-b" id="ovBooksBody"></div>
+</div>
+
+<!-- 매일 한끗 보드: 친구의 표지를 크게 + 응원해요 ♥ (2026-10-22 사용자) -->
+<div class="ov" id="ovOb">
+  <div class="ov-h"><button onclick="closeOv('ovOb')"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">매일 한끗</div><div class="t" id="ovObTitle"></div></div></div>
+  <div class="ov-b" id="ovObBody"></div>
 </div>
 
 <div class="ov" id="ovEx">
@@ -4557,6 +4571,7 @@ function kkutTodayCard(r) {
 // 일반 루틴이 없는 날에도 매일 한 장. 하루 1N, 다른 루틴과 함께 한다. 내 인증은 나만 보고(서버가 막는다),
 // 다른 참여자는 최근에 올린 순서로 닉네임·책 표지·연속일·「오늘」 표시만 보인다 (2026-10-22 사용자)
 const ongoingRoutine = () => state.routines.find(r => r.ongoing && r.status === 'active') || null;
+const OBC = {};         // 루틴 번호 → 내가 받은 응원 {t: 오늘, y: 어제}
 const OB = {};          // 루틴 번호 → 보드 [{nick,cover,streak,last_day,today}]
 const OB_CAP = {};      // 루틴 번호 → 보이는 개수
 let OB_LOADING = false;
@@ -4573,11 +4588,15 @@ async function loadBoard(rid) {
   if (OB_LOADING) return;
   OB_LOADING = true;
   try {
-    if (DEMO) OB[rid] = [{ nick: '하늘', cover: null, streak: 5, last_day: todayKST(), today: true }, { nick: '다온', cover: null, streak: 2, last_day: todayKST(), today: true }, { nick: '바다', cover: null, streak: 0, last_day: '2000-01-01', today: false }];
+    if (DEMO) { OB[rid] = [{ nick: '하늘', cover: null, streak: 5, last_day: todayKST(), today: true, tid: 'a', hearts: 2, mine: false, me: false }, { nick: '다온', cover: null, streak: 2, last_day: todayKST(), today: true, tid: 'b', hearts: 0, mine: false, me: false }, { nick: '바다', cover: null, streak: 0, last_day: '2000-01-01', today: false, tid: 'c', hearts: 0, mine: false, me: false }];
+      OBC[rid] = { t: 1, y: 3 }; }
     else {
       const { data, error } = await sb.rpc('ongoing_board', { p_routine: rid });
       if (error) return;                     // 145 가 아직이면 조용히 숨긴다
       OB[rid] = data || [];
+      // 내가 오늘·어제 받은 응원 수. 146 이 아직이면 비워 둔다
+      const c = await sb.rpc('ongoing_my_cheers', { p_routine: rid });
+      OBC[rid] = (!c.error && c.data && c.data[0]) ? { t: c.data[0].today || 0, y: c.data[0].yesterday || 0 } : { t: 0, y: 0 };
     }
   } catch (e) { return; }
   finally { OB_LOADING = false; }
@@ -4587,11 +4606,35 @@ function paintBoards(rid) { ['obBox', 'obBoxOv'].forEach(k => { const b = $(k + 
 function boardHtml(rid) {
   const list = OB[rid]; if (!list || !list.length) return '';
   const cap = OB_CAP[rid] || 10;
-  const tile = m => `<div class="ob-t${m.today ? ' today' : ''}">${m.today ? '<span class="ob-new" title="오늘 올렸어요"></span>' : ''}
-      <div class="ob-c"${m.cover ? ` data-big="${esc(m.cover)}" style="cursor:zoom-in;"` : ''}>${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
-      <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i></div>`;
-  return `<div class="og-board">${list.slice(0, cap).map(tile).join('')}</div>
+  const tile = (m, i) => `<div class="ob-t${m.today ? ' today' : ''}" onclick="openObTile(${rid}, ${i})" style="cursor:pointer;">${m.today ? '<span class="ob-new" title="오늘 올렸어요"></span>' : ''}
+      <div class="ob-c">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
+      <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i>${m.hearts > 0 ? `<i class="ob-h">♥ ${m.hearts}</i>` : ''}</div>`;
+  return `<div class="og-board">${list.slice(0, cap).map((m, i) => tile(m, i)).join('')}</div>
     ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 10) + 10; paintBoards(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
+}
+// 친구의 표지를 크게 보고 「응원해요 ♥」를 누른다. 하루에 한 사람에게 한 번, 알림·나다움 없음
+function openObTile(rid, i) {
+  const m = (OB[rid] || [])[i]; if (!m) return;
+  $('ovObTitle').textContent = m.me ? '내 책' : m.nick;
+  $('ovObBody').innerHTML = `<div class="ob-big">
+      <div class="pic">${m.cover ? `<img src="${esc(m.cover)}" alt="">` : '📖'}</div>
+      <div class="nm">${m.me ? '나' : esc(m.nick)}</div>
+      <div class="sub">${m.streak > 0 ? `🔥 ${m.streak}일 연속` : '오늘 첫 인증을 기다려요'}${m.hearts > 0 ? ` · 오늘 ♥ ${m.hearts}` : ''}</div>
+      ${m.me ? `<div class="sub" style="margin-top:14px;">내가 받은 응원은 홈 카드에서 볼 수 있어요</div>`
+        : m.mine ? `<button class="btn btn-line" disabled>오늘 응원했어요 ♥</button>`
+        : `<button class="btn btn-primary" onclick="cheerOngoing(${rid}, ${i})">응원해요 ♥</button>`}
+    </div>`;
+  openOv('ovOb');
+}
+async function cheerOngoing(rid, i) {
+  const m = (OB[rid] || [])[i]; if (!m || m.mine || m.me) return;
+  if (DEMO) { m.mine = true; m.hearts++; paintBoards(rid); openObTile(rid, i); return toast('응원했어요 ♥'); }
+  const { data, error } = await sb.rpc('ongoing_cheer', { p_routine: rid, p_tid: m.tid });
+  if (error) return toast(error.message.replace(/^.*?:\s*/, '') || '응원하지 못했어요');
+  if (data === 'ok') m.hearts++;
+  m.mine = true;
+  paintBoards(rid); openObTile(rid, i);
+  toast(data === 'ok' ? '응원했어요 ♥' : '오늘은 이미 응원했어요');
 }
 async function joinOngoing(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
@@ -4608,6 +4651,7 @@ function ongoingDash(r, ov) {
   return `<div class="og-s" style="margin-top:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${st > 0 ? `🔥 ${st}일 연속` : '오늘 첫 한 장을 남겨 볼까요'}${done ? `<span class="og-done">✓ 오늘 인증 완료</span>` : ''}</div>
       ${done ? ''
              : `<button class="btn btn-primary" onclick="${ov ? "closeOv('ovRoutine');" : ''}openCert(${r.id})">오늘 인증하기 · +${won(r.points_per_cert || 1)}N</button>`}
+      ${(OBC[r.id] && (OBC[r.id].t || OBC[r.id].y)) ? `<div class="og-d" style="margin-top:8px;">받은 응원 ♥ 오늘 ${OBC[r.id].t} · 어제 ${OBC[r.id].y}</div>` : ''}
       <div id="obBox${ov ? 'Ov' : ''}${r.id}">${boardHtml(r.id)}</div>`;
 }
 // 홈 카드: 참여했고 오늘 아직 인증 전일 때만 나온다. 오늘 인증을 마치면 홈에서 사라지고,
@@ -5152,9 +5196,6 @@ function openPhoto(urls, i) {
 }
 function closePhoto() { closeOv('ovPhoto'); }
 document.addEventListener('click', e => {
-  // 매일 한끗 보드의 책 표지를 누르면 크게 (2026-10-22 사용자)
-  const ob = e.target.closest && e.target.closest('.ob-c[data-big]');
-  if (ob) return openPhoto([ob.getAttribute('data-big')], 0);
   const kb = e.target.closest && e.target.closest('.kb-c img');
   if (kb) return openPhoto([kb.getAttribute('src')], 0);
   const img = e.target.closest && e.target.closest('.f-photos img'); if (!img) return;
