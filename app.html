@@ -2275,6 +2275,20 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
+<div class="sheet" id="shWelcome" onclick="if(event.target===this)closeSheet('shWelcome')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t" id="wlT">환영해요 🎉</div>
+        <div class="sheet-s">매일 한 장 읽고 인증하면 나다움이 쌓여요. 150N이 모이면 동네책방에서 책 한 권을 골라요.</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shWelcome')" aria-label="닫기">✕</button>
+    </div>
+    <div id="wlBody"></div>
+  </div>
+</div>
+
 <div class="sheet" id="shBooks" onclick="if(event.target===this)closeSheet('shBooks')">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -2903,11 +2917,13 @@ async function submitAuth() {
     }
     // 끗짱으로 고른 사람은 가입만으로 끝나지 않는다. 신청서를 받아야 운영진이 판단한다
     if (joinRole === 'kkut') sessionStorage.setItem('goKkutApply', '1');
+    else sessionStorage.setItem('welcomeNew', '1');   // 청소년으로 가입했으면 들어온 뒤 환영 인사 + 알림 안내를 한 번
   } else {
     const { error } = await sb.auth.signInWithPassword({ email, password: pw });
     if (error) { btn.disabled=false; btn.textContent='로그인'; return authError('이메일 또는 비밀번호를 다시 확인해주세요.', 'auPw'); }
   }
   await enter();
+  if (sessionStorage.getItem('welcomeNew')) { sessionStorage.removeItem('welcomeNew'); setTimeout(showWelcome, 600); }
 }
 
 // ── 비밀번호 찾기 · 바꾸기 ─────────────────────────────
@@ -3752,6 +3768,25 @@ async function maybeAskPush() {
   } catch (e) {}
 }
 async function askEnablePush() { closeSheet('shPushAsk'); await enablePush(); }
+
+// 가입하고 처음 들어온 청소년에게 한 번: 환영 인사 + 알림 켜는 방법 (2026-10-23 사용자).
+// 알림을 받으려면 아이폰은 홈 화면에 추가를 거쳐야 해서, 가입 순간에 그림 안내를 같이 건넨다
+async function showWelcome() {
+  if (!me || isGuest() || DEMO && !location.search.includes('welcome')) return;
+  const st = await pushState();
+  $('wlT').textContent = `${me.nick || me.name || '친구'}님, 환영해요 🎉`;
+  const per = state.settings.points_per_voucher || 150;
+  $('wlBody').innerHTML = `
+    <div class="card" style="margin:0 0 12px;"><div style="font-weight:800;font-size:14.5px;">🔔 알림을 켜면 매일 한 장을 잊지 않아요</div>
+      <div class="hint" style="margin:6px 0 0;line-height:1.7;">${st === 'needs-install'
+        ? '아이폰은 <b>홈 화면에 추가</b>를 해야 알림이 와요. 그림으로 따라 하면 1분이면 돼요.'
+        : st === 'on' ? '이미 알림이 켜져 있어요. 👍'
+        : '한 번만 켜 두면 인증을 깜빡하지 않게 알려 드려요.'}</div></div>
+    ${st === 'off' ? `<button class="btn btn-primary" onclick="closeSheet('shWelcome');enablePush()">알림 켜기</button>` : ''}
+    <a class="btn ${st === 'off' ? 'btn-line' : 'btn-primary'}" style="display:block;text-align:center;text-decoration:none;margin-top:8px;" href="push-guide.html" target="_blank" rel="noopener">알림 켜는 방법 그림으로 보기</a>
+    <button class="btn btn-line" style="margin-top:8px;" onclick="closeSheet('shWelcome')">${st === 'on' ? '시작할게요' : '나중에 할게요'}</button>`;
+  showLayer('shWelcome');
+}
 
 // 「오후 8시」보다 「저녁 8시」가 먼저 읽힌다. 12시는 「오후 12시」가 아니라 「낮 12시」다
 const hhmmKo = v => {
