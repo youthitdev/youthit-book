@@ -4301,7 +4301,7 @@ function routineCard(r) {
       <div class="r-over">
         <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}/${r.max_people}명</span>
         ${waiting ? `<span class="r-who c-wait">확인 중</span>` : ''}
-        ${r.status === 'active' && !joinOpen(r) && !mine && !waiting ? `<span class="r-who" style="background:#ECE8DD;color:var(--ink-3);">모집 마감</span>` : ''}
+        <!-- 「모집 마감」 칩은 뺐다 (2026-10-23 사용자): 「진행 중인 루틴」 구역에 있다는 것이 이미 모집이 끝났다는 뜻이다 -->
       </div>
     </div>
     <div class="r-body">
