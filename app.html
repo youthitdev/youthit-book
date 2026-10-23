@@ -725,6 +725,14 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-spon i { font-style:normal; color:var(--pink); font-size:10px; line-height:1; flex:none; }
 .r-spon span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .r-who { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
+/* 루틴 카드 정리 (2026-10-23 사용자): 제목 · 끗짱 · 나다움/인원 · 기간 · 지역/책방 · 후원 기업 */
+.r-ld { font-size:13px; font-weight:700; color:var(--ink-2); margin-top:3px; letter-spacing:-.2px; }
+.r-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:6px; }
+.r-row .r-pt { margin-top:0; }
+.r-row .n { font-size:12px; font-weight:600; color:var(--ink-3); }
+.r-row .tag { font-size:10.5px; padding:2px 7px; }
+.r-spon2 { font-size:11.5px; font-weight:700; color:var(--ink-2); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.r-spon2 i { font-style:normal; color:var(--pink); margin-right:3px; }
 /* 공유회는 들어가기 전에 알아야 하는 조건이다. 사진 위 오른쪽에 먼저 건다 */
 .r-badge { position:absolute; top:8px; right:8px; display:inline-flex; align-items:center; gap:3px;
   padding:3px 9px; border-radius:99px; background:rgba(232,163,61,.95); color:#3a2a0c;
@@ -4237,16 +4245,14 @@ function routineCard(r) {
       <div class="r-cover">
         <div class="r-cover-no">${r.emoji || '🌱'}</div>
         <span class="r-badge">♾️ 상시</span>
-        <div class="r-over">
-          <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}명</span>
-          <span class="r-who" style="${joined ? 'background:#E3F1D8;color:#3E6B2A;' : 'background:#fff;color:#2F5D50;'}">${joined ? '✓ 참여 중' : '언제든 참여'}</span></div>
+        ${joined ? `<div class="r-over"><span class="r-who" style="background:#E3F1D8;color:#3E6B2A;">✓ 참여 중</span></div>` : ''}
       </div>
       <div class="r-body">
         <div class="r-title">${r.emoji || '🌱'} ${esc(r.title)}</div>
-        <div class="r-lead">🤝 유스보이스</div>
-        <div class="r-pt">+${won(r.points_per_cert || 1)}N/일</div>
-        <div class="r-meta" style="margin-top:5px;">중복 참여 가능</div>
-        ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
+        <div class="r-ld">유스보이스</div>
+        <div class="r-row"><span class="r-pt">+${won(r.points_per_cert || 1)}N/일</span><span class="n">${peopleOf(r.id)}명</span></div>
+        <div class="r-meta">중복 참여 가능</div>
+        ${r.sponsor_name ? `<div class="r-spon2"><i>♥</i>${esc(r.sponsor_name)}</div>` : ''}
       </div>
     </div>`;
   }
@@ -4293,34 +4299,25 @@ function routineCard(r) {
     return '';
   })();
 
+  // 끗짱 이름은 진하게. 이름에 이미 「끗짱」이 들어 있으면(예: 허태준(끗짱)) 더 붙이지 않는다
+  const ldTxt = lead ? (/끗짱/.test(lead) ? lead : `${lead} 끗짱`) : '';
+  const st = storeOf(r);
+  const reg = shortRegion(r.meetup_address) || st?.region || '';   // 공유회가 있으면 그 자리, 없으면 함께하는 책방이 있는 데
+  const where = reg || st ? `${reg ? '📍 ' + esc(reg) : '🏠'}${st ? `${reg ? ' · ' : ' '}${esc(st.name)}` : ''}` : '';
   return `<div class="r-card" onclick="openRoutine(${r.id})">
     <div class="r-cover">
       ${r.cover_url ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">`
                     : `<div class="r-cover-no">${r.emoji || '📚'}</div>`}
       ${needsMeet(r) ? `<span class="r-badge">🤝 공유회</span>` : ''}
-      <div class="r-over">
-        <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}/${r.max_people}명</span>
-        ${waiting ? `<span class="r-who c-wait">확인 중</span>` : ''}
-        <!-- 「모집 마감」 칩은 뺐다 (2026-10-23 사용자): 「진행 중인 루틴」 구역에 있다는 것이 이미 모집이 끝났다는 뜻이다 -->
-      </div>
+      ${waiting ? `<div class="r-over"><span class="r-who c-wait">확인 중</span></div>` : ''}
     </div>
     <div class="r-body">
       <div class="r-title">${r.emoji||'📚'} ${esc(r.title)}</div>
-      ${r.points_per_cert ? `<div class="r-pt">+${won(r.points_per_cert)}N/일</div>` : ''}
-      ${lead ? `<div class="r-lead">🤝 ${esc(lead)}</div>` : ''}
+      ${ldTxt ? `<div class="r-ld">${esc(ldTxt)}</div>` : ''}
+      <div class="r-row">${r.points_per_cert ? `<span class="r-pt">+${won(r.points_per_cert)}N/일</span>` : ''}<span class="n">${peopleOf(r.id)}/${r.max_people}명</span>${r.quote_required ? '<span class="tag">필사</span>' : ''}</div>
       <div class="r-meta">${per}${dd ? ` · <b>${dd}</b>` : ''}</div>
-      ${(() => {
-        // 공유회가 있으면 그 자리, 없으면 함께하는 책방이 있는 데
-        const g = shortRegion(r.meetup_address) || storeOf(r)?.region || '';
-        return g ? `<div class="r-where">📍 ${esc(g)}</div>` : '';
-      })()}
-      ${(() => {
-        const st = storeOf(r);
-        return st ? `<div class="r-store">🏠<span>${esc(st.name)}</span></div>` : '';
-      })()}
-      ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
-      ${routineTags(r).length ? `<div class="r-tags">
-        ${routineTags(r).map(t => `<span class="tag">#${t}</span>`).join('')}</div>` : ''}
+      ${where ? `<div class="r-where">${where}</div>` : ''}
+      ${r.sponsor_name ? `<div class="r-spon2"><i>♥</i>${esc(r.sponsor_name)}</div>` : ''}
       ${mine && r.points_per_cert ? `<div class="r-mine">인증 ${myCerts(r.id).length}회 · ${won(myCerts(r.id).length * r.points_per_cert)}N</div>` : ''}
     </div>
   </div>`;
