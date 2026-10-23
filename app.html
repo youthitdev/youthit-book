@@ -3745,6 +3745,7 @@ async function maybeAskPush() {
            <button class="btn btn-line" style="margin-top:8px;" onclick="closeSheet('shPushAsk')">나중에</button>`
         : `<div class="hint" style="margin:0 0 12px;line-height:1.75;">사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> →
              <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>
+           <a class="btn btn-line" style="display:block;text-align:center;margin:0 0 8px;text-decoration:none;" href="push-guide.html" target="_blank" rel="noopener">그림으로 따라 하기</a>
            <button class="btn btn-line" onclick="closeSheet('shPushAsk')">알겠어요</button>`;
       showLayer('shPushAsk');
     }, 2600);   // 도장이 찍히고 나서
@@ -3828,8 +3829,10 @@ async function paintPushCard() {
     'unsupported' : `<div class="hint" style="margin:0;">이 브라우저는 알림을 지원하지 않아요.</div>`,
     'needs-install': `<div class="hint" style="margin:0;line-height:1.75;">
         아이폰은 <b>홈 화면에 추가</b>해야 알림을 받을 수 있어요.<br>
-        사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> → <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>`,
-    'blocked'     : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>`,
+        사파리 아래 <b>공유 <i class="ti ti-share-2"></i></b> → <b>홈 화면에 추가</b> → 홈에서 다시 열기</div>
+      <a class="btn btn-line" style="display:block;text-align:center;margin-top:10px;text-decoration:none;" href="push-guide.html" target="_blank" rel="noopener">그림으로 따라 하기</a>`,
+    'blocked'     : `<div class="hint" style="margin:0;">브라우저에서 알림을 막아 뒀어요. 설정에서 풀어주세요.</div>
+      <a class="btn btn-line" style="display:block;text-align:center;margin-top:10px;text-decoration:none;" href="push-guide.html" target="_blank" rel="noopener">그림으로 따라 하기</a>`,
     'off'         : `<button class="btn btn-green" onclick="enablePush()">알림 켜기</button>`,
     'on'          : `<div style="display:flex;align-items:center;gap:10px;">
         <div style="flex:1;font-size:13px;color:var(--green-d);font-weight:700;">켜져 있어요</div>

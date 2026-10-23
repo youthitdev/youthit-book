@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>한끗독서 · 알림 켜는 방법</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="logo-book-kkut.svg">
+<!-- 알림을 받으려면 아이폰은 「홈 화면에 추가」를 거쳐야 한다. 글로만 설명하면 따라 하기 어려워서 한 장짜리 그림 안내로 만든다 (2026-10-23 사용자).
+     링크 하나로 문자·카톡·QR 어디서든 열 수 있다. 서버를 부르지 않는다.
+     화면 캡처는 guide-shots/ 에 넣으면 단계마다 자동으로 보인다 (없으면 큰 아이콘 카드로 나온다):
+       push-ios-1.jpg … push-ios-5.jpg · push-and-1.jpg … push-and-3.jpg -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{ --ink:#1C1A17; --ink-2:#5D574E; --ink-3:#9A948A; --line:#E3DCCE; --bg:#FAF8F3;
+  --g:#1F4D44; --g-d:#143A33; --g-l:#EAF3E6; --g-b:#CFE3C6; --warn:#B5532F; --warn-l:#FBEDE6; }
+body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:var(--ink); background:var(--bg);
+  line-height:1.6; word-break:keep-all; -webkit-font-smoothing:antialiased; }
+.top{position:sticky;top:0;z-index:50;background:rgba(251,250,247,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.top-in{max-width:560px;margin:0 auto;padding:13px 18px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.4px;color:var(--ink);text-decoration:none}
+.logo span{color:#4E7A1C}
+.top a.open{font-size:13px;font-weight:800;color:#fff;background:var(--g);padding:9px 15px;border-radius:11px;text-decoration:none}
+.wrap{max-width:560px;margin:0 auto;padding:20px 18px 60px}
+h1{font-size:23px;letter-spacing:-.6px;line-height:1.35}
+.sub{font-size:14px;color:var(--ink-2);margin-top:6px}
+.why{margin:16px 0 4px;background:var(--g-l);border:1.5px solid var(--g-b);border-radius:16px;padding:13px 16px;font-size:14px;line-height:1.7}
+.why b{color:var(--g-d)}
+.tabs{display:flex;gap:8px;margin:20px 0 14px}
+.tabs button{flex:1;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;padding:13px 10px;border-radius:13px;border:1.5px solid var(--line);background:#fff;color:var(--ink-2)}
+.tabs button.on{background:var(--g);border-color:var(--g);color:#fff}
+.panel{display:none}.panel.on{display:block}
+.step{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+.step-h{display:flex;align-items:center;gap:10px}
+.n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--g);color:#fff;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.step-t{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.step p{font-size:14px;color:var(--ink-2);margin:9px 0 0 40px;line-height:1.7}
+.step p b{color:var(--ink);font-weight:800}
+.shot{margin:12px 0 0 40px}
+.shot img{display:block;width:100%;max-width:300px;border-radius:12px;border:1px solid var(--line)}
+.ico{margin:12px 0 0 40px;background:var(--bg);border:1px dashed var(--line);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--ink-2)}
+.ico big{font-size:34px;line-height:1}
+.ico small{display:block;font-size:12.5px;color:var(--ink-3)}
+.warn{margin:10px 0 0 40px;background:var(--warn-l);border-radius:12px;padding:10px 13px;font-size:13px;color:var(--warn);font-weight:700;line-height:1.6}
+.done{margin:6px 0 20px;background:var(--g);color:#fff;border-radius:18px;padding:16px 18px;font-size:15px;font-weight:800;text-align:center;line-height:1.6}
+.done small{display:block;font-weight:600;opacity:.85;font-size:13px;margin-top:2px}
+h2{font-size:17px;letter-spacing:-.3px;margin:26px 0 10px}
+details{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 16px;margin-bottom:8px}
+summary{cursor:pointer;font-weight:800;font-size:14.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';float:right;color:var(--ink-3);font-size:18px;line-height:1}
+details[open] summary::after{content:'−'}
+details p,details li{font-size:13.8px;color:var(--ink-2);line-height:1.75;margin-top:8px}
+details ul{padding-left:18px}
+.help{margin-top:24px;text-align:center;font-size:13.5px;color:var(--ink-3)}
+.help a{color:var(--g);font-weight:800}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <a class="logo" href="index.html">한끗<span>독서</span></a>
+  <a class="open" href="app.html">앱 열기</a>
+</div></header>
+
+<main class="wrap">
+  <h1>🔔 알림 켜는 방법</h1>
+  <p class="sub">알림을 켜면 매일 한 장을 잊지 않고, 책 받는 날과 후기 기한 소식도 놓치지 않아요. 한 번만 하면 돼요.</p>
+  <div class="why">⚠️ 아이폰은 <b>홈 화면에 추가</b>를 해야 알림이 와요. 그냥 사파리로만 쓰면 알림을 켤 수 없어요. 아래 순서대로 따라 해 주세요.</div>
+
+  <div class="tabs">
+    <button id="tIos" class="on" onclick="pick('ios')">🍎 아이폰</button>
+    <button id="tAnd" onclick="pick('and')">🤖 안드로이드</button>
+  </div>
+
+  <!-- ── 아이폰 ── -->
+  <section id="ios" class="panel on">
+    <div class="step"><div class="step-h"><span class="n">1</span><span class="step-t">사파리로 열기</span></div>
+      <p><b>book.youthvoice.or.kr</b> 을 <b>사파리</b>(파란 나침반 아이콘)에서 열어요.</p>
+      <div class="warn">카카오톡이나 인스타그램 안에서 열면 안 돼요. 그럴 땐 오른쪽 아래 ⋯ 를 눌러 「사파리로 열기」를 골라 주세요.</div>
+      <div class="shot"><img src="guide-shots/push-ios-1.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="step"><div class="step-h"><span class="n">2</span><span class="step-t">공유 버튼 누르기</span></div>
+      <p>화면 <b>아래 가운데</b>에 있는 <b>네모에 위쪽 화살표(⬆︎)</b> 모양 버튼을 눌러요.</p>
+      <div class="ico"><big>⬆︎</big><div>화면 아래 가운데<small>네모 위에 화살표가 있는 버튼</small></div></div>
+      <div class="shot"><img src="guide-shots/push-ios-2.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="step"><div class="step-h"><span class="n">3</span><span class="step-t">「홈 화면에 추가」 고르기</span></div>
+      <p>나온 메뉴를 <b>위로 올리면</b> 「홈 화면에 추가」가 보여요. 누른 뒤 오른쪽 위 <b>「추가」</b>를 눌러요.</p>
+      <div class="ico"><big>➕</big><div>홈 화면에 추가<small>안 보이면 메뉴를 위로 쓸어 올려요</small></div></div>
+      <div class="shot"><img src="guide-shots/push-ios-3.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="step"><div class="step-h"><span class="n">4</span><span class="step-t">홈 화면의 아이콘으로 다시 열기</span></div>
+      <p>휴대폰 홈 화면에 생긴 <b>한끗독서 아이콘</b>을 눌러 열어요. <b>꼭 이 아이콘으로 열어야 해요.</b> 사파리로 다시 열면 알림을 켤 수 없어요.</p>
+      <div class="ico"><big>📱</big><div>홈 화면의 한끗독서<small>사파리가 아니라 이 아이콘</small></div></div>
+      <div class="shot"><img src="guide-shots/push-ios-4.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="step"><div class="step-h"><span class="n">5</span><span class="step-t">「알림 켜기」 → 「허용」</span></div>
+      <p>로그인하면 홈 위쪽에 <b>「알림 켜기」</b>가 나와요. 눌러서 나오는 창에서 <b>「허용」</b>을 눌러요. (안 보이면 <b>MY → 알림</b>에서 켤 수 있어요.)</p>
+      <div class="shot"><img src="guide-shots/push-ios-5.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="done">끝! 알림이 켜졌어요 🎉<small>MY → 알림에 「켜져 있어요」가 보이면 성공이에요</small></div>
+  </section>
+
+  <!-- ── 안드로이드 ── -->
+  <section id="and" class="panel">
+    <div class="step"><div class="step-h"><span class="n">1</span><span class="step-t">크롬으로 열기</span></div>
+      <p><b>book.youthvoice.or.kr</b> 을 <b>크롬</b>에서 열어요. 카카오톡 안에서 열었다면 오른쪽 위 ⋮ → 「다른 브라우저로 열기」를 골라요.</p>
+      <div class="shot"><img src="guide-shots/push-and-1.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="step"><div class="step-h"><span class="n">2</span><span class="step-t">홈 화면에 추가</span></div>
+      <p>오른쪽 위 <b>점 세 개(⋮)</b>를 누르고 <b>「홈 화면에 추가」</b>(또는 「앱 설치」)를 눌러요. 나오는 창에서 <b>「추가」</b>(「설치」)를 눌러요.</p>
+      <div class="ico"><big>⋮</big><div>오른쪽 위 점 세 개<small>홈 화면에 추가 · 앱 설치</small></div></div>
+      <div class="shot"><img src="guide-shots/push-and-2.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="step"><div class="step-h"><span class="n">3</span><span class="step-t">「알림 켜기」 → 「허용」</span></div>
+      <p>홈 화면의 <b>한끗독서 아이콘</b>으로 열고 로그인해요. 홈 위쪽 <b>「알림 켜기」</b>를 누른 뒤 나오는 창에서 <b>「허용」</b>을 눌러요. (안 보이면 <b>MY → 알림</b>)</p>
+      <div class="shot"><img src="guide-shots/push-and-3.jpg" alt="" onerror="this.parentNode.style.display='none'"></div>
+    </div>
+    <div class="done">끝! 알림이 켜졌어요 🎉<small>MY → 알림에 「켜져 있어요」가 보이면 성공이에요</small></div>
+  </section>
+
+  <h2>알림이 안 와요</h2>
+  <details><summary>「알림 켜기」를 눌렀는데 아무 일도 없어요 (아이폰)</summary>
+    <ul><li>사파리가 아니라 <b>홈 화면의 한끗독서 아이콘</b>으로 열었는지 확인해 주세요.</li>
+    <li>아이폰은 <b>iOS 16.4 이상</b>이어야 해요. 설정 → 일반 → 소프트웨어 업데이트에서 확인해요.</li></ul></details>
+  <details><summary>「알림이 막혀 있어요」라고 나와요</summary>
+    <ul><li>아이폰: 설정 → 알림 → 한끗독서 → <b>알림 허용</b>을 켜 주세요.</li>
+    <li>안드로이드: 설정 → 앱 → 한끗독서(또는 크롬) → 알림 → <b>허용</b>으로 바꿔 주세요.</li>
+    <li>바꾼 뒤 앱을 완전히 닫았다가 다시 열어 주세요.</li></ul></details>
+  <details><summary>켜져 있다는데 알림이 안 와요</summary>
+    <ul><li><b>방해금지·집중 모드</b>가 켜져 있으면 알림이 조용히 쌓여요. 잠시 꺼 두고 확인해 주세요.</li>
+    <li>MY → 알림에서 <b>한 번 끄고 다시 켜면</b> 새로 연결돼요.</li>
+    <li>휴대폰을 바꿨거나 앱을 지웠다면 위 순서를 처음부터 다시 해 주세요.</li></ul></details>
+  <details><summary>알림을 끄고 싶어요</summary>
+    <p>앱의 <b>MY → 알림</b>에서 「끄기」를 누르면 돼요. 받고 싶은 소식(친구들 소식, 콕)과 매일 리마인더 시각도 거기서 고를 수 있어요.</p></details>
+
+  <p class="help">그래도 안 되면 <a href="http://pf.kakao.com/_kTGuxj" target="_blank" rel="noopener">카카오톡 채널로 문의</a>해 주세요.</p>
+</main>
+
+<script>
+// 기기에 맞는 탭을 먼저 보여 준다. 안드로이드면 그쪽이 열리고, 나머지는 아이폰이 기본이다
+function pick(k) {
+  document.getElementById('ios').classList.toggle('on', k === 'ios');
+  document.getElementById('and').classList.toggle('on', k === 'and');
+  document.getElementById('tIos').classList.toggle('on', k === 'ios');
+  document.getElementById('tAnd').classList.toggle('on', k === 'and');
+}
+if (/Android/i.test(navigator.userAgent)) pick('and');
+</script>
+</body>
+</html>
