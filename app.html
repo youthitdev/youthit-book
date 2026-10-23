@@ -1218,6 +1218,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .og-sum .t { font-size:15.5px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
 .og-sum .c { font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px; background:#EEF4E7; color:#3E6B2A; }
 .og-sum .d { font-size:12.5px; color:var(--ink-3); line-height:1.65; margin-top:7px; }
+.og-top { margin-top:14px; padding:12px 12px 10px; background:#fff; border:1px solid #D7E6C6; border-radius:14px; }
+.og-top-t { font-size:13px; font-weight:800; color:#3E6B2A; margin-bottom:10px; }
+.og-top-r { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.og-top .ob-t b { font-size:12.5px; }
+.og-top .ob-t i { font-size:11.5px; font-weight:700; color:#C2410C; }
 .og-board { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:14px; }
 .ob-t { text-align:center; position:relative; min-width:0; }
 .ob-c { width:100%; aspect-ratio:3/4; border-radius:8px; overflow:hidden; background:#EFEBE1; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid transparent; box-sizing:border-box; }
@@ -4664,10 +4669,15 @@ function paintBoards(rid) { ['obBox', 'obBoxOv'].forEach(k => { const b = $(k + 
 function boardHtml(rid) {
   const list = OB[rid]; if (!list || !list.length) return '';
   const cap = OB_CAP[rid] || 10;
+  // 맨 위에 늘 보이는 「꾸준한 친구들」: 지금 이어지는 연속 인증이 3일 이상인 친구 중 가장 긴 세 명. 순위 표시는 없다. 후보가 없으면 숨긴다 (2026-10-23 사용자)
+  const topList = list.map((m, i) => ({ m, i })).filter(x => x.m.streak >= 3).sort((a, b) => b.m.streak - a.m.streak).slice(0, 3);
+  const topHtml = topList.length ? `<div class="og-top"><div class="og-top-t">🔥 꾸준한 친구들</div><div class="og-top-r">${topList.map(x => `<div class="ob-t${x.m.today ? ' today' : ''}" onclick="openObTile(${rid}, ${x.i})" style="cursor:pointer;">${x.m.today ? '<span class="ob-new" title="오늘 올렸어요"></span>' : ''}
+      <div class="ob-c">${x.m.cover ? `<img src="${esc(x.m.cover)}" alt="" loading="lazy">` : '📖'}</div>
+      <b>${x.m.me ? '나' : esc(x.m.nick)}</b><i>🔥 ${x.m.streak}일</i></div>`).join('')}</div></div>` : '';
   const tile = (m, i) => `<div class="ob-t${m.today ? ' today' : ''}" onclick="openObTile(${rid}, ${i})" style="cursor:pointer;">${m.today ? '<span class="ob-new" title="오늘 올렸어요"></span>' : ''}
       <div class="ob-c">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy">` : '📖'}</div>
       <b>${esc(m.nick)}</b><i>${m.streak > 0 ? `🔥 ${m.streak}일` : '&nbsp;'}</i>${m.hearts > 0 ? `<i class="ob-h">♥ ${m.hearts}</i>` : ''}</div>`;
-  return `<div class="og-board">${list.slice(0, cap).map((m, i) => tile(m, i)).join('')}</div>
+  return topHtml + `<div class="og-board">${list.slice(0, cap).map((m, i) => tile(m, i)).join('')}</div>
     ${list.length > cap ? `<button class="store-more" onclick="OB_CAP[${rid}] = (OB_CAP[${rid}] || 10) + 10; paintBoards(${rid})"><span>더 보기</span><em>${list.length - cap}명 더</em><i class="ti ti-chevron-down"></i></button>` : ''}`;
 }
 // 친구의 표지를 크게 보고 「응원해요 ♥」를 누른다. 하루에 한 사람에게 한 번, 알림·나다움 없음
