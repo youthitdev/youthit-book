@@ -7155,7 +7155,6 @@ function openRoutine(id) {
     $('ovRBody').innerHTML = `<div class="og-sum">
         <div class="t">${r.emoji || '🌱'} ${esc(r.title)}<span class="c">상시</span><span class="c">참여 ${peopleOf(id)}명</span><span class="c">하루 ${won(r.points_per_cert || 1)}N</span></div>
         <div class="d">루틴이 없는 날에도 매일 한 장.<br>읽는 책을 <b>그 자리에서 찍어</b> 올려요(앨범 사진은 안 돼요).<br>다른 루틴과 함께 해도 돼요.</div>
-        <div class="d" style="font-size:11.5px;margin-top:6px;opacity:.85;">내 인증은 나만 봐요 · N은 나다움 단위예요. ${won(state.settings.points_per_voucher || 150)}N을 모으면 책 한 권과 바꿔요.</div>
       </div>
       ${joined ? `<div class="og-card" style="margin-top:0;">${ongoingDash(r, true)}</div>` : ''}
       ${isGuest() ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`
