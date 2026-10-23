@@ -2830,11 +2830,11 @@ function openRoutineEdit(id) {
       <span class="muted"> · ${esc(rName(r.led_by))} · ${R_KIND[r.kind || 'book']}</span></div>`}
 
     <div class="field">
-      <div class="label">끗짱 <span>*</span></div>
+      <div class="label">끗짱 ${r.ongoing ? '<span style="font-weight:600;">(상시 루틴은 없어도 돼요)</span>' : '<span>*</span>'}</div>
       ${leads.length > 6 ? `<input type="text" id="reLeadFind" placeholder="이름·소속으로 걸러보기"
         autocomplete="off" oninput="leadFilter()" style="margin-bottom:8px;">` : ''}
       <select id="reLead">
-        <option value="">선택하기</option>
+        <option value="">${r.ongoing ? '없음 — 유스보이스' : '선택하기'}</option>
         ${leads.map(l => `<option value="${esc(l.id)}"${l.id === r.led_by ? ' selected' : ''}>${
           esc(l.name)}${l.where ? ` — ${esc(l.where)}` : ''}</option>`).join('')}
       </select>
@@ -2859,7 +2859,7 @@ function openRoutineEdit(id) {
         <div class="label">이모지</div>
         <input type="text" id="reEmoji" maxlength="4" style="text-align:center;" value="${v(r.emoji || '📚')}">
       </div>
-      <div class="field" style="flex:1;min-width:0;">
+      <div class="field" style="flex:1;min-width:0;${r.ongoing ? 'display:none;' : ''}">
         <div class="label">모집 인원 <span>*</span></div>
         <input type="number" id="rePeople" min="1" max="50" value="${r.max_people ?? 8}">
       </div>
@@ -2902,7 +2902,7 @@ function openRoutineEdit(id) {
         <input type="date" id="reStart" value="${v(r.start_date || (isNew ? ymd(0) : ''))}">
       </div>
       <div class="field" style="flex:1;min-width:0;">
-        <div class="label">종료일 <span>*</span></div>
+        <div class="label">종료일 ${r.ongoing ? '<span style="font-weight:600;">(상시 루틴은 비워 두세요)</span>' : '<span>*</span>'}</div>
         <input type="date" id="reEnd" value="${v(r.end_date || (isNew ? ymd(14) : ''))}">
       </div>
     </div>
@@ -3085,7 +3085,7 @@ async function saveRoutineEdit() {
   if (!r) return;
   const g = id => document.getElementById(id);
   const lead = g('reLead').value;
-  if (!lead) return alert('끗짱을 골라주세요.');
+  if (!lead && !r.ongoing) return alert('끗짱을 골라주세요.');   // 상시 루틴(매일 한끗)은 끗짱이 없다
   const title = g('reTitle').value.trim();
   const desc  = g('reDesc').value.trim();
   const guide = g('reGuide').value.trim();
@@ -3093,8 +3093,8 @@ async function saveRoutineEdit() {
   if (!title) return alert('루틴 이름을 적어주세요.');
   if (!desc)  return alert('끗짱 소개를 적어주세요.');
   if (!guide) return alert('인증 안내를 적어주세요.');
-  if (!s0 || !e0) return alert('시작일과 종료일을 골라주세요.');
-  if (e0 < s0)    return alert('종료일이 시작일보다 빠를 수 없어요.');
+  if (!s0 || (!e0 && !r.ongoing)) return alert('시작일과 종료일을 골라주세요.');   // 상시 루틴은 종료일이 없다
+  if (e0 && e0 < s0) return alert('종료일이 시작일보다 빠를 수 없어요.');
 
   const meet = g('reMeet').checked;
   const place = meet ? (g('reMeetPlace').value.trim() || null) : null;
@@ -3125,13 +3125,13 @@ async function saveRoutineEdit() {
   }
 
   const row = {
-    led_by: lead,
+    led_by: lead || null,
     cover_url: coverSaved,
     bookstore_id: parseInt(g('reStore').value, 10) || null,
     title, description: desc, cert_guide: guide,
     emoji: g('reEmoji').value.trim() || '📚',
-    max_people: parseInt(g('rePeople').value || '8', 10),
-    start_date: s0, end_date: e0,
+    max_people: r.ongoing ? r.max_people : parseInt(g('rePeople').value || '8', 10),
+    start_date: s0, end_date: e0 || null,
     // 제목을 지웠으면 서지도 비운다. 고른 책과 제목이 어긋나면(reBookFind 가 이미 푼다) 서지도 없다.
     // 전에는 제목만 저장해서, 제목을 고치면 옛 책의 저자·ISBN 이 그대로 남았다
     kkut_book_title:     g('reBook').value.trim() || null,
