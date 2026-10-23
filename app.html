@@ -4243,7 +4243,7 @@ function routineCard(r) {
     const joined = !!(me && myPart(r.id) && myPart(r.id).status === 'approved');
     return `<div class="r-card" onclick="openRoutine(${r.id})">
       <div class="r-cover">
-        <div class="r-cover-no">${r.emoji || '🌱'}</div>
+        ${r.cover_url ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">` : `<div class="r-cover-no">${r.emoji || '🌱'}</div>`}
         <span class="r-badge">♾️ 상시</span>
         ${joined ? `<div class="r-over"><span class="r-who" style="background:#E3F1D8;color:#3E6B2A;">✓ 참여 중</span></div>` : ''}
       </div>
