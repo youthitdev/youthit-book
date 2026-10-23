@@ -3719,32 +3719,37 @@ async function enablePush() {
 // 그런데 끈 사람보다 **아직 안 켠 사람**이 훨씬 많다. 홈 맨 위에 한 장 카드로 매일 권하고(「나중에」는 오늘 하루만 접는다),
 // 첫 인증을 마친 직후에는 창으로 한 번만 묻는다 (마음이 가장 열려 있을 때다)
 const NUDGE_KEY = 'hankkut-push-nudge-day', ASK_KEY = 'hankkut-push-ask';
-function hidePushNudge() {   // 더는 쓰지 않는다 (알림과 홈 화면을 해 둘 때까지 계속 보인다 · 2026-10-23 사용자). 남은 호출을 위해 둔다
+// 알림과 홈 화면을 해 둘 때까지 계속 보이되, 「일주일 동안 숨기기」로 7일 쉴 수 있다 (2026-10-23 사용자).
+// 저장하는 값은 「이 날짜가 되기 전까지 숨김」이다
+function hidePushNudge() {
+  try { const d = new Date(todayKST() + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 7); localStorage.setItem(NUDGE_KEY, d.toISOString().slice(0, 10)); } catch (e) {}
   const el = $('pushNudge'); if (el) el.innerHTML = '';
 }
 // 알림이 꺼져 있거나 홈 화면에 추가하지 않았으면 홈 위쪽에 **계속** 보인다. 「나중에」로 숨기지 못한다 — 둘 다 해 두면 사라진다
 const isMobileUA = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 async function paintPushNudge() {
   const el = $('pushNudge'); if (!el || isGuest() || !me) return;
+  try { if ((localStorage.getItem(NUDGE_KEY) || '') > todayKST()) return; } catch (e) {}   // 일주일 숨기기 중
   const st = await pushState();
   const box = $('pushNudge'); if (!box) return;
   const k = canLead();
+  const later = '<button class="pn-x" onclick="hidePushNudge()">일주일 동안 숨기기</button>';
   const guide = '<a class="pn-x" href="push-guide.html" target="_blank" rel="noopener" style="text-decoration:underline;">그림으로 보기</a>';
   // 알림은 켜졌는데 홈 화면에는 아직인 휴대폰(주로 안드로이드)
   const state2 = (st === 'on' && isMobileUA() && !isStandalone()) ? 'install' : st;
   box.innerHTML = {
     'off': `<div class="pn"><div class="pn-t"><b>🔔 알림을 켜면 완주가 쉬워져요</b>
         <span>${k ? '새 친구가 들어오면 바로 알려드리고, 오늘 인증과 이벤트 소식도 챙겨 드려요.' : '매일 한 장을 떠올려 주고, 후기 기한·공유회·이벤트 소식도 알려드려요.'}</span></div>
-        <div class="pn-b"><button class="pn-go" onclick="enablePush()">켜기</button>${guide}</div></div>`,
+        <div class="pn-b"><button class="pn-go" onclick="enablePush()">켜기</button>${guide}${later}</div></div>`,
     'needs-install': `<div class="pn"><div class="pn-t"><b>📲 홈 화면에 추가해 주세요</b>
         <span>아이폰은 홈 화면에 추가해야 알림을 받을 수 있어요.</span></div>
-        <div class="pn-b"><button class="pn-go" onclick="window.open('push-guide.html', '_blank', 'noopener')">방법 보기</button></div></div>`,
+        <div class="pn-b"><button class="pn-go" onclick="window.open('push-guide.html', '_blank', 'noopener')">방법 보기</button>${later}</div></div>`,
     'blocked': `<div class="pn"><div class="pn-t"><b>🔕 알림이 막혀 있어요</b>
         <span>브라우저 설정에서 풀어 주면 다시 받을 수 있어요.</span></div>
-        <div class="pn-b"><button class="pn-go" onclick="window.open('push-guide.html', '_blank', 'noopener')">방법 보기</button></div></div>`,
+        <div class="pn-b"><button class="pn-go" onclick="window.open('push-guide.html', '_blank', 'noopener')">방법 보기</button>${later}</div></div>`,
     'install': `<div class="pn"><div class="pn-t"><b>📲 홈 화면에 추가해 두세요</b>
         <span>앱처럼 바로 열리고, 알림도 더 잘 와요.</span></div>
-        <div class="pn-b"><button class="pn-go" onclick="window.open('push-guide.html', '_blank', 'noopener')">방법 보기</button></div></div>`,
+        <div class="pn-b"><button class="pn-go" onclick="window.open('push-guide.html', '_blank', 'noopener')">방법 보기</button>${later}</div></div>`,
   }[state2] || '';
 }
 
