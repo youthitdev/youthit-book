@@ -1209,6 +1209,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .ob-big .sub { font-size:13px; color:var(--ink-3); margin-top:4px; }
 .ob-big .btn { margin-top:18px; }
 .og-done { font-size:11px; font-weight:700; color:#3E6B2A; background:#fff; border:1px solid #D7E6C6; padding:2px 9px; border-radius:10px; }
+.og-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#F3F8EE; border:1px solid #D7E6C6; border-radius:14px; padding:9px 10px 9px 14px; margin-bottom:12px; }
+.og-bar-t { min-width:0; font-size:14px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.og-bar-t i { font-style:normal; font-size:12px; font-weight:700; color:#3E6B2A; margin-left:8px; }
+.og-bar-b { flex:none; border:0; background:var(--blue, #1F4E46); color:#fff; font-size:13px; font-weight:800; padding:8px 14px; border-radius:11px; cursor:pointer; }
 .og-sum { background:#fff; border:1px solid var(--line, #E9E4D8); border-radius:16px; padding:13px 15px; margin-bottom:12px; }
 .og-sum .t { font-size:15.5px; font-weight:800; letter-spacing:-.3px; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
 .og-sum .c { font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px; background:#EEF4E7; color:#3E6B2A; }
@@ -4178,13 +4182,14 @@ function routineCard(r) {
         <div class="r-cover-no">${r.emoji || '🌱'}</div>
         <span class="r-badge">♾️ 상시</span>
         <div class="r-over">
-          <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}명 참여</span>
+          <span class="r-ppl"><i class="ti ti-users"></i> ${peopleOf(r.id)}명</span>
           <span class="r-who" style="${joined ? 'background:#E3F1D8;color:#3E6B2A;' : 'background:#fff;color:#2F5D50;'}">${joined ? '✓ 참여 중' : '언제든 참여'}</span></div>
       </div>
       <div class="r-body">
         <div class="r-title">${r.emoji || '🌱'} ${esc(r.title)}</div>
-        <div class="r-meta">하루 <b>1N</b> · 다른 루틴과 함께</div>
-        <div class="r-meta" style="margin-top:2px;">내 인증은 나만 봐요</div>
+        <div class="r-lead">🤝 유스보이스</div>
+        <div class="r-meta">하루 <b>${won(r.points_per_cert || 1)}N</b> · 중복 참여 가능</div>
+        ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
       </div>
     </div>`;
   }
@@ -4659,9 +4664,11 @@ function ongoingDash(r, ov) {
 function ongoingHomeCard(r) {
   const joined = !!(myPart(r.id) && myPart(r.id).status === 'approved');
   if (!joined || didToday(r.id)) return '';
-  return `<div class="og-card">
-      <div class="og-t" onclick="openRoutine(${r.id})" style="cursor:pointer;">${r.emoji || '🌱'} ${esc(r.title)}<i class="ti ti-chevron-right"></i></div>
-      <div style="margin-top:10px;">${ongoingDash(r, false)}</div>
+  const st = myStreak(r.id);
+  // 홈이라 크게 두지 않는다 (2026-10-23 사용자): 이름·연속일 한 줄과 작은 인증 단추만. 보드는 모집 중 목록의 카드를 눌렀을 때 본다
+  return `<div class="og-bar">
+      <div class="og-bar-t" onclick="openRoutine(${r.id})">${r.emoji || '🌱'} <b>${esc(r.title)}</b>${st > 0 ? `<i>🔥 ${st}일 연속</i>` : ''}</div>
+      <button class="og-bar-b" onclick="openCert(${r.id})">오늘 인증하기</button>
     </div>`;
 }
 
