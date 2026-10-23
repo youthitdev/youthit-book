@@ -1209,6 +1209,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .ob-big .sub { font-size:13px; color:var(--ink-3); margin-top:4px; }
 .ob-big .btn { margin-top:18px; }
 .og-done { font-size:11px; font-weight:700; color:#3E6B2A; background:#fff; border:1px solid #D7E6C6; padding:2px 9px; border-radius:10px; }
+.r-pt { display:inline-block; margin-top:7px; background:#E6F2DA; color:#2F6B1E; font-size:13px; font-weight:800; padding:4px 10px; border-radius:10px; letter-spacing:-.2px; }
+.r-pt small { font-size:10.5px; font-weight:700; opacity:.8; margin-left:3px; }
 .og-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; background:#F3F8EE; border:1px solid #D7E6C6; border-radius:14px; padding:9px 10px 9px 14px; margin-bottom:12px; }
 .og-bar-t { min-width:0; font-size:14px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .og-bar-t i { font-style:normal; font-size:12px; font-weight:700; color:#3E6B2A; margin-left:8px; }
@@ -4188,7 +4190,8 @@ function routineCard(r) {
       <div class="r-body">
         <div class="r-title">${r.emoji || '🌱'} ${esc(r.title)}</div>
         <div class="r-lead">🤝 유스보이스</div>
-        <div class="r-meta">하루 <b>${won(r.points_per_cert || 1)}N</b> · 중복 참여 가능</div>
+        <div class="r-pt">나다움 +${won(r.points_per_cert || 1)}N <small>하루 인증마다</small></div>
+        <div class="r-meta" style="margin-top:6px;">중복 참여 가능</div>
         ${r.sponsor_name ? `<div class="r-spon"><i>♥</i><span>${esc(r.sponsor_name)}</span></div>` : ''}
       </div>
     </div>`;
