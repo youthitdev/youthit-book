@@ -473,6 +473,25 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .pb img,.pb .pb-ph{width:44px;height:62px;border-radius:5px;object-fit:cover;display:flex;align-items:center;justify-content:center;background:#EFEBE1;font-size:17px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
 .pb i{display:block;font-style:normal;font-size:10px;color:var(--ink-3);line-height:1.25;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
+/* 일별 인증 현황 — 가로는 날짜, 세로는 참여 청소년 */
+.dm-sum{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-2);margin-bottom:10px}
+.dm-sum b{color:var(--ink);font-size:15px}
+.dm-leg{font-size:11.5px;color:var(--ink-3);margin:8px 0 0;display:flex;gap:14px;flex-wrap:wrap}
+.dm-leg i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-2px;margin-right:4px}
+.dm{border-collapse:separate;border-spacing:0;font-size:12px;width:auto;min-width:0}
+.dm th,.dm td{padding:0 2px;text-align:center;border-bottom:1px solid #EFEAE0;min-width:38px;height:30px;font-weight:600}
+.dm th{font-size:10.5px;color:var(--ink-3);height:34px;line-height:1.15;background:#fff}
+.dm .nm{position:sticky;left:0;z-index:1;background:#fff;text-align:left;padding:0 12px 0 4px;min-width:92px;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;font-weight:700}
+.dm th.nm{z-index:2}
+.dm .tot{padding:0 6px 0 12px;min-width:64px;white-space:nowrap;text-align:right;font-size:12px;color:var(--ink-2)}
+.dm td.ok span{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:#3E8E5A;color:#fff;font-size:12px}
+.dm td.miss{background:#FBEEE9}
+.dm td.fut{background:#FAF8F3}
+.dm td.pre{color:#CFC8BA}
+.dm th.today{background:#FDF1D6;color:#A96B08}
+.dm td.today:not(.ok){box-shadow:inset 0 0 0 1.5px #E8A33D}
+.dm tr.dm-foot td{font-size:11.5px;color:var(--ink-3);border-bottom:none;height:28px}
+
 /* 통계 (migration-133) */
 .st-wrap { padding:18px 20px 8px; }
 .st-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
@@ -742,6 +761,20 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-bd" id="peopleBody"></div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('peopleOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 일별 인증 현황 -->
+<div class="overlay" id="dailyOverlay">
+  <div class="modal" style="max-width:960px;">
+    <div class="modal-hd">
+      <div class="modal-t" id="dailyTitle">일별 인증 현황</div>
+      <div class="modal-d">날짜마다 누가 인증했는지 한눈에 봅니다. 끗짱은 빼고 청소년만 보여요. 인증은 하루에 한 번만 세요.</div>
+    </div>
+    <div class="modal-bd" id="dailyBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('dailyOverlay')">닫기</button>
     </div>
   </div>
 </div>
@@ -1228,7 +1261,7 @@ function viewStats() {
       <td class="num r">${r.people}명</td>
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
       <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td>
-      <td class="r" style="white-space:nowrap;"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">참여자</button>${r.canceled || r.status === 'recruit' ? '' : ` <button class="btn btn-line" onclick="rtOpen(${r.id})" title="후원 기업·외부에 공유하는 한 장짜리 결과 리포트">📄 리포트</button>`}</td></tr>`).join('')}</table>`
+      <td class="r" style="white-space:nowrap;"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">참여자</button>${r.canceled || r.status === 'recruit' ? '' : ` <button class="btn btn-line" onclick="openRoutineDaily(${r.id})" title="날짜별 인증 현황">일별</button> <button class="btn btn-line" onclick="rtOpen(${r.id})" title="후원 기업·외부에 공유하는 한 장짜리 결과 리포트">📄 리포트</button>`}</td></tr>`).join('')}</table>`
     : `<div class="empty">${rows.length ? '이 상태의 루틴이 없어요' : '아직 루틴이 없어요'}</div>`;
 
   return `<div class="st-wrap">
@@ -2380,7 +2413,7 @@ const md = d => d ? String(d).slice(5).replace('-', '.') : '–';
 async function loadRoutines() {
   const [rs, ps, cs] = await Promise.all([
     sb.from('routines').select('*').order('start_date', { ascending: false }),
-    sb.from('routine_participants').select('routine_id, user_id, status'),
+    sb.from('routine_participants').select('routine_id, user_id, status, joined_at'),
     sb.from('certifications').select('routine_id, user_id, cert_date').limit(5000),
   ]);
   DB.routines = rs.data || [];
@@ -2508,6 +2541,7 @@ function viewRoutines() {
       <td class="right" style="white-space:nowrap;">
         <button class="btn btn-line" onclick="openRoutineEdit(${r.id})">수정</button>
         <button class="btn btn-line" onclick="openRoutinePeople(${r.id})">참여자</button>
+        <button class="btn btn-line" onclick="openRoutineDaily(${r.id})" title="날짜별 인증 현황">일별</button>
         <button class="btn btn-line" onclick="openRoutineCerts(${r.id})">인증 보기</button>
         ${(r.kind || 'book') === 'shared' ? `<button class="btn btn-line" onclick="openRoutinePosts(${r.id})" title="끗짱이 올린 글을 날짜별로 봅니다">글 보기</button>` : ''}
         ${r.status !== 'pending' && !r.canceled ? `<button class="btn btn-line" onclick="cancelRoutine(${r.id})" title="인원이 모이지 않아 열지 못했어요">폐강</button>` : ''}
@@ -3412,6 +3446,100 @@ async function openRoutinePeople(id) {
   }));
   // 그새 다른 루틴을 열었으면 덮어쓰지 않는다
   if (document.getElementById('peopleTitle').textContent === `${r.emoji || '📚'} ${r.title}`) draw(pts);
+}
+
+// 일별 인증 현황 (2026-10-27 요청: 한끗루틴처럼 일별 진행상황 모니터링).
+//   가로 날짜 × 세로 참여 청소년. 인증한 날은 체크, 한 번도 안 한 날은 옅은 분홍, 합류 전·앞으로 올 날은 비워 둔다.
+//   「매일 한끗」은 끝이 없어 최근 14일만 보여 준다. 인증은 루틴 하나에서 하루 한 번만 센다
+async function openRoutineDaily(id) {
+  const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
+  const kst = ms => new Date(ms + 9 * 3600e3).toISOString().slice(0, 10);
+  const addDays = (d, n) => new Date(new Date(d + 'T00:00:00Z').getTime() + n * 86400e3).toISOString().slice(0, 10);
+  const today = kst(Date.now());
+  const title = `${r.emoji || '📚'} ${r.title} · 일별 인증 현황`;
+  document.getElementById('dailyTitle').textContent = title;
+  document.getElementById('dailyBody').innerHTML = '<div class="empty">불러오는 중…</div>';
+  document.getElementById('dailyOverlay').classList.add('on');
+
+  // 인증은 이 루틴 것만, 날짜와 사람만 받는다. 1000줄씩 이어서
+  let certs = [];
+  if (LIVE) {
+    for (let from = 0; from < 30000; from += 1000) {
+      const { data, error } = await sb.from('certifications').select('user_id, cert_date')
+        .eq('routine_id', id).range(from, from + 999);
+      if (error) { document.getElementById('dailyBody').innerHTML = `<div class="empty">불러오지 못했어요. ${esc(error.message || '')}</div>`; return; }
+      certs = certs.concat(data || []);
+      if (!data || data.length < 1000) break;
+    }
+  } else certs = rCerts(id);
+  if (document.getElementById('dailyTitle').textContent !== title) return;   // 그새 다른 루틴을 열었다
+
+  const ps = rParts(id).filter(p => p.user_id !== r.led_by);
+  const body = document.getElementById('dailyBody');
+  if (!ps.length) { body.innerHTML = '<div class="empty">아직 참여한 청소년이 없어요.</div>'; return; }
+  const startRaw = r.start_date || today;
+  if (!r.ongoing && startRaw > today) { body.innerHTML = `<div class="empty">아직 시작 전이에요. 시작일은 ${fmtDate(startRaw)}예요.</div>`; return; }
+
+  // 보여 줄 날짜들
+  const start = r.ongoing ? (startRaw > addDays(today, -13) ? startRaw : addDays(today, -13)) : startRaw;
+  const end   = r.ongoing ? today : (r.end_date || today);
+  const days = [];
+  for (let d = start; d <= end && days.length < 200; d = addDays(d, 1)) days.push(d);
+
+  const by = {};
+  certs.forEach(c => { (by[c.user_id] = by[c.user_id] || new Set()).add(c.cert_date); });
+  const joinOf = p => p.joined_at ? kst(new Date(p.joined_at).getTime()) : startRaw;
+  const wk = '일월화수목금토';
+  const label = d => { const [, m, dd] = d.split('-'); return `${Number(m)}/${Number(dd)}`; };
+  const dow = d => wk[new Date(d + 'T00:00:00Z').getUTCDay()];
+
+  const rows = ps.map(p => {
+    const set = by[p.user_id] || new Set();
+    const join = joinOf(p);
+    const todayDone = set.has(today);
+    // 오늘은 아직 안 한 사람을 깎지 않는다 — 어제까지로 센다
+    const lastCounted = (today <= end && !todayDone) ? addDays(today, -1) : (today < end ? today : end);
+    let possible = 0, done = 0;
+    for (let d = (join > startRaw ? join : startRaw); d <= lastCounted; d = addDays(d, 1)) { possible++; if (set.has(d)) done++; }
+    return { p, set, join, todayDone, possible, done };
+  }).sort((a, b) => rName(a.p.user_id).localeCompare(rName(b.p.user_id), 'ko'));
+
+  const live = today >= start && today <= end;                     // 오늘이 이 표 안에 있다
+  const didToday = rows.filter(x => x.todayDone).length;
+  const total = rows.reduce((n, x) => n + x.possible, 0), doneAll = rows.reduce((n, x) => n + x.done, 0);
+
+  const head = days.map(d => `<th class="${d === today ? 'today' : ''}" title="${esc(d)} (${dow(d)})">${label(d)}<br>${dow(d)}</th>`).join('');
+  const rowHtml = rows.map(x => `<tr>
+      <td class="nm" title="${esc(rName(x.p.user_id))}">${esc(rName(x.p.user_id))}</td>
+      ${days.map(d => {
+        const t = d === today ? ' today' : '';
+        if (x.set.has(d)) return `<td class="ok${t}"><span>✓</span></td>`;
+        if (d > today)    return `<td class="fut${t}"></td>`;
+        if (d < x.join)   return `<td class="pre${t}">·</td>`;
+        return `<td class="miss${t}"></td>`;
+      }).join('')}
+      <td class="tot">${r.ongoing ? `총 ${x.set.size}일` : `<b>${x.done}</b>/${x.possible}일`}</td>
+    </tr>`).join('');
+  const foot = `<tr class="dm-foot"><td class="nm">그날 인증</td>${days.map(d => {
+      const n = rows.filter(x => x.set.has(d)).length;
+      return `<td>${d > today ? '' : n}</td>`; }).join('')}<td class="tot"></td></tr>`;
+
+  body.innerHTML = `
+    <div class="dm-sum">
+      <span>참여 <b>${rows.length}</b>명</span>
+      ${live ? `<span>오늘 인증 <b>${didToday}</b>명 · 아직 <b>${rows.length - didToday}</b>명</span>` : ''}
+      ${r.ongoing ? '<span>최근 14일만 보여요</span>' : (total ? `<span>지금까지 인증률 <b>${Math.round(doneAll / total * 100)}%</b></span>` : '')}
+    </div>
+    <div class="tbl" style="max-height:62vh;overflow:auto;"><table class="dm">
+      <tr><th class="nm">청소년</th>${head}<th class="tot">${r.ongoing ? '' : '인증'}</th></tr>
+      ${rowHtml}${foot}
+    </table></div>
+    <div class="dm-leg">
+      <span><i style="background:#3E8E5A"></i>인증한 날</span>
+      <span><i style="background:#FBEEE9;border:1px solid #F0D5CB"></i>안 한 날</span>
+      <span><i style="background:#FAF8F3;border:1px solid #EFEAE0"></i>앞으로 올 날</span>
+      <span>· 합류하기 전</span>
+    </div>`;
 }
 
 // 끗짱 승인.
