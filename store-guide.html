@@ -118,64 +118,63 @@ function bad(t, s) {
   $('page').innerHTML = `<h1>${esc(t)}</h1><div class="sub">${esc(s)}</div>`;
 }
 
+// 이름 끝 글자에 받침이 있으면 「이」, 없으면 「가」
+const josa = w => { const c = String(w || '').trim().slice(-1).charCodeAt(0);
+  return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28) ? '이' : '가'; };
+
 function paint(s) {
   $('page').innerHTML = `
     <h1>한끗독서 파트너 책방 안내</h1>
-    <div class="sub">유스보이스가 청소년에게 책 한 권을 선물하는 일을, 사장님 책방에서 건네주십니다.</div>
+    <div class="sub">유스보이스와 ${esc(s.name)}${josa(s.name)} 함께 청소년에게 책을 선물합니다.</div>
 
-    <div class="store">${esc(s.name)}${s.region ? `<small>${esc(s.region)}</small>` : ''}</div>
+    <div class="store">${esc(s.name)}${(s.address || s.region) ? `<small>${esc(s.address || s.region)}</small>` : ''}</div>
 
     <div class="code">
       <div>
-        <div class="code-l">우리 책방 확인 번호</div>
+        <div class="code-l">책방 고유 번호</div>
         <div class="code-n">${s.code ? esc(s.code) : '＿＿＿＿'}</div>
         <div class="code-s">${s.code
-          ? 'QR을 찍으면 사장님 폰에 이 번호를 물어봅니다. 처음 한 번만 넣으시면 이 폰이 기억합니다.'
+          ? '최초 1회 입력 시, 기기에 자동 저장됩니다.'
           : '아직 번호가 정해지지 않았어요. 운영진에게 알려주세요.'}</div>
       </div>
     </div>
 
-    <h2>이렇게 해주세요</h2>
+    <h2>책 교환 방법</h2>
     <ol>
-      <li>청소년이 <b>“유스보이스 한끗독서로 책 교환하려고 합니다”</b>라고 말합니다.</li>
-      <li>책 한 권을 고르게 하고 <b>그냥 드리면</b> 됩니다. <b>돈은 받지 않습니다.</b></li>
-      <li>청소년이 폰에 띄운 <b>QR을 사장님 폰 카메라로 찍어주세요.</b></li>
-      <li>처음 한 번 위의 <b>확인 번호</b>를 넣고, <b>금액·영수증·책을 건넨 사진</b>을 올려주세요.
-        바쁘시면 나중에 올리셔도 됩니다.<br>
-        <b>단, 책을 건넨 사진은 청소년이 있을 때 찍어두세요.</b> 가고 나면 못 찍어요.</li>
-      <li>유스보이스가 확인하고 <b>매월 15일·말일에 책값을 책방 계좌로 보내드립니다.</b></li>
+      <li><b>청소년 확인:</b> 청소년이 <b>“유스보이스 한끗독서 책 교환”</b>을 요청합니다.</li>
+      <li><b>책 전달:</b> 청소년이 선택한 도서 1권을 <b>무료로</b> 전달합니다.</li>
+      <li><b>QR 스캔:</b> 청소년이 보여주는 <b>책 교환 QR 코드</b>를 책방지기님 휴대폰으로 스캔합니다.</li>
+      <li><b>내역 등록:</b> 책방 고유 번호 입력 후 도서명·금액·영수증·교환 인증 사진을 첨부합니다.
+        영수증 및 책 교환 인증 사진은 추후 등록 가능하며, <b>인증 사진은 교환 즉시 촬영</b>해 주세요.</li>
+      <li><b>정산 안내:</b> 내역 확인 후 <b>매월 15일 / 말일</b>에 등록된 계좌로 정산됩니다.</li>
     </ol>
 
+    <h2>나중에 등록하실 때 (또는 QR 스캔이 안 될 때)</h2>
     <div class="qr">
       <div class="qr-box" id="qr"></div>
       <div>
-        <div class="qr-t">나중에 올리실 때는 여기서</div>
-        <div class="qr-s">「나중에」로 두신 건이나 QR이 안 된 건은, 이 QR을 비추면 열리는 우리 책방 화면에서 올리실 수 있어요.<br>
-          <b>QR을 잃어버리셨다면</b> 폰에서 <b>book.youthvoice.or.kr/store-invite.html</b>을 열어
-          <b>「책방 로그인」</b>에 책방 이름과 위의 확인 번호를 넣으세요.<br>
-          이 화면은 <b>우리 책방 전용</b>이라 다른 책방 내역은 보이지 않습니다.</div>
+        <div class="qr-s">· <b>QR 코드 활용:</b> 안내문의 QR 코드를 스캔하면 책방 전용 등록 페이지로 이동합니다.<br>
+          · <b>링크 직접 접속:</b> QR 코드가 없는 경우, <b>book.youthvoice.or.kr/store-invite.html</b> 접속 후
+          책방 로그인(책방 이름 + 고유 번호)을 진행해 주세요.<br>
+          <span style="color:var(--ink-3);">※ 본 페이지는 책방 전용 화면으로, 타 책방 내역은 노출되지 않습니다.</span></div>
         <div class="qr-u">${esc(LINK)}</div>
       </div>
     </div>
 
-    <div class="note">
-      · 책값은 <b>한 권에 20,000원까지</b>입니다. 넘으면 청구가 되지 않습니다.<br>
-      · 사진은 <b>청소년 얼굴이 나오지 않게</b>, 책이 잘 보이게 찍어주세요.
-        보내신 뒤에는 사장님 폰에서 지우셔도 됩니다.<br>
-      · 청소년이 올리는 <b>교환 인증 사진은 한끗독서 회원에게 공개</b>되며 책방 이름이 함께 표시됩니다.<br>
-      · 우리 책방 화면에 <b>추천 책 한 줄</b>을 남기시면, 책방을 고르는 청소년에게 보입니다 (선택).<br>
-      · <b>QR이 안 될 때</b>는 청소년이 앱에서 직접 기록합니다. 그 건이 우리 책방 화면에
-        <b>「아직 안 보냈어요」</b>로 올라오니, 금액·영수증을 올려주세요.
-        <b>영수증으로 맞춰봅니다.</b><br>
-      · 확인 번호가 새어 나간 것 같으면 아래 메일이나 카카오톡 채널로 알려주세요. <b>확인하는 대로 바꿔드립니다.</b>
+    <h2>유의사항</h2>
+    <div class="note" style="margin-top:0;border-top:0;padding-top:0;">
+      · <b>도서 금액 한도:</b> 책값은 권당 최대 <b>20,000원</b>까지 지원됩니다. (초과 금액은 청구 불가)<br>
+      · <b>사진 촬영 기준:</b> 청소년의 얼굴이 나오지 않도록 도서 위주로 촬영해 주세요.<br>
+      · <b>인증 사진 활용:</b> 청소년이 올린 교환 인증 사진은 한끗독서 회원에게 공유되며, 책방 이름이 함께 표시됩니다.<br>
+      · <b>책방 한 줄 추천 (선택):</b> 책방 전용 페이지에 ‘추천 한 줄’을 남겨주시면 청소년이 책방을 고를 때 함께 보입니다.<br>
+      · <b>보안 안내:</b> 고유 번호 유출이 의심될 경우, 카카오톡 채널 또는 메일로 연락 주시면 즉시 변경 가능합니다.
     </div>
 
     <div class="ask">
       <div class="ask-b">
-        <div class="ask-t">막히실 때</div>
-        <div class="ask-s">메일 <a href="mailto:yv@youthvoice.or.kr"><b>yv@youthvoice.or.kr</b></a><br>
-          카카오톡 채널 <a href="http://pf.kakao.com/_kTGuxj"><b>pf.kakao.com/_kTGuxj</b></a><br>
-          <span>바로 답하지 못할 수 있어요. 확인하는 대로 연락드릴게요.</span></div>
+        <div class="ask-t">문의하기</div>
+        <div class="ask-s">이메일 <a href="mailto:yv@youthvoice.or.kr"><b>yv@youthvoice.or.kr</b></a><br>
+          카카오톡 채널 <a href="http://pf.kakao.com/_kTGuxj"><b>pf.kakao.com/_kTGuxj</b></a></div>
       </div>
       <div id="qr2"></div>
     </div>
