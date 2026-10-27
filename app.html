@@ -1481,6 +1481,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .f-cmts { margin-top:12px; padding-top:12px; border-top:1px solid #f1f1f4; }
 .f-cmt { font-size:13px; margin-bottom:7px; line-height:1.6; }
 .f-cmt b { font-weight:700; margin-right:5px; }
+.f-reply { margin-left:14px; padding-left:10px; border-left:2px solid #E7E2D8; font-size:12.5px; }
+.f-rp { border:none; background:none; color:var(--ink-3); font-size:12px; font-weight:700; cursor:pointer; margin-left:7px; padding:0 2px; }
+.f-cmt-to { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:9px; padding:7px 11px; background:#F2EEE6; border-radius:9px; font-size:12px; color:var(--ink-2); }
+.f-cmt-to:empty { display:none; }
+.f-cmt-to button { border:none; background:none; color:var(--ink-3); font-size:12px; font-weight:700; cursor:pointer; }
 .f-cmt-in { display:flex; gap:7px; margin-top:9px; }
 .f-cmt-in input { padding:9px 12px; font-size:13.5px; border-radius:10px; }
 .f-cmt-in button { flex-shrink:0; padding:0 15px; border:none; border-radius:10px; background:var(--blue); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
@@ -4143,7 +4148,7 @@ function myPoints() {
   // 하루 상한까지만. 자기 인증에 스스로 단 댓글은 빼고 (혼자 무한히 만들 수 있다)
   const byDay = {};
   state.comments
-    .filter(m => m.user_id === me.id
+    .filter(m => m.user_id === me.id && !m.parent_id   // 답글에는 나다움이 없다 (migration-151)
                  && state.certs.find(c => c.id === m.cert_id)?.user_id !== me.id)
     .forEach(m => { const d = String(m.created_at).slice(0,10); byDay[d] = (byDay[d]||0) + 1; });
   const from_comment = Object.values(byDay).reduce((n, v) => n + Math.min(v, cap), 0) * ppc;
@@ -5401,7 +5406,8 @@ function certCard(c) {
     ${c.content ? `<div class="f-text">${esc(c.content)}</div>` : ''}
     ${likeRow(c)}
     <div class="f-cmts">
-      ${cms.map(m => `<div class="f-cmt"><b>${esc(nameOf(m.user_id))}</b>${esc(m.content)}</div>`).join('')}
+      ${commentsHtml(c, cms)}
+      <div class="f-cmt-to" id="cmh_${c.id}">${replyChip(c.id)}</div>
       <div class="f-cmt-in">
         <input type="text" id="cm_${c.id}" placeholder="응원 한마디" maxlength="200"
                onkeydown="if(event.key==='Enter')addComment(${c.id})">
@@ -9396,14 +9402,51 @@ async function toggleLike(certId) {
 }
 
 // ── 댓글 ───────────────────────────────────────────────
+// ── 댓글과 답글 ─────────────────────────────────────────
+// 답글은 맨 위 댓글 밑에 한 단계만. 답글에는 나다움이 없다 (2026-10-27 사용자 · migration-151).
+// 같은 인증 카드가 화면에 두 번 뜰 수 있어(목록 + 열린 창) id 로 모두 찾아 쓴다
+let replyTo = null;   // { certId, cid, uid } — 지금 답글을 쓰는 중인 댓글
+const cmEls = id => [...document.querySelectorAll(`[id="${id}"]`)];
+const cmInput = certId => { const l = cmEls('cm_' + certId); return l.find(e => e.offsetParent) || l[0]; };
+// 답글 칸이 있는 서버인가 — 151 을 돌리기 전에는 단추를 숨긴다
+const repliesOn = () => (state.comments || []).some(m => 'parent_id' in m);
+function replyChip(certId) {
+  if (!replyTo || replyTo.certId !== certId) return '';
+  return `<span>↳ <b>${esc(nameOf(replyTo.uid))}</b>님에게 답글 · 나다움은 없어요</span>
+    <button onclick="cancelReply(${certId})">취소</button>`;
+}
+function commentsHtml(c, cms) {
+  const top = cms.filter(m => !m.parent_id);
+  const reps = pid => cms.filter(m => m.parent_id === pid);
+  const canReply = !!me && !isGuest() && repliesOn();
+  return top.map(m => `<div class="f-cmt"><b>${esc(nameOf(m.user_id))}</b>${esc(m.content)}${canReply
+        ? `<button class="f-rp" onclick="startReply(${c.id}, ${m.id})">답글</button>` : ''}</div>
+      ${reps(m.id).map(r => `<div class="f-cmt f-reply"><b>${esc(nameOf(r.user_id))}</b>${esc(r.content)}</div>`).join('')}`).join('');
+}
+function startReply(certId, cid) {
+  const m = (state.comments || []).find(x => x.id === cid); if (!m) return;
+  replyTo = { certId, cid, uid: m.user_id };
+  cmEls('cmh_' + certId).forEach(e => { e.innerHTML = replyChip(certId); });
+  const inp = cmInput(certId);
+  if (inp) { inp.placeholder = '답글 남기기'; inp.focus(); }
+}
+function cancelReply(certId) {
+  replyTo = null;
+  cmEls('cmh_' + certId).forEach(e => { e.innerHTML = ''; });
+  cmEls('cm_' + certId).forEach(e => { e.placeholder = '응원 한마디'; });
+}
+
 async function addComment(certId) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
-  const el = $('cm_'+certId), text = el.value.trim();
+  const el = cmInput(certId), text = el ? el.value.trim() : '';
   if (!text) return;
+  const pid = replyTo && replyTo.certId === certId ? replyTo.cid : null;
   el.value = '';
-  const { error } = await sb.from('cert_comments').insert({ cert_id: certId, user_id: me.id, content: text });
-  if (error) return toast('댓글을 저장하지 못했어요');
+  const { error } = await sb.from('cert_comments')
+    .insert({ cert_id: certId, user_id: me.id, content: text, ...(pid ? { parent_id: pid } : {}) });
+  if (error) return toast(/답글/.test(error.message || '') ? error.message : (pid ? '답글을 저장하지 못했어요' : '댓글을 저장하지 못했어요'));
+  replyTo = null;
   const c0 = state.certs.find(x => x.id === certId);
   await loadAll(); render(); refreshOpenOv(c0?.routine_id);
 }
