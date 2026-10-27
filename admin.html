@@ -780,7 +780,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <input type="text" id="sPhone" placeholder="예) 033-000-0000">
       </div>
       <div class="field">
-        <div class="label">확인 번호</div>
+        <div class="label">책방 고유 번호</div>
         <input type="text" id="sCode" maxlength="4" inputmode="numeric"
                placeholder="네 자리" style="letter-spacing:4px;font-weight:800;">
         <div class="hint">책방이 아이 폰에 누르는 번호예요. 등록하면 저절로 하나 생기고,
@@ -3843,12 +3843,12 @@ function viewStores() {
   <div class="panel-hd">
     <div><div class="panel-t">파트너 서점</div>
     <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.<br>
-      <b>확인 번호</b>는 사장님이 QR을 찍은 뒤 <b>제 폰에</b> 한 번 넣는 네 자리예요. 청소년에게는 안 보입니다.<br>
+      <b>책방 고유 번호</b>는 사장님이 QR을 찍은 뒤 <b>제 폰에</b> 한 번 넣는 네 자리예요. 청소년에게는 안 보입니다.<br>
       <b>책방 주소</b>는 사장님이 금액·영수증을 올리는 화면이에요. 한 번 보내드리면 즐겨찾기 해두시면 됩니다.</div></div>
     <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>서점</th><th class="num">확인 번호</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
+    <tr><th>서점</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(s => `<tr${s.active ? '' : ' style="opacity:.55;"'}>
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}${s.pick_title
         ? `<div class="muted" style="margin-top:4px;">💛 『${esc(s.pick_title)}』${s.pick_line ? ` ${esc(s.pick_line)}` : ''}
@@ -3889,7 +3889,7 @@ async function saveStoreCode(id) {
   const v = (document.getElementById('sCode').value || '').replace(/[^0-9]/g, '').slice(0, 4);
   const now = (DB.bookstores || []).find(b => b.id === id)?.code || '';
   if (v === now) return null;
-  if (v && v.length !== 4) return '확인 번호는 네 자리예요.';
+  if (v && v.length !== 4) return '책방 고유 번호는 네 자리예요.';
   const q = v
     ? await sb.from('bookstore_codes').upsert({ bookstore_id: id, code: v, updated_at: new Date().toISOString() })
     : await sb.from('bookstore_codes').delete().eq('bookstore_id', id);
@@ -4014,7 +4014,7 @@ async function submitStore() {
     if (error) { alert('저장하지 못했어요: ' + error.message); return; }
     if (storeEditId) {
       const bad = await saveStoreCode(storeEditId);
-      if (bad) { alert('확인 번호는 저장하지 못했어요.\n\n' + bad); }
+      if (bad) { alert('책방 고유 번호는 저장하지 못했어요.\n\n' + bad); }
     }
     await loadLive();
   } else if (storeEditId) {
@@ -4129,7 +4129,7 @@ async function storeLink(id, btn) {
   setTimeout(() => { btn.textContent = '책방 주소'; }, 1600);
 }
 
-// 사장님께 드릴 종이 한 장. 확인 번호와 QR 이 그 책방 것으로 박혀 나온다
+// 사장님께 드릴 종이 한 장. 책방 고유 번호와 QR 이 그 책방 것으로 박혀 나온다
 async function storeGuide(id) {
   if (!LIVE) { alert('데모 모드에서는 안내문이 없어요.'); return; }
   const { data, error } = await sb.rpc('store_key', { p_bookstore_id: id });
