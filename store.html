@@ -212,7 +212,7 @@ async function load() {
     if (/주소가 올바르지 않아요/.test(error.message || '')) {
       ls.del(KEY_SAVE); ls.del(NAME_SAVE); KEY = '';
       return showLogin(URL_KEY
-        ? '이 주소는 더 쓸 수 없어요. 책방 이름과 확인 번호로 들어와 주세요.'
+        ? '이 주소는 더 쓸 수 없어요. 책방 이름과 책방 고유 번호로 들어와 주세요.'
         : '다시 들어와 주세요.');
     }
     return fail('불러오지 못했어요', '잠시 뒤 다시 열어주세요.', error.message || error.code || '');
@@ -235,12 +235,12 @@ async function showLogin(msg) {
     <div class="card lg">
       <div class="store-n">책방 로그인</div>
       <div class="store-s" style="margin-top:5px;">이미 함께하는 책방이에요. 이름을 찾아 고르고
-        <b>안내문에 적힌 확인 번호 네 자리</b>를 넣어주세요.</div>
+        <b>안내문에 적힌 책방 고유 번호 네 자리</b>를 넣어주세요.</div>
       <label>책방</label>
       <input type="text" id="lgQ" placeholder="책방 이름이나 지역을 입력하세요" autocomplete="off"
              oninput="lgFilter(true)">
       <div class="lg-list" id="lgList"></div>
-      <label>확인 번호</label>
+      <label>책방 고유 번호</label>
       <input type="text" id="lgCode" inputmode="numeric" maxlength="4" placeholder="● ● ● ●"
              autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"
              style="text-align:center;letter-spacing:10px;font-size:20px;font-weight:800;">
@@ -278,7 +278,7 @@ async function doLogin() {
   const id   = LG_ID;
   const code = $('lgCode').value.replace(/[^0-9]/g, '');
   if (!id)             return lgMsg('책방을 골라주세요.');
-  if (code.length !== 4) return lgMsg('확인 번호 네 자리를 넣어주세요.');
+  if (code.length !== 4) return lgMsg('책방 고유 번호 네 자리를 넣어주세요.');
   // Enter 로 들어오면 event.target 이 단추가 아니라 입력칸이다. id 로 잡는다
   const btn = $('lgGo'); btn.disabled = true; btn.textContent = '확인 중…';
   const { data, error } = await sb.rpc('store_login', { p_store_id: id, p_code: code });
@@ -313,34 +313,32 @@ function paint() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div>
           <div class="store-n">${esc(store.name)}</div>
-          <div class="store-s">${store.region ? esc(store.region) + ' · ' : ''}한끗독서 파트너 책방</div>
+          <div class="store-s">${esc(store.address || store.region || '')}</div>
         </div>
         <a class="logout" onclick="logout()">로그아웃</a>
       </div>
-      ${store.code ? `<div class="code-mini">우리 책방 확인 번호 <b>${esc(store.code)}</b>
-        <span>QR을 찍으면 한 번 물어봐요. 넣으시면 이 폰이 기억해요</span></div>` : ''}
+      ${store.code ? `<div class="code-mini">책방 고유 번호 <b>${esc(store.code)}</b>
+        <span>최초 1회 입력 시, 기기에 자동 저장됩니다.</span></div>` : ''}
     </div>` : ''}
 
     <div class="guide">
-      <b>📚 이렇게 해주세요</b>
+      <b>책 교환 방법</b>
       <ol>
-        <li>청소년이 고른 책을 <b>그냥 드리면</b> 됩니다. 돈은 받지 않습니다.</li>
-        <li>청소년이 폰에 띄운 <b>QR을 카메라로 찍어주세요.</b></li>
-        <li><b>금액·영수증·사진</b>을 올려주세요. 바쁘시면 나중에 올리셔도 됩니다.<br>
-          <b>단, 책을 건넨 사진은 청소년이 있을 때 찍어두세요.</b> 가고 나면 못 찍어요.</li>
-        <li>QR이 안 되면 청소년이 앱에서 직접 기록해요. 그 건이 아래 <b>「청구할 건」</b>에 올라오니 금액·영수증을 올려주세요.</li>
-        <li>유스보이스가 확인하고 <b>매월 15일·말일에 책값을 보내드립니다.</b></li>
+        <li><b>청소년 확인:</b> 청소년이 “유스보이스 한끗독서 책 교환”을 요청합니다.</li>
+        <li><b>책 전달:</b> 청소년이 선택한 도서 1권을 <b>무료로</b> 전달합니다.</li>
+        <li><b>QR 스캔:</b> 청소년이 보여주는 책 교환 QR 코드를 책방지기님 휴대폰으로 스캔합니다.</li>
+        <li><b>내역 등록:</b> 책방 고유 번호 입력 후 도서명·금액·영수증·교환 인증 사진을 첨부합니다.
+          영수증 및 책 교환 인증 사진은 추후 등록 가능하며, <b>인증 사진은 교환 즉시 촬영</b>해 주세요.</li>
+        <li><b>정산 안내:</b> 내역 확인 후 <b>매월 15일 / 말일</b>에 등록된 계좌로 정산됩니다.</li>
       </ol>
-      <div class="hint" style="margin-top:8px;">청소년이 올리는 교환 인증 사진은 한끗독서 회원에게 공개되며, 책방 이름이 함께 표시됩니다.</div>
     </div>
 
     ${pickCard()}
 
-    <div class="sec">청구할 건 ${wait.length ? `<span style="color:var(--amber-d);">${wait.length}</span>` : ''}</div>
+    <div class="sec">청구 내역 ${wait.length ? `<span style="color:var(--amber-d);">${wait.length}</span>` : ''}</div>
     ${wait.length
       ? wait.map(card).join('')
-      : `<div class="card"><div class="hint">지금은 청구할 건이 없어요.<br>
-           청소년이 다녀가면 여기에 나타납니다.</div></div>`}
+      : `<div class="card"><div class="hint">청구할 내역이 없습니다.</div></div>`}
 
     ${rest.length ? `<div class="sec">지난 건</div>${rest.map(card).join('')}` : ''}
   `;
@@ -351,14 +349,14 @@ function paint() {
 function pickCard() {
   if (!storePick.ready) return '';          // 110 이 아직이면 칸 자체를 보이지 않는다
   return `<div class="card" style="margin-top:14px;">
-    <div class="store-n" style="font-size:16.5px;">💛 이번 달 추천 한 줄</div>
-    <div class="store-s" style="margin-top:4px;">청소년이 책방을 고를 때 사장님의 추천이 보여요. 어렵게 생각하지 않으셔도 돼요.</div>
-    <label>추천하는 책 <span style="font-weight:500;color:var(--ink-3);">— 제목을 치면 찾아드려요</span></label>
-    <input type="text" id="pkTitle" maxlength="60" placeholder="예) 아몬드" value="${esc(storePick.title)}"
+    <div class="store-n" style="font-size:16.5px;">${esc(store ? store.name : '책방')} 추천 한 줄 <span style="font-weight:600;color:var(--ink-3);font-size:14px;">(선택)</span></div>
+    <div class="store-s" style="margin-top:4px;">청소년이 책을 교환할 책방을 고를 때 책방지기의 추천 한 줄이 보여집니다.</div>
+    <label>추천하는 책</label>
+    <input type="text" id="pkTitle" maxlength="60" placeholder="제목 입력" value="${esc(storePick.title)}"
            autocomplete="off" oninput="pkType()">
     <div id="pkFind"></div>
     <div id="pkGot">${pkGot()}</div>
-    <label>한 줄 (80자까지)</label>
+    <label>한 줄 (80자 내외)</label>
     <input type="text" id="pkLine" maxlength="80" placeholder="예) 마음이 복잡한 날 읽으면 좋아요" value="${esc(storePick.line)}">
     <button class="btn btn-line" id="pkGo" onclick="savePick()" style="margin-top:14px;">저장하기</button>
     <div id="pkMsg"></div>
@@ -491,7 +489,7 @@ function rememberStore(id, code) {
 function askCode(msg) {
   $('app').innerHTML = `
     <div class="card">
-      <div class="store-n">확인 번호를 넣어주세요</div>
+      <div class="store-n">책방 고유 번호를 넣어주세요</div>
       <div class="store-s" style="margin-top:6px;">
         안내문에 적힌 <b>우리 책방 네 자리</b>예요. 이 폰이 기억하니 다음부터는 안 물어봅니다.</div>
       <input type="text" id="code" inputmode="numeric" maxlength="4"
