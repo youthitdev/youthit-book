@@ -3801,6 +3801,9 @@ async function showWelcome() {
   $('wlT').textContent = `${me.nick || me.name || '친구'}님, 환영해요 🎉`;
   const per = state.settings.points_per_voucher || 150;
   $('wlBody').innerHTML = `
+    ${verifyBlocked() ? `<div class="card" style="margin:0 0 12px;"><div style="font-weight:800;font-size:14.5px;">🪪 먼저 청소년 확인을 해 주세요</div>
+      <div class="hint" style="margin:6px 0 0;line-height:1.7;">루틴에 참여하고 인증하려면 한 번 필요해요. 서류 사진만 올리면 돼요.</div></div>
+    <button class="btn btn-primary" style="margin-bottom:12px;" onclick="closeSheet('shWelcome');openVerify()">청소년 확인하러 가기</button>` : ''}
     <div class="card" style="margin:0 0 12px;"><div style="font-weight:800;font-size:14.5px;">🔔 알림을 켜면 매일 한 장을 잊지 않아요</div>
       <div class="hint" style="margin:6px 0 0;line-height:1.7;">${st === 'needs-install'
         ? '아이폰은 <b>홈 화면에 추가</b>를 해야 알림이 와요. 그림으로 따라 하면 1분이면 돼요.'
@@ -4187,7 +4190,7 @@ function render() {
   paintBell();
   // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
   if (isGuest() && tab !== 'home' && tab !== 'store') { b.innerHTML = guestWall(); return; }
-  if (tab === 'home') { b.innerHTML = '<div id="pushNudge"></div>' + viewHome(); paintPushNudge(); fillPickCovers(); }
+  if (tab === 'home') { b.innerHTML = verifyHomeCard() + '<div id="pushNudge"></div>' + viewHome(); paintPushNudge(); fillPickCovers(); }
   else if (tab === 'cert') b.innerHTML = viewCert();
   else if (tab === 'feed') b.innerHTML = viewFeed();
   else if (tab === 'store') b.innerHTML = viewStores();
@@ -4704,6 +4707,7 @@ async function cheerOngoing(rid, i) {
 async function joinOngoing(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
   if (!me || isGuest()) return needLogin('로그인하면 참여할 수 있어요');
+  if (verifyBlocked()) return askVerify();
   const { error } = await sb.from('routine_participants').insert({ routine_id: rid, user_id: me.id, status: 'approved', note: '매일 한끗' });
   if (error && error.code !== '23505') return toast('참여하지 못했어요: ' + error.message);
   await loadAll(); render();
@@ -6153,16 +6157,38 @@ async function deleteReview() {
 // 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
 // 15·30·66일 사다리가 여기로 이어진다
 // ── 청소년 확인 ────────────────────────────────────────
+// 【2026-10-27 사용자: 서류를 안 낸 아이도 인증이 되던 것을 막는다】 확인 서류를 낸 뒤에야 루틴에 참여하고 인증한다.
+//   서류를 낸 상태(pending)는 통과 — 운영진이 보는 동안 기다리게 하지 않는다. 서버도 같은 식으로 막는다 (migration-150).
+//   운영진·끗짱·어른은 대상이 아니다. 설정 require_verify 를 끄면 예전처럼 열린다.
+//   아래 옛 주석(책 받을 때만 묻는다)은 이 날짜 전의 결정이다
+const verifyBlocked = () => !!me && !isGuest() && isYouth() && !canLead() && !isAdminUser()
+  && state.settings.require_verify !== false
+  && !['pending', 'approved'].includes(me.verify_status || 'none');
+function askVerify() { toast('먼저 청소년 확인을 해 주세요'); openVerify(); }
+// 홈 맨 위 카드 — 막혀 있는 동안 계속 보인다
+function verifyHomeCard() {
+  if (!verifyBlocked()) return '';
+  const rej = (me.verify_status || 'none') === 'rejected';
+  return `<div class="card vf ${rej ? 'rejected' : 'soon'}" style="margin-bottom:12px;">
+    <div class="vf-i">🪪</div>
+    <div class="vf-t">
+      <b>${rej ? '서류를 다시 내주세요' : '청소년 확인부터 해 주세요'}</b>
+      <span>${rej ? esc(me.verify_reason || '다시 올려주세요.') : '루틴 참여와 인증 전에 한 번 필요해요. 서류 사진만 올리면 돼요.'}</span>
+      <button class="btn btn-line" style="margin-top:10px;" onclick="openVerify()">확인하러 가기</button>
+    </div>
+  </div>`;
+}
+
 // 도서기금은 청소년에게 쓰는 돈이다. 그런데 가입할 때는 나이를 안 묻는다.
 // 읽는 건 누구나 하게 두고, 책을 받는 순간에만 확인한다 —
 // 가입 직후부터 서류를 요구하면 시작을 못 한다
 // ⚠️ 2026-10-06(migration-82) 로 참여 문이 열렸다. 확인은 이제 **책을 받을 때**
 //   필요하다. 「루틴에 참여하려면」이라고 적으면 읽기도 전에 기다리게 만든다
 const VERIFY = {
-  none:     ['🪪', '청소년 확인이 필요해요', '책을 받으려면 한 번 확인해야 해요.'],
+  none:     ['🪪', '청소년 확인이 필요해요', '루틴에 참여하고 인증하려면 한 번 확인해야 해요.'],
   pending:  ['🕰️', '확인하고 있어요',       '운영진이 보고 있어요. 하루 이틀이면 끝나요.'],
   rejected: ['✉️', '다시 내주세요',          ''],
-  approved: ['✅', '청소년 확인이 끝났어요',  '이제 책을 받을 수 있어요 🌱'],
+  approved: ['✅', '청소년 확인이 끝났어요',  '루틴 참여도, 책 받기도 할 수 있어요 🌱'],
 };
 
 // 카드 한 장을 쓰던 자리다. 담긴 건 상태 한 줄뿐이라 프로필 밑으로 옮긴다.
@@ -6185,8 +6211,8 @@ function verifyLine() {
   if (st === 'approved') return '';
   const [ico, title] = VERIFY[st] || VERIFY.none;
   const sub = st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
-            : st === 'pending'  ? '하루 이틀이면 끝나요'
-            : '지금 읽는 건 돼요. 책 받을 때까지만 끝내면 됩니다';
+            : st === 'pending'  ? '확인하는 동안에도 참여하고 인증할 수 있어요'
+            : '루틴 참여와 인증에 필요해요. 서류 사진만 올리면 돼요';
   return `<div class="vline ${st}" onclick="openVerify()">
       <span>${ico}</span>
       <div><b>${title}</b><i>${sub}</i></div>
@@ -6299,14 +6325,14 @@ function verifyNote() {
   if (st === 'pending') return `<div class="card vf pending" style="margin-bottom:12px;">
     <div class="vf-i">🕰️</div>
     <div class="vf-t"><b>청소년 확인을 보고 있어요</b>
-      <span>지금 바로 참여하고 읽을 수 있어요. 책을 받을 때까지만 끝나면 돼요.</span></div>
+      <span>확인하는 동안에도 참여하고 인증할 수 있어요. 책을 받을 때는 확인이 끝나 있어야 해요.</span></div>
   </div>`;
   return `<div class="card vf ${st === 'rejected' ? 'rejected' : 'soon'}" style="margin-bottom:12px;">
     <div class="vf-i">🪪</div>
     <div class="vf-t">
-      <b>${st === 'rejected' ? '서류를 다시 내주세요' : '책을 받으려면 청소년 확인이 필요해요'}</b>
+      <b>${st === 'rejected' ? '서류를 다시 내주세요' : '참여하려면 청소년 확인이 필요해요'}</b>
       <span>${st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
-        : '지금 참여해서 읽는 건 돼요. 나다움이 모이기 전에만 끝내면 됩니다.'}</span>
+        : '서류 사진을 올리면 바로 참여하고 인증할 수 있어요.'}</span>
       <button class="btn btn-line" style="margin-top:10px;" onclick="openVerify()">확인하러 가기</button>
     </div>
   </div>`;
@@ -7251,6 +7277,7 @@ function openRoutine(id) {
       : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
       : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="closeOv('ovRoutine'); go('cert', ${r.id})">👀 인증글 보기 (운영진)</button>` : '')}`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
+      : verifyBlocked() ? verifyNote()
       : `<div>
           ${me.verify_status !== 'approved' ? verifyNote() : ''}
           ${isShared(r) ? '' : isOneBook(r)
@@ -7336,6 +7363,7 @@ function checkApply() {
 
 async function apply(rid) {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
+  if (verifyBlocked()) return askVerify();
 
   const r0   = state.routines.find(x => x.id === rid);
   const one  = isOneBook(r0);
@@ -8049,6 +8077,7 @@ const introMissing = () => $('cIntro') && $('cIntro').style.display !== 'none'
 
 function openCert(rid, pickTitle) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
+  if (verifyBlocked()) return askVerify();   // 서류를 내기 전에는 인증도 막는다 (migration-150)
   // 알림·링크로도 이 창이 열린다. 시작 전 루틴에는 인증이 올라가면 안 된다 (서버도 막는다 — migration-119)
   if (routineDay(r)?.notYet) return toast(`아직 시작 전이에요. ${fmtDay(r.start_date)}부터 인증할 수 있어요`);
   if (routineEnded(r)) return toast('끝난 루틴이라 더 인증할 수 없어요');   // 종료일 당일까지만
