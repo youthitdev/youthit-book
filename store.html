@@ -331,16 +331,16 @@ function paint() {
         <li><b>QR 스캔:</b> 청소년이 보여주는 책 교환 QR 코드를 책방지기님 휴대폰으로 스캔합니다.</li>
         <li><b>내역 등록:</b> 책방 고유 번호 입력 후 도서명·금액·교환 인증 사진을 첨부합니다.
           책 교환 인증 사진은 추후 등록 가능하며, <b>교환 즉시 촬영</b>해 주세요.</li>
-        <li><b>정산 안내:</b> 내역 확인 후 <b>매월 15일 / 말일</b>에 등록된 계좌로 정산됩니다.</li>
+        <li><b>입금 안내:</b> 내역 확인 후 <b>매월 15일 / 말일</b>에 등록된 계좌로 입금됩니다. (입금일 전날까지 확인이 끝난 건이 그날 입금)</li>
       </ol>
     </div>
 
     ${pickCard()}
 
-    <div class="sec">청구 내역 ${wait.length ? `<span style="color:var(--amber-d);">${wait.length}</span>` : ''}</div>
+    <div class="sec">요청 내역 ${wait.length ? `<span style="color:var(--amber-d);">${wait.length}</span>` : ''}</div>
     ${wait.length
       ? wait.map(card).join('')
-      : `<div class="card"><div class="hint">청구할 내역이 없습니다.</div></div>`}
+      : `<div class="card"><div class="hint">요청할 내역이 없습니다.</div></div>`}
 
     ${rest.length ? `<div class="sec">지난 건</div>${rest.map(card).join('')}` : ''}
   `;
@@ -440,7 +440,7 @@ function form() {
 
     <label>책 값 (원) <span style="font-weight:600;color:var(--bad);">필수</span></label>
     <input type="number" id="amt" inputmode="numeric" placeholder="16500" oninput="check()">
-    <div class="hint" style="margin-top:6px;">책방에서 청구하는 실제 책 값을 적어주세요.</div>
+    <div class="hint" style="margin-top:6px;">책방에서 요청하는 실제 책 값을 적어주세요.</div>
 
     <label>책 교환 인증 사진 <span style="font-weight:500;color:var(--ink-3);">(추후 업로드 가능)</span></label>
     <label class="file" id="phLab">사진 선택
@@ -593,7 +593,7 @@ function goHome(e) {
 function sentMsg(both) {
   const head = `<div class="msg m-ok" style="font-size:16px;padding:20px;">유스보이스에게 책 값이 요청되었습니다.</div>`;
   return both
-    ? `${head}<div class="card"><div class="hint">책 값은 책 교환 사진 확인 후, 매월 15일 혹은 말일에 등록된 계좌로 정산됩니다.</div></div>`
+    ? `${head}<div class="card"><div class="hint">책 값은 책 교환 사진 확인 후, 매월 15일 혹은 말일에 등록된 계좌로 입금됩니다.</div></div>`
     : `${head}<div class="card"><div class="hint">책 교환 인증 사진은 교환권 사용 이후 <b>3일 이내로</b> 업로드해주시기 바랍니다.</div>
         <button class="btn btn-line" onclick="later()">나중에 업로드하기</button></div>`;
 }
