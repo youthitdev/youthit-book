@@ -306,7 +306,7 @@ function fail(t, s, detail) {
 
 function paint() {
   // 챙길 일이 남은 건이 위로 — 요청 전이거나, 요청은 했는데 사진이 덜 올라온 건
-  const need = r => r.submitted && !r.settled && (!r.has_receipt || !r.has_photo);
+  const need = r => r.submitted && !r.settled && !r.has_photo;
   const wait = rows.filter(r => !r.settled && (!r.submitted || need(r)));
   const rest = rows.filter(r => !wait.includes(r));
 
@@ -329,8 +329,8 @@ function paint() {
         <li><b>청소년 확인:</b> 청소년이 “유스보이스 한끗독서 책 교환”을 요청합니다.</li>
         <li><b>책 전달:</b> 청소년이 선택한 도서 1권을 <b>무료로</b> 전달합니다.</li>
         <li><b>QR 스캔:</b> 청소년이 보여주는 책 교환 QR 코드를 책방지기님 휴대폰으로 스캔합니다.</li>
-        <li><b>내역 등록:</b> 책방 고유 번호 입력 후 도서명·금액·영수증·교환 인증 사진을 첨부합니다.
-          영수증 및 책 교환 인증 사진은 추후 등록 가능하며, <b>인증 사진은 교환 즉시 촬영</b>해 주세요.</li>
+        <li><b>내역 등록:</b> 책방 고유 번호 입력 후 도서명·금액·교환 인증 사진을 첨부합니다.
+          책 교환 인증 사진은 추후 등록 가능하며, <b>교환 즉시 촬영</b>해 주세요.</li>
         <li><b>정산 안내:</b> 내역 확인 후 <b>매월 15일 / 말일</b>에 등록된 계좌로 정산됩니다.</li>
       </ol>
     </div>
@@ -412,12 +412,11 @@ async function savePick() {
 }
 
 function card(r) {
-  // 사진이 아직 덜 올라왔나 — 요청은 했는데 영수증이나 교환 인증 사진이 비어 있는 건
-  const need = r.submitted && !r.settled && (!r.has_receipt || !r.has_photo);
+  // 사진이 아직 안 올라왔나 — 요청은 했는데 책 교환 인증 사진이 비어 있는 건
+  const need = r.submitted && !r.settled && !r.has_photo;
   const tag = r.settled   ? `<span class="chip c-done">책값을 보냈어요</span>`
             : r.submitted ? `<span class="chip c-sent">요청했어요 · ${won(r.store_amount)}원</span>`
             :               `<span class="chip c-wait">아직 요청 전이에요${(d => d >= 1 ? ` · ${d}일째` : '')(Math.floor((Date.now() - new Date(r.came_at).getTime()) / 86400e3))}</span>`;
-  const miss = [!r.has_receipt && '영수증', !r.has_photo && '책 교환 인증'].filter(Boolean).join('·');
   return `<div class="row${picked === r.id ? ' on' : ''}">
     <div class="row-t">
       <div class="row-who">${esc(r.who)}${r.kid_age != null ? ` <span class="age">만 ${r.kid_age}세</span>` : ''}</div>
@@ -426,7 +425,7 @@ function card(r) {
     ${r.store_book ? `<div class="row-book">📖 ${esc(r.store_book)}</div>` : ''}
     ${r.code_ok === false ? `<div class="row-book">📱 청소년이 앱에서 직접 기록한 건이에요 · 책을 건넨 분이 맞는지 확인해 주세요</div>` : ''}
     ${tag}
-    ${need ? `<div class="hint" style="margin-top:8px;"><b>${miss} 사진</b>을 올려 주세요. 교환권 사용 이후 3일 이내로 부탁드립니다.</div>` : ''}
+    ${need ? `<div class="hint" style="margin-top:8px;"><b>책 교환 인증 사진</b>을 올려 주세요. 교환권 사용 이후 3일 이내로 부탁드립니다.</div>` : ''}
     ${picked === r.id
       ? (r.submitted ? proofForm(r) : form())
       : (!r.submitted ? `<button class="btn btn-go" onclick="pick(${r.id})">책 값 요청하기</button>`
@@ -441,12 +440,7 @@ function form() {
 
     <label>책 값 (원) <span style="font-weight:600;color:var(--bad);">필수</span></label>
     <input type="number" id="amt" inputmode="numeric" placeholder="16500" oninput="check()">
-    <div class="hint" style="margin-top:6px;">영수증에 찍힌 금액을 그대로 적어주세요.</div>
-
-    <label>영수증 사진 <span style="font-weight:500;color:var(--ink-3);">(추후 업로드 가능)</span></label>
-    <label class="file" id="rcLab">사진 선택
-      <input type="file" accept="image/*" onchange="pickFile(event,'receipt')"></label>
-    <div id="rcPrev"></div>
+    <div class="hint" style="margin-top:6px;">책방에서 청구하는 실제 책 값을 적어주세요.</div>
 
     <label>책 교환 인증 사진 <span style="font-weight:500;color:var(--ink-3);">(추후 업로드 가능)</span></label>
     <label class="file" id="phLab">사진 선택
@@ -459,18 +453,14 @@ function form() {
     <div id="msg"></div>`;
 }
 
-// 요청은 이미 했고 사진만 비어 있는 건 — 빠진 사진만 묻는다
+// 요청은 이미 했고 책 교환 인증 사진만 비어 있는 건
 function proofForm(r) {
   return `
-    ${r.has_receipt ? '' : `<label>영수증 사진</label>
-    <label class="file" id="rcLab">사진 선택
-      <input type="file" accept="image/*" onchange="pickFile(event,'receipt')"></label>
-    <div id="rcPrev"></div>`}
-    ${r.has_photo ? '' : `<label>책 교환 인증 사진</label>
+    <label>책 교환 인증 사진</label>
     <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
-    <div class="hint" style="margin-top:6px;"><b>청소년의 얼굴이 나오지 않도록</b> 도서 위주로 촬영해 주세요.</div>`}
+    <div class="hint" style="margin-top:6px;"><b>청소년의 얼굴이 나오지 않도록</b> 도서 위주로 촬영해 주세요.</div>
     <button class="btn btn-go" id="go" disabled onclick="sendProof()">사진 올리기</button>
     <button class="btn btn-line" onclick="pick(null)">그만두기</button>
     <div id="msg"></div>`;
@@ -559,16 +549,16 @@ async function pickFile(e, which) {
   try {
     const blob = await shrink(f);
     const url  = URL.createObjectURL(blob);
-    if (which === 'receipt') { receipt = blob; $('rcPrev').innerHTML = `<img class="prev" src="${url}">`; $('rcLab').classList.add('on'); $('rcLab').firstChild.nodeValue = '다시 고르기 '; }
-    else                     { photo   = blob; $('phPrev').innerHTML = `<img class="prev" src="${url}">`; $('phLab').classList.add('on'); $('phLab').firstChild.nodeValue = '다시 고르기 '; }
+    { photo   = blob; $('phPrev').innerHTML = `<img class="prev" src="${url}">`; $('phLab').classList.add('on'); $('phLab').firstChild.nodeValue = '다시 고르기 '; }
   } catch (err) { show('m-bad', err.message || '사진을 불러오지 못했어요'); }
   check();
 }
 
-// 책 값만 있으면 요청이 된다. 영수증·책 교환 인증 사진은 나중에 올려도 된다 (2026-10-28 요청) —
-// 막아 두면 사장님이 그 자리에서 포기한다. 사진만 올리는 화면(proofForm)은 한 장이라도 골라야 한다
+// 책 값만 있으면 요청이 된다. 책 교환 인증 사진은 나중에 올려도 된다 (2026-10-28 요청) —
+// 막아 두면 사장님이 그 자리에서 포기한다. 영수증은 받지 않는다: 아이는 돈을 내지 않아 책방에 영수증이 생기지 않는다.
+// 사진만 올리는 화면(proofForm)은 한 장을 골라야 한다
 function check() {
-  $('go').disabled = $('amt') ? !(Number($('amt').value) > 0) : !(receipt || photo);
+  $('go').disabled = $('amt') ? !(Number($('amt').value) > 0) : !photo;
 }
 
 function show(cls, t) { $('msg').innerHTML = `<div class="msg ${cls}">${esc(t)}</div>`; }
@@ -603,8 +593,8 @@ function goHome(e) {
 function sentMsg(both) {
   const head = `<div class="msg m-ok" style="font-size:16px;padding:20px;">유스보이스에게 책 값이 요청되었습니다.</div>`;
   return both
-    ? `${head}<div class="card"><div class="hint">책 값은 영수증과 책 교환 사진 확인 후, 매월 15일 혹은 말일에 등록된 계좌로 정산됩니다.</div></div>`
-    : `${head}<div class="card"><div class="hint">영수증과 책 교환 인증 사진은 교환권 사용 이후 <b>3일 이내로</b> 업로드해주시기 바랍니다.</div>
+    ? `${head}<div class="card"><div class="hint">책 값은 책 교환 사진 확인 후, 매월 15일 혹은 말일에 등록된 계좌로 정산됩니다.</div></div>`
+    : `${head}<div class="card"><div class="hint">책 교환 인증 사진은 교환권 사용 이후 <b>3일 이내로</b> 업로드해주시기 바랍니다.</div>
         <button class="btn btn-line" onclick="later()">나중에 업로드하기</button></div>`;
 }
 // 「나중에 업로드하기」 — 우리 책방 화면에서 사진을 올리면 된다
@@ -613,17 +603,16 @@ function later() { if (TOKEN) return goList(); const m = $('sentBox'); if (m) m.
 async function send() {
   const btn = $('go'); btn.disabled = true; btn.textContent = '보내는 중…';
   try {
-    const rc = await up(receipt, 'receipt');
-    const ph = await up(photo,   'photo');
-    const common = { p_amount: parseInt($('amt').value, 10), p_receipt: rc, p_photo: ph,
+    const ph = await up(photo, 'photo');
+    const common = { p_amount: parseInt($('amt').value, 10), p_receipt: null, p_photo: ph,
                      p_book: $('bk').value.trim() || null };
     const { data: res, error } = TOKEN
       ? await sb.rpc('redeem_qr_confirm', { p_token: TOKEN, p_code: savedCode(), ...common })
       : await sb.rpc('store_submit',      { p_key: KEY, p_purchase_id: picked, ...common });
     if (error) throw new Error(error.message);
     if (res && res.ok === false) throw new Error(res.message || '보내지 못했어요');
-    picked = null; receipt = null; photo = null;
-    const both = !!(rc && ph);
+    picked = null; photo = null;
+    const both = !!ph;
 
     if (TOKEN) {
       // 쪽지는 한 번 쓰면 끝이다. 목록으로 돌아갈 데가 없으니 여기서 맺는다
@@ -642,14 +631,13 @@ async function send() {
   }
 }
 
-// 이미 요청한 건에 영수증·책 교환 인증 사진을 더 올린다
+// 이미 요청한 건에 책 교환 인증 사진을 더 올린다
 async function sendProof() {
   const btn = $('go'); btn.disabled = true; btn.textContent = '올리는 중…';
   try {
-    const rc = await up(receipt, 'receipt');
-    const ph = await up(photo,   'photo');
+    const ph = await up(photo, 'photo');
     const { data: res, error } = await sb.rpc('store_add_proof',
-      { p_key: KEY, p_purchase_id: picked, p_receipt: rc, p_photo: ph });
+      { p_key: KEY, p_purchase_id: picked, p_receipt: null, p_photo: ph });
     if (error) throw new Error(error.message);
     if (res && res.ok === false) throw new Error(res.message || '올리지 못했어요');
     picked = null; receipt = null; photo = null;

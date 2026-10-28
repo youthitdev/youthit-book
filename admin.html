@@ -642,7 +642,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-t">정산 입력</div>
-      <div class="modal-d">서점 영수증에 찍힌 실제 금액을 입력하세요.</div>
+      <div class="modal-d">책방이 요청한 금액이 맞는지 확인하고 입력하세요.</div>
     </div>
     <div class="modal-bd">
       <div class="target" id="settleTarget"></div>
@@ -652,9 +652,9 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <div class="hint">교환권 한도 <b id="capHint"></b>원. 초과분은 후원금에서 나갈 수 없어요</div>
       </div>
       <div class="field">
-        <div class="label">영수증 첨부</div>
+        <div class="label">증빙 첨부 <span style="font-weight:500;color:var(--ink-3);">(선택)</span></div>
         <input type="file" id="settleReceipt" accept="image/*,application/pdf">
-        <div class="hint">서점이 보낸 영수증 사진 또는 스캔본</div>
+        <div class="hint">계산서 등 받은 증빙이 있으면 사진이나 PDF로 첨부해요</div>
       </div>
       <div class="field">
         <div class="label">메모</div>
@@ -3972,7 +3972,7 @@ function viewStores() {
     <div><div class="panel-t">파트너 서점</div>
     <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.<br>
       <b>책방 고유 번호</b>는 사장님이 QR을 찍은 뒤 <b>제 폰에</b> 한 번 넣는 네 자리예요. 청소년에게는 안 보입니다.<br>
-      <b>책방 주소</b>는 사장님이 금액·영수증을 올리는 화면이에요. 한 번 보내드리면 즐겨찾기 해두시면 됩니다.</div></div>
+      <b>책방 주소</b>는 사장님이 책 값·사진을 올리는 화면이에요. 한 번 보내드리면 즐겨찾기 해두시면 됩니다.</div></div>
     <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
@@ -4160,9 +4160,9 @@ function viewPending() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">정산 대기</div>
-    <div class="panel-d">교환권으로 책을 받아온 건이에요. 서점이 보낸 영수증과 금액을 확인해 확정하세요.<br>
-      <b>QR 없이</b>로 적힌 건은 QR이 안 돼서 청소년이 앱에서 직접 기록한 건이에요. 책방이 올린 금액·영수증과 맞는지 확인하세요.<br>
-      <b>청구 ○○원</b>은 책방이 직접 올린 금액이에요. 영수증을 보고 확정하세요 — <b>그대로 확정되지 않습니다.</b></div></div>
+    <div class="panel-d">교환권으로 책을 받아온 건이에요. 책방이 요청한 금액·책 이름과 교환 인증 사진을 확인해 확정하세요.<br>
+      <b>QR 없이</b>로 적힌 건은 QR이 안 돼서 청소년이 앱에서 직접 기록한 건이에요. 책방이 올린 금액·사진과 맞는지 확인하세요.<br>
+      <b>청구 ○○원</b>은 책방이 직접 올린 금액이에요. 책 이름·사진을 보고 확정하세요 — <b>그대로 확정되지 않습니다.</b></div></div>
   </div>
   ${overdueBanner(rows)}
   ${rows.length ? `<div class="tbl"><table>
@@ -4197,7 +4197,7 @@ function claimMessage(store, list) {
     '',
     ...list.map(g => `· ${day(g.created_at)} ${g.nick || g.name}`),
     '',
-    '한가하실 때 아래에서 「책방 로그인」으로 들어가 금액과 영수증을 올려주세요.',
+    '한가하실 때 아래에서 「책방 로그인」으로 들어가 책 값과 사진을 올려주세요.',
     SITE + '/store-invite.html',
     '',
     '막히시면 답장으로 알려주세요.',
@@ -4241,7 +4241,7 @@ function storeClaimCell(g) {
   // 사진은 요청한 뒤에 올라올 수 있다. 비어 있으면 「대기」로 보여서 정산 전에 챙기게 한다 (2026-10-28)
   return `<span class="chip c-act">청구 ${won(g.store_amount)}원</span>
     ${g.store_book ? `<span class="muted">📖 ${esc(g.store_book)}</span> ` : ''}
-    ${g.store_receipt_path ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_receipt_path)}','영수증')">영수증</button>` : `<span class="chip c-wait">영수증 대기</span>`}
+    ${g.store_receipt_path ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_receipt_path)}','영수증')">영수증</button>` : ''}
     ${g.store_photo_path   ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_photo_path)}','사진')">건넨 사진</button>` : `<span class="chip c-wait">교환 사진 대기</span>`}
     ${g.store_note ? `<div class="muted" style="margin-top:4px;">“${esc(g.store_note)}”</div>` : ''} `;
 }
@@ -4511,9 +4511,9 @@ function openSettle(id) {
     `<div><b>${esc(g.name)}</b> · ${esc(g.routine)}</div>
      <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 구매</div>
      ${g.store_submitted_at ? `<div style="margin-top:6px;color:var(--pink);font-weight:700;">
-        책방이 <b>${won(g.store_amount)}원</b>을 청구했어요 — 영수증과 맞춰보세요
+        책방이 <b>${won(g.store_amount)}원</b>을 청구했어요 — 책 이름·사진과 맞춰보세요
         ${g.store_book ? `<div class="muted" style="font-weight:500;">📖 ${esc(g.store_book)}</div>` : ''}
-        ${!g.store_receipt_path || !g.store_photo_path ? `<div style="font-weight:600;color:#b00038;">${[!g.store_receipt_path && '영수증', !g.store_photo_path && '교환 인증 사진'].filter(Boolean).join('·')}이 아직 안 올라왔어요 — 정산 전에 확인하세요</div>` : ''}
+        ${!g.store_photo_path ? `<div style="font-weight:600;color:#b00038;">교환 인증 사진이 아직 안 올라왔어요 — 정산 전에 확인하세요</div>` : ''}
         ${g.store_note ? `<div class="muted" style="font-weight:500;">“${esc(g.store_note)}”</div>` : ''}</div>` : ''}`;
   document.getElementById('capHint').textContent = won(voucherCap());
   // 책방이 올린 금액을 미리 채운다. 확정은 여전히 사람이 누른다
@@ -4559,7 +4559,7 @@ async function submitSettle() {
       const path = `${settleTargetId}_${Date.now()}.${ext}`;
       const { error: up } = await sb.storage.from('dokseo-receipts')
         .upload(path, f, { contentType: f.type || 'application/octet-stream', cacheControl: '31536000' });
-      if (up) { alert('영수증을 올리지 못했어요: ' + up.message + '\n정산은 계속 진행해요.'); }
+      if (up) { alert('증빙을 올리지 못했어요: ' + up.message + '\n정산은 계속 진행해요.'); }
       else receiptPath = path;
     }
     const { error } = await sb.rpc('settle_book_purchase',
