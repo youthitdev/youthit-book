@@ -305,8 +305,10 @@ function fail(t, s, detail) {
 }
 
 function paint() {
-  const wait = rows.filter(r => !r.submitted && !r.settled);
-  const rest = rows.filter(r =>  r.submitted ||  r.settled);
+  // 챙길 일이 남은 건이 위로 — 요청 전이거나, 요청은 했는데 사진이 덜 올라온 건
+  const need = r => r.submitted && !r.settled && (!r.has_receipt || !r.has_photo);
+  const wait = rows.filter(r => !r.settled && (!r.submitted || need(r)));
+  const rest = rows.filter(r => !wait.includes(r));
 
   $('app').innerHTML = `
     ${store ? `<div class="card">
@@ -410,53 +412,67 @@ async function savePick() {
 }
 
 function card(r) {
+  // 사진이 아직 덜 올라왔나 — 요청은 했는데 영수증이나 교환 인증 사진이 비어 있는 건
+  const need = r.submitted && !r.settled && (!r.has_receipt || !r.has_photo);
   const tag = r.settled   ? `<span class="chip c-done">책값을 보냈어요</span>`
-            : r.submitted ? `<span class="chip c-sent">보냈어요 · ${won(r.store_amount)}원</span>`
-            :               `<span class="chip c-wait">아직 안 보냈어요${(d => d >= 1 ? ` · ${d}일째` : '')(Math.floor((Date.now() - new Date(r.came_at).getTime()) / 86400e3))}</span>`;
+            : r.submitted ? `<span class="chip c-sent">요청했어요 · ${won(r.store_amount)}원</span>`
+            :               `<span class="chip c-wait">아직 요청 전이에요${(d => d >= 1 ? ` · ${d}일째` : '')(Math.floor((Date.now() - new Date(r.came_at).getTime()) / 86400e3))}</span>`;
+  const miss = [!r.has_receipt && '영수증', !r.has_photo && '책 교환 인증'].filter(Boolean).join('·');
   return `<div class="row${picked === r.id ? ' on' : ''}">
     <div class="row-t">
       <div class="row-who">${esc(r.who)}${r.kid_age != null ? ` <span class="age">만 ${r.kid_age}세</span>` : ''}</div>
       <div class="row-when">${when(r.came_at)}</div>
     </div>
+    ${r.store_book ? `<div class="row-book">📖 ${esc(r.store_book)}</div>` : ''}
     ${r.code_ok === false ? `<div class="row-book">📱 청소년이 앱에서 직접 기록한 건이에요 · 책을 건넨 분이 맞는지 확인해 주세요</div>` : ''}
     ${tag}
-    ${(!r.submitted && !r.settled)
-      ? (picked === r.id ? form() : `<button class="btn btn-go" onclick="pick(${r.id})">금액·영수증 올리기</button>`)
-      : ''}
+    ${need ? `<div class="hint" style="margin-top:8px;"><b>${miss} 사진</b>을 올려 주세요. 교환권 사용 이후 3일 이내로 부탁드립니다.</div>` : ''}
+    ${picked === r.id
+      ? (r.submitted ? proofForm(r) : form())
+      : (!r.submitted ? `<button class="btn btn-go" onclick="pick(${r.id})">책 값 요청하기</button>`
+        : need ? `<button class="btn btn-go" onclick="pick(${r.id})">사진 올리기</button>` : '')}
   </div>`;
 }
 
 function form() {
   return `
-    <label>책값 (원)</label>
+    <label>책 이름 <span style="font-weight:500;color:var(--ink-3);">(선택)</span></label>
+    <input type="text" id="bk" maxlength="80" placeholder="예) 아몬드" autocomplete="off">
+
+    <label>책 값 (원) <span style="font-weight:600;color:var(--bad);">필수</span></label>
     <input type="number" id="amt" inputmode="numeric" placeholder="16500" oninput="check()">
     <div class="hint" style="margin-top:6px;">영수증에 찍힌 금액을 그대로 적어주세요.</div>
 
-    <label>영수증 사진</label>
-    <label class="file" id="rcLab">사진 고르기
+    <label>영수증 사진 <span style="font-weight:500;color:var(--ink-3);">(추후 업로드 가능)</span></label>
+    <label class="file" id="rcLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'receipt')"></label>
     <div id="rcPrev"></div>
 
-    <label>책을 건넨 사진</label>
-    <label class="file" id="phLab">사진 고르기
+    <label>책 교환 인증 사진 <span style="font-weight:500;color:var(--ink-3);">(추후 업로드 가능)</span></label>
+    <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
-    <div class="hint" style="margin-top:6px;">
-      <b>청소년 얼굴이 나오지 않게</b>, 책이 잘 보이게 찍어주세요.<br>
-      올리신 뒤에는 사장님 폰에서 지워주셔도 됩니다.</div>
+    <div class="hint" style="margin-top:6px;"><b>청소년의 얼굴이 나오지 않도록</b> 도서 위주로 촬영해 주세요.</div>
 
-    <label>남길 말 <span style="font-weight:500;color:var(--ink-3);">(없으면 비워두세요)</span></label>
-    <input type="text" id="note" maxlength="80" placeholder="예) 품절이라 다른 책으로 드렸어요">
+    <button class="btn btn-go" id="go" disabled onclick="send()">책 값 요청하기</button>
+    ${TOKEN ? '' : `<button class="btn btn-line" onclick="pick(null)">그만두기</button>`}
+    <div id="msg"></div>`;
+}
 
-    <button class="btn btn-go" id="go" disabled onclick="send()">${TOKEN ? '지금 다 올릴게요' : '유스보이스에 보내기'}</button>
-    ${TOKEN ? `
-      <div class="later">
-        <div class="later-t">바쁘시면 금액은 나중에</div>
-        <div class="later-s">영수증과 금액은 한가할 때 올리셔도 돼요.<br>
-          <b>사진만 지금 한 장</b> 부탁드려요 — 청소년이 가고 나면 못 찍어요.</div>
-        <button class="btn btn-line" style="margin-top:12px;" onclick="hold()">사진만 찍고 나중에</button>
-      </div>` : `
-      <button class="btn btn-line" onclick="pick(null)">그만두기</button>`}
+// 요청은 이미 했고 사진만 비어 있는 건 — 빠진 사진만 묻는다
+function proofForm(r) {
+  return `
+    ${r.has_receipt ? '' : `<label>영수증 사진</label>
+    <label class="file" id="rcLab">사진 선택
+      <input type="file" accept="image/*" onchange="pickFile(event,'receipt')"></label>
+    <div id="rcPrev"></div>`}
+    ${r.has_photo ? '' : `<label>책 교환 인증 사진</label>
+    <label class="file" id="phLab">사진 선택
+      <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
+    <div id="phPrev"></div>
+    <div class="hint" style="margin-top:6px;"><b>청소년의 얼굴이 나오지 않도록</b> 도서 위주로 촬영해 주세요.</div>`}
+    <button class="btn btn-go" id="go" disabled onclick="sendProof()">사진 올리기</button>
+    <button class="btn btn-line" onclick="pick(null)">그만두기</button>
     <div id="msg"></div>`;
 }
 
@@ -549,10 +565,10 @@ async function pickFile(e, which) {
   check();
 }
 
-// 금액과 영수증은 있어야 한다. 책 사진은 깜빡할 수 있으니 막지 않는다 —
-// 막아 두면 사장님이 그 자리에서 포기한다
+// 책 값만 있으면 요청이 된다. 영수증·책 교환 인증 사진은 나중에 올려도 된다 (2026-10-28 요청) —
+// 막아 두면 사장님이 그 자리에서 포기한다. 사진만 올리는 화면(proofForm)은 한 장이라도 골라야 한다
 function check() {
-  $('go').disabled = !(Number($('amt').value) > 0 && receipt);
+  $('go').disabled = $('amt') ? !(Number($('amt').value) > 0) : !(receipt || photo);
 }
 
 function show(cls, t) { $('msg').innerHTML = `<div class="msg ${cls}">${esc(t)}</div>`; }
@@ -578,35 +594,21 @@ function goHome(e) {
   // QR 화면이 아니라 이미 우리 책방 화면(목록·로그인)이면 같은 곳으로 보내는 게 아니라 책방 메인으로
   if (!TOKEN) { location.href = 'store-invite.html'; return; }
   // QR 로 들어와 금액·사진을 적던 중이면 쓰던 게 사라진다. 그때만 한 번 묻는다
-  const writing = TOKEN && picked && (receipt || photo || ($('amt') && $('amt').value));
+  const writing = TOKEN && picked && (receipt || photo || ($('amt') && $('amt').value) || ($('bk') && $('bk').value));
   if (writing && !confirm('쓰던 내용이 사라져요. 나갈까요?')) return;
   location.href = homeUrl();
 }
 
-// 사진만 받고 금액은 뒤로 미룬다. 사진이 없어도 막지 않는다 —
-// 막으면 바쁜 사장님은 그냥 창을 닫는다
-async function hold() {
-  const btn = event.target; btn.disabled = true; btn.textContent = '보내는 중…';
-  try {
-    const ph = await up(photo, 'photo');
-    const { data: res, error } = await sb.rpc('redeem_qr_hold',
-      { p_token: TOKEN, p_code: savedCode(), p_photo: ph });
-    if (error) throw new Error(error.message);
-    if (res && res.ok === false) throw new Error(res.message || '보내지 못했어요');
-    $('app').innerHTML = `
-      <div class="msg m-ok" style="font-size:16px;padding:20px;">
-        교환을 받아 두었습니다.<br>금액과 영수증은 한가하실 때 올려주세요.</div>
-      <div class="card">
-        <div class="hint">금액과 영수증은 <b>우리 책방 화면</b>에 <b>「아직 안 보냈어요」</b>로
-          남아 있어요. 한가하실 때 거기서 올리시면 됩니다.</div>
-        <button class="btn btn-go" onclick="goList()">나중에 올릴 화면 열기</button>
-      </div>`;
-    window.scrollTo(0, 0);
-  } catch (err) {
-    btn.disabled = false; btn.textContent = '사진만 찍고 나중에';
-    show('m-bad', err.message || '보내지 못했어요');
-  }
+// 요청이 들어간 뒤 보여 주는 말. 사진이 둘 다 올랐으면 정산 안내, 아니면 3일 안에 올려 달라는 안내
+function sentMsg(both) {
+  const head = `<div class="msg m-ok" style="font-size:16px;padding:20px;">유스보이스에게 책 값이 요청되었습니다.</div>`;
+  return both
+    ? `${head}<div class="card"><div class="hint">책 값은 영수증과 책 교환 사진 확인 후, 매월 15일 혹은 말일에 등록된 계좌로 정산됩니다.</div></div>`
+    : `${head}<div class="card"><div class="hint">영수증과 책 교환 인증 사진은 교환권 사용 이후 <b>3일 이내로</b> 업로드해주시기 바랍니다.</div>
+        <button class="btn btn-line" onclick="later()">나중에 업로드하기</button></div>`;
 }
+// 「나중에 업로드하기」 — 우리 책방 화면에서 사진을 올리면 된다
+function later() { if (TOKEN) return goList(); const m = $('sentBox'); if (m) m.remove(); window.scrollTo(0, 0); }
 
 async function send() {
   const btn = $('go'); btn.disabled = true; btn.textContent = '보내는 중…';
@@ -614,31 +616,49 @@ async function send() {
     const rc = await up(receipt, 'receipt');
     const ph = await up(photo,   'photo');
     const common = { p_amount: parseInt($('amt').value, 10), p_receipt: rc, p_photo: ph,
-                     p_note: $('note').value.trim() || null };
+                     p_book: $('bk').value.trim() || null };
     const { data: res, error } = TOKEN
       ? await sb.rpc('redeem_qr_confirm', { p_token: TOKEN, p_code: savedCode(), ...common })
       : await sb.rpc('store_submit',      { p_key: KEY, p_purchase_id: picked, ...common });
     if (error) throw new Error(error.message);
     if (res && res.ok === false) throw new Error(res.message || '보내지 못했어요');
     picked = null; receipt = null; photo = null;
+    const both = !!(rc && ph);
 
     if (TOKEN) {
       // 쪽지는 한 번 쓰면 끝이다. 목록으로 돌아갈 데가 없으니 여기서 맺는다
-      $('app').innerHTML = `
-        <div class="msg m-ok" style="font-size:16px;padding:20px;">
-          교환이 끝났습니다. 확인하고 책값을 보내드릴게요.<br>고맙습니다 🙏</div>
-        <div class="card"><div class="hint">이 창은 닫으셔도 됩니다.</div>
-          <button class="btn btn-line" onclick="goList()">우리 책방 화면 보기</button></div>`;
+      $('app').innerHTML = sentMsg(both) +
+        (both ? `<div class="card"><div class="hint">이 창은 닫으셔도 됩니다.</div>
+          <button class="btn btn-line" onclick="goList()">우리 책방 화면 보기</button></div>` : '');
       window.scrollTo(0, 0);
       return;
     }
     await load();
     window.scrollTo(0, 0);
-    $('app').insertAdjacentHTML('afterbegin',
-      `<div class="msg m-ok">보냈습니다. 확인하고 책값을 보내드릴게요. 고맙습니다 🙏</div>`);
+    $('app').insertAdjacentHTML('afterbegin', `<div id="sentBox">${sentMsg(both)}</div>`);
   } catch (err) {
-    btn.disabled = false; btn.textContent = '유스보이스에 보내기';
+    btn.disabled = false; btn.textContent = '책 값 요청하기';
     show('m-bad', err.message || '보내지 못했어요. 잠시 뒤 다시 해주세요.');
+  }
+}
+
+// 이미 요청한 건에 영수증·책 교환 인증 사진을 더 올린다
+async function sendProof() {
+  const btn = $('go'); btn.disabled = true; btn.textContent = '올리는 중…';
+  try {
+    const rc = await up(receipt, 'receipt');
+    const ph = await up(photo,   'photo');
+    const { data: res, error } = await sb.rpc('store_add_proof',
+      { p_key: KEY, p_purchase_id: picked, p_receipt: rc, p_photo: ph });
+    if (error) throw new Error(error.message);
+    if (res && res.ok === false) throw new Error(res.message || '올리지 못했어요');
+    picked = null; receipt = null; photo = null;
+    await load();
+    window.scrollTo(0, 0);
+    $('app').insertAdjacentHTML('afterbegin', `<div class="msg m-ok">사진을 올렸습니다. 고맙습니다 🙏</div>`);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = '사진 올리기';
+    show('m-bad', err.message || '올리지 못했어요. 잠시 뒤 다시 해주세요.');
   }
 }
 

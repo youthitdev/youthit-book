@@ -4238,9 +4238,11 @@ function storeClaimCell(g) {
       ? `<span class="chip c-warn">⚠️ 책방 청구 없음 ${d}일째</span> `
       : `<span class="chip c-wait">책방 청구 대기${d ? ` ${d}일째` : ''}</span> `;
   }
+  // 사진은 요청한 뒤에 올라올 수 있다. 비어 있으면 「대기」로 보여서 정산 전에 챙기게 한다 (2026-10-28)
   return `<span class="chip c-act">청구 ${won(g.store_amount)}원</span>
-    ${g.store_receipt_path ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_receipt_path)}','영수증')">영수증</button>` : ''}
-    ${g.store_photo_path   ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_photo_path)}','사진')">건넨 사진</button>` : ''}
+    ${g.store_book ? `<span class="muted">📖 ${esc(g.store_book)}</span> ` : ''}
+    ${g.store_receipt_path ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_receipt_path)}','영수증')">영수증</button>` : `<span class="chip c-wait">영수증 대기</span>`}
+    ${g.store_photo_path   ? `<button class="btn btn-line" onclick="viewStoreFile('${esc(g.store_photo_path)}','사진')">건넨 사진</button>` : `<span class="chip c-wait">교환 사진 대기</span>`}
     ${g.store_note ? `<div class="muted" style="margin-top:4px;">“${esc(g.store_note)}”</div>` : ''} `;
 }
 const viewStoreFile = (p, what) => openSigned('store-proofs', p, what);
@@ -4510,6 +4512,8 @@ function openSettle(id) {
      <div>${esc(g.bookstore)}에서 ${fmtDate(g.created_at)} 구매</div>
      ${g.store_submitted_at ? `<div style="margin-top:6px;color:var(--pink);font-weight:700;">
         책방이 <b>${won(g.store_amount)}원</b>을 청구했어요 — 영수증과 맞춰보세요
+        ${g.store_book ? `<div class="muted" style="font-weight:500;">📖 ${esc(g.store_book)}</div>` : ''}
+        ${!g.store_receipt_path || !g.store_photo_path ? `<div style="font-weight:600;color:#b00038;">${[!g.store_receipt_path && '영수증', !g.store_photo_path && '교환 인증 사진'].filter(Boolean).join('·')}이 아직 안 올라왔어요 — 정산 전에 확인하세요</div>` : ''}
         ${g.store_note ? `<div class="muted" style="font-weight:500;">“${esc(g.store_note)}”</div>` : ''}</div>` : ''}`;
   document.getElementById('capHint').textContent = won(voucherCap());
   // 책방이 올린 금액을 미리 채운다. 확정은 여전히 사람이 누른다
@@ -4680,6 +4684,7 @@ async function loadLive() {
     receipt: p.receipt_url || null,
     // 책방이 직접 올린 것 (migration-85). 금액은 제안이고 확정은 amount 다
     store_amount: p.store_amount ?? null, store_note: p.store_note || null,
+    store_book: p.store_book_title || null,   // 책방이 적은 책 이름 (migration-152)
     store_receipt_path: p.store_receipt_path || null,
     store_photo_path:   p.store_photo_path   || null,
     store_submitted_at: p.store_submitted_at || null,
