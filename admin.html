@@ -601,6 +601,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab on" data-tab="verify" onclick="switchTab('verify')">청소년 확인<i id="cntVerify"></i></button>
     <button class="tab" data-tab="kkut" onclick="switchTab('kkut')">끗짱 승인<i id="cntKkut"></i></button>
     <button class="tab" data-tab="photos" onclick="switchTab('photos')">프로필 사진<i id="cntPhotos"></i></button>
+    <button class="tab" data-tab="nadaum" onclick="switchTab('nadaum')">나다움 지급</button>
   </div>
   <div class="tabs" id="tabsRoutines" style="display:none;">
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
@@ -761,6 +762,31 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-bd" id="peopleBody"></div>
     <div class="modal-ft">
       <button class="btn btn-line" onclick="closeModal('peopleOverlay')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 나다움 지급 -->
+<div class="overlay" id="grantOverlay">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-hd">
+      <div class="modal-t" id="grantTitle">나다움 지급</div>
+      <div class="modal-d">받는 청소년에게 알림이 가요. 사유가 그대로 보여요. 잘못 줬으면 지급 내역에서 회수할 수 있어요.</div>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <div class="label">줄 나다움 (N) <span>*</span></div>
+        <input type="number" id="grantAmount" min="1" max="1000" placeholder="예) 10">
+        <div class="hint">한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.</div>
+      </div>
+      <div class="field">
+        <div class="label">사유 <span>*</span></div>
+        <input type="text" id="grantReason" maxlength="60" placeholder="예) 공유회 참석 보너스">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('grantOverlay')">취소</button>
+      <button class="btn btn-dark" id="grantGo" onclick="submitGrant()">지급하기</button>
     </div>
   </div>
 </div>
@@ -1143,6 +1169,7 @@ function renderPanel() {
   if (tab === 'inbox')    return viewInbox();
   if (tab === 'reports')  return el.innerHTML = viewReports();
   if (tab === 'photos')   return el.innerHTML = viewPhotos();
+  if (tab === 'nadaum')   return el.innerHTML = viewNadaum();
   if (tab === 'covers')   return el.innerHTML = viewCovers();
   if (tab === 'notices')  return el.innerHTML = viewNotices();
   if (tab === 'report')   return el.innerHTML = viewReport();
@@ -1615,6 +1642,98 @@ const inKkutTab = uid => (DB.kkutApps || []).some(a => a.user_id === uid);
 //   확인이 필요하다. 그때 이 줄을 다시 볼 것 — 지금은 그런 길이 없다
 // 탈퇴 처리한 회원(migration-123)은 이름이 「탈퇴한 회원」으로 바뀌어 있다. 명단에서 뺀다
 const vqPool = () => (DB.verify || []).filter(r => !inKkutTab(r.user_id) && r.name !== '탈퇴한 회원');
+
+// ── 나다움 지급 (migration-153, 2026-10-29 요청: 한끗루틴처럼 손으로 줄 수 있게) ──
+//   청소년을 찾아 N 과 사유를 적어 준다. 받은 아이에게 알림이 가고, 합계·교환권에 바로 들어간다.
+//   잘못 준 건 아래 지급 내역에서 「회수」 — 줄은 지우지 않고 회수 표시만 남는다
+let ndFind = '', NDG = null, ndBusy = false, grantTarget = null;
+async function ndLoad() {
+  if (ndBusy) return; ndBusy = true;
+  try {
+    if (!LIVE) { NDG = []; return; }
+    const { data, error } = await sb.from('nadaum_grants').select('*').order('created_at', { ascending: false }).limit(100);
+    NDG = error ? [] : (data || []);
+    if (error) console.warn('나다움 지급 내역', error.message);
+  } finally { ndBusy = false; }
+}
+const ndName = uid => { const r = (DB.verify || []).find(x => x.user_id === uid); return r ? r.name + (r.nick && r.nick !== r.name ? ` (${r.nick})` : '') : '(알 수 없음)'; };
+function ndRows() {
+  const q = ndFind.trim().toLowerCase();
+  const rows = vqPool().filter(r => r.role !== 'adult' && (!q
+    || (r.name || '').toLowerCase().includes(q) || (r.nick || '').toLowerCase().includes(q)));
+  if (!rows.length) return `<div class="empty">찾는 청소년이 없어요.</div>`;
+  const shown = rows.slice(0, 60);
+  return `<div class="tbl"><table>
+    <tr><th>청소년</th><th class="right">나다움</th><th class="right">교환권</th><th></th></tr>
+    ${shown.map(r => { const pt = (DB.points || {})[r.user_id];
+      return `<tr><td><b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? `<div class="muted">${esc(r.nick)}</div>` : ''}</td>
+        <td class="num right">${pt ? won(pt.points) + 'N' : '—'}</td>
+        <td class="num right">${pt ? (pt.remain || 0) + '장' : '—'}</td>
+        <td class="right"><button class="btn btn-dark" onclick="openGrant('${r.user_id}')">나다움 지급</button></td></tr>`; }).join('')}
+  </table></div>
+  ${rows.length > shown.length ? `<div class="muted" style="padding:8px 4px;">${rows.length}명 중 ${shown.length}명만 보여요. 이름이나 닉네임으로 찾아주세요.</div>` : ''}`;
+}
+function viewNadaum() {
+  if (NDG === null) ndLoad().then(() => { if (tab === 'nadaum') renderPanel(); });
+  const hist = NDG === null ? `<div class="empty">불러오는 중…</div>` : !NDG.length ? `<div class="empty">아직 지급한 내역이 없어요.</div>`
+    : `<div class="tbl"><table>
+        <tr><th>일시</th><th>청소년</th><th class="right">나다움</th><th>사유</th><th></th></tr>
+        ${NDG.map(g => `<tr${g.voided_at ? ' class="voided"' : ''}>
+          <td class="num">${fmtDate(g.created_at)}</td>
+          <td>${esc(ndName(g.user_id))}</td>
+          <td class="num right">${g.voided_at ? `<s>+${won(g.amount)}N</s>` : `<b>+${won(g.amount)}N</b>`}</td>
+          <td>${esc(g.reason)}${g.voided_at ? `<div class="muted">회수됨 · ${esc(g.void_reason || '')}</div>` : ''}</td>
+          <td class="right">${g.voided_at ? '' : `<button class="btn btn-line" onclick="voidGrant(${g.id})">회수</button>`}</td>
+        </tr>`).join('')}
+      </table></div>`;
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">나다움 지급</div>
+    <div class="panel-d">행사 참여·특별한 사정 등으로 나다움을 손으로 줄 때 써요. 받은 아이에게 알림이 가고 교환권 계산에도 들어가요.<br>
+      청소년에게만 줄 수 있고, 한 번에 1~1000N까지예요.</div></div>
+  </div>
+  <div style="padding:14px 20px 8px;">
+    <input class="vq-find" type="search" placeholder="이름 · 닉네임으로 찾기" value="${esc(ndFind)}"
+           oninput="ndFind=this.value; document.getElementById('ndList').innerHTML=ndRows();">
+  </div>
+  <div id="ndList" style="padding:0 20px 8px;">${ndRows()}</div>
+  <div class="panel-hd" style="margin-top:14px;"><div><div class="panel-t" style="font-size:15px;">지급 내역 <span class="muted" style="font-weight:500;">최근 100건</span></div></div></div>
+  <div style="padding:0 20px 20px;">${hist}</div>`;
+}
+function openGrant(uid) {
+  if (!LIVE) return alert('데모 모드에서는 지급할 수 없어요.');
+  grantTarget = uid;
+  document.getElementById('grantTitle').textContent = `${ndName(uid)} · 나다움 지급`;
+  document.getElementById('grantAmount').value = '';
+  document.getElementById('grantReason').value = '';
+  document.getElementById('grantGo').disabled = false;
+  document.getElementById('grantOverlay').classList.add('on');
+  setTimeout(() => document.getElementById('grantAmount').focus(), 50);
+}
+async function submitGrant() {
+  const amt = parseInt(document.getElementById('grantAmount').value, 10);
+  const why = document.getElementById('grantReason').value.trim();
+  if (!amt || amt < 1 || amt > 1000) return alert('한 번에 1~1000N 까지 줄 수 있어요.');
+  if (!why) return alert('사유를 적어주세요.');
+  if (!confirm(`${ndName(grantTarget)}님에게 나다움 ${amt}N을 지급할까요?\n\n사유: ${why}\n받는 아이에게 알림이 가요.`)) return;
+  const btn = document.getElementById('grantGo'); btn.disabled = true;
+  const { error } = await sb.rpc('grant_nadaum', { p_user: grantTarget, p_amount: amt, p_reason: why });
+  if (error) { btn.disabled = false; return alert('지급하지 못했어요.\n\n' + error.message); }
+  closeModal('grantOverlay');
+  await loadLive(); NDG = null;
+  renderPanel();
+}
+async function voidGrant(id) {
+  const g = (NDG || []).find(x => x.id === id); if (!g) return;
+  const why = prompt(`「${ndName(g.user_id)}」 +${g.amount}N (${g.reason})\n\n왜 회수하나요? (기록에 남아요)`);
+  if (why === null) return;
+  if (!why.trim()) return alert('사유를 적어주세요.');
+  if (!confirm('이 지급을 회수해요. 아이의 나다움이 그만큼 줄어요.')) return;
+  const { error } = await sb.rpc('void_nadaum', { p_grant_id: id, p_reason: why.trim() });
+  if (error) return alert('회수하지 못했어요.\n\n' + error.message);
+  await loadLive(); NDG = null;
+  renderPanel();
+}
 
 function vqRows() {
   const q = vqFind.trim().toLowerCase();
@@ -4743,7 +4862,7 @@ const viewProof   = p => openSigned('dokseo-proofs',   p, '사진');
 const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
-const GROUPS = { members:  ['verify', 'kkut', 'photos'],
+const GROUPS = { members:  ['verify', 'kkut', 'photos', 'nadaum'],
                  routines: ['routines', 'reports'],
                  msgs:     ['inbox', 'notices', 'notify'],
                  site:     ['quotes', 'covers'],

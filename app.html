@@ -3498,7 +3498,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg, nc, ints] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg, nc, ints, grn] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3524,7 +3524,10 @@ async function loadAll() {
     sb.from('notices').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(20),
     // 첫 인증 때 남기는 자기소개 (내 것만). 마이그레이션 142 가 아직이면 오류가 오고, 그때는 자기소개 단계를 보이지 않는다
     sb.from('routine_intros').select('routine_id').eq('user_id', me.id),
+    // 운영진이 손으로 준 나다움 (내 것만, 회수한 건 뺀다). 마이그레이션 153 이 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('nadaum_grants').select('id,amount,reason,created_at').eq('user_id', me.id).is('voided_at', null),
   ]);
+  state.grants = grn.error ? [] : (grn.data || []);
   state.introsOn = !ints.error;
   state.myIntros = ints.error ? [] : (ints.data || []);
   state.notices = nc.error ? [] : (nc.data || []);
@@ -4125,7 +4128,7 @@ function myPoints() {
   const pb  = state.settings.points_per_bookreview ?? 30;
   const pmt = state.settings.points_per_meetup ?? 50;
   if (!me) return { points:0, cert_count:0, from_cert:0, from_comment:0, from_bonus:0,
-                    from_review:0, from_meetup:0, lost_meetup:0,
+                    from_review:0, from_meetup:0, from_manual:0, lost_meetup:0,
                     next_milestone:ms[0], per, earned:0, used:0, left:0, to_next:per };
 
   // 하루에 한 번이다. 같은 날 세 권을 읽어도 그날치 한 번 — 서버
@@ -4166,14 +4169,17 @@ function myPoints() {
   const from_meetup = state.parts.filter(p => p.user_id === me.id && p.met_at
     && state.routines.find(r => r.id === p.routine_id)?.meetup_required).length * pmt;
 
-  const points = from_cert + from_comment + from_bonus + from_review + from_meetup;
+  // 운영진이 손으로 준 나다움 — 서버 dokseo_points() 의 from_manual 과 같다 (migration-153)
+  const from_manual = (state.grants || []).reduce((n, g) => n + (g.amount || 0), 0);
+
+  const points = from_cert + from_comment + from_bonus + from_review + from_meetup + from_manual;
   const used = state.purchases.filter(p => p.user_id === me.id && p.status !== 'void').length;
   // 크게 뜨는 숫자는 「지금 쓸 수 있는 것」이어야 한다.
   // 누적을 크게 띄우면 이미 쓴 분까지 남아 있는 줄 안다
   const balance = Math.max(0, points - used * per);
   const into = balance % per;
   return { points, balance, into, cert_count, from_cert, from_comment, from_bonus, from_review,
-           from_meetup, lost_meetup,
+           from_meetup, from_manual, lost_meetup,
            next_milestone, per, earned: Math.floor(points / per), used,
            left: Math.floor(balance / per), to_next: per - into };
 }
