@@ -2065,7 +2065,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
      번호를 누르고, 그때 책이 건네진다. 누르는 순간 아이가 한 일은 「골랐다」뿐이다 -->
 <div class="ov" id="ovBuy">
   <div class="ov-h"><button onclick="closeBuy()"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">책 골랐어요</div><div class="t" id="ovBuyTitle"></div></div></div>
+    <div><div class="s">교환권 사용</div><div class="t" id="ovBuyTitle"></div></div></div>
   <div class="ov-b">
     <div id="buyBal"></div>
     <!-- 【무슨 말을 할지 적어 준다 · 2026-10-07 사용자】 여기서 제일 어려운 건
@@ -5314,7 +5314,13 @@ function balanceBlock() {
           <div class="bal-l">📚 내 독서 나다움</div>
           <div class="bal-n">${won(p.balance)}<small>N</small></div>
         </div>
-        <div class="vch-n ${p.left ? 'on' : ''}">🎫 교환권 <b>${p.left}</b>장</div>
+        ${(() => {
+          // 교환권을 누르면 바로 책방 고르기 + QR 로 간다 (2026-10-29 직원 의견). 확인 전이면 확인부터
+          const act = p.left > 0 ? (me.verify_status !== 'approved' ? 'openVerify()' : buyRoutine() ? `openBuy(${buyRoutine().id})` : '') : '';
+          return act
+            ? `<button type="button" class="vch-n on" style="font-family:inherit;cursor:pointer;" onclick="${act}">🎫 교환권 <b>${p.left}</b>장 ›</button>`
+            : `<div class="vch-n ${p.left ? 'on' : ''}">🎫 교환권 <b>${p.left}</b>장</div>`;
+        })()}
       </div>
 
       <div class="bal-bar"><i style="width:${pct}%"></i></div>
@@ -5336,7 +5342,7 @@ function balanceBlock() {
         ${p.left > 0 ? (me.verify_status !== 'approved'
           ? `<button class="btn-green" onclick="openVerify()">청소년 확인부터 하기</button>`
           : buyRoutine()
-            ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">책 골랐어요</button>`
+            ? `<button class="btn-green" onclick="openBuy(${buyRoutine().id})">교환권 사용하기</button>`
             : '') : ''}
       </div>
       ${p.left > 0 && me.verify_status === 'approved' && !buyRoutine() && meetPending()
