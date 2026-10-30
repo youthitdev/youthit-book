@@ -199,17 +199,13 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
 .step h3{font-size:17px;font-weight:800;letter-spacing:-.4px}
 .step .where{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-left:7px}
 .step p{font-size:14px;color:var(--ink-2);line-height:1.8;margin-top:9px}
-.step .key{display:inline-block;margin-top:12px;font-size:12.5px;font-weight:700;color:var(--green-d);
-  background:var(--green-l);border-radius:9px;padding:7px 13px}
 
-/* 데스크톱에서는 세 단계를 한 줄에 나란히. 번호가 위, 설명이 아래, 한 줄 요약은 바닥에 맞춘다 */
+/* 데스크톱에서는 세 단계를 한 줄에 나란히. 번호가 위, 설명이 아래 */
 @media(min-width:721px){
   .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
   .step{flex-direction:column;gap:16px;padding:24px 20px}
   .step > div:last-child{display:flex;flex-direction:column;flex:1}
   .step .where{display:block;margin:5px 0 0}
-  .step p{margin-bottom:16px}
-  .step .key{margin-top:auto;align-self:flex-start}
 }
 
 /* 성과 */
@@ -476,33 +472,29 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
 <!-- 해법 -->
 <section>
   <div class="wrap">
-    <div class="sec-label">한끗독서는 이렇게 합니다</div>
+    <div class="sec-label">한끗독서는 이렇게 움직여요</div>
     <h2>한 장으로 시작해<br>나만의 서사로 이어집니다</h2>
-    <p class="sec-lead">읽는 습관에서 멈추지 않고, 관계와 창작으로 이어지는 세 단계입니다.</p>
 
     <div class="steps">
       <div class="step s1">
         <div class="step-n">1</div>
         <div>
-          <h3>한끗루틴 <span class="where">온라인 · 15일</span></h3>
-          <p>책을 좋아하는 어른이 <b>끗짱</b>이 되어 청소년과 15일간 함께합니다. 매일 10분 읽고, 한 문장을 남기고, 서로의 기록에 댓글을 답니다.</p>
-          <span class="key">공부가 아닌, 즐거운 습관으로서의 독서</span>
+          <h3>한끗독서 <span class="where">#온라인 #독서커뮤니티</span></h3>
+          <p>하루 10분, 혼자서 책에 몰입해 자유롭게 인증하는 <span style="white-space:nowrap">&lt;매일한끗&gt;</span>으로 독서 습관을 만들고,<br>책을 좋아하는 어른 '<b>끗짱</b>'이 이끄는 모임 <span style="white-space:nowrap">&lt;함께한끗&gt;</span>에서 또래 친구들과 연결됩니다.</p>
         </div>
       </div>
       <div class="step s2">
         <div class="step-n">2</div>
         <div>
-          <h3>독립서점 <span class="where">오프라인 · 책을 고르는 곳</span></h3>
-          <p>모인 나다움으로 교환권을 받아, 동네책방에 찾아가 직접 책을 고릅니다. 화면 밖으로 한 걸음 나와, 책방 주인과 짧게라도 책 이야기를 나눕니다.</p>
-          <span class="key">책 한 권으로 이어지는 다정한 연결</span>
+          <h3>독립서점 <span class="where">#오프라인 #책 교환소</span></h3>
+          <p>차곡차곡 쌓인 ‘나다움’ 포인트로 책 한 권을 교환합니다. 우리 동네 독립서점에 방문해 내가 읽고 싶은 책을 직접 고르고, 책방지기와 따뜻한 안부를 나누며 다정한 연결을 경험합니다.</p>
         </div>
       </div>
       <div class="step s3">
         <div class="step-n">3</div>
         <div>
-          <h3>창작지원 <span class="where">온·오프라인</span></h3>
-          <p>읽기에서 얻은 영감으로 자신의 이야기를 씁니다. 완성된 글은 책이 되어 독립서점에 놓이고, 전시회로 이어집니다.</p>
-          <span class="key">수동적 독자를 넘어 능동적 창작자로</span>
+          <h3>창작 지원 <span class="where">#독립출판</span></h3>
+          <p>읽고 나눈 시간 속에서 얻은 영감으로 나만의 글을 씁니다. 완성된 글은 독립출판과 전시로 이어져, 수동적 독자를 넘어 하나의 능동적인 창작자로 성장합니다.</p>
         </div>
       </div>
     </div>
