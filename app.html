@@ -9161,7 +9161,7 @@ async function qrGotIt(pid) {
     <div class="qr-card" style="border-color:#DCEBC4;background:#F7FBF0;">
       <div style="font-size:34px;line-height:1;margin-bottom:8px;">📚</div>
       <div class="qr-t">책을 받았어요!</div>
-      <div class="qr-s" style="margin-top:5px;">이제 한 장만 남겨주세요</div>
+      <div class="qr-s" style="margin-top:5px;">책을 들고 한 장만 남겨주세요</div>
       <button class="btn btn-primary" style="margin-top:16px;"
         onclick="gotFromBuy(${pid})">받은 책 남기기</button>
     </div>`;
@@ -9172,6 +9172,12 @@ async function qrGotIt(pid) {
   await loadAll();
   paintBuyBal();
   render();
+  // 【단추를 누르게 하지 않는다 · 2026-11-02 사용자】 책방 안에서 책을 든 채로 바로 찍게 해야
+  //   사진이 남는다. 집에 가서는 MY 안내를 못 보고 지나친다. 축하 카드를 잠깐 보여 준 뒤
+  //   사진 화면으로 넘긴다. 그 사이 아이가 이 화면을 닫았으면 가로채지 않는다
+  //   (MY 의 「책을 받았어요」 안내가 그대로 남는다)
+  await new Promise(r => setTimeout(r, 900));
+  if (isOvOpen('ovBuy') && !isOvOpen('ovGot')) gotFromBuy(pid);
 }
 
 async function qrIssue() {
