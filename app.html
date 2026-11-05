@@ -2240,7 +2240,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">알림</div>
-        <div class="sheet-s">매일 한 장을 떠올려 주고, 후기 기한·공유회·책 교환 소식, 운영진이 보내는 이벤트와 공지를 알려드려요. 끝까지 완주하는 가장 쉬운 방법이에요.</div>
+        <div class="sheet-s">매일 독서 습관을 잊지 않도록 리마인더와 주요 소식을 전해드려요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shPush')" aria-label="닫기">✕</button>
     </div>
@@ -3797,7 +3797,7 @@ const hhmmKo = v => {
 async function pickRemind(at) {
   if (!at) return;
   me.remind_at = at;
-  $('rmHint').textContent = `${hhmmKo(at)}까지 오늘 인증이 없으면 한 번 알려드려요.`;
+  $('rmHint').textContent = '설정한 시간까지 오늘 인증이 없으면 알림을 보내드려요.';
   if (DEMO) return;
   const { error } = await sb.from('profiles').update({ remind_at: at }).eq('id', me.id);
   if (error) return toast('저장하지 못했어요: ' + error.message);
@@ -3807,7 +3807,7 @@ async function saveRemind() {
   const on = $('rmOn').checked;
   $('rmTimeRow').style.display = on ? '' : 'none';
   $('rmHint').textContent = on
-    ? `${hhmmKo(me.remind_at)}까지 오늘 인증이 없으면 한 번 알려드려요.`
+    ? '설정한 시간까지 오늘 인증이 없으면 알림을 보내드려요.'
     : '리마인더를 껐어요. 승인·기한 알림은 그대로 가요.';
   if (DEMO) return;
   const { error } = await sb.from('profiles').update({ remind_on: on }).eq('id', me.id);
@@ -3882,21 +3882,21 @@ async function paintPushCard() {
           <input type="time" id="rmAt" value="${hhmm}" step="1800" onchange="pickRemind(this.value)">
         </div>
         <div class="hint" id="rmHint" style="margin:9px 0 0;">
-          ${hhmmKo(hhmm)}까지 오늘 인증이 없으면 한 번 알려드려요.</div>
+          설정한 시간까지 오늘 인증이 없으면 알림을 보내드려요.</div>
       </div>
       <div class="rm" style="margin-top:14px;">
         <div class="rm-hd">받고 싶은 소식</div>
         <label class="rm-row">
-          <span>친구들 소식<small>인증이 올라오거나 댓글·좋아요가 달릴 때</small></span>
+          <span>친구들 소식<small>새로운 인증 및 댓글, 좋아요 알림</small></span>
           <input type="checkbox" id="mkFriends" ${muted('friends') ? '' : 'checked'} onchange="saveMute()">
         </label>
         <label class="rm-row">
-          <span>콕 찌르기<small>끗짱이 오늘 한 장 어때요? 하고 보낼 때</small></span>
+          <span>콕 찌르기<small>끗짱의 독서 독려(콕 찌르기) 알림</small></span>
           <input type="checkbox" id="mkPoke" ${muted('poke') ? '' : 'checked'} onchange="saveMute()">
         </label>
-        <div class="hint" style="margin:9px 0 0;">끄면 알림함에도 오지 않아요. 승인·책 교환·공지는 늘 가요.</div>
+        <div class="hint" style="margin:9px 0 0;">알림을 끄더라도 승인·책 교환·필수 공지는 수신됩니다.</div>
       </div>
-      <a class="hint" style="display:block;margin:14px 0 0;text-align:center;color:var(--green-d);font-weight:700;text-decoration:none;" href="push-guide.html" target="_blank" rel="noopener">알림이 안 켜져요? 그림으로 따라 하기 ›</a>`;
+      <a class="hint" style="display:block;margin:14px 0 0;text-align:center;color:var(--green-d);font-weight:700;text-decoration:none;" href="push-guide.html" target="_blank" rel="noopener">알림이 안 켜지나요? 설정 방법 보기 ›</a>`;
   paintPushRow();
 }
 
