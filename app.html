@@ -282,6 +282,7 @@ body.kkut header.k .h-title { color:var(--blue); }
 .hs-row::-webkit-scrollbar { display:none; }
 .hs-row > .card { flex:0 0 82%; margin:0; scroll-snap-align:start; box-sizing:border-box; }
 .hs-row > .ex-t { flex:0 0 44%; scroll-snap-align:start; }
+.hs-row > .bk { flex:0 0 30%; scroll-snap-align:start; min-width:0; }
 .hs-row .clamp6 { -webkit-line-clamp:5; }
 .hs-row .clamp-more { display:none; }
 .ex-t { position:relative; padding:0; border:0; border-radius:14px; overflow:hidden; aspect-ratio:1/1;
@@ -5322,14 +5323,10 @@ function balanceBlock() {
   const rvBtn = '';
   const cap = won(state.settings.voucher_max_amount || 20000);
   const pct = Math.min(100, Math.round(p.into / Math.max(p.per, 1) * 100));
-  const mile = p.next_milestone
-    ? `${p.next_milestone}일 채우면 +${state.settings.points_per_milestone ?? 10}N`
-    : null;
-
   return `<div class="bal">
       <div class="bal-top">
         <div>
-          <div class="bal-l">📚 내 독서 나다움</div>
+          <div class="bal-l">📚 나다움 포인트</div>
           <div class="bal-n">${won(p.balance)}<small>N</small></div>
         </div>
         ${(() => {
@@ -5347,8 +5344,6 @@ function balanceBlock() {
                            : `다음 교환권까지 <b>${won(p.to_next)}N</b>`}</span>
         <span class="bal-goal-r">${won(p.into)} / ${won(p.per)}N</span>
       </div>
-
-      <div class="bal-s" style="color:var(--ink-3);">누적 인증 ${p.cert_count}일${mile ? ` · ${mile}` : ''}</div>
 
       ${noPhoto
         ? `<div class="bal-got" onclick="openGotPhoto(${noPhoto.id})">
@@ -6046,9 +6041,9 @@ function drawFeedAll() {
     + (left > 0 ? `<button class="store-more" onclick="feedAllMore()"><span>더 보기</span><em>${Math.min(left, FEED_PAGE)}개 더 · 남은 ${left}개</em><i class="ti ti-chevron-down"></i></button>` : '');
 }
 // 구역 제목 + 오른쪽 「전체보기 ›」. 내용이 하나도 없으면 눌러 볼 게 없으니 단추를 뺀다
-function secHead(title, n, kind) {
+function secHead(title, n, kind, act) {
   return `<div class="sec-t sec-row"><span>${title}${n ? ` <span class="sec-n">${n}</span>` : ''}</span>`
-    + (n ? `<button type="button" class="sec-all" onclick="openFeedAll('${kind}')">전체보기 <i class="ti ti-chevron-right"></i></button>` : '') + `</div>`;
+    + (n ? `<button type="button" class="sec-all" onclick="${act || `openFeedAll('${kind}')`}">전체보기 <i class="ti ti-chevron-right"></i></button>` : '') + `</div>`;
 }
 function feedMoreBtn(k, total) {
   const left = total - feedCap[k];
@@ -6244,7 +6239,7 @@ const VERIFY = {
 // ⚠️ 「인증」이 아니라 「확인」이다. 이 앱에서 인증은 매일 하는 독서 인증을 뜻한다
 function verifyBadge() {
   if (!isYouth() || !me || (me.verify_status || 'none') !== 'approved') return '';
-  return `<span class="vbadge"><i class="ti ti-check"></i>확인됨</span>`;
+  return `<span class="vbadge"><i class="ti ti-check"></i>청소년 인증 완료</span>`;
 }
 
 function verifyLine() {
@@ -6494,8 +6489,8 @@ function myBooks() {
   return [...m.values()].sort((a, b) => String(b.last).localeCompare(String(a.last)));
 }
 
-function bookTile(b) {
-  return `<div class="bk">
+function bookTile(b, i) {
+  return `<div class="bk" style="cursor:pointer;" onclick="openBookQuotes(${i})">
     <div class="bk-img">${b.photo
       ? `<img src="${esc(b.photo)}" loading="lazy" alt="">`
       : `<span>📖</span>`}${iFinishedAny(b.title) ? FIN_BADGE : ''}</div>
@@ -6503,35 +6498,36 @@ function bookTile(b) {
   </div>`;
 }
 
-const BOOKS_PREVIEW = 6;   // 3열 × 2줄
-
-// 내가 남긴 글 — 후기 탭은 모두의 글이라 길어진다. 내 후기·내 문장·내 책 교환 인증은 MY 에 모아 둔다 (2026-10-21 사용자).
-//   세 줄 중 하나를 누르면 그 종류의 내 글이 새 화면에서 열린다 (20개씩). 후기는 거기서도 고칠 수 있다
-function myWritingsBlock() {
-  if (!me || isGuest() || !isYouth()) return '';
-  const n = k => (faData(k).list() || []).length;
-  const rv = n('mrv'), qt = n('mqt'), ex = n('mex');
-  if (!rv && !qt && !ex) return '';
-  const row = (k, label, c) => c ? `<button class="store-more" onclick="openFeedAll('${k}')" style="margin-top:8px;">
-      <span>${label}</span><em>${c}개</em><i class="ti ti-chevron-right"></i></button>` : '';
-  return `<div class="sec-t">내가 남긴 글</div>
-    ${row('mrv', '📝 내 루틴 후기', rv)}${row('mqt', '💬 내가 남긴 문장', qt)}${row('mex', '📚 내 책 교환 인증', ex)}`;
-}
+const BOOKS_PREVIEW = 9;   // 가로 한 줄에 3권씩 보이고 옆으로 넘긴다. 나머지는 「전체보기」
 
 function myBooksBlock() {
   const all = myBooks();
   if (!all.length) return '';
-  const shown = all.slice(0, BOOKS_PREVIEW);
-  return `<div class="sec-t">내가 읽은 책 <span class="sec-n">${all.length}</span></div>
-    <div class="bgrid">${shown.map(bookTile).join('')}</div>
-    ${all.length > BOOKS_PREVIEW
-      ? `<button class="btn btn-line" style="margin-top:10px;" onclick="openBooks()">더보기 (${all.length - BOOKS_PREVIEW}권 더)</button>`
-      : ''}`;
+  return secHead('내가 읽은 책', all.length, null, 'openBooks()')
+    + `<div class="hs-row">${all.slice(0, BOOKS_PREVIEW).map((b, i) => bookTile(b, i)).join('')}</div>`;
+}
+
+// 표지를 누르면 그 책에서 내가 남긴 문장이 나온다. 매일 한끗처럼 나만 보는 기록의 문장도 여기서 다시 본다
+function openBookQuotes(i) {
+  const b = myBooks()[i]; if (!b) return;
+  const key = loose(b.title);
+  const qs = state.certs.filter(c => me && c.user_id === me.id && c.quote && c.quote.trim()
+    && key && loose(c.book_title || '') === key)
+    .sort((a, c) => String(c.cert_date).localeCompare(String(a.cert_date)));
+  FA = { kind: null, cap: FEED_PAGE };   // 열려 있는 「전체보기」 새로 그리기가 이 화면을 덮지 않게
+  $('ovFaSub').textContent = '내가 읽은 책';
+  $('ovFaTitle').textContent = `${b.title || '이 책'}${qs.length ? ` · ${qs.length}` : ''}`;
+  $('ovFaBody').innerHTML = qs.length
+    ? qs.map(c => `<div class="card" style="padding:15px 16px;">
+        ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">${esc(dayKo(c.cert_date))}${c.page_end ? ` · ${c.page_end}쪽` : ''}</div></div>`).join('')
+    : `<div class="empty">이 책에서 남긴 문장이 아직 없어요.<br>인증할 때 마음에 남는 문장을 적어 보세요.</div>`;
+  openOv('ovFeedAll');
 }
 
 function openBooks() {
   const all = myBooks();
-  $('ovBooksBody').innerHTML = `<div class="bgrid">${all.map(bookTile).join('')}</div>`;
+  $('ovBooksBody').innerHTML = `<div class="bgrid">${all.map((b, i) => bookTile(b, i)).join('')}</div>`;
   openOv('ovBooks');
 }
 
@@ -6726,7 +6722,7 @@ function calBlock() {
       <div class="cal-w">${['일','월','화','수','목','금','토']
         .map((d, i) => `<span class="${i === 0 ? 'sun' : ''}">${d}</span>`).join('')}</div>
       <div class="cal-g">${cells}</div>
-      <div class="cal-f">${nDone ? `이 달에 <b>${nDone}일</b> 읽었어요` : '아직 이 달의 기록이 없어요'}</div>
+      <div class="cal-f">${nDone ? `이번 달에 <b>${nDone}일</b> 읽었어요` : '아직 이 달의 기록이 없어요'}</div>
     </div>`;
 }
 
@@ -7015,7 +7011,6 @@ function viewMy() {
     ${kkutStatBlock()}
     ${calBlock()}
     ${myBooksBlock()}
-    ${myWritingsBlock()}
     ${pastBlock()}
     ${waiting ? '' : kkutCard()}
     ${/* 「함께 쌓은 것」(지금 N명이 함께 읽고 있어요 · 앉은 하루 · 책) 줄은 뺐다 (2026-10-13 사용자) */''}
@@ -8904,7 +8899,7 @@ function storeGoal() {
 
   const pct = Math.min(100, Math.round((p.points % p.per) / Math.max(p.per, 1) * 100));
   return `<div class="sg">
-      <b>${won(p.to_next)}N만 더 모으면 여기서 책을 골라요</b>
+      <b>${won(p.to_next)}N만 더 모으면 우리 동네 책방에서 책을 교환할 수 있어요!</b>
       <div class="bal-bar" style="background:#EBE5DA;margin:11px 0 8px;"><i style="width:${pct}%"></i></div>
       <span>오늘 인증하면 ${state.settings.points_per_cert ?? 10}N 쌓여요.</span>
     </div>`;
