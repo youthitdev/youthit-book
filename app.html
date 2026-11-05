@@ -5165,8 +5165,6 @@ function youthCertBlock(mine) {
     if (r.ongoing) {
       const cs0 = certsOf(r.id);
       return `<div class="sec-t" style="margin-top:0;">${r.emoji||'🌱'} ${esc(r.title)}</div>
-        <div class="og-card"><div class="og-s" style="margin-top:0;">${myStreak(r.id) > 0 ? `🔥 ${myStreak(r.id)}일 연속` : '오늘 첫 한 장을 남겨 볼까요'}</div>
-          <div class="og-d">내 인증은 나만 볼 수 있어요.</div></div>
         ${certAction(r, 'btn-primary', 'margin-bottom:12px;', true)}
         ${certGrid(cs0, r.id)}`;
     }
@@ -5205,7 +5203,9 @@ function certGrid(all, rid) {
   const cs   = who ? all.filter(c => c.user_id === who) : certOnlyMine ? mine : all;
   const whoNm = who ? (who === me.id ? '나' : nameOf(who)) : '';
 
-  const head = `<div class="cg-head">
+  // 상시 루틴(매일 한끗)은 내 인증만 읽힌다(RLS). 「우리」도 「전체/내 인증」 구분도 「내 인증」 표시도 필요 없다
+  const og = !!(rid && (state.routines.find(x => x.id === rid) || {}).ongoing);
+  const head = og ? `<div class="cg-head"><span>내 인증 <b>${all.length}</b></span></div>` : `<div class="cg-head">
     <span>${who ? `${esc(whoNm)} 인증 <b>${cs.length}</b><button class="cg-who-clr" onclick="setCertWho(${rid},'${who}')">전체 보기</button>`
                 : `우리 인증 <b>${all.length}</b>`}</span>
     ${mine.length ? `<div class="seg">
@@ -5228,7 +5228,7 @@ function certGrid(all, rid) {
       <div class="cg">
         ${(c.photo_urls||[])[0] ? `<img src="${esc((c.photo_urls||[])[0])}" loading="lazy">`
                                 : `<div class="cg-no">📖</div>`}
-        ${!certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 인증</i>` : ''}
+        ${!og && !certOnlyMine && c.user_id === me.id ? `<i class="cg-me">내 인증</i>` : ''}
       </div>
       <div class="cg-wr">
         <div class="cg-who">${c.user_id === me.id ? '나' : esc(nameOf(c.user_id))}</div>
@@ -5404,6 +5404,8 @@ function routineFeed(r) {
 
 function certCard(c) {
   const cms = state.comments.filter(x => x.cert_id === c.id);
+  // 매일 한끗 인증은 나만 본다. 말을 걸 사람이 없으니 댓글 칸을 접는다 (2026-11-05 QA)
+  const priv = !!(state.routines.find(x => x.id === c.routine_id) || {}).ongoing;
   return `<div class="f-card">
     <div class="f-head">
       ${avatarHtml(c.user_id)}
@@ -5417,8 +5419,8 @@ function certCard(c) {
     ${c.quote ? `<div class="f-quote"><p>“${esc(c.quote)}”</p>
       ${(c.book_title||c.page_end) ? `<cite>📖 ${[esc(c.book_title||''), c.page_end?c.page_end+'쪽':''].filter(Boolean).join(' · ')}</cite>` : ''}</div>` : ''}
     ${c.content ? `<div class="f-text">${esc(c.content)}</div>` : ''}
-    ${likeRow(c)}
-    <div class="f-cmts">
+    ${priv ? '' : likeRow(c)}
+    ${priv ? '' : `<div class="f-cmts">
       ${commentsHtml(c, cms)}
       <div class="f-cmt-to" id="cmh_${c.id}">${replyChip(c.id)}</div>
       <div class="f-cmt-in">
@@ -5426,7 +5428,7 @@ function certCard(c) {
                onkeydown="if(event.key==='Enter')addComment(${c.id})">
         <button onclick="addComment(${c.id})">남기기</button>
       </div>
-    </div>
+    </div>`}
   </div>`;
 }
 
