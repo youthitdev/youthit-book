@@ -2049,6 +2049,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div id="buyQrWrap">
       <div class="field-label">어느 책방인가요 <span class="req">* 필수</span></div>
       <select id="qrStore" onchange="qrPick()"></select>
+      <!-- 교환 때 책방이 찍는 사진(책 든 모습, 얼굴 없음)은 소개용으로도 쓴다. 따로 동의를 받지 않고 한 줄로만 알린다 (2026-11-05 사용자) -->
+      <div class="hint" style="margin-top:8px;">📷 책을 받을 때 책을 든 사진을 찍어요. 얼굴은 나오지 않고, 유스보이스를 소개하는 데 쓰일 수 있어요.</div>
       <div id="qrBox"></div>
       <button class="btn btn-primary" id="qrGo" disabled onclick="qrIssue()" style="margin-top:14px;">책방에 보여줄 QR 띄우기</button>
       <!-- 【QR 이 안 되는 날의 길 · 2026-10-07 사용자와 정함】
