@@ -270,9 +270,6 @@ body.kkut header.k .h-title { color:var(--blue); }
 .h-title { font-size:17px; font-weight:800; letter-spacing:-.4px; }
 .h-badge { font-size:12px; font-weight:600; color:var(--ink-3); margin-left:7px; }
 .body { padding:18px; }
-.ex-c { padding:0; overflow:hidden; }
-.ex-c img { width:100%; max-height:480px; object-fit:cover; display:block; background:#eeeae2; }
-.ex-g { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
 /* 후기 탭: 구역마다 가로로 넘겨 보는 한 줄 (2026-11-05 QA). 오른쪽 끝에 다음 카드가 살짝 걸려 「더 있다」가 보인다 */
 .sec-row { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
 .sec-all { border:0; background:none; font:inherit; font-size:12.5px; font-weight:700; color:var(--ink-3); cursor:pointer; padding:2px 0 2px 8px; flex:none; }
@@ -281,19 +278,9 @@ body.kkut header.k .h-title { color:var(--blue); }
   scroll-padding-left:18px; -webkit-overflow-scrolling:touch; scrollbar-width:none; align-items:stretch; }
 .hs-row::-webkit-scrollbar { display:none; }
 .hs-row > .card { flex:0 0 82%; margin:0; scroll-snap-align:start; box-sizing:border-box; }
-.hs-row > .ex-t { flex:0 0 44%; scroll-snap-align:start; }
 .hs-row > .bk { flex:0 0 30%; scroll-snap-align:start; min-width:0; }
 .hs-row .clamp6 { -webkit-line-clamp:5; }
 .hs-row .clamp-more { display:none; }
-.ex-t { position:relative; padding:0; border:0; border-radius:14px; overflow:hidden; aspect-ratio:1/1;
-  background:#eeeae2; cursor:pointer; }
-.ex-t img { width:100%; height:100%; object-fit:cover; display:block; }
-.ex-t span { position:absolute; left:0; right:0; bottom:0; padding:22px 10px 9px; color:#fff;
-  font-size:12px; font-weight:700; text-align:left; line-height:1.3;
-  background:linear-gradient(transparent, rgba(0,0,0,.6));
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ex-r { font-size:14.5px; line-height:1.75; padding:13px 16px 0; }
-.ex-m { font-size:11.5px; color:var(--ink-3); padding:8px 16px 14px; }
 /* 바닥에 붙이지 않고 띄운다. 아이폰 홈 인디케이터와 겹치지 않게
    safe-area 만큼 더 올린다 */
 nav { position:fixed; left:0; right:0; max-width:480px; margin:0 auto; z-index:30;
@@ -2382,12 +2369,6 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="ov-b" id="ovObBody"></div>
 </div>
 
-<div class="ov" id="ovEx">
-  <div class="ov-h"><button onclick="closeOv('ovEx')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">후기</div><div class="t">책 교환 인증</div></div></div>
-  <div class="ov-b" id="ovExBody"></div>
-</div>
-
 <!-- 알림함. 푸시를 못 받거나 놓쳐도 여기엔 남는다 -->
 <div class="ov" id="ovNotif">
   <div class="ov-h"><button onclick="closeOv('ovNotif')"><i class="ti ti-arrow-left"></i></button>
@@ -3472,13 +3453,13 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchanges = [];
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, ex, lk, fn, pg, rpg, nc, ints, grn] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3490,8 +3471,6 @@ async function loadAll() {
     // 오늘 누구를 찔렀는지. 안 들고 오면 새로고침마다 버튼이 되살아나고,
     // 눌러야 「이미 보냈어요」를 만난다
     sb.from('nudges').select('to_id,routine_id').eq('day', todayKST()),
-    // 책 교환 인증. 마이그레이션 96 이 아직이면 오류가 와도 빈 채로 둔다
-    sb.rpc('exchange_feed', { p_limit: 30 }),
     // 인증 좋아요. 마이그레이션 105 가 아직이면 오류가 와도 빈 채로 둔다
     sb.from('cert_likes').select('cert_id,user_id'),
     // 완독 도장. 마이그레이션 109 가 아직이면 오류가 와도 빈 채로 둔다
@@ -3511,8 +3490,6 @@ async function loadAll() {
   state.introsOn = !ints.error;
   state.myIntros = ints.error ? [] : (ints.data || []);
   state.notices = nc.error ? [] : (nc.data || []);
-  state.exchanges = ex.error ? [] : (ex.data || []);
-  await signExchanges();
   state.likes = lk.error ? [] : (lk.data || []);
   state.finishes = fn.error ? [] : (fn.data || []);
   state.pages = pg.error ? null : (pg.data || null);
@@ -5325,52 +5302,6 @@ function balanceBlock() {
     </div>`;
 }
 
-// 책 교환 인증 — 책을 받은 아이들이 남긴 사진과 「왜 이 책을 골랐는지」.
-// 혼자 읽기 어려워서 온 아이들이라 "다른 애들은 어떻게 받았지?" 가 크게 작동한다.
-// 닉네임·날짜·사진·이유만 나온다. 책방과 금액은 서버 함수가 아예 내보내지 않는다
-const exDays = d => { const n = Math.floor((new Date(todayKST()) - new Date(d)) / 864e5);
-                      return n <= 0 ? '오늘' : `${n}일 전`; };
-
-// 훑어볼 땐 사진과 책방 이름만 보인다. 누르면 닉네임·고른 이유가 나온다
-// 책 교환 인증 사진은 책방지기가 올린 것이다 (2026-11-05 사용자). 정산 증빙과 같은 비공개 저장소에 있어서
-// 서버가 「교환 인증으로 쓰는 사진」만 읽게 열어 두고(migration-154), 앱은 한 시간짜리 서명 주소로 보여 준다.
-// 옛 청소년 사진은 처음부터 공개 주소다. 서명에 실패한 건은 빈 사진 대신 뺀다
-const exSigned = {};   // 경로 → { url, exp }
-async function signExchanges() {
-  const list = state.exchanges || [];
-  const need = [...new Set(list.filter(x => x.photo_path && !(exSigned[x.photo_path] && exSigned[x.photo_path].exp > Date.now() + 5 * 60e3))
-    .map(x => x.photo_path))];
-  if (need.length && !DEMO) {
-    try {
-      const { data } = await sb.storage.from('store-proofs').createSignedUrls(need, 3600);
-      (data || []).forEach(d => { if (d && d.signedUrl) exSigned[d.path] = { url: d.signedUrl, exp: Date.now() + 3600e3 }; });
-    } catch (e) { /* 아래에서 걸러진다 */ }
-  }
-  state.exchanges = list.map(x => x.photo_path ? { ...x, photo_url: (exSigned[x.photo_path] || {}).url || '' } : x)
-    .filter(x => x.photo_url);
-}
-
-function exchangeHtml() {
-  const list = state.exchanges || [];
-  return secHead('📚 책 교환 인증', list.length, 'ex') + (list.length
-    ? `<div class="hs-row">${list.slice(0, feedCap.ex).map((x, i) => `
-        <button type="button" class="ex-t" onclick="openExchange(${i})">
-          <img src="${esc(x.photo_url)}" loading="lazy" alt="">
-          ${x.store_name ? `<span>${esc(x.store_name)}</span>` : ''}
-        </button>`).join('')}</div>`
-    : `<div class="empty" style="padding:14px 0 18px;">아직 올라온 교환 인증이 없어요.<br>책방에서 책을 받으면 이곳에 쌓여요.</div>`);
-}
-
-function openExchange(i) {
-  const x = (state.exchanges || [])[i]; if (!x) return;
-  $('ovExBody').innerHTML = `<div class="card ex-c">
-      <img src="${esc(x.photo_url)}" alt="">
-      ${x.reason ? `<div class="ex-r">“${esc(x.reason)}”</div>` : ''}
-      <div class="ex-m">${[x.nick ? esc(x.nick) : '', exDays(x.day), x.store_name ? esc(x.store_name) : ''].filter(Boolean).join(' · ')}</div>
-    </div>`;
-  openOv('ovEx');
-}
-
 // 인증 카드 한 장. 루틴 상세와 '모두' 탭에서 같이 쓴다
 // 그 루틴 참여자들의 기록. 8명이 서로 보고 댓글 다는 게 이 프로그램의 동력이라
 // 피드는 '모든 기록'이 아니라 '우리 루틴'이어야 한다
@@ -5979,7 +5910,7 @@ function reviewCard(v) {
 
 // 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 가로 한 줄에 몇 개만 보이고, 「전체보기」를 누르면 그 구역 전체가 새 화면에서 열린다.
 //   새 화면도 20개씩만 보이고 「더 보기」로 20개씩 늘어난다. 긴 글은 여섯 줄까지만 보이고 눌러서 펼친다
-const FEED_SHOW = { rv: 6, ex: 8, qt: 6 };            // 후기 탭에 처음 보이는 개수
+const FEED_SHOW = { rv: 6, qt: 6 };            // 후기 탭에 처음 보이는 개수
 const FEED_PAGE = 20;                                 // 새 화면에서 한 번에 보이는 개수
 const feedCap = FEED_SHOW;
 let FA = { kind: null, cap: FEED_PAGE };
@@ -5990,19 +5921,14 @@ let FA = { kind: null, cap: FEED_PAGE };
 const sharedQuotes = () => state.certs.filter(c => c.quote && c.quote.trim()
   && !(state.routines.find(r => r.id === c.routine_id) || {}).ongoing);
 function faData(kind) {
-  const exMine = () => (state.purchases || []).filter(b => b.user_id === me.id && b.status !== 'void')
-    .map(b => ({ photo_url: (b.book_photo_url || '').trim() || (/^http/.test(b.proof_photo_url || '') ? b.proof_photo_url : ''),
-                 store_name: (state.stores.find(x => x.id === b.bookstore_id) || {}).name || '' })).filter(x => x.photo_url);
   const quote = c => `<div class="card" style="padding:15px 16px;">
       ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
       <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title || '')}</div></div>`;
   const D = {
     rv:  { sub: '후기', title: '📝 루틴 후기',      list: () => state.reviews.filter(v => v.kind !== 'book'), card: reviewCard },
     qt:  { sub: '후기', title: '💬 함께 나누고 싶은 문장', list: () => sharedQuotes(), card: quote },
-    ex:  { sub: '후기', title: '📚 책 교환 인증',    list: () => state.exchanges || [], grid: true },
     mrv: { sub: '내가 남긴 글', title: '📝 내 루틴 후기',   list: () => state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id), card: reviewCard },
     mqt: { sub: '내가 남긴 글', title: '💬 내가 남긴 문장', list: () => state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim()), card: quote },
-    mex: { sub: '내가 남긴 글', title: '📚 내 책 교환 인증', list: exMine, grid: true, mine: true },
   };
   return D[kind];
 }
@@ -6013,10 +5939,7 @@ function drawFeedAll() {
   const all = d.list(), shown = all.slice(0, FA.cap), left = all.length - shown.length;
   $('ovFaSub').textContent = d.sub;
   $('ovFaTitle').textContent = `${d.title} · ${all.length}`;
-  $('ovFaBody').innerHTML = (d.grid
-    ? `<div class="ex-g">${shown.map((x, i) => `<${d.mine ? 'div' : 'button type="button" onclick="openExchange(' + i + ')"'} class="ex-t"${d.mine ? ' style="cursor:default;"' : ''}>
-        <img src="${esc(x.photo_url)}" loading="lazy" alt="">${x.store_name ? `<span>${esc(x.store_name)}</span>` : ''}</${d.mine ? 'div' : 'button'}>`).join('')}</div>`
-    : shown.map(d.card).join(''))
+  $('ovFaBody').innerHTML = shown.map(d.card).join('')
     + (left > 0 ? `<button class="store-more" onclick="feedAllMore()"><span>더 보기</span><em>${Math.min(left, FEED_PAGE)}개 더 · 남은 ${left}개</em><i class="ti ti-chevron-down"></i></button>` : '');
 }
 // 구역 제목 + 오른쪽 「전체보기 ›」. 내용이 하나도 없으면 눌러 볼 게 없으니 단추를 뺀다
@@ -6071,7 +5994,7 @@ function viewFeed() {
       </div>`).join('')}</div>`
     : `<div class="empty" style="padding:14px 0 18px;">아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.</div>`);
 
-  return todoHtml + listHtml + exchangeHtml() + quoteHtml;
+  return todoHtml + listHtml + quoteHtml;
 }
 
 // ── 후기 쓰기 ──────────────────────────────────────────

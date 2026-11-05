@@ -4432,7 +4432,7 @@ function confirmPhoto() {
 
 async function togglePhoto(id, next) {
   const g = DB.purchases.find(x => x.id === id); if (!g) return;
-  if (!next && !confirm('랜딩(로그인 전 화면)에서 이 사진을 내릴까요?\n앱 안의 「책 교환 인증」에는 그대로 남아요.')) return;
+  if (!next && !confirm('랜딩(로그인 전 화면)에서 이 사진을 내릴까요?')) return;
   if (LIVE) {
     const { error } = await sb.from('book_purchases').update({ landing_ok: next }).eq('id', id);
     if (error) return alert('바꾸지 못했어요: ' + error.message);
