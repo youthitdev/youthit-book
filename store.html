@@ -446,7 +446,7 @@ function form() {
     <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
-    <div class="hint" style="margin-top:6px;"><b>청소년의 얼굴이 나오지 않도록</b> 도서 위주로 촬영해 주세요.</div>
+    <div class="hint" style="margin-top:6px;">청소년이 책을 들고 있는 모습을 찍어 주세요. <b>얼굴은 나오지 않게</b>, 책이 잘 보이게요.<br>이 사진은 앱의 「책 교환 인증」에 다른 청소년들에게도 보여요.</div>
 
     <button class="btn btn-go" id="go" disabled onclick="send()">책 값 요청하기</button>
     ${TOKEN ? '' : `<button class="btn btn-line" onclick="pick(null)">그만두기</button>`}
@@ -460,7 +460,7 @@ function proofForm(r) {
     <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
-    <div class="hint" style="margin-top:6px;"><b>청소년의 얼굴이 나오지 않도록</b> 도서 위주로 촬영해 주세요.</div>
+    <div class="hint" style="margin-top:6px;">청소년이 책을 들고 있는 모습을 찍어 주세요. <b>얼굴은 나오지 않게</b>, 책이 잘 보이게요.<br>이 사진은 앱의 「책 교환 인증」에 다른 청소년들에게도 보여요.</div>
     <button class="btn btn-go" id="go" disabled onclick="sendProof()">사진 올리기</button>
     <button class="btn btn-line" onclick="pick(null)">그만두기</button>
     <div id="msg"></div>`;

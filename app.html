@@ -2040,39 +2040,6 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 </div>
 
 <!-- 책을 받고 나서 남기는 한 장 (migration-89) -->
-<div class="ov" id="ovGot">
-  <div class="ov-h"><button onclick="closeOv('ovGot')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">책을 받았어요</div><div class="t">받은 책 한 장</div></div></div>
-  <div class="ov-b">
-    <div style="background:#F2EEE6;border-radius:12px;padding:13px 15px;">
-      <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">📚 이렇게 찍어주세요</div>
-      <div style="font-size:13.5px;line-height:1.6;">이 사진은 나를 응원하는 어른들에게도 보여요.<br>그래서 얼굴은 안 나오게, 책이 잘 보이게 찍어주세요.<br>책을 들어올리면 돼요.</div>
-    </div>
-    <div style="margin-top:16px;">
-      <div class="field-label">책 사진 <span class="req">* 필수</span></div>
-      <div id="gotPrev" style="margin-bottom:8px;"></div>
-      <button class="btn btn-line" onclick="document.getElementById('gotInput').click()">사진 고르기</button>
-      <input type="file" id="gotInput" accept="image/*" style="display:none;" onchange="pickGotPhoto(event)">
-      <div class="hint">기록 피드에는 올라가지 않아요. 운영진이 먼저 확인해요.</div>
-    </div>
-    <div style="margin-top:16px;">
-      <!-- 【「후기」가 아니다 · 2026-10-07 사용자와 정함】 받은 그 자리에서는
-           아직 안 읽었다. 「어땠어?」를 물으면 쓸 말이 없다. 「왜 골랐어요?」는
-           그날 가장 쓰기 쉬운 말이고, 다 읽고 쓰는 책인증후기(+30N)는 그대로 남는다 -->
-      <div class="field-label">왜 이 책을 골랐어요? <span class="opt">선택</span></div>
-      <textarea id="gotReason" rows="3" maxlength="200"
-        placeholder="표지가 예뻐서, 제목이 마음에 들어서, 전부터 읽고 싶어서…"></textarea>
-      <div class="hint">다 읽고 나면 후기를 따로 쓸 수 있어요. 지금은 한 줄이면 충분해요.</div>
-    </div>
-    <label style="display:flex;gap:10px;align-items:flex-start;background:#f7fbf0;border-radius:12px;padding:13px 15px;cursor:pointer;margin-top:16px;">
-      <input type="checkbox" id="gotShare" checked style="margin-top:3px;width:17px;height:17px;flex:none;">
-      <span style="font-size:13.5px;line-height:1.6;">이 사진을 <b>나를 응원하는 어른들</b>에게 보여줄게요
-        <span style="display:block;font-size:12px;color:var(--ink-3);margin-top:3px;">원하지 않으면 꺼주세요. 운영진이 한 번 더 확인하고, 얼굴이 나왔으면 올리지 않아요.</span></span>
-    </label>
-    <button class="btn btn-primary" id="gotSubmit" disabled onclick="submitGot()" style="margin-top:18px;">남기기</button>
-  </div>
-</div>
-
 <!-- 책 골랐어요 -->
 <!-- 【「받았어요」가 아니다 · 2026-10-07 사용자】 이 단추를 눌러야 사장님이
      번호를 누르고, 그때 책이 건네진다. 누르는 순간 아이가 한 일은 「골랐다」뿐이다 -->
@@ -3545,6 +3512,7 @@ async function loadAll() {
   state.myIntros = ints.error ? [] : (ints.data || []);
   state.notices = nc.error ? [] : (nc.data || []);
   state.exchanges = ex.error ? [] : (ex.data || []);
+  await signExchanges();
   state.likes = lk.error ? [] : (lk.data || []);
   state.finishes = fn.error ? [] : (fn.data || []);
   state.pages = pg.error ? null : (pg.data || null);
@@ -5314,9 +5282,6 @@ function balanceBlock() {
   //   전에는 정산 대기(pending)가 있으면 교환 단추를 숨겼다. 아이에게 교환은 끝난 일이고
   //   정산은 유스보이스 안쪽 사정이다. 교환권은 구매가 생기는 순간 이미 줄어 있으니
   //   (used = pending+settled) 남은 교환권이 있으면 쓸 수 있어야 한다. (migration-93)
-  // 사장님이 QR 로 확정한 건. 교환은 끝났고 아이 사진만 비어 있다 (migration-88·89)
-  const noPhoto = state.purchases.find(x => x.user_id === me.id && x.status !== 'void'
-    && !x.proof_photo_url && x.store_submitted_at);
   // 【책 후기는 닫았다 · 2026-10-08 사용자】 후기는 루틴 후기와 책 교환 인증(사진 + 고른 이유)
   //   둘이면 된다. 같은 책에 글을 두 번 쓰게 하지 않는다. 이미 쓰인 책 후기는 지우지 않고
   //   후기 탭에서만 가린다 (관리자 월간 보고서가 읽는다). 되살리려면 이 자리에 rvBtn 을 다시 둔다
@@ -5345,11 +5310,7 @@ function balanceBlock() {
         <span class="bal-goal-r">${won(p.into)} / ${won(p.per)}N</span>
       </div>
 
-      ${noPhoto
-        ? `<div class="bal-got" onclick="openGotPhoto(${noPhoto.id})">
-             <b>📚 책을 받았어요!</b>
-             <span>받은 책을 한 장 남겨주세요 ›</span></div>`
-        : rvBtn}
+      ${rvBtn}
       <div class="bal-btns">
         <button class="btn-line" onclick="go('store')">책방 찾기</button>
         ${p.left > 0 ? (me.verify_status !== 'approved'
@@ -5371,6 +5332,24 @@ const exDays = d => { const n = Math.floor((new Date(todayKST()) - new Date(d)) 
                       return n <= 0 ? '오늘' : `${n}일 전`; };
 
 // 훑어볼 땐 사진과 책방 이름만 보인다. 누르면 닉네임·고른 이유가 나온다
+// 책 교환 인증 사진은 책방지기가 올린 것이다 (2026-11-05 사용자). 정산 증빙과 같은 비공개 저장소에 있어서
+// 서버가 「교환 인증으로 쓰는 사진」만 읽게 열어 두고(migration-154), 앱은 한 시간짜리 서명 주소로 보여 준다.
+// 옛 청소년 사진은 처음부터 공개 주소다. 서명에 실패한 건은 빈 사진 대신 뺀다
+const exSigned = {};   // 경로 → { url, exp }
+async function signExchanges() {
+  const list = state.exchanges || [];
+  const need = [...new Set(list.filter(x => x.photo_path && !(exSigned[x.photo_path] && exSigned[x.photo_path].exp > Date.now() + 5 * 60e3))
+    .map(x => x.photo_path))];
+  if (need.length && !DEMO) {
+    try {
+      const { data } = await sb.storage.from('store-proofs').createSignedUrls(need, 3600);
+      (data || []).forEach(d => { if (d && d.signedUrl) exSigned[d.path] = { url: d.signedUrl, exp: Date.now() + 3600e3 }; });
+    } catch (e) { /* 아래에서 걸러진다 */ }
+  }
+  state.exchanges = list.map(x => x.photo_path ? { ...x, photo_url: (exSigned[x.photo_path] || {}).url || '' } : x)
+    .filter(x => x.photo_url);
+}
+
 function exchangeHtml() {
   const list = state.exchanges || [];
   return secHead('📚 책 교환 인증', list.length, 'ex') + (list.length
@@ -5379,7 +5358,7 @@ function exchangeHtml() {
           <img src="${esc(x.photo_url)}" loading="lazy" alt="">
           ${x.store_name ? `<span>${esc(x.store_name)}</span>` : ''}
         </button>`).join('')}</div>`
-    : `<div class="empty" style="padding:14px 0 18px;">아직 올라온 교환 인증이 없어요.<br>책을 받으면 한 장 남겨주세요.</div>`);
+    : `<div class="empty" style="padding:14px 0 18px;">아직 올라온 교환 인증이 없어요.<br>책방에서 책을 받으면 이곳에 쌓여요.</div>`);
 }
 
 function openExchange(i) {
@@ -5387,7 +5366,7 @@ function openExchange(i) {
   $('ovExBody').innerHTML = `<div class="card ex-c">
       <img src="${esc(x.photo_url)}" alt="">
       ${x.reason ? `<div class="ex-r">“${esc(x.reason)}”</div>` : ''}
-      <div class="ex-m">${esc(x.nick)} · ${exDays(x.day)}${x.store_name ? ` · ${esc(x.store_name)}` : ''}</div>
+      <div class="ex-m">${[x.nick ? esc(x.nick) : '', exDays(x.day), x.store_name ? esc(x.store_name) : ''].filter(Boolean).join(' · ')}</div>
     </div>`;
   openOv('ovEx');
 }
@@ -9116,49 +9095,6 @@ function openBuy(rid) {
   checkBuy(); openOv('ovBuy');
 }
 
-// ── 책을 받고 나서 남기는 한 장 (migration-89) ─────────
-// 사장님이 확정하는 순간 교환은 끝난다. 아이는 가게를 나와서 찍으면 된다 —
-// 사장님 앞에 서서 사진을 찍느라 어색해하지 않아도 된다
-let gotId = null, gotPhoto = null;
-
-function openGotPhoto(id) {
-  gotId = id; gotPhoto = null;
-  $('gotPrev').innerHTML = ''; $('gotInput').value = ''; $('gotReason').value = '';
-  $('gotShare').checked = true; $('gotSubmit').disabled = true;
-  openOv('ovGot');
-}
-
-async function pickGotPhoto(e) {
-  const f = e.target.files[0]; if (!f) return;
-  try {
-    gotPhoto = await resize(f, 1280, .82, true);
-    $('gotPrev').innerHTML = `<img src="${gotPhoto}" style="width:100%;border-radius:12px;display:block;">`;
-    $('gotSubmit').disabled = false;
-  } catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
-}
-
-async function submitGot() {
-  if (!gotPhoto) return;
-  const btn = $('gotSubmit'); btn.disabled = true; btn.textContent = '올리는 중…';
-  try {
-    const path = `${me.id}/got_${Date.now()}.jpg`;
-    const { error: up } = await sb.storage.from('cert-photos')
-      .upload(path, toBlob(gotPhoto), { contentType: 'image/jpeg', cacheControl: '31536000' });
-    if (up) throw new Error(up.message);
-    const url = sb.storage.from('cert-photos').getPublicUrl(path).data.publicUrl;
-    const { error } = await sb.rpc('redeem_add_photo',
-      { p_purchase_id: gotId, p_proof: url, p_public: $('gotShare').checked,
-        p_reason: $('gotReason').value.trim() || null });
-    if (error) throw new Error(error.message);
-    closeOv('ovGot');
-    await loadAll(); render();
-    toast('남겼어요. 고마워요 🌱');
-  } catch (err) {
-    btn.disabled = false; btn.textContent = '남기기';
-    toast(err.message || '올리지 못했어요');
-  }
-}
-
 // ── QR 로 교환하기 (migration-88) ──────────────────────
 // 아이가 띄우고, 사장님이 카메라로 찍는다. 15분 지나면 저절로 접힌다
 let qrTok = null, qrTimer = null;
@@ -9184,23 +9120,13 @@ function qrClear() {
   $('qrBox').innerHTML = '';
 }
 
-// 【닫고 바로 열면 안 된다】 closeBuy() 뒤에 openGotPhoto() 를 부르면, 뒤늦게 도는
-//   history.back() 이 방금 연 사진 화면까지 걷어내 MY 로 떨어졌다
-//   (2026-10-07 사용자). 이 앱이 이미 겪고 만들어 둔 「바꿔 끼우기」(goFromOv)로 간다.
-//   쪽지는 이미 끝났으니(done) 접을 것도 없다 — qrClear 를 부르지 않는다
-function gotFromBuy(pid) {
-  goFromOv('ovBuy', () => openGotPhoto(pid));
-}
-
 // 사장님이 확인을 마쳤다. 축하부터 하고, 할 일은 그다음에
 async function qrGotIt(pid) {
   $('qrBox').innerHTML = `
     <div class="qr-card" style="border-color:#DCEBC4;background:#F7FBF0;">
       <div style="font-size:34px;line-height:1;margin-bottom:8px;">📚</div>
       <div class="qr-t">책을 받았어요!</div>
-      <div class="qr-s" style="margin-top:5px;">책을 들고 한 장만 남겨주세요</div>
-      <button class="btn btn-primary" style="margin-top:16px;"
-        onclick="gotFromBuy(${pid})">받은 책 남기기</button>
+      <div class="qr-s" style="margin-top:5px;">책 한 권, 잘 챙겨 가세요</div>
     </div>`;
   $('qrGo').style.display = 'none';
   // 【loadAll 은 숫자만 받아온다. 화면은 다시 안 그린다】 render() 를 빼먹어서
@@ -9209,12 +9135,6 @@ async function qrGotIt(pid) {
   await loadAll();
   paintBuyBal();
   render();
-  // 【단추를 누르게 하지 않는다 · 2026-11-02 사용자】 책방 안에서 책을 든 채로 바로 찍게 해야
-  //   사진이 남는다. 집에 가서는 MY 안내를 못 보고 지나친다. 축하 카드를 잠깐 보여 준 뒤
-  //   사진 화면으로 넘긴다. 그 사이 아이가 이 화면을 닫았으면 가로채지 않는다
-  //   (MY 의 「책을 받았어요」 안내가 그대로 남는다)
-  await new Promise(r => setTimeout(r, 900));
-  if (isOvOpen('ovBuy') && !isOvOpen('ovGot')) gotFromBuy(pid);
 }
 
 async function qrIssue() {
@@ -9233,7 +9153,7 @@ async function qrIssue() {
       <div class="qr-s">카메라로 찍으시면 바로 열려요</div>
       <div class="qr-img" id="qrImg"></div>
       <div class="qr-left" id="qrLeft"></div>
-      <div class="qr-done">사장님이 확인을 마치면 알림이 와요.<br>그때 받은 책을 한 장 남겨주세요.</div>
+      <div class="qr-done">사장님이 확인을 마치면 이 화면이 바뀌어요.</div>
     </div>`;
   new QRCode($('qrImg'), { text: url, width: 208, height: 208,
     colorDark: '#1C1A17', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
