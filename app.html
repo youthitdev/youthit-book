@@ -273,6 +273,17 @@ body.kkut header.k .h-title { color:var(--blue); }
 .ex-c { padding:0; overflow:hidden; }
 .ex-c img { width:100%; max-height:480px; object-fit:cover; display:block; background:#eeeae2; }
 .ex-g { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+/* 후기 탭: 구역마다 가로로 넘겨 보는 한 줄 (2026-11-05 QA). 오른쪽 끝에 다음 카드가 살짝 걸려 「더 있다」가 보인다 */
+.sec-row { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.sec-all { border:0; background:none; font:inherit; font-size:12.5px; font-weight:700; color:var(--ink-3); cursor:pointer; padding:2px 0 2px 8px; flex:none; }
+.sec-all i { font-size:13px; vertical-align:-1px; }
+.hs-row { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; margin:0 -18px 6px; padding:0 18px 4px;
+  scroll-padding-left:18px; -webkit-overflow-scrolling:touch; scrollbar-width:none; align-items:stretch; }
+.hs-row::-webkit-scrollbar { display:none; }
+.hs-row > .card { flex:0 0 82%; margin:0; scroll-snap-align:start; box-sizing:border-box; }
+.hs-row > .ex-t { flex:0 0 44%; scroll-snap-align:start; }
+.hs-row .clamp6 { -webkit-line-clamp:5; }
+.hs-row .clamp-more { display:none; }
 .ex-t { position:relative; padding:0; border:0; border-radius:14px; overflow:hidden; aspect-ratio:1/1;
   background:#eeeae2; cursor:pointer; }
 .ex-t img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -5367,13 +5378,13 @@ const exDays = d => { const n = Math.floor((new Date(todayKST()) - new Date(d)) 
 // 훑어볼 땐 사진과 책방 이름만 보인다. 누르면 닉네임·고른 이유가 나온다
 function exchangeHtml() {
   const list = state.exchanges || [];
-  return `<div class="sec-t">📚 책 교환 인증${list.length ? ` <span class="sec-n">${list.length}</span>` : ''}</div>` + (list.length
-    ? `<div class="ex-g">${list.slice(0, feedCap.ex).map((x, i) => `
+  return secHead('📚 책 교환 인증', list.length, 'ex') + (list.length
+    ? `<div class="hs-row">${list.slice(0, feedCap.ex).map((x, i) => `
         <button type="button" class="ex-t" onclick="openExchange(${i})">
           <img src="${esc(x.photo_url)}" loading="lazy" alt="">
           ${x.store_name ? `<span>${esc(x.store_name)}</span>` : ''}
-        </button>`).join('')}</div>` + feedMoreBtn('ex', list.length)
-    : `<div class="empty">아직 올라온 교환 인증이 없어요.<br>책을 받으면 한 장 남겨주세요.</div>`);
+        </button>`).join('')}</div>`
+    : `<div class="empty" style="padding:14px 0 18px;">아직 올라온 교환 인증이 없어요.<br>책을 받으면 한 장 남겨주세요.</div>`);
 }
 
 function openExchange(i) {
@@ -5992,9 +6003,9 @@ function reviewCard(v) {
   </div>`;
 }
 
-// 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 처음에는 몇 개만 보이고, 「더 보기」를 누르면 그 구역 전체가 새 화면에서 열린다.
+// 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 가로 한 줄에 몇 개만 보이고, 「전체보기」를 누르면 그 구역 전체가 새 화면에서 열린다.
 //   새 화면도 20개씩만 보이고 「더 보기」로 20개씩 늘어난다. 긴 글은 여섯 줄까지만 보이고 눌러서 펼친다
-const FEED_SHOW = { rv: 3, ex: 6, qt: 5 };            // 후기 탭에 처음 보이는 개수
+const FEED_SHOW = { rv: 6, ex: 8, qt: 6 };            // 후기 탭에 처음 보이는 개수
 const FEED_PAGE = 20;                                 // 새 화면에서 한 번에 보이는 개수
 const feedCap = FEED_SHOW;
 let FA = { kind: null, cap: FEED_PAGE };
@@ -6034,6 +6045,11 @@ function drawFeedAll() {
     : shown.map(d.card).join(''))
     + (left > 0 ? `<button class="store-more" onclick="feedAllMore()"><span>더 보기</span><em>${Math.min(left, FEED_PAGE)}개 더 · 남은 ${left}개</em><i class="ti ti-chevron-down"></i></button>` : '');
 }
+// 구역 제목 + 오른쪽 「전체보기 ›」. 내용이 하나도 없으면 눌러 볼 게 없으니 단추를 뺀다
+function secHead(title, n, kind) {
+  return `<div class="sec-t sec-row"><span>${title}${n ? ` <span class="sec-n">${n}</span>` : ''}</span>`
+    + (n ? `<button type="button" class="sec-all" onclick="openFeedAll('${kind}')">전체보기 <i class="ti ti-chevron-right"></i></button>` : '') + `</div>`;
+}
 function feedMoreBtn(k, total) {
   const left = total - feedCap[k];
   return left > 0 ? `<button class="store-more" onclick="openFeedAll('${k}')"><span>전체 보기</span><em>${total}개</em><i class="ti ti-chevron-right"></i></button>` : '';
@@ -6067,19 +6083,19 @@ function viewFeed() {
       </div>
     </div>`).join('')}` : '';
 
-  const listHtml = `<div class="sec-t">📝 루틴 후기${list.length ? ` <span class="sec-n">${list.length}</span>` : ''}</div>` + (list.length
-    ? list.slice(0, feedCap.rv).map(reviewCard).join('') + feedMoreBtn('rv', list.length)
-    : `<div class="empty">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
+  const listHtml = secHead('📝 루틴 후기', list.length, 'rv') + (list.length
+    ? `<div class="hs-row">${list.slice(0, feedCap.rv).map(reviewCard).join('')}</div>`
+    : `<div class="empty" style="padding:14px 0 18px;">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
 
   const allQuotes = sharedQuotes();
   const quotes = allQuotes.slice(0, feedCap.qt);
-  const quoteHtml = `<div class="sec-t">💬 함께 나누고 싶은 문장${allQuotes.length ? ` <span class="sec-n">${allQuotes.length}</span>` : ''}</div>`
+  const quoteHtml = secHead('💬 함께 나누고 싶은 문장', allQuotes.length, 'qt')
     + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">우리 루틴 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.</div>` + (quotes.length
-    ? quotes.map(c => `<div class="card" style="padding:15px 16px;">
+    ? `<div class="hs-row">${quotes.map(c => `<div class="card" style="padding:15px 16px;">
         ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
-      </div>`).join('') + feedMoreBtn('qt', allQuotes.length)
-    : `<div class="empty">아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.</div>`);
+      </div>`).join('')}</div>`
+    : `<div class="empty" style="padding:14px 0 18px;">아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.</div>`);
 
   return todoHtml + listHtml + exchangeHtml() + quoteHtml;
 }
