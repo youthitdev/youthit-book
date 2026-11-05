@@ -5205,7 +5205,7 @@ function certGrid(all, rid) {
 
   // 상시 루틴(매일 한끗)은 내 인증만 읽힌다(RLS). 「우리」도 「전체/내 인증」 구분도 「내 인증」 표시도 필요 없다
   const og = !!(rid && (state.routines.find(x => x.id === rid) || {}).ongoing);
-  const head = og ? `<div class="cg-head"><span>내 인증 <b>${all.length}</b></span></div>` : `<div class="cg-head">
+  const head = og ? `<div class="cg-head"><span>내 인증</span></div>` : `<div class="cg-head">
     <span>${who ? `${esc(whoNm)} 인증 <b>${cs.length}</b><button class="cg-who-clr" onclick="setCertWho(${rid},'${who}')">전체 보기</button>`
                 : `우리 인증 <b>${all.length}</b>`}</span>
     ${mine.length ? `<div class="seg">
