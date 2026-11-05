@@ -442,7 +442,7 @@ function form() {
     <input type="number" id="amt" inputmode="numeric" placeholder="16500" oninput="check()">
     <div class="hint" style="margin-top:6px;">책방에서 요청하는 실제 책 값을 적어주세요.</div>
 
-    <label>책 교환 인증 사진 <span style="font-weight:500;color:var(--ink-3);">(추후 업로드 가능)</span></label>
+    <label>책 교환 인증 사진 <span style="font-weight:600;color:var(--bad);">필수</span></label>
     <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
@@ -554,11 +554,11 @@ async function pickFile(e, which) {
   check();
 }
 
-// 책 값만 있으면 요청이 된다. 책 교환 인증 사진은 나중에 올려도 된다 (2026-10-28 요청) —
-// 막아 두면 사장님이 그 자리에서 포기한다. 영수증은 받지 않는다: 아이는 돈을 내지 않아 책방에 영수증이 생기지 않는다.
-// 사진만 올리는 화면(proofForm)은 한 장을 골라야 한다
+// 책 값과 책 교환 인증 사진이 있어야 요청이 된다 (2026-11-05 사용자: 나중에 올리게 두면 일이 두 번이고 사진이 비는 건이 쌓인다.
+// 책을 건네는 그 자리가 찍을 수 있는 유일한 때다). 영수증은 받지 않는다: 아이는 돈을 내지 않아 책방에 영수증이 생기지 않는다.
+// 사진만 올리는 화면(proofForm)은 옛 건을 채우는 길이고, 거기서도 한 장을 골라야 한다
 function check() {
-  $('go').disabled = $('amt') ? !(Number($('amt').value) > 0) : !photo;
+  $('go').disabled = $('amt') ? !(Number($('amt').value) > 0 && photo) : !photo;
 }
 
 function show(cls, t) { $('msg').innerHTML = `<div class="msg ${cls}">${esc(t)}</div>`; }
