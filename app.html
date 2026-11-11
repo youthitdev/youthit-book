@@ -3146,7 +3146,7 @@ function renderKkutGate() {
         <b>한끗독서를 홈 화면에 추가해 보세요</b>
         앱을 홈 화면에 추가하면 승인 알림을 가장 빠르게 확인하고, 매일 독서 루틴에 쉽게 접속할 수 있어요.
         <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#fff;"
-           href="push-guide.html" target="_blank" rel="noopener">홈 화면에 추가하는 방법 보기</a>
+           href="home-guide.html" target="_blank" rel="noopener">홈 화면에 추가하는 방법 보기</a>
       </div>
       <div class="gate-why" style="margin-top:12px;">
         <b>승인이 완료되면?</b>
@@ -3164,7 +3164,7 @@ function renderKkutGate() {
 
   const rejected = a && a.status === 'rejected';
 
-  // 앱 안 신청서는 닫았다. 새로 쓰거나 반려된 사람 모두 구글폼 안내를 본다
+  // 앱 안 신청서는 닫았다. 반려된 사람은 사유와 문의처를 본다 (신청서가 아예 없는 경우는 거의 없지만 문의로 안내)
   if (!KKUT_FORM_IN_APP) {
     $('kkutBody').innerHTML = `
       ${backable() ? `
@@ -3179,25 +3179,15 @@ function renderKkutGate() {
           <div class="gate-s" style="white-space:pre-wrap;">${esc(a.reject_reason)}</div>
         </div>` : ''}
       <div class="gate-card">
-        <div class="gate-ico">📖</div>
-        <div class="gate-t">끗짱이 되려면 신청 폼이 필요해요</div>
+        <div class="gate-t">${rejected ? '이번에는 승인이 어려웠어요' : '신청 내용을 찾지 못했어요'}</div>
         <div class="gate-s">
-          끗짱은 청소년 곁에서 함께하는 역할이라,<br>
-          유스보이스가 신청 내용을 읽고 연락드린 뒤 열어 드려요.<br>
-          가입만으로는 아직 루틴을 열 수 없어요.
+          ${rejected ? '위 안내를 확인해 주세요.<br>다시 신청하고 싶거나 궁금한 점이 있으면 아래로 문의해 주세요.'
+                     : '신청이 잘 들어갔는지 확인이 필요해요.<br>아래로 문의해 주세요.'}
         </div>
-        ${KKUT_FORM_URL
-          ? `<a class="btn btn-primary" style="display:block;margin-top:16px;text-decoration:none;"
-               href="${esc(KKUT_FORM_URL)}" target="_blank" rel="noopener">신청 폼 쓰러 가기</a>`
-          : `<div class="gate-num" style="margin-top:14px;">신청 폼을 준비하고 있어요. 곧 안내해 드릴게요</div>`}
-        <div class="gate-s" style="margin-top:12px;font-size:12.5px;color:var(--ink-3);">
-          폼에 적는 이메일은 이 계정의 이메일 <b>${esc(me.email || '')}</b> 과 같아야 해요.
+        <div class="gate-s" style="margin-top:12px;">
+          메일 <a href="mailto:yv@youthvoice.or.kr" style="color:var(--ink);font-weight:800;">yv@youthvoice.or.kr</a><br>
+          <a href="http://pf.kakao.com/_kTGuxj" target="_blank" rel="noopener" style="color:var(--ink);font-weight:800;">유스보이스 카카오톡 채널</a>
         </div>
-      </div>
-      <div class="gate-why" style="margin-top:14px;">
-        <b>왜 폼으로 받나요?</b>
-        끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.
-        청소년이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 열어요.
       </div>
       <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:14px;"
          href="kkut-guide.html" target="_blank" rel="noopener">끗짱 안내문 보기</a>
