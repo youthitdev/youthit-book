@@ -1,13 +1,13 @@
 -- 한끗독서 마이그레이션 159
--- 모임 만들기 개편 — 일정을 운영진이 미리 등록, 온라인 공유회, 모임 주체, 최소 4명 자동 취소 (2026-11-11 요청)
+-- 루틴 만들기 개편 — 일정을 운영진이 미리 등록, 온라인 공유회, 루틴 주체, 최소 4명 자동 취소 (2026-11-11 요청)
 --
 -- 【무엇을】
 --   1. routines 새 칸: host_kind(general/partner) · meetup_kind(online/offline) · schedule_id · online_meetup_id · min_people
---   2. meeting_schedules — 운영진이 미리 등록하는 모임 일정(이름·시작일·종료일). 끗짱은 개설할 때 여기서 고른다.
+--   2. meeting_schedules — 운영진이 미리 등록하는 루틴 일정(이름·시작일·종료일). 끗짱은 개설할 때 여기서 고른다.
 --   3. online_meetups — 유스보이스가 정한 온라인 공유회 일시. online_meetup_links — Zoom 링크(운영진만 읽는다).
---      Zoom 링크는 meeting_zoom(모임) 으로만 나간다: 그 모임의 끗짱·승인된 참여자·운영진에게, 모임이 열린 뒤에.
---   4. sync_routine_status(매일 0시 10분) — 시작일이 됐는데 최소 인원(min_people)에 못 미친 「모집 중」 모임을 자동 폐강하고
---      참여자와 끗짱에게 알린다. min_people 가 있는 새 모임만 대상이라, 이미 만들어진 모임은 건드리지 않는다.
+--      Zoom 링크는 meeting_zoom(루틴) 으로만 나간다: 그 루틴의 끗짱·승인된 참여자·운영진에게, 루틴이 열린 뒤에.
+--   4. sync_routine_status(매일 0시 10분) — 시작일이 됐는데 최소 인원(min_people)에 못 미친 「모집 중」 루틴을 자동 폐강하고
+--      참여자와 끗짱에게 알린다. min_people 가 있는 새 루틴만 대상이라, 이미 만들어진 루틴은 건드리지 않는다.
 --   온라인 공유회는 책 교환 조건도 나다움 보너스도 없다(meetup_required 는 오프라인 공유회에서만 켜진다).
 --
 -- ⚠️ 134(sync_routine_status)·136(admin_cancel_routine) 뒤에 돌린다. 여러 번 돌려도 된다.
@@ -19,7 +19,7 @@ ALTER TABLE routines ADD COLUMN IF NOT EXISTS schedule_id      bigint;
 ALTER TABLE routines ADD COLUMN IF NOT EXISTS online_meetup_id bigint;
 ALTER TABLE routines ADD COLUMN IF NOT EXISTS min_people       int;
 
--- ── 2. 모임 일정 ───────────────────────────────────────
+-- ── 2. 루틴 일정 ───────────────────────────────────────
 CREATE TABLE IF NOT EXISTS meeting_schedules (
   id         bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   title      text NOT NULL,
@@ -98,8 +98,8 @@ BEGIN
     n_cancel := n_cancel + 1;
     IF x.led_by IS NOT NULL THEN
       BEGIN
-        PERFORM notify_push(x.led_by, '모임이 열리지 못했어요',
-          COALESCE(x.title, '모임') || ' · 최소 ' || x.min_people || '명이 모이지 않아 자동으로 취소됐어요',
+        PERFORM notify_push(x.led_by, '루틴이 열리지 못했어요',
+          COALESCE(x.title, '루틴') || ' · 최소 ' || x.min_people || '명이 모이지 않아 자동으로 취소됐어요',
           '/youthit-book/app.html?tab=home');
       EXCEPTION WHEN OTHERS THEN NULL;
       END;

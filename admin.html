@@ -606,7 +606,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="tabs" id="tabsRoutines" style="display:none;">
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="reports" onclick="switchTab('reports')">인증 신고<i id="cntReports"></i></button>
-    <button class="tab" data-tab="schedules" onclick="switchTab('schedules')">모임 일정</button>
+    <button class="tab" data-tab="schedules" onclick="switchTab('schedules')">루틴 일정</button>
   </div>
   <div class="tabs" id="tabsMsgs" style="display:none;">
     <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">받은 알림<i id="cntInbox"></i></button>
@@ -1752,10 +1752,10 @@ async function voidGrant(id) {
 }
 
 
-// ── 모임 일정 (migration-159, 2026-11-11 요청) ──────────────────────
-//   끗짱이 모임을 만들 때 시작일·기간을 직접 적지 않고 여기 등록해 둔 일정에서 고른다 (예: 12월 모임).
+// ── 루틴 일정 (migration-159, 2026-11-11 요청) ──────────────────────
+//   끗짱이 루틴을 만들 때 시작일·기간을 직접 적지 않고 여기 등록해 둔 일정에서 고른다 (예: 12월 루틴).
 //   온라인 공유회도 유스보이스가 정한 일시와 Zoom 링크를 여기서 미리 등록한다.
-//   Zoom 링크는 모임이 열린 뒤 그 모임의 끗짱·승인된 참여자에게만 보인다 (서버 meeting_zoom).
+//   Zoom 링크는 루틴이 열린 뒤 그 루틴의 끗짱·승인된 참여자에게만 보인다 (서버 meeting_zoom).
 let MSC = null, mscBusy = false;
 async function mscLoad() {
   if (mscBusy) return; mscBusy = true;
@@ -1784,7 +1784,7 @@ function viewSchedules() {
         <td>${x.active ? '고를 수 있음' : '숨김'}</td>
         <td class="right"><button class="btn btn-line" onclick="mscToggle('meeting_schedules', ${x.id}, ${!x.active})">${x.active ? '숨기기' : '다시 보이기'}</button>
           <button class="btn btn-line" onclick="mscDel('meeting_schedules', ${x.id}, '${esc(x.title).replace(/'/g, "\\'")}')">삭제</button></td></tr>`).join('')}
-    </table></div>` : `<div class="empty">아직 등록한 모임 일정이 없어요.</div>`;
+    </table></div>` : `<div class="empty">아직 등록한 루틴 일정이 없어요.</div>`;
   const mt = MSC.mt.length ? `<div class="tbl"><table>
       <tr><th>일시</th><th>이름(선택)</th><th>Zoom 링크</th><th>상태</th><th></th></tr>
       ${MSC.mt.map(x => `<tr${x.active ? '' : ' class="voided"'}>
@@ -1797,14 +1797,14 @@ function viewSchedules() {
     </table></div>` : `<div class="empty">아직 등록한 온라인 공유회가 없어요.</div>`;
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">모임 일정</div>
-    <div class="panel-d">끗짱이 모임을 만들 때 여기 등록한 일정에서 골라요. 달마다 미리 등록해 두세요.<br>
+    <div><div class="panel-t">루틴 일정</div>
+    <div class="panel-d">끗짱이 루틴을 만들 때 여기 등록한 일정에서 골라요. 달마다 미리 등록해 두세요.<br>
       아직 시작하지 않은 일정만 끗짱에게 보여요.${MSC.err ? `<br><b style="color:#b00038;">불러오지 못했어요: ${esc(MSC.err)} (마이그레이션 159 를 돌렸는지 확인해 주세요)</b>` : ''}</div></div>
   </div>
   <div style="padding:6px 20px 8px;">
-    <div class="panel-t" style="font-size:15px;margin:8px 0;">모임 운영 일정</div>
+    <div class="panel-t" style="font-size:15px;margin:8px 0;">루틴 운영 일정</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
-      <div><div class="muted">이름</div><input type="text" id="mscTitle" placeholder="예) 12월 모임" maxlength="30" style="width:170px;"></div>
+      <div><div class="muted">이름</div><input type="text" id="mscTitle" placeholder="예) 12월 루틴" maxlength="30" style="width:170px;"></div>
       <div><div class="muted">시작일</div><input type="date" id="mscStart"></div>
       <div><div class="muted">종료일</div><input type="date" id="mscEnd"></div>
       <button class="btn btn-dark" onclick="mscAddSchedule()">일정 추가</button>
@@ -1862,7 +1862,7 @@ async function mscToggle(tbl, id, on) {
   MSC = null; renderPanel();
 }
 async function mscDel(tbl, id, name) {
-  if (!confirm(`「${name}」을(를) 삭제할까요?\n\n이미 이 일정으로 만든 모임은 그대로 남아요.`)) return;
+  if (!confirm(`「${name}」을(를) 삭제할까요?\n\n이미 이 일정으로 만든 루틴은 그대로 남아요.`)) return;
   const { error } = await sb.from(tbl).delete().eq('id', id);
   if (error) return alert('지우지 못했어요.\n\n' + error.message);
   MSC = null; renderPanel();
