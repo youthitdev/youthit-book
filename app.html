@@ -1572,6 +1572,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .ov-b { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:18px 18px calc(28px + env(safe-area-inset-bottom)); overscroll-behavior:contain; }
 .ov-b > div:not(:last-child) { margin-bottom:16px; }
+#mkP2 > div:not(:last-child) { margin-bottom:16px; }   /* 모임 만들기 2페이지 칸 사이 간격 (한 겹 안쪽이라 위 규칙이 안 닿는다) */
 
 /* 아래에서 올라오는 시트 */
 .sheet { position:fixed; inset:0; z-index:60; display:none; align-items:flex-end; justify-content:center;
@@ -1932,45 +1933,72 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
-<!-- 루틴 만들기 (끗짱) -->
+<!-- 모임 만들기 (끗짱) — 2페이지: ① 모임 주체 ② 모임 정보 (2026-11-11 개편) -->
 <div class="ov" id="ovMake">
-  <div class="ov-h"><button onclick="closeOv('ovMake')"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">끗짱</div><div class="t" id="ovMakeTitle">루틴 만들기</div></div></div>
+  <div class="ov-h"><button onclick="mkBack()"><i class="ti ti-arrow-left"></i></button>
+    <div><div class="s">끗짱</div><div class="t" id="ovMakeTitle">모임 만들기</div></div></div>
   <div class="ov-b">
-    <!-- 종류는 만들 때만 고른다. 중간에 바꾸면 이미 쌓인 인증이 붕 뜼다 -->
+
+    <!-- 1페이지: 모임 주체. 고른 쪽에 따라 2페이지의 공유회 선택이 달라진다 -->
+    <div id="mkP1">
+      <div style="font-size:20px;font-weight:800;line-height:1.45;letter-spacing:-.4px;margin:4px 0 16px;">어떤 모임을 열까요?</div>
+      <div class="kind">
+        <button type="button" id="mHostGeneral" onclick="pickHost('general')">
+          <em>🙋</em><span><b>일반 끗짱</b><i>개인으로서 온라인 독서 모임을 운영해요</i></span></button>
+        <button type="button" id="mHostPartner" onclick="pickHost('partner')">
+          <em>🏠</em><span><b>파트너 끗짱</b><i>파트너 기관·서점을 기반으로 운영해요</i></span></button>
+      </div>
+      <button class="btn btn-primary" id="mkNext" disabled onclick="mkNext()" style="margin-top:20px;">다음</button>
+    </div>
+
+    <!-- 2페이지 -->
+    <div id="mkP2" style="display:none;">
     <div id="mKindWrap">
-      <div class="field-label">어떻게 읽나요 <span class="req">*</span></div>
+      <div class="field-label">독서 유형 <span class="req">*</span></div>
       <div class="kind">
         <button type="button" id="mKindBook" class="on" onclick="pickKind('book')">
-          <em>📚</em><span><b>각자 읽는 책</b><i>청소년마다 제 책을 골라요</i></span></button>
+          <em>📚</em><span><b>각자 읽는 책</b><i>각자 원하는 책을 골라 읽고 인증해요</i></span></button>
         <button type="button" id="mKindOne" onclick="pickKind('one_book')">
-          <em>📕</em><span><b>함께 읽는 책</b><i>내가 정한 한 권을 다 같이 읽어요</i></span></button>
+          <em>📕</em><span><b>함께 읽는 책</b><i>지정된 책 1권을 함께 읽고 인증해요</i></span></button>
         <button type="button" id="mKindShared" onclick="pickKind('shared')">
-          <em>📖</em><span><b>함께 읽는 글</b><i>내가 올린 글을 같이 읽어요</i></span></button>
+          <em>📖</em><span><b>함께 읽는 글</b><i>끗짱이 매일 공유하는 글/아티클을 읽어요</i></span></button>
       </div>
       <div class="hint" id="mKindHint"></div>
     </div>
     <div>
-      <div class="field-label">루틴 이름 <span class="req">* 필수</span></div>
-      <input type="text" id="mTitle" placeholder="예) 밤에 읽는 15일" maxlength="40">
+      <div class="field-label">모임 이름 <span class="req">*</span></div>
+      <input type="text" id="mTitle" placeholder="예) 밤에 읽는 15일, 매일 한 장 에세이 읽기" maxlength="40">
       <div class="hint" id="mTitleHint"></div>
     </div>
     <div>
-      <div class="field-label">대표 사진 <span class="req">* 필수</span></div>
+      <div class="field-label">대표 사진 <span class="req">*</span></div>
       <div id="mCoverBox"></div>
       <input type="file" id="mCoverInput" accept="image/*" style="display:none;" onchange="pickCover(event)">
-      <div class="hint">청소년이 루틴을 고를 때 제일 먼저 보는 그림이에요.</div>
+      <div class="hint">청소년이 모임을 고를 때 제일 먼저 보는 그림이에요.</div>
     </div>
     <div>
       <div class="field-label">이모지 <span class="opt">선택</span></div>
       <input type="text" id="mEmoji" placeholder="📚" maxlength="4" style="width:90px;text-align:center;font-size:20px;">
     </div>
     <div>
-      <div class="field-label">끗짱 소개 <span class="req">* 필수</span></div>
+      <div class="field-label">모임 및 끗짱 소개 <span class="req">*</span></div>
       <textarea id="mDesc" rows="5" placeholder="안녕하세요, 성수에서 작은 책방을 하는 김유스입니다.&#10;혼자서는 잘 안 읽히는 책, 15일만 같이 읽어봐요." maxlength="300"></textarea>
       <div class="hint">어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 이걸 보고 골라요.</div>
-      <div class="field-label" style="margin-top:16px;" id="mBookLabel">내가 읽을 책 <span class="req">* 필수</span></div>
-      <input type="text" id="mBookTitle" maxlength="60" placeholder="책 제목을 검색하면 찾아드려요"
+    </div>
+    <div>
+      <div class="field-label">모집 인원 <span class="req">*</span></div>
+      <input type="number" id="mPeople" min="4" max="50" inputmode="numeric" placeholder="최소 4명" oninput="mkPeopleCheck()">
+      <div class="hint" id="mPeopleErr" style="display:none;color:#b00038;font-weight:700;margin-top:6px;">최소 4명 이상 입력해 주세요</div>
+      <div class="hint">※ 최소 4명 이상 모집되어야 모임이 개설되며, 미달 시 자동 취소됩니다.</div>
+    </div>
+    <div id="mStoreWrap">
+      <div class="field-label">함께하는 책방 <span class="opt">선택</span></div>
+      <select id="mStore"></select>
+      <div class="hint">청소년이 책을 받으러 갈 곳이에요. 모집 카드에 같이 보입니다.</div>
+    </div>
+    <div>
+      <div class="field-label" id="mBookLabel">내가 읽을 책 <span class="req">*</span></div>
+      <input type="text" id="mBookTitle" maxlength="60" placeholder="책 제목이나 저자를 검색해 주세요"
              autocomplete="off" oninput="bookFind('mBookTitle','mBookFind',drawKkutBook)">
       <div id="mBookFind"></div>
       <div id="mBookFindGot"></div>
@@ -1979,84 +2007,55 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="hint" id="mBookHint">검색한 표지나 직접 찍은 사진, 눌러서 골라요.</div>
     </div>
     <div>
-      <div class="field-label">이렇게 인증해 주세요 <span class="req">* 필수</span></div>
-      <select id="mGuideSel" onchange="pickGuide()"></select>
-      <div id="mGuideDesc" class="guide-prev"></div>
-      <textarea id="mGuide" rows="3" placeholder="어떻게 인증하면 좋을지 적어주세요." maxlength="200"
-                style="display:none;margin-top:8px;"></textarea>
+      <div class="field-label">인증 방식 <span class="req">*</span></div>
+      <textarea id="mGuide" rows="3" maxlength="200"
+        placeholder="예) 오늘 읽은 페이지 사진을 올리고, 가장 인상 깊었던 문장과 그 이유를 작성해 주세요"></textarea>
+      <div class="hint">청소년에게 그대로 보여요.</div>
     </div>
     <div id="mLockNote" class="hint" style="display:none;background:#FBF3E4;color:#8A5A16;border-radius:11px;padding:10px 13px;line-height:1.65;"></div>
-    <div style="display:flex;gap:10px;">
-      <div style="flex:1;min-width:0;">
-        <div class="field-label">시작일 <span class="req">*</span></div>
-        <input type="date" id="mStart" required onchange="makeHint()">
+    <div>
+      <div class="field-label">모임 운영 일정 <span class="req">*</span></div>
+      <select id="mSchedule" class="ph" onchange="this.classList.toggle('ph', !this.value)"></select>
+      <div class="hint" id="mSchedHint"></div>
+    </div>
+    <div id="mMeetBox">
+      <div class="field-label">공유회 방식 선택 <span class="req">*</span></div>
+      <div class="kind">
+        <button type="button" id="mMeetOnline" onclick="pickMeet('online')">
+          <em>💻</em><span><b>온라인 공유회</b><i>유스보이스가 정한 일정에 Zoom 으로 만나요</i></span></button>
+        <button type="button" id="mMeetOffline" onclick="pickMeet('offline')">
+          <em>📍</em><span><b>오프라인 공유회</b><i>직접 장소를 정해 만나요. 참석한 청소년만 책을 받아요</i></span></button>
       </div>
-      <div style="width:118px;flex-shrink:0;">
-        <div class="field-label">기간 <span class="req">*</span> <span class="opt">7일 이상</span></div>
-        <input type="number" id="mDays" min="7" max="365" step="1" value="15" oninput="makeHint()">
+      <div class="hint" id="mMeetLock" style="display:none;">오프라인 모임은 공간을 보유한 파트너 서점/기관 끗짱만 개설할 수 있어요.</div>
+    </div>
+    <div id="mOnlineWrap" style="display:none;">
+      <div class="field-label">온라인 공유회 일정 선택 <span class="req">*</span></div>
+      <select id="mOnline" class="ph" onchange="this.classList.toggle('ph', !this.value)"></select>
+      <div class="hint" id="mOnlineHint">※ 모임 개설이 완료되면 유스보이스가 지정한 온라인 공유회 Zoom 링크가 화면에 자동으로 노출됩니다.</div>
+    </div>
+    <div id="mMeetWrap" style="display:none;">
+      <div class="field-label">공유회 일시 <span class="req">*</span></div>
+      <div style="display:flex;gap:10px;">
+        <input type="date" id="mMeetDate" style="flex:1;min-width:0;">
+        <input type="time" id="mMeetTime" step="1800" style="width:150px;flex:none;">
       </div>
+      <div class="field-label" style="margin-top:14px;">장소 <span class="req">*</span></div>
+      <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 서울숲"
+             autocomplete="off" oninput="placeFind()">
+      <div id="mMeetFind"></div>
+      <div id="mMeetGot"></div>
+      <div class="field-label" style="margin-top:14px;">상세 주소 <span class="opt">선택</span></div>
+      <input type="text" id="mMeetDetail" maxlength="60" placeholder="예) 2층 세미나실">
+      <div class="hint">층·호실처럼 지도에 안 나오는 곳을 적어주세요.</div>
+      <div class="field-label" style="margin-top:14px;">안내 사항 <span class="opt">선택</span></div>
+      <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 등 청소년들에게 전하고 싶은 내용을 작성해 주세요."></textarea>
+      <div class="hint">청소년이 모임을 고를 때부터 봐요. 나중에 바꿀 수 있어요.</div>
     </div>
-    <div class="day-pick">
-      <button type="button" onclick="pickDays(7)"><b>7일</b><span>맛보기</span></button>
-      <button type="button" onclick="pickDays(15)"><b>15일</b><span>가볍게 시작</span></button>
-      <button type="button" onclick="pickDays(30)"><b>30일</b><span>한 달 채우기</span></button>
-      <button type="button" onclick="pickDays(66)"><b>66일</b><span>습관이 자리 잡는 시간</span></button>
+    <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">모임 만들기</button>
     </div>
-    <div>
-      <div class="field-label">모집 인원 <span class="req">*</span></div>
-      <input type="number" id="mPeople" min="1" max="50" value="10">
-    </div>
-    <div>
-      <div class="field-label">함께하는 책방 <span class="opt">선택</span></div>
-      <select id="mStore"></select>
-      <div class="hint">청소년이 책을 받으러 갈 곳이에요. 모집 카드에 같이 보입니다.</div>
-    </div>
-    <div id="mHint" style="font-size:12.5px;line-height:1.6;padding:11px 13px;border-radius:11px;background:#f7fbf0;color:var(--green-d);"></div>
-    <div>
-      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
-        <input type="checkbox" id="mQuote" style="width:17px;height:17px;">
-        필사도 함께하기
-      </label>
-      <div class="hint">체크하면 인증할 때 마음에 남은 문장을 꼭 옮겨 적어야 해요</div>
-    </div>
-    <div>
-      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
-        <input type="checkbox" id="mCamera" checked style="width:17px;height:17px;">
-        그 자리에서 찍은 사진만 받기
-      </label>
-      <div class="hint">카메라로 바로 찍어야 해요. 필요하면 해제할 수 있어요</div>
-    </div>
-    <div>
-      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px;">
-        <input type="checkbox" id="mMeet" style="width:17px;height:17px;" onchange="toggleMeetFields()">
-        오프라인 공유회 함께하기
-      </label>
-      <div class="hint">체크하면 <b>공유회에 온 청소년만</b> 책을 받아요. 참석하면 나다움도 더 드려요</div>
-      <div id="mMeetWrap" style="display:none;margin-top:12px;">
-        <div class="field-label">언제 모이나요 <span class="req">* 필수</span></div>
-        <div style="display:flex;gap:10px;">
-          <input type="date" id="mMeetDate" style="flex:1;min-width:0;">
-          <!-- 「오후 02:00」에 시계 아이콘까지 들어가야 한다. 126px 에서는 분이 잘렸다 -->
-          <input type="time" id="mMeetTime" step="1800" style="width:150px;flex:none;">
-        </div>
-        <div class="field-label" style="margin-top:14px;">어디서 <span class="req">* 필수</span></div>
-        <input type="text" id="mMeetPlace" maxlength="80" placeholder="예) 서울숲"
-               autocomplete="off" oninput="placeFind()">
-        <div id="mMeetFind"></div>
-        <div id="mMeetGot"></div>
-        <div class="field-label" style="margin-top:14px;">상세 위치 <span class="opt">선택</span></div>
-        <input type="text" id="mMeetDetail" maxlength="60" placeholder="예) 2층 세미나실">
-        <div class="hint">층·호실처럼 지도에 안 나오는 곳을 적어주세요.</div>
-        <div class="field-label" style="margin-top:14px;">안내할 말 <span class="opt">선택</span></div>
-        <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 같은 걸 적어주세요."></textarea>
-        <div class="hint">청소년이 루틴을 고를 때부터 봐요. 나중에 바꿀 수 있어요.</div>
-      </div>
-    </div>
-    <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
   </div>
 </div>
 
-<!-- 책을 받고 나서 남기는 한 장 (migration-89) -->
 <!-- 책 골랐어요 -->
 <!-- 【「받았어요」가 아니다 · 2026-10-07 사용자】 이 단추를 눌러야 사장님이
      번호를 누르고, 그때 책이 건네진다. 누르는 순간 아이가 한 일은 「골랐다」뿐이다 -->
@@ -3544,7 +3543,7 @@ async function loadAll() {
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3570,8 +3569,13 @@ async function loadAll() {
     sb.from('routine_intros').select('routine_id').eq('user_id', me.id),
     // 운영진이 손으로 준 나다움 (내 것만, 회수한 건 뺀다). 마이그레이션 153 이 아직이면 오류가 와도 빈 채로 둔다
     sb.from('nadaum_grants').select('id,amount,reason,created_at').eq('user_id', me.id).is('voided_at', null),
+    // 모임 만들기에서 고르는 일정. 마이그레이션 159 가 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('meeting_schedules').select('id,title,start_date,end_date,active').order('start_date'),
+    sb.from('online_meetups').select('id,at,label,active').order('at'),
   ]);
   state.grants = grn.error ? [] : (grn.data || []);
+  state.schedules = msc.error ? [] : (msc.data || []);
+  state.onlineMeetups = omt.error ? [] : (omt.data || []);
   state.introsOn = !ints.error;
   state.myIntros = ints.error ? [] : (ints.data || []);
   state.notices = nc.error ? [] : (nc.data || []);
@@ -7193,6 +7197,26 @@ async function loadMembers(rid) {
   if (curRid === rid) { const box = $('rmBox'); if (box) box.innerHTML = membersHtml(rid); }
 }
 
+// 온라인 공유회 — 일시는 모두에게, Zoom 링크는 모임이 열린 뒤 그 모임의 끗짱·승인된 참여자에게만 (서버 meeting_zoom, migration-159).
+// 책 받는 조건도 나다움 보너스도 없는 모임이다
+function onlineMeetCard(r) {
+  const m = (state.onlineMeetups || []).find(x => x.id === r.online_meetup_id);
+  if (!m) return '';
+  setTimeout(() => loadZoom(r.id), 0);
+  return `<div class="sec-t">💻 온라인 공유회</div>
+    <div class="card"><div style="font-weight:700;">${fmtMeetAt(m.at)}</div>
+      <div class="hint" style="margin:6px 0 0;">Zoom 으로 만나요. 참석은 자유예요.</div>
+      <div id="zoomBox${r.id}"></div></div>`;
+}
+async function loadZoom(rid) {
+  const box = $('zoomBox' + rid); if (!box || DEMO) return;
+  try {
+    const { data, error } = await sb.rpc('meeting_zoom', { p_routine: rid });
+    if (error || !data || !/^https?:\/\//i.test(data)) return;
+    box.innerHTML = `<a class="btn btn-primary" style="display:block;text-align:center;text-decoration:none;margin-top:10px;" href="${esc(data)}" target="_blank" rel="noopener">Zoom 입장하기</a>`;
+  } catch (e) { /* 링크가 안 와도 일시는 그대로 보인다 */ }
+}
+
 function openRoutine(id) {
   const r = state.routines.find(x => x.id === id); if (!r) return;
   curRid = id;
@@ -7279,6 +7303,7 @@ function openRoutine(id) {
     })()}
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
     ${needsMeet(r) ? meetCard(r) : ''}
+    ${r.meetup_kind === 'online' && r.online_meetup_id ? onlineMeetCard(r) : ''}
     ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
         : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="closeOv('ovRoutine'); go('cert', ${r.id})">👀 인증글 보기 (운영진)</button>` : '')}`
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
@@ -7710,44 +7735,6 @@ async function pickCover(e) {
   } catch (err) { toast(err.message || '사진을 불러오지 못했어요'); }
 }
 
-// 인증 방법은 루틴마다 크게 다르지 않다. 대표적인 것들을 고르게 하고,
-// 그래도 다르게 하고 싶으면 '기타'로 직접 쓰게 둔다
-const GUIDES = [
-  ['읽는 자리', '지금 읽고 있는 자리를 그대로 한 장 찍어주세요. 책상이든 침대든 버스 안이든 괜찮아요.'],
-  ['펼친 책',   '오늘 읽은 데까지 펼쳐서 한 장 찍어주세요. 쪽수가 보이면 더 좋아요.'],
-  ['남은 문장', '오늘 마음에 걸린 문장이 있는 쪽을 찍어주세요. 한 문장이면 충분해요.'],
-];
-
-function buildGuideSel(cur) {
-  const hit = GUIDES.findIndex(g => g[1] === cur);
-  const val = cur ? (hit >= 0 ? String(hit) : 'etc') : '';
-  $('mGuideSel').innerHTML =
-    `<option value="">선택해주세요</option>` +
-    GUIDES.map(([label], i) => `<option value="${i}">${label}</option>`).join('') +
-    `<option value="etc">기타 — 직접 적을게요</option>`;
-  $('mGuideSel').value = val;
-  pickGuide(cur);
-}
-
-// cur 은 수정 화면에서 기존 문구를 그대로 살릴 때만 넘어온다
-function pickGuide(cur) {
-  const v = $('mGuideSel').value;
-  $('mGuideSel').classList.toggle('ph', v === '');   // 안 고른 상태는 회색으로
-  const ta = $('mGuide'), desc = $('mGuideDesc');
-  if (v === 'etc') {
-    ta.style.display = '';
-    // 수정 화면이면 원래 쓰던 문구를 살리고, 직접 바꿔 고른 거면 빈칸에서 시작한다
-    ta.value = (typeof cur === 'string') ? cur : '';
-    desc.style.display = 'none'; desc.innerHTML = '';
-    ta.focus();
-  } else {
-    ta.style.display = 'none';
-    ta.value = v === '' ? '' : GUIDES[+v][1];
-    desc.style.display = ta.value ? 'block' : 'none';   // '' 로 두면 CSS 의 display:none 으로 되돌아간다
-    desc.innerHTML = ta.value ? `<b>청소년에게 이렇게 보여요</b>${esc(ta.value)}` : '';
-  }
-}
-
 // 종류는 만들 때만 고른다. 서버도 수정 때는 옆 값을 되돌린다 (migration-57)
 let makeKind = 'book';
 function pickKind(k) {
@@ -7755,14 +7742,12 @@ function pickKind(k) {
   $('mKindBook').classList.toggle('on', k === 'book');
   $('mKindOne').classList.toggle('on', k === 'one_book');
   $('mKindShared').classList.toggle('on', k === 'shared');
-  // 함께 읽는 글은 필사를 따로 켜고 끔 일이 없다 — 소감이 늘 필수다
-  $('mQuote').closest('div').style.display = k === 'shared' ? 'none' : '';
   // 함께 읽는 책에서는 이 칸이 「내 책」이 아니라 「우리 책」이다.
   // 청소년은 따로 고르지 않고 이 한 권으로 인증한다
   $('mBookLabel').innerHTML = k === 'one_book'
-    ? '함께 읽을 책 <span class="req">* 필수</span>'
+    ? '함께 읽을 책 <span class="req">*</span>'
     : '내가 읽을 책 ' + (k === 'shared'
-        ? '<span class="opt">선택</span>' : '<span class="req">* 필수</span>');
+        ? '<span class="opt">선택</span>' : '<span class="req">*</span>');
   $('mBookHint').textContent = k === 'one_book'
     ? '청소년은 이 책으로 인증해요. 따로 고르지 않아요.'
     : '검색한 표지나 직접 찍은 사진, 눌러서 골라요.';
@@ -7773,44 +7758,116 @@ function pickKind(k) {
 }
 
 function toggleMeetFields() {
-  $('mMeetWrap').style.display = $('mMeet').checked ? '' : 'none';
+  $('mMeetWrap').style.display = makeMeet === 'offline' ? '' : 'none';
+  $('mOnlineWrap').style.display = makeMeet === 'online' ? '' : 'none';
+}
+
+// ── 모임 만들기: 1페이지(모임 주체) → 2페이지(모임 정보) (2026-11-11 개편) ──
+//   · 일반 끗짱: 개인으로서 온라인 모임. 오프라인 공유회는 잠긴다(공간이 있는 파트너만)
+//   · 파트너 끗짱: 파트너 기관·서점 기반. 온라인·오프라인 중 하나를 고른다 (책방 고르기도 이쪽에만)
+//   · 일정은 운영진이 미리 등록해 둔 것 중에서 고른다. 시작일·기간을 직접 적지 않는다
+//   · 온라인 공유회는 책 받는 조건도 나다움 보너스도 없다 → meetup_required 는 오프라인일 때만 켠다
+let makeHost = null, makeMeet = null;
+const p2 = n => String(n).padStart(2, '0');
+const fmtMeetAt = iso => { const d = new Date(iso);
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${'일월화수목금토'[d.getDay()]}요일 ${p2(d.getHours())}:${p2(d.getMinutes())}`; };
+
+function pickHost(h) {
+  makeHost = h;
+  $('mHostGeneral').classList.toggle('on', h === 'general');
+  $('mHostPartner').classList.toggle('on', h === 'partner');
+  $('mkNext').disabled = false;
+}
+function mkNext() {
+  if (!makeHost) return;
+  mkShowPage(2);
+}
+function mkShowPage(n) {
+  $('mkP1').style.display = n === 1 ? '' : 'none';
+  $('mkP2').style.display = n === 2 ? '' : 'none';
+  if (n === 2) {
+    const r = makeId ? state.routines.find(x => x.id === makeId) : null;
+    const partner = makeHost === 'partner';
+    $('mStoreWrap').style.display = partner ? '' : 'none';
+    // 오프라인은 파트너만. 이미 오프라인으로 만들어 둔 모임을 고치는 건 그대로 열어 둔다.
+    // 공유회는 만들 때만 켜진다(들어온 뒤에 「사실 공유회도 와야 해」가 되면 안 된다) — 서버도 같은 규칙
+    const offOk = (partner || !!(r && r.meetup_required)) && !(r && !r.meetup_required);
+    $('mMeetOffline').disabled = !offOk;
+    $('mMeetLock').style.display = (!partner && !(r && r.meetup_required)) ? '' : 'none';
+    window.scrollTo(0, 0);
+  }
+}
+function mkBack() {
+  if ($('mkP2').style.display !== 'none' && !makeId) { mkShowPage(1); return; }
+  closeOv('ovMake');
+}
+function pickMeet(m) {
+  if (m === 'offline' && $('mMeetOffline').disabled) return;
+  makeMeet = m;
+  $('mMeetOnline').classList.toggle('on', m === 'online');
+  $('mMeetOffline').classList.toggle('on', m === 'offline');
+  toggleMeetFields();
+}
+function mkPeopleCheck() {
+  const n = parseInt($('mPeople').value || '0', 10);
+  const cur = makeId ? state.routines.find(x => x.id === makeId) : null;
+  const bad = !!$('mPeople').value && n < 4 && !(cur && n === cur.max_people);
+  $('mPeopleErr').style.display = bad ? '' : 'none';
+}
+
+function buildSchedule(r) {
+  const t = todayKST(), sel = $('mSchedule');
+  const list = (state.schedules || []).filter(s => s.active && (s.start_date >= t || s.id === r?.schedule_id));
+  const legacy = !!(r && !r.schedule_id && r.start_date);   // 일정표가 생기기 전에 만든 모임
+  sel.innerHTML = `<option value="">일정을 골라주세요</option>`
+    + (legacy ? `<option value="keep" selected>지금 일정 그대로 · ${fmtDay(r.start_date)} ~ ${fmtDay(r.end_date)}</option>` : '')
+    + list.map(s => `<option value="${s.id}"${s.id === r?.schedule_id ? ' selected' : ''}>${esc(s.title)} · ${fmtDay(s.start_date)} ~ ${fmtDay(s.end_date)}</option>`).join('');
+  sel.classList.toggle('ph', !sel.value);
+  $('mSchedHint').textContent = (list.length || legacy) ? ''
+    : '운영진이 아직 모임 일정을 등록하지 않았어요. 등록되면 여기에서 고를 수 있어요.';
+}
+function buildOnline(r) {
+  const now = Date.now(), sel = $('mOnline');
+  const list = (state.onlineMeetups || []).filter(m => m.active && (new Date(m.at).getTime() > now || m.id === r?.online_meetup_id));
+  sel.innerHTML = `<option value="">일정을 골라주세요</option>`
+    + list.map(m => `<option value="${m.id}"${m.id === r?.online_meetup_id ? ' selected' : ''}>${fmtMeetAt(m.at)}${m.label ? ` · ${esc(m.label)}` : ''}</option>`).join('');
+  sel.classList.toggle('ph', !sel.value);
+  $('mOnlineHint').textContent = list.length
+    ? '※ 모임 개설이 완료되면 유스보이스가 지정한 온라인 공유회 Zoom 링크가 화면에 자동으로 노출됩니다.'
+    : '유스보이스가 아직 온라인 공유회 일정을 등록하지 않았어요. 등록되면 여기에서 고를 수 있어요.';
 }
 
 function openMake(id) {
   makeId = id || null;
   const r = id ? state.routines.find(x => x.id === id) : null;
-  $('ovMakeTitle').textContent = r ? '루틴 수정' : '루틴 만들기';
-  $('mSubmit').textContent = r ? '수정하기' : '루틴 만들기';
+  $('ovMakeTitle').textContent = r ? '모임 수정' : '모임 만들기';
+  $('mSubmit').textContent = r ? '수정하기' : '모임 만들기';
+  // 새로 만들 때는 1페이지(주체 고르기)부터. 고칠 때는 이미 정한 주체로 바로 2페이지
+  makeHost = r ? (r.host_kind || (r.meetup_required ? 'partner' : 'general')) : null;
+  $('mHostGeneral').classList.remove('on'); $('mHostPartner').classList.remove('on');
+  $('mkNext').disabled = true;
   // 청소년이 고르는 기준은 '누구랑'이라 이름이 제목에 들어가야 한다. 미리 채워둔다
   $('mTitle').value  = r?.title || '';
   $('mEmoji').value  = r?.emoji || '📚';
   $('mDesc').value   = r?.description || '';
-  $('mStart').value  = r?.start_date || '';
-  // 수정 화면에서는 저장된 시작·종료일로 기간을 역산한다
-  $('mDays').value = (r?.start_date && r?.end_date)
-    ? Math.max(MIN_DAYS, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1)
-    : MIN_DAYS;
-  $('mPeople').value = r?.max_people ?? 10;
+  $('mPeople').value = r?.max_people ?? '';
+  $('mPeopleErr').style.display = 'none';
   $('mStore').innerHTML = `<option value="">고르지 않음</option>` +
     (state.stores || []).filter(s => s.active || s.id === r?.bookstore_id).map(s =>
       `<option value="${s.id}"${s.id === r?.bookstore_id ? ' selected' : ''}>${esc(s.name)}${
         s.region ? ` (${esc(s.region)})` : ''}</option>`).join('');
-  // 이미 만든 루틴은 종류를 못 바꾼다. 바꾸면 쌓인 인증이 붕 뜼다
+  // 이미 만든 모임은 종류를 못 바꾼다. 바꾸면 쌓인 인증이 붕 뜬다
   pickKind(r?.kind || 'book');
   $('mKindBook').disabled = $('mKindOne').disabled = $('mKindShared').disabled = !!r;
-  // 수정 화면에서 각자 읽는 책은 굳이 안 보여준다. 나머지는 어떤 루틴인지
+  // 수정 화면에서 각자 읽는 책은 굳이 안 보여준다. 나머지는 어떤 모임인지
   // 알아야 아래 칸들이 왜 이렇게 생겼는지 이해가 된다
   $('mKindWrap').style.display = r && r.kind === 'book' ? 'none' : '';
-  $('mQuote').checked  = !!r?.quote_required;
-  $('mCamera').checked = r ? !!r.camera_only : true;
-  // 공유회는 만들 때만 켜진다. 들어온 뒤에 「사실 공유회도 와야 해」가 되면 안 된다.
-  // 끄는 건 언제든 — 모임이 취소될 수 있다 (서버도 같은 규칙, migration-58)
-  $('mMeet').checked  = !!r?.meetup_required;
-  $('mMeet').disabled = !!(r && !r.meetup_required);
-  // 한 칸짜리 datetime-local 은 다른 칸과 얼굴이 달랐다. 날짜·시각을 갈라
-  // 이미 손봐 둔 모양을 그대로 쓴다
+  $('mGuide').value = r?.cert_guide || '';
+  buildSchedule(r); buildOnline(r);
+  // 공유회: 오프라인 칸은 저장된 값으로 채우고, 방식은 저장된 대로 고른다
+  makeMeet = null;
+  $('mMeetOffline').disabled = false;
   const mAt = r?.meetup_at ? new Date(r.meetup_at) : null;
-  const p2  = n => String(n).padStart(2, '0');
   $('mMeetDate').value = mAt ? `${mAt.getFullYear()}-${p2(mAt.getMonth()+1)}-${p2(mAt.getDate())}` : '';
   $('mMeetTime').value = mAt ? `${p2(mAt.getHours())}:${p2(mAt.getMinutes())}` : '';
   $('mMeetPlace').value = r?.meetup_place || '';
@@ -7822,7 +7879,6 @@ function openMake(id) {
   $('mMeetFind').innerHTML = ''; drawPlaceGot();
   $('mMeetDetail').value = r?.meetup_detail || '';
   $('mMeetNote').value  = r?.meetup_note  || '';
-  toggleMeetFields();
   // 이름을 넣으라고 강제하지 않는다. 누구랑 하는지는 카드에 끗짱 이름이
   // 따로 나오고, 제목까지 묶어버리면 「밤에 읽는 15일」 같은 걸 못 쓴다
   $('mTitleHint').textContent = '한눈에 보이게 적어주세요. 청소년이 이 이름을 보고 골라요.';
@@ -7843,9 +7899,14 @@ function openMake(id) {
   kkutBookUrl  = wasFound ? null : (r?.kkut_book_url || null);
   kkutUseFound = wasFound;
   $('mBookInput').value = ''; drawKkutBook();
-  buildGuideSel(r?.cert_guide || '');
   paintMakeLock(r);
-  makeHint(); openOv('ovMake');
+  openOv('ovMake');
+  mkShowPage(r ? 2 : 1);
+  if (r) {
+    // 저장된 방식으로 공유회를 고른다 (옛 모임은 오프라인 공유회 여부로 가른다)
+    const mk = r.meetup_kind || (r.meetup_required ? 'offline' : null);
+    if (mk) pickMeet(mk); else toggleMeetFields();
+  } else toggleMeetFields();
 }
 
 // 【시작한 뒤에는 잠그는 것 · 2026-10-08 사용자】 이미 읽고 있는 아이의 일정과 약속이 흔들리면 안 된다.
@@ -7855,55 +7916,26 @@ const routineLocked = r => !!r && r.status !== 'pending' && !!r.start_date && r.
 function paintMakeLock(r) {
   const on = routineLocked(r);
   const kids = on ? Math.max(1, peopleOf(r.id)) : 1;
-  $('mStart').disabled = on;
+  $('mSchedule').disabled = on;
   $('mStore').disabled = on;
-  $('mDays').min = on ? Math.max(MIN_DAYS, Math.round((new Date(r.end_date) - new Date(r.start_date)) / 86400e3) + 1) : MIN_DAYS;
-  $('mPeople').min = kids;
+  $('mPeople').min = on ? kids : 4;
   const one = on && r.kind === 'one';
   $('mBookTitle').disabled = one;
   const lines = [];
   if (on) {
-    lines.push('루틴이 시작돼서 <b>시작일과 책방</b>은 바꿀 수 없어요. 기간은 <b>늘리기만</b>, 모집 인원은 지금 함께하는 친구 수보다 적게는 못 줄여요.');
+    lines.push('모임이 시작돼서 <b>일정과 책방</b>은 바꿀 수 없어요. 모집 인원은 지금 함께하는 친구 수보다 적게는 못 줄여요.');
     if (one) lines.push('함께 읽는 책도 바꿀 수 없어요.');
   }
   const note = $('mLockNote');
   note.innerHTML = lines.join('<br>'); note.style.display = on ? '' : 'none';
 }
 
-// 종료일은 직접 고르지 않는다. 시작일 + 기간으로 계산한다. 최소 7일
-const MIN_DAYS = 7;
 const addDays = (ymd, n) => {
   const d = new Date(ymd + 'T00:00:00');
   d.setDate(d.getDate() + n);
   // toISOString() 은 UTC 로 바꿔서 한국 시간대에선 하루가 밀린다. 직접 만든다
-  const p = x => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
 };
-const makeDays = () => Math.max(MIN_DAYS, parseInt($('mDays').value || '0', 10) || MIN_DAYS);
-const makeEnd  = () => { const a = $('mStart').value; return a ? addDays(a, makeDays() - 1) : ''; };
-
-// 칩에서 뺀 별명. 고른 기간 옆에 한 번만 붙여준다
-const DAY_NICK = { 7: '맛보기', 15: '가볍게 시작', 30: '한 달 채우기', 66: '습관이 자리 잡는 시간' };
-
-function pickDays(n) { $('mDays').value = n; makeHint(); }
-
-function makeHint() {
-  const n = parseInt($('mDays').value || '0', 10);
-  document.querySelectorAll('.day-pick button')
-    .forEach(b => b.classList.toggle('on', parseInt(b.querySelector('b').textContent, 10) === n));
-
-  const a = $('mStart').value, h = $('mHint');
-  if (n && n < MIN_DAYS) {
-    h.style.display = ''; h.style.background = '#FAECE8'; h.style.color = '#b00038';
-    h.textContent = `기간은 ${MIN_DAYS}일 이상이어야 해요.`;
-    return;
-  }
-  if (!a) { h.style.display = 'none'; return; }
-  h.style.display = ''; h.style.background = '#f7fbf0'; h.style.color = 'var(--green-d)';
-  const nick = DAY_NICK[makeDays()];
-  h.innerHTML = `${fmtDay(a)}부터 <b>${makeDays()}일</b> 동안 · <b>${fmtDay(makeEnd())}</b>에 끝나요`
-    + (nick ? ` <i style="font-style:normal;opacity:.75;">— ${nick}</i>` : '');
-}
 
 const fmtDay = d => { const [, m, dd] = d.split('-'); return `${+m}월 ${+dd}일`; };
 
@@ -7913,8 +7945,7 @@ const dayKo = d => {
   const t = todayKST();
   if (d === t) return '오늘';
   const y = new Date(new Date(t + 'T00:00:00').getTime() - 86400e3);
-  const p = x => String(x).padStart(2, '0');
-  if (d === `${y.getFullYear()}-${p(y.getMonth() + 1)}-${p(y.getDate())}`) return '어제';
+  if (d === `${y.getFullYear()}-${p2(y.getMonth() + 1)}-${p2(y.getDate())}`) return '어제';
   const [, m, dd] = d.split('-');
   return `${+m}.${+dd}`;
 };
@@ -7923,34 +7954,40 @@ async function submitMake() {
   if (DEMO) return toast('데모 모드에서는 저장되지 않아요');
 
   const title = $('mTitle').value.trim(), desc = $('mDesc').value.trim();
-  const s = $('mStart').value;
-  const days = parseInt($('mDays').value || '0', 10);
-  if (!title) return toast('루틴 이름을 적어주세요');
-  if (!desc) return toast('끗짱 소개를 적어주세요');
+  const cur0 = makeId ? state.routines.find(x => x.id === makeId) : null;
+  if (!title) return authError('모임 이름을 적어주세요', 'mTitle');
   // 이모지만 띄우면 카드가 허전하다. 청소년이 제일 먼저 보는 그림이다
   if (!cover && !coverUrl) return authError('대표 사진을 올려주세요', 'mCoverBox');
+  if (!desc) return authError('모임 및 끗짱 소개를 적어주세요', 'mDesc');
+  const people = parseInt($('mPeople').value || '0', 10);
+  if (!(people >= 4) && !(cur0 && people === cur0.max_people && people >= 1)) {
+    $('mPeopleErr').style.display = '';
+    return authError('최소 4명 이상 입력해 주세요', 'mPeople');
+  }
+  if (people > 50) return authError('모집 인원은 50명까지예요', 'mPeople');
   // 함께 읽는 글은 끗짱이 글을 올린다. 읽는 책이 없을 수 있다
   if (makeKind !== 'shared' && !$('mBookTitle').value.trim())
     return authError('읽을 책 제목을 적어주세요', 'mBookTitle');
-  if (!$('mGuide').value.trim()) {
-    const etc = $('mGuideSel').value === 'etc';
-    return authError(etc ? '인증 방법을 적어주세요' : '인증 방법을 골라주세요',
-                     etc ? 'mGuide' : 'mGuideSel');
+  if (!$('mGuide').value.trim()) return authError('인증 방식을 적어주세요', 'mGuide');
+  const sv = $('mSchedule').value;
+  if (!sv) return authError('모임 운영 일정을 골라주세요', 'mSchedule');
+  if (!makeMeet) return authError('공유회 방식을 골라주세요', 'mMeetBox');
+  if (makeMeet === 'online' && !$('mOnline').value) return authError('온라인 공유회 일정을 골라주세요', 'mOnline');
+  // 오프라인 공유회를 켜놓고 비워 두면 아이가 「언제 어디서」를 모른 채 약속만 진다
+  if (makeMeet === 'offline') {
+    if (!$('mMeetDate').value) return authError('공유회 날짜를 골라주세요', 'mMeetDate');
+    if (!$('mMeetTime').value) return authError('공유회 시각을 골라주세요', 'mMeetTime');
+    if (!$('mMeetPlace').value.trim()) return authError('공유회 장소를 적어주세요', 'mMeetPlace');
   }
-  if (!s) return toast('시작일을 골라주세요');
-  if (!days || days < MIN_DAYS) return toast(`기간은 ${MIN_DAYS}일 이상이어야 해요`);
-  // 공유회를 켜놓고 비워 두면 아이가 「언제 어디서」를 모른 채 약속만 진다
-  if ($('mMeet').checked) {
-    if (!$('mMeetDate').value) return toast('공유회 날짜를 골라주세요');
-    if (!$('mMeetTime').value) return toast('공유회 시각을 골라주세요');
-    if (!$('mMeetPlace').value.trim()) return toast('공유회 장소를 적어주세요');
-  }
-  const e = makeEnd();
+  // 일정은 운영진이 등록한 것에서 가져온다. 옛 모임(「지금 일정 그대로」)은 저장된 날짜를 그대로 쓴다
+  const sch = sv === 'keep' ? null : (state.schedules || []).find(x => String(x.id) === sv);
+  if (sv !== 'keep' && !sch) return authError('모임 운영 일정을 다시 골라주세요', 'mSchedule');
+  const s = sch ? sch.start_date : cur0.start_date, e = sch ? sch.end_date : cur0.end_date;
 
   const btn = $('mSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
 
-  // 새로 고른 사진이 있으면 먼저 올린다. 실패하면 루틴 저장까지 막지 않고 사진만 건너뛴다
+  // 새로 고른 사진이 있으면 먼저 올린다. 실패하면 모임 저장까지 막지 않고 사진만 건너뛴다
   let coverSaved = coverUrl;
   if (cover) {
     const path = `${me.id}/cover_${Date.now()}.jpg`;
@@ -7973,26 +8010,29 @@ async function submitMake() {
   // 제목을 지웠으면 서지도 비운다 — 제목만 바꿨는데 옛 ISBN 이 남으면 딴 책이 된다
   const kTitle = $('mBookTitle').value.trim();
   const kb = kTitle ? bookMeta('mBookTitle') : {};
-  const mp = $('mMeet').checked ? placePick : null;
+  const off = makeMeet === 'offline';
+  const mp = off ? placePick : null;
 
   const row = {
     title, emoji: $('mEmoji').value.trim() || '📚', description: desc,
     cert_guide: $('mGuide').value.trim() || null,
     start_date: s, end_date: e,
-    max_people: parseInt($('mPeople').value||'10',10),
-    bookstore_id: parseInt($('mStore').value, 10) || null,
+    max_people: people,
+    bookstore_id: makeHost === 'partner' ? (parseInt($('mStore').value, 10) || null) : (cur0 ? cur0.bookstore_id : null),
     kind: makeKind,
-    meetup_required: $('mMeet').checked,
-    meetup_at:    $('mMeet').checked && $('mMeetDate').value
+    // 공유회: 오프라인만 「와야 책을 받는」 조건이 걸린다. 온라인은 책 받는 조건도 나다움 보너스도 없다
+    meetup_required: off,
+    meetup_at:    off && $('mMeetDate').value
                     ? new Date(`${$('mMeetDate').value}T${$('mMeetTime').value || '15:00'}`).toISOString() : null,
-    meetup_place: $('mMeet').checked ? ($('mMeetPlace').value.trim() || null) : null,
+    meetup_place: off ? ($('mMeetPlace').value.trim() || null) : null,
     meetup_address: mp ? (mp.road || mp.addr || null) : null,
-    meetup_detail: $('mMeet').checked ? ($('mMeetDetail').value.trim() || null) : null,
+    meetup_detail: off ? ($('mMeetDetail').value.trim() || null) : null,
     meetup_lat:     mp ? mp.lat : null,
     meetup_lng:     mp ? mp.lng : null,
-    meetup_note:  $('mMeet').checked ? ($('mMeetNote').value.trim()  || null) : null,
-    quote_required: makeKind === 'shared' ? false : $('mQuote').checked,
-    camera_only: $('mCamera').checked,
+    meetup_note:  off ? ($('mMeetNote').value.trim()  || null) : null,
+    // 필사·「그 자리에서 찍은 사진만」은 이 화면에서 더 묻지 않는다. 새 모임은 필사 끔·사진 켬, 고칠 때는 있던 값 그대로
+    quote_required: makeKind === 'shared' ? false : (cur0 ? !!cur0.quote_required : false),
+    camera_only: cur0 ? !!cur0.camera_only : true,
     cover_url: coverSaved,
     kkut_book_url:       kkutBookSaved,
     kkut_book_title:     kTitle || null,
@@ -8000,9 +8040,13 @@ async function submitMake() {
     kkut_book_authors:   kb.authors   || null,
     kkut_book_publisher: kb.publisher || null,
     led_by: me.id,
+    // 새 칸(migration-159). 만들 때만 정하는 것: 모임 주체·최소 인원
+    meetup_kind: makeMeet,
+    schedule_id: sch ? sch.id : (cur0 ? (cur0.schedule_id || null) : null),
+    online_meetup_id: makeMeet === 'online' ? parseInt($('mOnline').value, 10) : null,
+    ...(cur0 ? {} : { host_kind: makeHost, min_people: 4 }),
   };
-  // 시작한 루틴은 잠긴 칸을 원래 값으로 되돌려 보낸다 (서버도 같은 규칙으로 지킨다)
-  const cur0 = makeId ? state.routines.find(x => x.id === makeId) : null;
+  // 시작한 모임은 잠긴 칸을 원래 값으로 되돌려 보낸다 (서버도 같은 규칙으로 지킨다)
   const wasLocked = routineLocked(cur0);
   if (wasLocked) {
     row.start_date = cur0.start_date;
@@ -8015,9 +8059,16 @@ async function submitMake() {
       row.kkut_book_publisher = cur0.kkut_book_publisher;
     }
   }
-  const { error } = makeId
-    ? await sb.from('routines').update(row).eq('id', makeId)
-    : await sb.from('routines').insert(row);
+  const save = body => makeId
+    ? sb.from('routines').update(body).eq('id', makeId)
+    : sb.from('routines').insert(body);
+  let { error } = await save(row);
+  // 새 칸은 마이그레이션 159 뒤에 있다. 아직이면 칸 이름이 없다는 오류가 오는데, 그때는 새 칸 없이 다시 보내 저장이 막히지 않게 한다
+  if (error && /host_kind|meetup_kind|schedule_id|online_meetup_id|min_people/.test(error.message || '')) {
+    const slim = { ...row };
+    ['host_kind', 'meetup_kind', 'schedule_id', 'online_meetup_id', 'min_people'].forEach(k => delete slim[k]);
+    ({ error } = await save(slim));
+  }
   btn.disabled = false; btn.textContent = label;
   if (error) return toast('저장하지 못했어요: ' + error.message);
 

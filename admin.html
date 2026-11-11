@@ -606,6 +606,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="tabs" id="tabsRoutines" style="display:none;">
     <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="reports" onclick="switchTab('reports')">인증 신고<i id="cntReports"></i></button>
+    <button class="tab" data-tab="schedules" onclick="switchTab('schedules')">모임 일정</button>
   </div>
   <div class="tabs" id="tabsMsgs" style="display:none;">
     <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">받은 알림<i id="cntInbox"></i></button>
@@ -1170,6 +1171,7 @@ function renderPanel() {
   if (tab === 'reports')  return el.innerHTML = viewReports();
   if (tab === 'photos')   return el.innerHTML = viewPhotos();
   if (tab === 'nadaum')   return el.innerHTML = viewNadaum();
+  if (tab === 'schedules') return el.innerHTML = viewSchedules();
   if (tab === 'covers')   return el.innerHTML = viewCovers();
   if (tab === 'notices')  return el.innerHTML = viewNotices();
   if (tab === 'report')   return el.innerHTML = viewReport();
@@ -1747,6 +1749,123 @@ async function voidGrant(id) {
   if (error) return alert(`${neg ? '차감을 취소' : '회수'}하지 못했어요.\n\n` + error.message);
   await loadLive(); NDG = null;
   renderPanel();
+}
+
+
+// ── 모임 일정 (migration-159, 2026-11-11 요청) ──────────────────────
+//   끗짱이 모임을 만들 때 시작일·기간을 직접 적지 않고 여기 등록해 둔 일정에서 고른다 (예: 12월 모임).
+//   온라인 공유회도 유스보이스가 정한 일시와 Zoom 링크를 여기서 미리 등록한다.
+//   Zoom 링크는 모임이 열린 뒤 그 모임의 끗짱·승인된 참여자에게만 보인다 (서버 meeting_zoom).
+let MSC = null, mscBusy = false;
+async function mscLoad() {
+  if (mscBusy) return; mscBusy = true;
+  try {
+    if (!LIVE) { MSC = { sch: [], mt: [], err: '' }; return; }
+    const [a, b, c] = await Promise.all([
+      sb.from('meeting_schedules').select('*').order('start_date', { ascending: false }),
+      sb.from('online_meetups').select('*').order('at', { ascending: false }),
+      sb.from('online_meetup_links').select('*')]);
+    const links = {}; (c.data || []).forEach(x => { links[x.meetup_id] = x.zoom_url; });
+    const er = a.error || b.error;
+    MSC = { sch: a.data || [], mt: (b.data || []).map(m => ({ ...m, zoom: links[m.id] || '' })),
+            err: er ? (er.message || '') : '' };
+  } finally { mscBusy = false; }
+}
+const mscAt = iso => { const d = new Date(iso), p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())} (${'일월화수목금토'[d.getDay()]}) ${p(d.getHours())}:${p(d.getMinutes())}`; };
+function viewSchedules() {
+  if (MSC === null) mscLoad().then(() => { if (tab === 'schedules') renderPanel(); });
+  if (MSC === null) return `<div class="empty">불러오는 중…</div>`;
+  const today = new Date().toISOString().slice(0, 10);
+  const sch = MSC.sch.length ? `<div class="tbl"><table>
+      <tr><th>이름</th><th>시작일</th><th>종료일</th><th>상태</th><th></th></tr>
+      ${MSC.sch.map(x => `<tr${x.active ? '' : ' class="voided"'}>
+        <td><b>${esc(x.title)}</b></td><td class="num">${esc(x.start_date)}</td><td class="num">${esc(x.end_date)}</td>
+        <td>${x.active ? '고를 수 있음' : '숨김'}</td>
+        <td class="right"><button class="btn btn-line" onclick="mscToggle('meeting_schedules', ${x.id}, ${!x.active})">${x.active ? '숨기기' : '다시 보이기'}</button>
+          <button class="btn btn-line" onclick="mscDel('meeting_schedules', ${x.id}, '${esc(x.title).replace(/'/g, "\\'")}')">삭제</button></td></tr>`).join('')}
+    </table></div>` : `<div class="empty">아직 등록한 모임 일정이 없어요.</div>`;
+  const mt = MSC.mt.length ? `<div class="tbl"><table>
+      <tr><th>일시</th><th>이름(선택)</th><th>Zoom 링크</th><th>상태</th><th></th></tr>
+      ${MSC.mt.map(x => `<tr${x.active ? '' : ' class="voided"'}>
+        <td class="num"><b>${mscAt(x.at)}</b></td><td>${esc(x.label || '')}</td>
+        <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.zoom ? esc(x.zoom) : '<span class="muted">없음</span>'}</td>
+        <td>${x.active ? '고를 수 있음' : '숨김'}</td>
+        <td class="right"><button class="btn btn-line" onclick="mscZoom(${x.id})">링크 수정</button>
+          <button class="btn btn-line" onclick="mscToggle('online_meetups', ${x.id}, ${!x.active})">${x.active ? '숨기기' : '다시 보이기'}</button>
+          <button class="btn btn-line" onclick="mscDel('online_meetups', ${x.id}, '${esc(mscAt(x.at))}')">삭제</button></td></tr>`).join('')}
+    </table></div>` : `<div class="empty">아직 등록한 온라인 공유회가 없어요.</div>`;
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">모임 일정</div>
+    <div class="panel-d">끗짱이 모임을 만들 때 여기 등록한 일정에서 골라요. 달마다 미리 등록해 두세요.<br>
+      아직 시작하지 않은 일정만 끗짱에게 보여요.${MSC.err ? `<br><b style="color:#b00038;">불러오지 못했어요: ${esc(MSC.err)} (마이그레이션 159 를 돌렸는지 확인해 주세요)</b>` : ''}</div></div>
+  </div>
+  <div style="padding:6px 20px 8px;">
+    <div class="panel-t" style="font-size:15px;margin:8px 0;">모임 운영 일정</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+      <div><div class="muted">이름</div><input type="text" id="mscTitle" placeholder="예) 12월 모임" maxlength="30" style="width:170px;"></div>
+      <div><div class="muted">시작일</div><input type="date" id="mscStart"></div>
+      <div><div class="muted">종료일</div><input type="date" id="mscEnd"></div>
+      <button class="btn btn-dark" onclick="mscAddSchedule()">일정 추가</button>
+    </div>
+    ${sch}
+  </div>
+  <div style="padding:14px 20px 20px;">
+    <div class="panel-t" style="font-size:15px;margin:8px 0;">온라인 공유회</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
+      <div><div class="muted">날짜</div><input type="date" id="mscMDate"></div>
+      <div><div class="muted">시각</div><input type="time" id="mscMTime" step="1800" value="20:00"></div>
+      <div><div class="muted">이름(선택)</div><input type="text" id="mscMLabel" placeholder="예) 12월 공유회" maxlength="30" style="width:150px;"></div>
+      <div><div class="muted">Zoom 링크</div><input type="url" id="mscMZoom" placeholder="https://zoom.us/j/..." style="width:260px;"></div>
+      <button class="btn btn-dark" onclick="mscAddMeetup()">공유회 추가</button>
+    </div>
+    ${mt}
+  </div>`;
+}
+async function mscAddSchedule() {
+  if (!LIVE) return alert('데모 모드에서는 저장할 수 없어요.');
+  const title = document.getElementById('mscTitle').value.trim();
+  const a = document.getElementById('mscStart').value, b = document.getElementById('mscEnd').value;
+  if (!title) return alert('일정 이름을 적어주세요.');
+  if (!a || !b) return alert('시작일과 종료일을 골라주세요.');
+  if (b < a) return alert('종료일이 시작일보다 빠를 수 없어요.');
+  const { error } = await sb.from('meeting_schedules').insert({ title, start_date: a, end_date: b });
+  if (error) return alert('저장하지 못했어요.\n\n' + error.message);
+  MSC = null; renderPanel();
+}
+async function mscAddMeetup() {
+  if (!LIVE) return alert('데모 모드에서는 저장할 수 없어요.');
+  const d = document.getElementById('mscMDate').value, t = document.getElementById('mscMTime').value;
+  const zoom = document.getElementById('mscMZoom').value.trim();
+  const label = document.getElementById('mscMLabel').value.trim();
+  if (!d || !t) return alert('공유회 날짜와 시각을 골라주세요.');
+  if (!/^https?:\/\//i.test(zoom)) return alert('Zoom 링크는 https:// 로 시작해야 해요.');
+  const ins = await sb.from('online_meetups').insert({ at: new Date(`${d}T${t}`).toISOString(), label: label || null }).select('id').single();
+  if (ins.error) return alert('저장하지 못했어요.\n\n' + ins.error.message);
+  const lk = await sb.from('online_meetup_links').insert({ meetup_id: ins.data.id, zoom_url: zoom });
+  if (lk.error) { await sb.from('online_meetups').delete().eq('id', ins.data.id); return alert('Zoom 링크를 저장하지 못해 취소했어요.\n\n' + lk.error.message); }
+  MSC = null; renderPanel();
+}
+async function mscZoom(id) {
+  const m = (MSC && MSC.mt || []).find(x => x.id === id); if (!m) return;
+  const v = prompt('새 Zoom 링크를 적어주세요', m.zoom || '');
+  if (v === null) return;
+  if (!/^https?:\/\//i.test(v.trim())) return alert('Zoom 링크는 https:// 로 시작해야 해요.');
+  const { error } = await sb.from('online_meetup_links').upsert({ meetup_id: id, zoom_url: v.trim() }, { onConflict: 'meetup_id' });
+  if (error) return alert('저장하지 못했어요.\n\n' + error.message);
+  MSC = null; renderPanel();
+}
+async function mscToggle(tbl, id, on) {
+  const { error } = await sb.from(tbl).update({ active: on }).eq('id', id);
+  if (error) return alert('바꾸지 못했어요.\n\n' + error.message);
+  MSC = null; renderPanel();
+}
+async function mscDel(tbl, id, name) {
+  if (!confirm(`「${name}」을(를) 삭제할까요?\n\n이미 이 일정으로 만든 모임은 그대로 남아요.`)) return;
+  const { error } = await sb.from(tbl).delete().eq('id', id);
+  if (error) return alert('지우지 못했어요.\n\n' + error.message);
+  MSC = null; renderPanel();
 }
 
 function vqRows() {
@@ -4877,7 +4996,7 @@ const viewReceipt = p => openSigned('dokseo-receipts', p, '영수증');
 
 // ── 공통 ────────────────────────────────────────────────
 const GROUPS = { members:  ['verify', 'kkut', 'photos', 'nadaum'],
-                 routines: ['routines', 'reports'],
+                 routines: ['routines', 'reports', 'schedules'],
                  msgs:     ['inbox', 'notices', 'notify'],
                  site:     ['quotes', 'covers'],
                  money:    ['pending', 'settled', 'stores', 'charges'],
