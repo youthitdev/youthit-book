@@ -771,13 +771,13 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal" style="max-width:460px;">
     <div class="modal-hd">
       <div class="modal-t" id="grantTitle">나다움 지급</div>
-      <div class="modal-d">받는 청소년에게 알림이 가요. 사유가 그대로 보여요. 잘못 줬으면 지급 내역에서 회수할 수 있어요.</div>
+      <div class="modal-d" id="grantDesc">받는 청소년에게 알림이 가요. 사유가 그대로 보여요. 잘못 줬으면 지급 내역에서 회수할 수 있어요.</div>
     </div>
     <div class="modal-bd">
       <div class="field">
-        <div class="label">줄 나다움 (N) <span>*</span></div>
+        <div class="label" id="grantAmtLabel">줄 나다움 (N) <span>*</span></div>
         <input type="number" id="grantAmount" min="1" max="1000" placeholder="예) 10">
-        <div class="hint">한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.</div>
+        <div class="hint" id="grantAmtHint">한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.</div>
       </div>
       <div class="field">
         <div class="label">사유 <span>*</span></div>
@@ -1669,7 +1669,7 @@ function ndRows() {
       return `<tr><td><b>${esc(r.name)}</b>${r.nick && r.nick !== r.name ? `<div class="muted">${esc(r.nick)}</div>` : ''}</td>
         <td class="num right">${pt ? won(pt.points) + 'N' : '—'}</td>
         <td class="num right">${pt ? (pt.remain || 0) + '장' : '—'}</td>
-        <td class="right"><button class="btn btn-dark" onclick="openGrant('${r.user_id}')">나다움 지급</button></td></tr>`; }).join('')}
+        <td class="right"><button class="btn btn-line" onclick="openGrant('${r.user_id}', true)">차감</button> <button class="btn btn-dark" onclick="openGrant('${r.user_id}')">나다움 지급</button></td></tr>`; }).join('')}
   </table></div>
   ${rows.length > shown.length ? `<div class="muted" style="padding:8px 4px;">${rows.length}명 중 ${shown.length}명만 보여요. 이름이나 닉네임으로 찾아주세요.</div>` : ''}`;
 }
@@ -1681,16 +1681,16 @@ function viewNadaum() {
         ${NDG.map(g => `<tr${g.voided_at ? ' class="voided"' : ''}>
           <td class="num">${fmtDate(g.created_at)}</td>
           <td>${esc(ndName(g.user_id))}</td>
-          <td class="num right">${g.voided_at ? `<s>+${won(g.amount)}N</s>` : `<b>+${won(g.amount)}N</b>`}</td>
-          <td>${esc(g.reason)}${g.voided_at ? `<div class="muted">회수됨 · ${esc(g.void_reason || '')}</div>` : ''}</td>
-          <td class="right">${g.voided_at ? '' : `<button class="btn btn-line" onclick="voidGrant(${g.id})">회수</button>`}</td>
+          <td class="num right">${(t => g.voided_at ? `<s>${t}</s>` : `<b>${t}</b>`)((g.amount < 0 ? '−' : '+') + won(Math.abs(g.amount)) + 'N')}</td>
+          <td>${esc(g.reason)}${g.voided_at ? `<div class="muted">${g.amount < 0 ? '차감 취소됨' : '회수됨'} · ${esc(g.void_reason || '')}</div>` : ''}</td>
+          <td class="right">${g.voided_at ? '' : `<button class="btn btn-line" onclick="voidGrant(${g.id})">${g.amount < 0 ? '차감 취소' : '회수'}</button>`}</td>
         </tr>`).join('')}
       </table></div>`;
   return `
   <div class="panel-hd">
     <div><div class="panel-t">나다움 지급</div>
     <div class="panel-d">행사 참여·특별한 사정 등으로 나다움을 손으로 줄 때 써요. 받은 아이에게 알림이 가고 교환권 계산에도 들어가요.<br>
-      청소년에게만 줄 수 있고, 한 번에 1~1000N까지예요.</div></div>
+      교환권 오류처럼 이미 책을 받았는데 나다움이 남아 있을 때는 「차감」으로 줄여요(150N = 교환권 1장). 청소년에게만, 한 번에 1~1000N까지예요.</div></div>
   </div>
   <div style="padding:14px 20px 8px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임으로 찾기" value="${esc(ndFind)}"
@@ -1700,10 +1700,20 @@ function viewNadaum() {
   <div class="panel-hd" style="margin-top:14px;"><div><div class="panel-t" style="font-size:15px;">지급 내역 <span class="muted" style="font-weight:500;">최근 100건</span></div></div></div>
   <div style="padding:0 20px 20px;">${hist}</div>`;
 }
-function openGrant(uid) {
+let grantDeduct = false;
+function openGrant(uid, deduct) {
   if (!LIVE) return alert('데모 모드에서는 지급할 수 없어요.');
-  grantTarget = uid;
-  document.getElementById('grantTitle').textContent = `${ndName(uid)} · 나다움 지급`;
+  grantTarget = uid; grantDeduct = !!deduct;
+  document.getElementById('grantTitle').textContent = `${ndName(uid)} · 나다움 ${deduct ? '차감' : '지급'}`;
+  document.getElementById('grantDesc').textContent = deduct
+    ? '받은 나다움에서 빼요. 해당 청소년에게 알림이 가고 사유가 그대로 보여요. 잘못 뺐으면 지급 내역에서 「차감 취소」로 되돌려요.'
+    : '받는 청소년에게 알림이 가요. 사유가 그대로 보여요. 잘못 줬으면 지급 내역에서 회수할 수 있어요.';
+  document.getElementById('grantAmtLabel').innerHTML = (deduct ? '뺄 나다움 (N)' : '줄 나다움 (N)') + ' <span>*</span>';
+  document.getElementById('grantAmtHint').textContent = deduct
+    ? '한 번에 1~1000N. 교환권 한 장은 150N이에요. 지금 가진 것보다 많이는 못 빼요.'
+    : '한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.';
+  document.getElementById('grantReason').placeholder = deduct ? '예) 책 교환 완료(QR 오류로 교환권 미반영)' : '예) 공유회 참석 보너스';
+  document.getElementById('grantGo').textContent = deduct ? '차감하기' : '지급하기';
   document.getElementById('grantAmount').value = '';
   document.getElementById('grantReason').value = '';
   document.getElementById('grantGo').disabled = false;
@@ -1713,24 +1723,28 @@ function openGrant(uid) {
 async function submitGrant() {
   const amt = parseInt(document.getElementById('grantAmount').value, 10);
   const why = document.getElementById('grantReason').value.trim();
-  if (!amt || amt < 1 || amt > 1000) return alert('한 번에 1~1000N 까지 줄 수 있어요.');
+  if (!amt || amt < 1 || amt > 1000) return alert(`한 번에 1~1000N 까지 ${grantDeduct ? '뺄' : '줄'} 수 있어요.`);
   if (!why) return alert('사유를 적어주세요.');
-  if (!confirm(`${ndName(grantTarget)}님에게 나다움 ${amt}N을 지급할까요?\n\n사유: ${why}\n받는 아이에게 알림이 가요.`)) return;
+  const verb = grantDeduct ? '차감' : '지급';
+  if (!confirm(grantDeduct
+    ? `${ndName(grantTarget)}님의 나다움에서 ${amt}N을 뺄까요?\n\n사유: ${why}\n해당 청소년에게 알림이 가요.`
+    : `${ndName(grantTarget)}님에게 나다움 ${amt}N을 지급할까요?\n\n사유: ${why}\n받는 아이에게 알림이 가요.`)) return;
   const btn = document.getElementById('grantGo'); btn.disabled = true;
-  const { error } = await sb.rpc('grant_nadaum', { p_user: grantTarget, p_amount: amt, p_reason: why });
-  if (error) { btn.disabled = false; return alert('지급하지 못했어요.\n\n' + error.message); }
+  const { error } = await sb.rpc(grantDeduct ? 'deduct_nadaum' : 'grant_nadaum', { p_user: grantTarget, p_amount: amt, p_reason: why });
+  if (error) { btn.disabled = false; return alert(`${verb}하지 못했어요.\n\n` + error.message); }
   closeModal('grantOverlay');
   await loadLive(); NDG = null;
   renderPanel();
 }
 async function voidGrant(id) {
   const g = (NDG || []).find(x => x.id === id); if (!g) return;
-  const why = prompt(`「${ndName(g.user_id)}」 +${g.amount}N (${g.reason})\n\n왜 회수하나요? (기록에 남아요)`);
+  const neg = g.amount < 0;
+  const why = prompt(`「${ndName(g.user_id)}」 ${neg ? '−' : '+'}${Math.abs(g.amount)}N (${g.reason})\n\n왜 ${neg ? '차감을 취소하나요' : '회수하나요'}? (기록에 남아요)`);
   if (why === null) return;
   if (!why.trim()) return alert('사유를 적어주세요.');
-  if (!confirm('이 지급을 회수해요. 아이의 나다움이 그만큼 줄어요.')) return;
+  if (!confirm(neg ? '이 차감을 취소해요. 아이의 나다움이 그만큼 다시 늘어요.' : '이 지급을 회수해요. 아이의 나다움이 그만큼 줄어요.')) return;
   const { error } = await sb.rpc('void_nadaum', { p_grant_id: id, p_reason: why.trim() });
-  if (error) return alert('회수하지 못했어요.\n\n' + error.message);
+  if (error) return alert(`${neg ? '차감을 취소' : '회수'}하지 못했어요.\n\n` + error.message);
   await loadLive(); NDG = null;
   renderPanel();
 }

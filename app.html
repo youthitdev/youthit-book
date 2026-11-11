@@ -192,6 +192,7 @@ input[type=date]:disabled, select:disabled { background-image:none; }
 .au-back:hover { color:#fff; }
 .au-step { font-size:13px; color:rgba(255,255,255,.66); margin:0 0 18px; }
 .au-step b { color:#fff; }
+.au-big { font-size:23px; font-weight:800; line-height:1.4; letter-spacing:-.5px; color:#fff; margin:0 0 22px; }
 /* 둘을 나란히 두어 눌러보지 않고도 견주게 한다 */
 .pick { display:flex; flex-direction:column; gap:10px; }
 .pick-c { display:block; width:100%; text-align:left; cursor:pointer; font-family:inherit;
@@ -1615,8 +1616,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
 <!-- 로그인 -->
 <div class="auth" id="authScr">
-  <h1>매일 한 장,<br>책과 가까워지는 습관</h1>
-  <div class="sub">끗짱과 함께 매일 한 장, 읽은 만큼 나다움이 쌓여요</div>
+  <h1 id="auH1">매일 한 장,<br>책과 가까워지는 습관</h1>
+  <div class="sub" id="auSub">끗짱과 함께 매일 한 장, 읽은 만큼 나다움이 쌓여요</div>
   <button type="button" class="au-back" id="auBack" style="display:none;" onclick="authBack()">← 뒤로</button>
 
   <div class="role-row" id="authTabs">
@@ -1626,20 +1627,16 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
   <!-- 2걸음: 무엇으로 가입할까 -->
   <div id="rolePick" style="display:none;">
-    <div class="au-step">어떤 역할로 함께할까요?</div>
+    <div class="au-step au-big">반가워요!<br>어떤 역할로 시작할까요?</div>
     <div class="pick">
       <button type="button" class="pick-c" onclick="pickRole('youth')">
-        <b>🌱 청소년</b>
-        <span>함께 책을 읽고 인증해서 나다움을 모아요.
-          모이면 동네책방에서 책 한 권과 바꿔요.</span>
-        <i>혼자 읽기 어려운 날에도 곁에 함께하는 사람이 있어요 · 만 14~20세</i>
+        <b>🌱 청소년 <em>14~19세</em></b>
+        <span>매일 책을 읽고 인증하면 동네 책방에서 사용 가능한 도서교환권이 발급됩니다.</span>
       </button>
       <button type="button" class="pick-c" onclick="pickRole('kkut')">
         <b>💪 끗짱 <em>어른</em></b>
-        <span>청소년 곁에서 함께 읽으며, 건강한 읽기 습관이 자리 잡도록 도와요.
-          매일 기록에 한 줄씩 답을 달아줍니다.</span>
-        <i>운영진이 확인한 분만 끗짱이 될 수 있어요.<br>
-          가입한 뒤 <strong style="display:inline-block;font-weight:800;color:#fff;font-size:11.5px;line-height:1;padding:4px 9px;margin:0 1px;border:1px solid rgba(255,255,255,.55);border-radius:999px;background:rgba(255,255,255,.14);vertical-align:1px;">신청 폼</strong>을 보내 주시면 확인 후 열어 드려요.</i>
+        <span>원하는 독서 모임을 직접 개설하고 청소년과 함께 읽어요. 매일 기록에 답글을 남기며 건강한 독서 습관을 도와줍니다.</span>
+        <i>※ 운영진 승인 후 활동이 가능합니다.</i>
       </button>
     </div>
   </div>
@@ -2627,6 +2624,8 @@ function paintAuth() {
   on('authTabs',   step === 'login');
   on('auBack',     step !== 'login');
   on('rolePick',   step === 'role');
+  on('auH1',       step !== 'role');     // 역할을 고를 때는 아래 큰 제목이 맨 위다
+  on('auSub',      step !== 'role');
   on('signupOnly', step === 'form');
   on('signupAgree',step === 'form');
   on('authCreds',  step !== 'role');     // 역할 고르는 중엔 이메일·비번을 묻지 않는다
@@ -2734,10 +2733,10 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
 // 생년월일 칸의 위·아래 끝. 비어 있으면 아이폰 고르개가 **1970년**에서 열려
 // 서른 해를 굴려야 한다. 만 14세 되는 날을 위 끝으로 두면 거기서 열리고,
 // 나이에 못 미치는 날짜는 고르개에서 아예 흐려진다
-// 청소년은 만 14~20세다 (2026-10-12 사용자: 20세까지. 전에는 24세 — 청소년기본법의 청소년은 9~24세, 우리는 14세부터).
-// ⚠️ 위 끝은 가입·생년월일 입력 때만 본다. 이미 가입한 21~24세 회원은 그대로 쓴다.
+// 청소년은 만 14~19세다 (2026-11-11 사용자: 19세까지. 그 전에는 20세, 더 전에는 24세 — 청소년기본법의 청소년은 9~24세, 우리는 14세부터).
+// ⚠️ 위 끝은 가입·생년월일 입력 때만 본다. 이미 가입한 20세 이상 회원은 그대로 쓴다.
 // 끗짱은 어른이라 위 끝만 있다
-const YOUTH_MIN_AGE = 14, YOUTH_MAX_AGE = 20;
+const YOUTH_MIN_AGE = 14, YOUTH_MAX_AGE = 19;
 
 // ── 생년월일: 연·월·일 고르개 셋 ────────────────────────
 // 【왜 input[type=date] 를 버렸나】 아이폰 달력은 머리글을 누르면 연·월 바퀴만
@@ -2766,7 +2765,7 @@ function birthPick(pre) {
   [ys, ms, ds].forEach(el => el.classList.toggle('ph', !el.value));
 }
 
-// role 이 'youth' 면 연도 목록이 만 14~20세로 좁아진다.
+// role 이 'youth' 면 연도 목록이 만 14~19세로 좁아진다.
 // ⚠️ 해 단위라 한 해는 넉넉하게 연다 — 생일 전후로 만 나이가 갈리기 때문이다.
 //    정확한 선은 제출할 때 ageOf 가 다시 본다
 function birthBounds(el, role, picked) {
@@ -2865,7 +2864,7 @@ async function submitAuth() {
     // 동의서를 받아 관리하는 것 자체가 부담이라 14세부터 쓰게 한다
     if (ageOf(birth) < YOUTH_MIN_AGE)
       return stop(`한끗독서는 만 ${YOUTH_MIN_AGE}세부터 함께할 수 있어요.`, 'auBirth');
-    // 청소년은 만 20세까지. 끗짱은 어른이 맡으므로 위 끝이 없다
+    // 청소년은 만 19세까지. 끗짱은 어른이 맡으므로 위 끝이 없다
     if (joinRole === 'youth' && ageOf(birth) > YOUTH_MAX_AGE)
       return stop(`청소년은 만 ${YOUTH_MAX_AGE}세까지 함께할 수 있어요.\n`
                 + `끗짱으로 함께하시려면 뒤로 가서 끗짱을 골라주세요.`, 'auBirth');
