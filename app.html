@@ -6066,19 +6066,22 @@ function viewFeed() {
       </div>
     </div>`).join('')}` : '';
 
-  const listHtml = secHead('📝 루틴 후기', list.length, 'rv') + (list.length
+  // 끗짱은 본인이 이끄는 모임의 글만 읽을 수 있다(서버 규칙). 비어 있어도 이상한 게 아니라는 걸 말해 준다 (2026-11-11 QA)
+  const kk = canLead();
+  const kkNote = t => `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${t}</div>`;
+  const listHtml = secHead('📝 루틴 후기', list.length, 'rv') + (kk ? kkNote('내가 연 모임의 청소년들이 남긴 글만 보여요') : '') + (list.length
     ? `<div class="hs-row">${list.slice(0, feedCap.rv).map(reviewCard).join('')}</div>`
-    : `<div class="empty" style="padding:14px 0 18px;">아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.</div>`);
+    : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 후기를 남기면 여기에 모여요.' : '아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.'}</div>`);
 
   const allQuotes = sharedQuotes();
   const quotes = allQuotes.slice(0, feedCap.qt);
   const quoteHtml = secHead('💬 함께 나누고 싶은 문장', allQuotes.length, 'qt')
-    + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">우리 루틴 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.</div>` + (quotes.length
+    + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${kk ? '내가 연 모임의 청소년들이 남긴 문장만 보여요. 밖에는 공개되지 않아요.' : '우리 루틴 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.'}</div>` + (quotes.length
     ? `<div class="hs-row">${quotes.map(c => `<div class="card" style="padding:15px 16px;">
         ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
       </div>`).join('')}</div>`
-    : `<div class="empty" style="padding:14px 0 18px;">아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.</div>`);
+    : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 문장을 남기면 여기에 모여요.' : '아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.'}</div>`);
 
   return todoHtml + listHtml + quoteHtml;
 }
