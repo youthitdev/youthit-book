@@ -192,6 +192,15 @@ input[type=date]:disabled, select:disabled { background-image:none; }
 .au-back:hover { color:#fff; }
 .au-step { font-size:13px; color:rgba(255,255,255,.66); margin:0 0 18px; }
 .au-step b { color:#fff; }
+/* 끗짱 가입(2026-11-11): 칸마다 제목을 붙이고, 동기·경험은 다음 화면에서 받는다. 청소년 가입은 그대로다 */
+.kk-lb { display:none; font-size:13px; font-weight:700; color:#fff; margin:16px 0 6px; line-height:1.5; }
+.kk-lb span { font-weight:500; color:rgba(255,255,255,.62); }
+.kkmode .kk-lb { display:block; }
+.kkmode #signupOnly > .kk-lb:first-child { margin-top:2px; }
+.auth textarea { background-color:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); color:#fff; border-radius:12px;
+  padding:13px 14px; font-size:15px; font-family:inherit; width:100%; box-sizing:border-box; resize:none; line-height:1.6; outline:none; }
+.auth textarea::placeholder { color:rgba(255,255,255,.5); }
+.auth textarea:focus { border-color:rgba(255,255,255,.6); }
 .au-big { font-size:23px; font-weight:800; line-height:1.4; letter-spacing:-.5px; color:#fff; margin:0 0 22px; }
 /* 둘을 나란히 두어 눌러보지 않고도 견주게 한다 */
 .pick { display:flex; flex-direction:column; gap:10px; }
@@ -1645,30 +1654,36 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div id="signupOnly" style="display:none;">
     <div class="au-step" id="roleHint"></div>
 
+    <div class="kk-lb">닉네임</div>
     <input type="text" id="auNick" placeholder="닉네임 (앱에서 부를 이름)" maxlength="8" autocomplete="nickname">
     <!-- ⚠️ id 에 'name' 을 넣지 말 것. 암호 관리자들은 id·name 에 name 이
          들어가면 아이디 칸으로 보고 저장된 메일 주소를 밀어넣는다.
          auNick 은 멀쩡했고 auName 만 당했다 -->
+    <div class="kk-lb">이름 (실명)</div>
     <input type="text" id="auReal" placeholder="이름 (실명)" maxlength="20"
            autocomplete="name" autocorrect="off" spellcheck="false">
-    <div class="au-hint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
+    <div class="au-hint" id="auRealHint">실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요</div>
+    <div class="kk-lb">생년월일</div>
     <div class="au-row" id="auBirth">
       <select id="auBirthY" class="ph" onchange="birthPick('au')"></select>
       <select id="auBirthM" class="ph" onchange="birthPick('au')"></select>
       <select id="auBirthD" class="ph" onchange="birthPick('au')"></select>
     </div>
     <div class="au-hint" id="auBirthHint">만 14세부터 함께할 수 있어요. 나이 확인에만 써요</div>
+    <div class="kk-lb">휴대폰 번호</div>
     <input type="tel" id="auPhone" placeholder="휴대폰번호 ('-' 없이)" maxlength="13" inputmode="numeric" autocomplete="tel">
+    <div class="kk-lb">지역 선택</div>
     <div class="au-row">
       <select id="auSido" onchange="this.classList.toggle('ph', !this.value); fillGu('auGu', this.value);"></select>
       <select id="auGu" onchange="this.classList.toggle('ph', !this.value)"></select>
     </div>
-    <div class="au-hint">가까운 동네책방을 먼저 보여드리는 데 써요</div>
+    <div class="au-hint" id="auSidoHint">가까운 동네책방을 먼저 보여드리는 데 써요</div>
     <select id="auSchool" class="ph" onchange="this.classList.toggle('ph', !this.value)">
       <option value="">재학 상태</option>
       <option>재학</option><option>학교밖</option><option>졸업</option><option>기타</option>
     </select>
     <!-- 끗짱에게 재학 상태를 묻는 건 뜻이 없다. 어디서 오셨는지가 궁금한 것이다 -->
+    <div class="kk-lb" id="auAffilLb">소속</div>
     <input type="text" id="auAffil" placeholder="소속 (기관·단체·학교 등)" maxlength="30" style="display:none;">
   </div>
 
@@ -1676,8 +1691,26 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
        아이디 칸을 찾는데, 없으면 직접 골라버린다 — 이름 칸에 저장된
        메일 주소를 밀어넣고 있었다 -->
   <div id="authCreds">
+    <div class="kk-lb">이메일</div>
     <input type="email" id="auEmail" placeholder="이메일" autocomplete="username">
+    <div class="kk-lb">비밀번호</div>
     <input type="password" id="auPw" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+  </div>
+
+  <!-- 끗짱 가입의 둘째 화면: 어떤 마음인지, 경험이 있는지. 가입할 때 신청서에 함께 들어간다 (2026-11-11 사용자) -->
+  <div id="kkStep2" style="display:none;">
+    <div class="kk-lb" style="margin-top:2px;">어떤 마음으로 끗짱을 신청하게 되었나요? <span>(100자 내외 작성)</span></div>
+    <textarea id="kkMotive" rows="4" maxlength="100" placeholder="왜 끗짱을 하고 싶은지 적어주세요." oninput="kkCount()"></textarea>
+    <div class="au-hint" id="kkMotiveCnt" style="text-align:right;">0/100자</div>
+    <div class="kk-lb">기존에 독서 모임이나 청소년 관련 분야에서 활동한 경험이 있으신가요? <span>(2개 중복 선택 가능)</span></div>
+    <div id="kkExpBox" style="border:1.5px solid transparent;border-radius:12px;">
+    <label class="au-chk"><input type="checkbox" class="kkExp" value="독서 모임 운영/참여" onchange="kkExpPick(this)">
+      <span>독서 모임 운영/참여했어요!</span></label>
+    <label class="au-chk"><input type="checkbox" class="kkExp" value="청소년 관련 분야 활동" onchange="kkExpPick(this)">
+      <span>청소년 관련 분야에서 활동했어요!</span></label>
+    <label class="au-chk"><input type="checkbox" class="kkExp" value="처음이에요" onchange="kkExpPick(this)">
+      <span>처음이에요!</span></label>
+    </div>
   </div>
 
   <div id="signupAgree" style="display:none;margin-top:6px;">
@@ -2614,29 +2647,46 @@ function agAllPick() {
   const v = $('agAll').checked;
   AG_ROWS.forEach(id => { const e = $(id); if (e) e.checked = v; });
 }
+// 끗짱 가입 둘째 화면: 글자 수 · 경험 체크 («처음이에요»는 다른 것과 함께 고를 수 없다)
+function kkCount() { $('kkMotiveCnt').textContent = `${$('kkMotive').value.length}/100자`; }
+function kkExpPick(el) {
+  const all = [...document.querySelectorAll('.kkExp')];
+  if (!el.checked) return;
+  if (el.value === '처음이에요') all.forEach(e => { if (e !== el) e.checked = false; });
+  else all.filter(e => e.value === '처음이에요').forEach(e => { e.checked = false; });
+}
 function agSync() {
   const all = $('agAll');
   if (all) all.checked = AG_ROWS.every(id => $(id)?.checked);
+}
+// 끗짱은 첫 화면에서 「다음」, 둘째 화면에서 「가입하기」다
+function authBtnLabel() {
+  if (authStep === 'k2') return '가입하기';
+  if (authStep === 'form') return joinRole === 'kkut' ? '다음' : '가입하기';
+  return '로그인';
 }
 function paintAuth() {
   const step = authStep;
   const on = (id, v) => { const e = $(id); if (e) e.style.display = v ? '' : 'none'; };
   on('authTabs',   step === 'login');
   on('auBack',     step !== 'login');
+  const kk = joinRole === 'kkut' && (step === 'form' || step === 'k2');   // 끗짱 가입 화면
+  $('authScr').classList.toggle('kkmode', kk);
   on('rolePick',   step === 'role');
-  on('auH1',       step !== 'role');     // 역할을 고를 때는 아래 큰 제목이 맨 위다
-  on('auSub',      step !== 'role');
+  on('auH1',       step !== 'role' && !kk);   // 역할 고르는 화면과 끗짱 가입 화면은 따로 있는 큰 제목이 맨 위다
+  on('auSub',      step !== 'role' && !kk);
   on('signupOnly', step === 'form');
-  on('signupAgree',step === 'form');
-  on('authCreds',  step !== 'role');     // 역할 고르는 중엔 이메일·비번을 묻지 않는다
+  on('kkStep2',    step === 'k2');
+  on('signupAgree',step === 'k2' || (step === 'form' && joinRole !== 'kkut'));   // 끗짱은 둘째 화면에서 동의를 받는다
+  on('authCreds',  step !== 'role' && step !== 'k2');     // 역할 고르는 중엔 이메일·비번을 묻지 않는다
   on('auBtn',      step !== 'role');
   on('authGuest',  step === 'login');
   on('authForgot', step === 'login');
   if (step !== 'login') on('authEmailHelp', false);
-  $('auBtn').textContent = step === 'form' ? '가입하기' : '로그인';
+  $('auBtn').textContent = authBtnLabel();
   // 아이폰은 비밀번호 칸의 autocomplete 를 보고 저장된 암호를 들이민다.
   // 가입인데 current-password 면 남의 계정 암호를 채워 넣는다
-  $('auPw').setAttribute('autocomplete', step === 'form' ? 'new-password' : 'current-password');
+  $('auPw').setAttribute('autocomplete', (step === 'form' || step === 'k2') ? 'new-password' : 'current-password');
 }
 
 function setMode(m) {
@@ -2658,7 +2708,8 @@ function pickRole(r) {
 
 // 정보 적다가 → 역할 고르기 → 로그인. 한 걸음씩 되돌아간다
 function authBack() {
-  if (authStep === 'form') { authStep = 'role'; }
+  if (authStep === 'k2') { authStep = 'form'; }
+  else if (authStep === 'form') { authStep = 'role'; }
   else { authMode = 'login'; authStep = 'login';
          $('segLogin').classList.add('on'); $('segSignup').classList.remove('on'); }
   paintAuth();
@@ -2797,13 +2848,27 @@ let joinRole = 'youth';
 function setJoinRole(r) {
   joinRole = r;
   const k = r === 'kkut';
+  $('roleHint').className = k ? 'au-step au-big' : 'au-step';
   $('roleHint').innerHTML = k
-    ? '<b>💪 끗짱</b>으로 함께해요 · 청소년 곁에서 같이 읽어요'
+    ? '끗짱 가입을<br>시작합니다'
     : '<b>🌱 청소년</b>으로 함께해요 · 읽고 인증해서 나다움을 모아요';
   const bh = $('auBirthHint');
   if (bh) bh.textContent = k
-    ? '만 14세부터 함께할 수 있어요. 나이 확인에만 써요'
+    ? '* 자격 확인 및 본인 인증 용도로 사용됩니다.'
     : `만 ${YOUTH_MIN_AGE}~${YOUTH_MAX_AGE}세가 함께할 수 있어요. 나이 확인에만 써요`;
+  // 끗짱 화면의 안내·입력 예시 (보내 주신 문구). 청소년 화면은 원래 문구로 되돌린다
+  const kt = (id, v, d) => { const e = $(id); if (e) e.placeholder = k ? v : d; };
+  kt('auNick', '앱에서 사용할 닉네임을 입력하세요', '닉네임 (앱에서 부를 이름)');
+  kt('auReal', '홍길동', '이름 (실명)');
+  kt('auPhone', "'-' 없이 숫자만 입력", "휴대폰번호 ('-' 없이)");
+  kt('auAffil', '소속 기관, 단체, 학교명 등', '소속 (기관·단체·학교 등)');
+  kt('auEmail', 'example@email.com', '이메일');
+  kt('auPw', '6자 이상', '비밀번호 (6자 이상)');
+  const rh = $('auRealHint');
+  if (rh) rh.textContent = k ? '* 실명은 운영진 승인 및 확인용으로만 사용되며 타인에게 노출되지 않습니다.'
+                             : '실명은 운영진만 봐요. 다른 사람에게는 닉네임으로 보여요';
+  const sh = $('auSidoHint'); if (sh) sh.style.display = k ? 'none' : '';
+
   // 끗짱에게는 재학 상태 대신 소속을 묻는다
   $('auSchool').style.display = k ? 'none' : '';
   $('auAffil').style.display  = k ? '' : 'none';
@@ -2849,7 +2914,7 @@ async function submitAuth() {
   const btn = $('auBtn'); btn.disabled = true; btn.textContent = '잠시만요…';
 
   if (authMode === 'signup') {
-    const stop = (m, id) => { btn.disabled=false; btn.textContent='가입하기'; return authError(m, id); };
+    const stop = (m, id) => { btn.disabled=false; btn.textContent=authBtnLabel(); return authError(m, id); };
     const nick = $('auNick').value.trim();
     const name = $('auReal').value.trim();
     const sido = $('auSido').value, gu = $('auGu').value;
@@ -2873,6 +2938,22 @@ async function submitAuth() {
     if (!gu)   return stop('사는 곳의 시·군·구를 골라주세요.', 'auGu');
     if (!school) return stop(joinRole === 'kkut' ? '소속을 적어주세요.' : '재학 상태를 골라주세요.',
                              joinRole === 'kkut' ? 'auAffil' : 'auSchool');
+    // 끗짱은 정보를 다 적으면 한 화면 더 간다 (어떤 마음인지·경험). 비밀번호·이메일은 여기서 미리 본다 —
+    // 둘째 화면에서 틀렸다고 하면 칸이 안 보인다
+    if (joinRole === 'kkut' && authStep === 'form') {
+      if (pw.length < 6) return stop('비밀번호는 6자 이상으로 해주세요.', 'auPw');
+      if (!/^\S+@\S+\.\S+$/.test(email)) return stop('이메일 주소를 다시 확인해주세요.', 'auEmail');
+      btn.disabled = false; authStep = 'k2'; paintAuth(); window.scrollTo(0, 0);
+      return;
+    }
+    let kkMotive = null, kkExp = null;
+    if (joinRole === 'kkut') {
+      kkMotive = $('kkMotive').value.trim();
+      if (kkMotive.length < 20) return stop('어떤 마음으로 신청하셨는지 조금만 더 적어주세요. (20자 이상)', 'kkMotive');
+      const picked = [...document.querySelectorAll('.kkExp:checked')].map(e => e.value);
+      if (!picked.length) return stop('경험을 하나 이상 골라주세요. 처음이면 「처음이에요!」를 골라주세요.', 'kkExpBox');
+      kkExp = picked.join(', ');
+    }
     if (!$('agPolicy').checked) return stop('개인정보 수집 및 이용에 동의해주세요.', 'agPolicy');
     const region = joinRegion(sido, gu);
     const { data, error } = await sb.auth.signUp({ email, password: pw,
@@ -2881,18 +2962,21 @@ async function submitAuth() {
                          // 신청서를 「나중에」로 닫아도 이 값은 남는다. MY 카드가
                          // 이걸 보고 「이어서 쓰기」를 띄운다 — 없으면 돌아올 길이 없다
                          join_role: joinRole,
+                         ...(joinRole === 'kkut' ? { k_motive: kkMotive, k_experience: kkExp } : {}),
                          marketing_ok: $('agMkt').checked,
                          policy_agreed_at: new Date().toISOString() } } });
     if (error) {
-      btn.disabled=false; btn.textContent='가입하기';
+      btn.disabled=false; btn.textContent=authBtnLabel();
       const m = authMsg(error.message);
+      if (joinRole === 'kkut' && /비밀번호|이메일/.test(m)) { authStep = 'form'; paintAuth(); }   // 고칠 칸이 있는 화면으로
       return authError(m, /비밀번호/.test(m) ? 'auPw' : /이메일/.test(m) ? 'auEmail' : null);
     }
     // 이미 있는 이메일로 가입하면 Supabase 는 (이메일 존재 여부를 숨기려고)
     // 오류 없이 성공처럼 응답하고 새 계정을 만들지 않는다. identities 가 비어 있는 걸로 구분한다.
     // 이걸 놓치면 고른 역할이 반영되지 않은 채 기존 계정으로 들어가 버린다
     if (data?.user && (data.user.identities || []).length === 0) {
-      btn.disabled=false; btn.textContent='가입하기';
+      btn.disabled=false; btn.textContent=authBtnLabel();
+      if (joinRole === 'kkut') { authStep = 'form'; paintAuth(); }
       return authError('이미 가입된 이메일이에요. 로그인으로 들어와 주세요.', 'auEmail');
     }
     // 끗짱으로 고른 사람은 가입만으로 끝나지 않는다. 신청서를 받아야 운영진이 판단한다
