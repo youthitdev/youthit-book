@@ -3136,21 +3136,24 @@ function renderKkutGate() {
   if (a && a.status === 'pending') {
     $('kkutBody').innerHTML = `
       <div class="gate-card">
-        <div class="gate-ico">🕰️</div>
-        <div class="gate-t">신청서를 잘 받았어요</div>
+        <div class="gate-t">⏳ 끗짱 승인 대기 중입니다</div>
         <div class="gate-s">
-          운영진이 확인 후 연락드릴게요.<br>
-          ${a.contact && a.contact !== '운영진이 따로 확인'
-            ? `적어주신 연락처 <b>${esc(a.contact)}</b> 로 전화나 문자를 드려요.` : ''}
+          유스보이스 운영진이 영업일 기준 1~2일 이내로 확인 후 승인해 드려요.<br>
+          승인이 완료되면 바로 알림을 보내드릴게요!
         </div>
+      </div>
+      <div class="gate-why" style="margin-top:14px;">
+        <b>한끗독서를 홈 화면에 추가해 보세요</b>
+        앱을 홈 화면에 추가하면 승인 알림을 가장 빠르게 확인하고, 매일 독서 루틴에 쉽게 접속할 수 있어요.
+        <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#fff;"
+           href="push-guide.html" target="_blank" rel="noopener">홈 화면에 추가하는 방법 보기</a>
+      </div>
+      <div class="gate-why" style="margin-top:12px;">
+        <b>승인이 완료되면?</b>
+        내가 원하는 독서 루틴을 직접 개설하여, 청소년들에게 독서의 즐거움을 나눠주세요!
       </div>
       <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:14px;"
          href="kkut-guide.html" target="_blank" rel="noopener">끗짱 안내문 보기</a>
-      <div class="gate-why">
-        <b>왜 기다려야 하나요?</b>
-        끗짱은 청소년과 한 그룹에서 매일 이야기를 나누는 사람이에요.
-        청소년이 안심하고 지낼 수 있도록, 어떤 분인지 확인한 뒤에 문을 열어요.
-      </div>
       ${backable() ? `<button class="btn btn-line" style="margin-top:18px;"
         onclick="closeKkutGate()">루틴 홈으로 돌아가기</button>` : ''}
       <div style="text-align:center;margin-top:${backable() ? 14 : 18}px;">
@@ -3477,7 +3480,7 @@ async function enter() {
   paintTheme(isK);
   // 끗짱으로 가입해 놓고 신청서를 「나중에」로 닫은 사람에게 「청소년」은 틀린 말이다.
   // 아직 끗짱도 아니니 사실대로 적는다 — 승인되면 그때 「끗짱」이 된다
-  $('hdrRole').textContent = isAdminUser() ? '관리자' : isK ? '끗짱' : (kkutPending() ? '끗짱 신청 전' : '청소년');   // 운영진 계정은 청소년·끗짱이 아니라 「관리자」 (2026-10-20 사용자)
+  $('hdrRole').textContent = isAdminUser() ? '관리자' : isK ? '끗짱' : (kkutPending() ? '끗짱 승인 대기중' : '청소년');   // 운영진 계정은 청소년·끗짱이 아니라 「관리자」 (2026-10-20 사용자)
   $('hdrBtn').style.display = 'none';      // 로그아웃은 MY 맨 아래에 있다
   await loadAll();
   go('home');
@@ -4904,10 +4907,9 @@ function viewHome() {
     // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
     // 「루틴을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
     h += `<div class="card" onclick="openKkutApply()" style="text-align:center;padding:26px 20px;cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
-      <div style="font-size:30px;">📖</div>
-      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">끗짱이 되려면 신청 폼이 필요해요</div>
-      <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;">
-        운영진이 확인한 분만 끗짱이 될 수 있어요.<br>확인을 받으면 직접 루틴을 열 수 있어요.</div>
+      <div style="font-size:15.5px;font-weight:800;">⏳ 끗짱 승인 대기 중입니다</div>
+      <div style="font-size:13px;color:var(--ink-3);margin-top:8px;line-height:1.6;">
+        유스보이스 운영진이 영업일 기준 1~2일 이내로 확인 후 승인해 드려요.<br>승인이 완료되면 바로 알림을 보내드릴게요!</div>
       <div style="font-size:13px;font-weight:700;color:var(--pink);margin-top:12px;">안내 보기 ›</div>
     </div>`;
   } else {
@@ -6189,7 +6191,7 @@ async function deleteReview() {
 //   서류를 낸 상태(pending)는 통과 — 운영진이 보는 동안 기다리게 하지 않는다. 서버도 같은 식으로 막는다 (migration-150).
 //   운영진·끗짱·어른은 대상이 아니다. 설정 require_verify 를 끄면 예전처럼 열린다.
 //   아래 옛 주석(책 받을 때만 묻는다)은 이 날짜 전의 결정이다
-const verifyBlocked = () => !!me && !isGuest() && isYouth() && !canLead() && !isAdminUser()
+const verifyBlocked = () => !!me && !isGuest() && isYouth() && !canLead() && !isAdminUser() && !kkutPending()
   && state.settings.require_verify !== false
   && !['pending', 'approved'].includes(me.verify_status || 'none');
 function askVerify() { toast('먼저 청소년 확인을 해 주세요'); openVerify(); }
@@ -6410,8 +6412,8 @@ function kkutCard() {
   if (!a && me?.join_role === 'kkut') return `
     <div class="sec-t">끗짱</div>
     <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
-      <div style="font-weight:700;">📖 끗짱이 되려면 신청 폼이 필요해요</div>
-      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">운영진이 확인한 분만 끗짱이 될 수 있어요</div>
+      <div style="font-weight:700;">⏳ 끗짱 승인 대기 중입니다</div>
+      <div style="font-size:12.5px;color:var(--ink-3);margin-top:4px;">눌러서 안내를 확인해 주세요</div>
     </div>`;
 
   if (!el) return '';
@@ -6979,9 +6981,9 @@ function viewMy() {
   // 어른 끗짱은 본인 인증이 0 이다. 0 만 셋 늘어놓으면 아무것도 안 한 사람처럼 보인다
   const joined = myRoutines().filter(r => r.led_by !== me.id).length;
   // 끗짱으로 가입해 놓고 신청서를 아직 안 낸 사람. 저장된 역할은 청소년이지만
-  // 머리 배지는 「끗짱 신청 전」이다. 여기서 「청소년」이라고 하면 둘이 어긋난다
+  // 머리 배지는 「끗짱 승인 대기중」이다. 여기서 「청소년」이라고 하면 둘이 어긋난다
   const waiting = kkutPending();
-  const who = isAdminUser() ? '관리자' : [canLead() ? '끗짱' : '', waiting ? '끗짱 신청 전' : (isYouth() ? '청소년' : '어른'),
+  const who = isAdminUser() ? '관리자' : [canLead() ? '끗짱' : '', waiting ? '끗짱 승인 대기중' : (isYouth() ? '청소년' : '어른'),
                me.school_status || '', me.region || ''].filter(Boolean).join(' · ');
   return `<div class="card">
       <div class="pf">
