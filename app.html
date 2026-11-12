@@ -4158,7 +4158,7 @@ const allDoneToday = rid => booksOf(rid).length
 function myPoints() {
   const per = state.settings.points_per_voucher || 150;
   const ppc = state.settings.points_per_comment ?? 1;
-  const cap = state.settings.comment_daily_cap ?? 5;
+  const cap = state.settings.comment_daily_cap ?? 3;
   const pm  = state.settings.points_per_milestone ?? 10;
   const ms  = state.settings.bonus_milestones || [10,30,66,100,200];
   const pr  = state.settings.points_per_review ?? 30;
@@ -5921,7 +5921,7 @@ const RV_PR = () => state.settings.points_per_review ?? 30;
 // 댓글 나다움. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20N을 기다린다
 const MEET_P  = () => state.settings.points_per_meetup ?? 50;
 const CMT_P   = () => state.settings.points_per_comment ?? 1;
-const CMT_CAP = () => state.settings.comment_daily_cap ?? 5;
+const CMT_CAP = () => state.settings.comment_daily_cap ?? 3;
 const RV_PB = () => state.settings.points_per_bookreview ?? 30;
 
 // 모임 후기 기한. 서버 review_due() 와 같은 식으로 센다 —
@@ -9674,7 +9674,7 @@ function enterDemo(role) {
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
   const kid = isK ? uid  : 'demo-k'; // 모임을 이끄는 끗짱
 
-  state.settings = { book_fund_rate: 0.8, points_per_cert: 10, points_per_comment: 1, comment_daily_cap: 5, points_per_voucher: 150, voucher_max_amount: 20000, points_per_milestone: 10, bonus_milestones: [10,30,66,100,200], points_per_meetup: 50 };
+  state.settings = { book_fund_rate: 0.8, points_per_cert: 10, points_per_comment: 1, comment_daily_cap: 3, points_per_voucher: 150, voucher_max_amount: 20000, points_per_milestone: 10, bonus_milestones: [10,30,66,100,200], points_per_meetup: 50 };
   state.stores = [
     { id:1, name:'완벽한날들', region:'강원 속초', address:'강원특별자치도 속초시 동해대로 4344',
       hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
