@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>한끗독서</title>
-<!-- 링크 미리보기. 정적 호스팅이라 루틴마다 다르게 만들 수는 없다 — 앱 전체용이다 -->
+<!-- 링크 미리보기. 정적 호스팅이라 모임마다 다르게 만들 수는 없다 — 앱 전체용이다 -->
 <meta name="description" content="매일 한 장 읽으면, 동네책방에서 책 한 권을 받아 가요. 같이 읽어요.">
 <meta property="og:title" content="한끗독서">
 <meta property="og:description" content="매일 한 장 읽으면, 동네책방에서 책 한 권을 받아 가요. 같이 읽어요.">
@@ -459,7 +459,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .c-done { background:#eee; color:#888; }
 .c-wait { background:#FFF4E5; color:#8A5A16; }
 
-/* 루틴 카드 */
+/* 모임 카드 */
 .r-card { background:var(--card); border-radius:16px; padding:16px; margin-bottom:10px; cursor:pointer; overflow:hidden; }
 .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line);
   border:1px solid var(--line); border-radius:14px; overflow:hidden; margin-bottom:18px; }
@@ -470,11 +470,11 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .stats span { display:block; font-size:10px; color:var(--ink-3); margin-top:3px; font-weight:600; }
 
 /* 홈 지표 — 넷을 한 줄에 우겨넣으면 글자가 눌린다. 2×2 로 펴고 이모지를 붙였다 */
-/* 오늘 하는 루틴 — 홈 맨 위 주인공 */
+/* 오늘 하는 모임 — 홈 맨 위 주인공 */
 .tcard { background:var(--card); border-radius:18px; overflow:hidden; margin-bottom:12px; }
 .tc-b { padding:14px 15px 15px; }
-/* 눌러서 루틴 화면으로. 참여하거나 맡은 뒤에는 목록에서 빠지기 때문에
-   여기서 못 들어가면 끗짱 소개도, 공유회 길찾기도, 루틴 수정도 길이 끊긴다 */
+/* 눌러서 모임 화면으로. 참여하거나 맡은 뒤에는 목록에서 빠지기 때문에
+   여기서 못 들어가면 끗짱 소개도, 공유회 길찾기도, 모임 수정도 길이 끊긴다 */
 .tc-t { font-size:16px; font-weight:800; letter-spacing:-.4px; cursor:pointer;
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .tc-t i { font-size:15px; color:var(--ink-3); vertical-align:-2px; margin-left:1px; }
@@ -566,7 +566,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
   font-size:13.5px; line-height:1.7; color:var(--ink-2); }
 .cr-line b { color:var(--ink); font-weight:800; }
 .cr-note { margin-top:9px; font-size:11.5px; color:var(--ink-3); line-height:1.6; }
-/* 끗짱 루틴이 아직 안 열렸을 때 */
+/* 끗짱 모임이 아직 안 열렸을 때 */
 .k-wait { margin-top:10px; background:#F9EEDC; border:1px solid #E5C795; border-radius:11px;
   padding:11px 13px; }
 .k-wait.bad { background:#FAEBE7; border-color:#EDC6BC; }
@@ -734,7 +734,7 @@ nav i { display:block; font-size:20px; margin-bottom:1px; }
 .r-spon i { font-style:normal; color:var(--pink); font-size:10px; line-height:1; flex:none; }
 .r-spon span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
 .r-who { font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:7px; }
-/* 루틴 카드 정리 (2026-10-23 사용자): 제목 · 끗짱 · 나다움/인원 · 기간 · 지역/책방 · 후원 기업 */
+/* 모임 카드 정리 (2026-10-23 사용자): 제목 · 끗짱 · 나다움/인원 · 기간 · 지역/책방 · 후원 기업 */
 .r-ld { font-size:13px; font-weight:700; color:var(--ink-2); margin-top:3px; letter-spacing:-.2px; }
 .r-row { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin-top:6px; }
 .r-row .r-pt { margin-top:0; }
@@ -786,7 +786,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kbook-prev img { width:100%; height:100%; object-fit:cover; display:block; }
 .kbook-prev button { position:absolute; top:5px; right:5px; width:24px; height:24px; border:none;
   border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:13px; cursor:pointer; }
-/* 루틴 맨 위 대표 사진. 사진이 없어도 빈 화면이 되지 않게 이모지로 채운다 */
+/* 모임 맨 위 대표 사진. 사진이 없어도 빈 화면이 되지 않게 이모지로 채운다 */
 .r-hero { width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; margin-bottom:12px;
   background:linear-gradient(160deg,var(--tint),#fff); display:flex; align-items:center; justify-content:center; }
 .r-hero img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -836,7 +836,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .r-title { font-size:15.5px; font-weight:700; letter-spacing:-.3px; }
 .r-meta { font-size:12px; color:var(--ink-3); margin-top:3px; }
 .r-where { font-size:12px; font-weight:700; color:var(--ink-2); margin-top:3px; }
-/* 공유회가 있는 루틴은 몸이 가야 한다. 고르기 전에 보여야 하고,
+/* 공유회가 있는 모임은 몸이 가야 한다. 고르기 전에 보여야 하고,
    어디로 가야 하는지가 같이 보여야 한다 */
 .r-meet { display:inline-flex; align-items:center; gap:4px; margin-top:7px;
   padding:3px 8px; border-radius:7px; background:#FBF3E4; border:1px solid #EFDFBE;
@@ -913,7 +913,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   font-size:13px; font-weight:700; }
 .pv-body { flex:1; min-height:0; display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
 .pv-body img { flex:0 0 100%; width:100%; height:100%; object-fit:contain; scroll-snap-align:center; touch-action:pinch-zoom pan-x; }
-/* 루틴 정보. 넷을 세로로 쌓으니 빈 여백이 화면 한 판이었다 */
+/* 모임 정보. 넷을 세로로 쌓으니 빈 여백이 화면 한 판이었다 */
 .rinfo { display:grid; grid-template-columns:1fr 1fr; gap:14px 12px; }
 .rinfo span { display:block; font-size:12px; color:var(--ink-3); }
 .rinfo b { display:block; font-size:14.5px; font-weight:700; margin-top:2px; }
@@ -922,7 +922,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
 /* 리마인더 설정 */
 .rm { border-top:1px solid var(--line); margin-top:13px; padding-top:12px; }
-/* 루틴 종류 고르기 */
+/* 모임 종류 고르기 */
 .kind { display:flex; flex-direction:column; gap:8px; }
 /* 안 고른 쪽이 흰색이면 크림색 배경에서 되레 튄다. 안 고른 쪽을 배경에
    묻히게 두고, 고른 쪽만 흰 카드로 띄운다.
@@ -949,13 +949,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .kind button.on:disabled { opacity:1; }
 
 /* 오프라인 공유회 */
-/* 한 루틴만 보고 있다는 표시 겸 돌아가는 길 */
+/* 한 모임만 보고 있다는 표시 겸 돌아가는 길 */
 .only-one { display:inline-flex; align-items:center; gap:5px; margin-bottom:12px;
   padding:7px 13px 7px 10px; border-radius:999px; border:1px solid var(--line); background:#fff;
   font-family:inherit; font-size:12.5px; font-weight:700; color:var(--green-d); cursor:pointer; }
 .only-one i { font-size:15px; line-height:1; }
 .only-one:active { background:var(--green-l); }
-/* 시작 전 루틴의 모집 안내 */
+/* 시작 전 모임의 모집 안내 */
 .tc-wait { background:#FBF3E4; border:1px solid #EFDFBE; border-radius:12px;
   padding:11px 13px; margin:9px 0; }
 .tc-wait b { display:block; font-size:14px; font-weight:800; color:#8A5A16; }
@@ -1204,7 +1204,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .rec-c b { display:block; font-size:22px; font-weight:800; letter-spacing:-.6px; line-height:1.15; color:var(--ink); }
 .rec-c b small { font-size:12px; font-weight:700; margin-left:1px; color:var(--green-d); }
 .rec-c span { display:block; margin-top:3px; font-size:11.5px; color:var(--ink-3); font-weight:600; }
-/* 루틴 화면의 「함께 읽는 친구들」 — 닉네임과 공식 표지만 (migration-129) */
+/* 모임 화면의 「함께 읽는 친구들」 — 닉네임과 공식 표지만 (migration-129) */
 .mem-row { display:flex; gap:10px; overflow-x:auto; padding:2px 2px 8px; margin:0 -2px; -webkit-overflow-scrolling:touch; }
 .mem-t { flex:none; width:74px; text-align:center; }
 .mem-c { width:74px; height:104px; border-radius:8px; overflow:hidden; background:#EFEBE1; display:flex; align-items:center; justify-content:center;
@@ -1474,7 +1474,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .lk-b:active { transform:scale(.95); }
 .lk-n { font-size:13px; color:var(--ink-3); }
 
-/* 지난 루틴 한 줄 */
+/* 지난 모임 한 줄 */
 .pr { display:flex; align-items:center; gap:12px; padding:13px 0; cursor:pointer; }
 .pr + .pr { border-top:1px solid var(--line); }
 .pr-t { flex:1; min-width:0; font-size:14px; font-weight:700;
@@ -1572,7 +1572,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .ov-b { flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
   padding:18px 18px calc(28px + env(safe-area-inset-bottom)); overscroll-behavior:contain; }
 .ov-b > div:not(:last-child) { margin-bottom:16px; }
-#mkP2 > div:not(:last-child) { margin-bottom:16px; }   /* 루틴 만들기 2페이지 칸 사이 간격 (한 겹 안쪽이라 위 규칙이 안 닿는다) */
+#mkP2 > div:not(:last-child) { margin-bottom:16px; }   /* 모임 만들기 2페이지 칸 사이 간격 (한 겹 안쪽이라 위 규칙이 안 닿는다) */
 
 /* 아래에서 올라오는 시트 */
 .sheet { position:fixed; inset:0; z-index:60; display:none; align-items:flex-end; justify-content:center;
@@ -1645,7 +1645,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       </button>
       <button type="button" class="pick-c" onclick="pickRole('kkut')">
         <b>💪 끗짱 <em>어른</em></b>
-        <span>원하는 독서 루틴을 직접 개설하고 청소년과 함께 읽어요. 매일 기록에 답글을 남기며 건강한 독서 습관을 도와줍니다.</span>
+        <span>원하는 독서 모임을 직접 개설하고 청소년과 함께 읽어요. 매일 기록에 답글을 남기며 건강한 독서 습관을 도와줍니다.</span>
         <i>※ 운영진 승인 후 활동이 가능합니다.</i>
       </button>
     </div>
@@ -1714,7 +1714,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div class="kk-lb">청소년 보호 수칙 <span>(필수)</span></div>
     <label class="au-chk"><input type="checkbox" id="kkPledge">
-      <span>끗짱은 한 루틴의 여러 청소년과 함께하는 역할임을 이해하고, 청소년에게 <b>사적인 연락을 하거나 개인 정보를 요구하지 않겠습니다.</b>
+      <span>끗짱은 한 모임의 여러 청소년과 함께하는 역할임을 이해하고, 청소년에게 <b>사적인 연락을 하거나 개인 정보를 요구하지 않겠습니다.</b>
         <a href="kkut-guide.html" target="_blank" rel="noopener" style="color:#fff;">안내 보기</a></span></label>
   </div>
 
@@ -1761,8 +1761,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <p><b>1. 수집 및 이용 목적</b>
       '한끗독서'(이하 '서비스')는 아래 목적으로만 개인정보를 이용합니다. 목적이 바뀌면 미리 동의를 구합니다.<br>
       · 회원 가입 및 관리: 회원 식별, 만 14세 이상 확인, 부정 이용 방지<br>
-      · 독서루틴 제공: 참여 신청·승인, 끗짱 배정, 청소년 여부 확인을 위한 서류 심사,
-        독서 인증(사진·문장·쪽수) 저장, 같은 루틴 안에서의 인증 열람·응원<br>
+      · 독서모임 제공: 참여 신청·승인, 끗짱 배정, 청소년 여부 확인을 위한 서류 심사,
+        독서 인증(사진·문장·쪽수) 저장, 같은 모임 안에서의 인증 열람·응원<br>
       · 나다움과 교환권: 인증으로 쌓인 나다움을 도서 교환권으로 바꾸고,
         파트너 동네책방에서 책으로 바꾼 뒤 책방에 정산하는 일.
         이때 책방 화면에는 <b>닉네임(없으면 이름)과 만 나이, 교환한 시각</b>만 보이고
@@ -1772,9 +1772,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         올릴지 여부는 <b>사진 한 장마다 회원이 끄고 켤 수 있습니다</b>(기본 켜짐).
         얼굴이 나온 사진은 운영진이 확인해 올리지 않습니다. 운영진에게 말하면
         언제든 내립니다<br>
-      · 알림 발송: 루틴 리마인더, 승인·반려 안내, 후기 기한 안내(푸시 알림)<br>
+      · 알림 발송: 모임 리마인더, 승인·반려 안내, 후기 기한 안내(푸시 알림)<br>
       · 고객 지원: 문의 처리, 공지 전달<br>
-      · 마케팅 및 광고에의 활용(선택): 새 루틴·행사 안내</p>
+      · 마케팅 및 광고에의 활용(선택): 새 모임·행사 안내</p>
     <p><b>2. 만 14세 미만 가입 제한</b>
       서비스는 만 14세 이상만 가입·이용할 수 있습니다. 가입할 때 적은 생년월일로 만 14세 미만이 확인되면 가입이 제한됩니다.</p>
     <p><b>3. 수집하는 항목</b>
@@ -1783,9 +1783,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       · 청소년 확인 서류: 청소년증·학생증·재학증명서·정원외관리증명서·
         검정고시 합격증서·합격증명서 등 파일.
         <b style="display:inline;">확인이 끝나면 파일은 지웁니다.</b> 확인했다는 사실과 날짜만 남습니다.<br>
-      · 이용 과정에서 생기는 것: 루틴 참여 신청 각오, 독서 인증 사진·문장·읽은 쪽수, 후기,
+      · 이용 과정에서 생기는 것: 모임 참여 신청 각오, 독서 인증 사진·문장·읽은 쪽수, 후기,
         푸시 알림을 보내기 위한 브라우저 구독 정보(endpoint 및 암호화 키)<br>
-      · 선택: 프로필 사진(올린 경우, 같은 루틴 회원과 운영진에게만 보이며 언제든 바꾸거나 지울 수 있습니다),
+      · 선택: 프로필 사진(올린 경우, 같은 모임 회원과 운영진에게만 보이며 언제든 바꾸거나 지울 수 있습니다),
         마케팅 수신에 동의한 회원의 이메일 주소 및 푸시 구독 정보<br>
       · 자동으로 쌓이는 것: 서비스 이용 기록, 접속 로그</p>
     <p><b>4. 후원자에게 알리는 범위</b>
@@ -1848,7 +1848,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="body" id="kkutBody" style="padding:18px;"></div>
 </div>
 
-<!-- 루틴 상세 -->
+<!-- 모임 상세 -->
 <!-- 후기 탭·MY 의 「더 보기」: 그 구역 전체를 새 화면에서. 20개씩 늘어난다 (2026-10-21 사용자) -->
 <div class="ov" id="ovFeedAll">
   <div class="ov-h"><button onclick="closeOv('ovFeedAll')"><i class="ti ti-arrow-left"></i></button>
@@ -1858,12 +1858,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
 <div class="ov" id="ovRoutine">
   <div class="ov-h"><button onclick="closeOv('ovRoutine')"><i class="ti ti-arrow-left"></i></button>
-    <div style="flex:1;min-width:0;"><div class="s">루틴</div><div class="t" id="ovRTitle"></div></div>
-    <!-- 【공유하기 · 2026-10-08 사용자】 주소창 링크는 어느 루틴에서도 같다(app.html).
-         루틴마다 다른 링크(?routine=)는 이 단추가 만든다 -->
+    <div style="flex:1;min-width:0;"><div class="s">모임</div><div class="t" id="ovRTitle"></div></div>
+    <!-- 【공유하기 · 2026-10-08 사용자】 주소창 링크는 어느 모임에서도 같다(app.html).
+         모임마다 다른 링크(?routine=)는 이 단추가 만든다 -->
     <button class="ov-set" id="rtEdit" style="display:none;margin-left:0;" onclick="goFromOv('ovRoutine', () => openMake(curRid))"
-      aria-label="이 루틴 수정하기"><i class="ti ti-pencil"></i>수정</button>
-    <button onclick="shareRoutine(curRid)" aria-label="이 루틴 공유하기"><i class="ti ti-share-3"></i></button></div>
+      aria-label="이 모임 수정하기"><i class="ti ti-pencil"></i>수정</button>
+    <button onclick="shareRoutine(curRid)" aria-label="이 모임 공유하기"><i class="ti ti-share-3"></i></button></div>
   <div class="ov-b" id="ovRBody"></div>
 </div>
 
@@ -1873,10 +1873,10 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div><div class="s" id="ovCLabel">오늘의 인증</div><div class="t" id="ovCTitle"></div></div></div>
   <div class="ov-b">
     <div id="certGuide"></div>
-    <!-- 루틴의 첫 인증에서만 보인다 (2026-10-19 사용자). 자기소개(사진 + 한 줄)를 먼저 남기고, 아래 인증을 올린다 -->
+    <!-- 모임의 첫 인증에서만 보인다 (2026-10-19 사용자). 자기소개(사진 + 한 줄)를 먼저 남기고, 아래 인증을 올린다 -->
     <div id="cIntro" class="intro-box" style="display:none;">
       <div class="ib-t">👋 먼저 나를 소개해 주세요</div>
-      <div class="ib-d">첫 인증에 한 번만 남겨요. 같은 루틴 친구들에게 보여요.</div>
+      <div class="ib-d">첫 인증에 한 번만 남겨요. 같은 모임 친구들에게 보여요.</div>
       <div class="field-label" style="margin-top:0;">요즘 내가 관심 있는 것 <span class="req">* 필수</span></div>
       <div id="cIntroPh"></div>
       <input type="file" id="cIntroInput" accept="image/*" style="display:none;" onchange="pickIntroPhoto(event)">
@@ -1891,13 +1891,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <input type="file" id="phInput" accept="image/*" multiple style="display:none;" onchange="pickPhotos(event)">
       <div class="hint" id="camHint">지금 읽고 있는 모습을 바로 찍어주세요</div>
     </div>
-    <!-- 「함께 읽는 글」 루틴이면 오늘 끗짱이 올린 글을 여기서 바로 읽는다 -->
+    <!-- 「함께 읽는 글」 모임이면 오늘 끗짱이 올린 글을 여기서 바로 읽는다 -->
     <div id="cTodayPost"></div>
     <div id="cQuoteWrap">
       <div class="field-label"><span id="cQuoteTxt">마음에 남은 문장</span> <span id="cQuoteReq" class="opt">선택</span></div>
       <textarea id="cQuote" rows="3" placeholder="옮겨 적고 싶은 문장이 있다면 적어주세요." maxlength="300" oninput="checkCert()"></textarea>
     </div>
-    <!-- 주석: 각자 책을 읽는 루틴에서만 쓴다. 함께 읽는 글은 책도 쪽수도 없다 -->
+    <!-- 주석: 각자 책을 읽는 모임에서만 쓴다. 함께 읽는 글은 책도 쪽수도 없다 -->
     <div id="cBookWrap">
       <div style="display:flex;gap:10px;">
         <div style="flex:1;min-width:0;">
@@ -1920,7 +1920,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="bk-chips" id="cBookChips"></div>
       <div id="cPageHint" style="display:none;font-size:12.5px;line-height:1.6;padding:10px 13px;border-radius:11px;"></div>
       <label class="fin-row" id="cFinRow"><input type="checkbox" id="cFin">
-        <span>이 책, 다 읽었어요 🎉<small>완독 도장이 찍히고, 같은 루틴 친구들에게 알려요</small></span></label>
+        <span>이 책, 다 읽었어요 🎉<small>완독 도장이 찍히고, 같은 모임 친구들에게 알려요</small></span></label>
     </div>
     <!-- 함께 읽는 글: 책이 없어서 위치가 아니라 「오늘 읽은 분량」을 적는다 (선택). 적으면 책 높이·도시에 더해진다 -->
     <div id="cSharedPage" style="display:none;">
@@ -1937,18 +1937,18 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
-<!-- 루틴 만들기 (끗짱) — 2페이지: ① 루틴 주체 ② 루틴 정보 (2026-11-11 개편) -->
+<!-- 모임 만들기 (끗짱) — 2페이지: ① 모임 주체 ② 모임 정보 (2026-11-11 개편) -->
 <div class="ov" id="ovMake">
   <div class="ov-h"><button onclick="mkBack()"><i class="ti ti-arrow-left"></i></button>
-    <div><div class="s">끗짱</div><div class="t" id="ovMakeTitle">루틴 만들기</div></div></div>
+    <div><div class="s">끗짱</div><div class="t" id="ovMakeTitle">모임 만들기</div></div></div>
   <div class="ov-b">
 
-    <!-- 1페이지: 루틴 주체. 고른 쪽에 따라 2페이지의 공유회 선택이 달라진다 -->
+    <!-- 1페이지: 모임 주체. 고른 쪽에 따라 2페이지의 공유회 선택이 달라진다 -->
     <div id="mkP1">
-      <div style="font-size:20px;font-weight:800;line-height:1.45;letter-spacing:-.4px;margin:4px 0 16px;">어떤 루틴을 열까요?</div>
+      <div style="font-size:20px;font-weight:800;line-height:1.45;letter-spacing:-.4px;margin:4px 0 16px;">어떤 모임을 열까요?</div>
       <div class="kind">
         <button type="button" id="mHostGeneral" onclick="pickHost('general')">
-          <em>🙋</em><span><b>일반 끗짱</b><i>개인으로서 온라인 독서 루틴을 운영해요</i></span></button>
+          <em>🙋</em><span><b>일반 끗짱</b><i>개인으로서 온라인 독서 모임을 운영해요</i></span></button>
         <button type="button" id="mHostPartner" onclick="pickHost('partner')">
           <em>🏠</em><span><b>파트너 끗짱</b><i>파트너 기관·서점을 기반으로 운영해요</i></span></button>
       </div>
@@ -1970,7 +1970,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="hint" id="mKindHint"></div>
     </div>
     <div>
-      <div class="field-label">루틴 이름 <span class="req">*</span></div>
+      <div class="field-label">모임 이름 <span class="req">*</span></div>
       <input type="text" id="mTitle" placeholder="예) 밤에 읽는 15일, 매일 한 장 에세이 읽기" maxlength="40">
       <div class="hint" id="mTitleHint"></div>
     </div>
@@ -1978,14 +1978,14 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="field-label">대표 사진 <span class="req">*</span></div>
       <div id="mCoverBox"></div>
       <input type="file" id="mCoverInput" accept="image/*" style="display:none;" onchange="pickCover(event)">
-      <div class="hint">청소년이 루틴을 고를 때 제일 먼저 보는 그림이에요.</div>
+      <div class="hint">청소년이 모임을 고를 때 제일 먼저 보는 그림이에요.</div>
     </div>
     <div>
       <div class="field-label">이모지 <span class="opt">선택</span></div>
       <input type="text" id="mEmoji" placeholder="📚" maxlength="4" style="width:90px;text-align:center;font-size:20px;">
     </div>
     <div>
-      <div class="field-label">루틴 및 끗짱 소개 <span class="req">*</span></div>
+      <div class="field-label">모임 및 끗짱 소개 <span class="req">*</span></div>
       <textarea id="mDesc" rows="5" placeholder="안녕하세요, 성수에서 작은 책방을 하는 김유스입니다.&#10;혼자서는 잘 안 읽히는 책, 15일만 같이 읽어봐요." maxlength="300"></textarea>
       <div class="hint">어떤 마음으로 함께하고 싶은지 적어주세요. 청소년이 이걸 보고 골라요.</div>
     </div>
@@ -1993,7 +1993,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="field-label">모집 인원 <span class="req">*</span></div>
       <input type="number" id="mPeople" min="4" max="50" inputmode="numeric" placeholder="최소 4명" oninput="mkPeopleCheck()">
       <div class="hint" id="mPeopleErr" style="display:none;color:#b00038;font-weight:700;margin-top:6px;">최소 4명 이상 입력해 주세요</div>
-      <div class="hint">※ 최소 4명 이상 모집되어야 루틴이 개설되며, 미달 시 자동 취소됩니다.</div>
+      <div class="hint">※ 최소 4명 이상 모집되어야 모임이 개설되며, 미달 시 자동 취소됩니다.</div>
     </div>
     <div id="mStoreWrap">
       <div class="field-label">함께하는 책방 <span class="opt">선택</span></div>
@@ -2018,7 +2018,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div id="mLockNote" class="hint" style="display:none;background:#FBF3E4;color:#8A5A16;border-radius:11px;padding:10px 13px;line-height:1.65;"></div>
     <div>
-      <div class="field-label">루틴 운영 일정 <span class="req">*</span></div>
+      <div class="field-label">모임 운영 일정 <span class="req">*</span></div>
       <select id="mSchedule" class="ph" onchange="this.classList.toggle('ph', !this.value)"></select>
       <div class="hint" id="mSchedHint"></div>
     </div>
@@ -2030,12 +2030,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <button type="button" id="mMeetOffline" onclick="pickMeet('offline')">
           <em>📍</em><span><b>오프라인 공유회</b><i>직접 장소를 정해 만나요. 참석한 청소년만 책을 받아요</i></span></button>
       </div>
-      <div class="hint" id="mMeetLock" style="display:none;">오프라인 루틴은 공간을 보유한 파트너 서점/기관 끗짱만 개설할 수 있어요.</div>
+      <div class="hint" id="mMeetLock" style="display:none;">오프라인 모임은 공간을 보유한 파트너 서점/기관 끗짱만 개설할 수 있어요.</div>
     </div>
     <div id="mOnlineWrap" style="display:none;">
       <div class="field-label">온라인 공유회 일정 선택 <span class="req">*</span></div>
       <select id="mOnline" class="ph" onchange="this.classList.toggle('ph', !this.value)"></select>
-      <div class="hint" id="mOnlineHint">※ 루틴 개설이 완료되면 유스보이스가 지정한 온라인 공유회 Zoom 링크가 화면에 자동으로 노출됩니다.</div>
+      <div class="hint" id="mOnlineHint">※ 모임 개설이 완료되면 유스보이스가 지정한 온라인 공유회 Zoom 링크가 화면에 자동으로 노출됩니다.</div>
     </div>
     <div id="mMeetWrap" style="display:none;">
       <div class="field-label">공유회 일시 <span class="req">*</span></div>
@@ -2053,9 +2053,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div class="hint">층·호실처럼 지도에 안 나오는 곳을 적어주세요.</div>
       <div class="field-label" style="margin-top:14px;">안내 사항 <span class="opt">선택</span></div>
       <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 등 청소년들에게 전하고 싶은 내용을 작성해 주세요."></textarea>
-      <div class="hint">청소년이 루틴을 고를 때부터 봐요. 나중에 바꿀 수 있어요.</div>
+      <div class="hint">청소년이 모임을 고를 때부터 봐요. 나중에 바꿀 수 있어요.</div>
     </div>
-    <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">루틴 만들기</button>
+    <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">모임 만들기</button>
     </div>
   </div>
 </div>
@@ -2223,7 +2223,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 
 <!-- 읽는 책 관리. 더하기만 있으면 잘못 넣었을 때 세 칸이 영영 막힌다 -->
 <!-- 알림 설정. MY 메뉴의 「알림」에서 열린다 -->
-<!-- 루틴 링크. 기기 공유창이 없거나 닫아버린 사람도 복사만은 되어야 한다 -->
+<!-- 모임 링크. 기기 공유창이 없거나 닫아버린 사람도 복사만은 되어야 한다 -->
 <div class="sheet" id="shShare" onclick="if(event.target===this)closeSheet('shShare')">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -2237,7 +2237,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <input type="text" id="shShareUrl" readonly onclick="this.select()" style="margin-top:4px;">
     <button class="btn btn-primary" style="margin-top:12px;" onclick="copyShare()">링크 복사하기</button>
     <button class="btn btn-line" id="shShareNative" style="margin-top:8px;" onclick="nativeShare()">다른 앱으로 보내기</button>
-    <div class="hint">이 링크를 열면 그 루틴이 바로 열려요.</div>
+    <div class="hint">이 링크를 열면 그 모임이 바로 열려요.</div>
   </div>
 </div>
 
@@ -2315,7 +2315,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div class="sheet-hd">
       <div style="flex:1;min-width:0;">
         <div class="sheet-t">병렬독서</div>
-        <div class="sheet-s">한 루틴에서 세 권까지 나눠 읽을 수 있어요.
+        <div class="sheet-s">한 모임에서 세 권까지 나눠 읽을 수 있어요.
           책마다 하루 한 번 인증해요.</div>
       </div>
       <button class="sheet-x" onclick="closeSheet('shBooks')" aria-label="닫기">✕</button>
@@ -2338,7 +2338,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   </div>
 </div>
 
-<!-- 루틴 마무리 카드 -->
+<!-- 모임 마무리 카드 -->
 <div class="sheet" id="shWrap" onclick="if(event.target===this)closeSheet('shWrap')">
   <div class="sheet-in">
     <div class="sheet-grip"></div>
@@ -2421,7 +2421,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <div id="pfAv"></div>
       <div class="pf-photo-t">
         <b>프로필 사진</b>
-        <span>같은 루틴 친구들에게 이 사진이 보여요. 없으면 이름 첫 글자가 보여요.</span>
+        <span>같은 모임 친구들에게 이 사진이 보여요. 없으면 이름 첫 글자가 보여요.</span>
         <div>
           <button type="button" class="pf-pick" onclick="document.getElementById('pfAvInput').click()">사진 고르기</button>
           <button type="button" class="pf-del" id="pfAvDel" onclick="removeAvatar()">지우기</button>
@@ -2447,7 +2447,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <div>
       <div class="field-label">휴대폰번호</div>
       <input type="tel" id="pfPhone" maxlength="13" inputmode="numeric" placeholder="'-' 없이">
-      <div class="hint">운영진만 봐요. 같은 루틴 사람에게도 보이지 않아요.</div>
+      <div class="hint">운영진만 봐요. 같은 모임 사람에게도 보이지 않아요.</div>
     </div>
     <div>
       <div class="field-label">사는 곳 <span class="req">* 필수</span></div>
@@ -2474,7 +2474,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
         <input type="text" id="pfKw1" maxlength="12" placeholder="예) 시집">
         <input type="text" id="pfKw2" maxlength="12" placeholder="예) 느린 독서">
       </div>
-      <div class="hint">루틴을 보러 온 청소년에게 이름 옆에 보여요.</div>
+      <div class="hint">모임을 보러 온 청소년에게 이름 옆에 보여요.</div>
     </div>
     <div id="pfBirthWrap">
       <div class="field-label">생년월일 <span class="req" id="pfBirthReq">* 필수</span></div>
@@ -2487,7 +2487,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <label class="card" style="display:flex;align-items:center;gap:11px;cursor:pointer;">
       <input type="checkbox" id="pfMkt" style="width:19px;height:19px;flex:none;accent-color:var(--green);">
-      <span style="font-size:13.5px;">새 루틴·행사 소식 받기 <span class="opt">선택</span></span>
+      <span style="font-size:13.5px;">새 모임·행사 소식 받기 <span class="opt">선택</span></span>
     </label>
     <div class="card" style="font-size:12.5px;color:var(--ink-3);line-height:1.7;">
       역할(청소년·끗짱)은 여기서 바꿀 수 없어요.<br>바꿔야 하면 운영진에게 말해주세요.
@@ -2532,16 +2532,16 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 // ?demo=1 이면 샘플 데이터로 모든 화면을 보여준다. 서버로 쓰기는 전부 막힌다
 const DEMO = new URLSearchParams(location.search).get('demo') === '1';
 let me = null;                 // profiles row
-// 운영진 계정으로 열었을 때, 참여하지 않은 루틴의 인증 화면을 「읽기만」 보여주려는 용도다 (관리자 화면의 루틴 제목 링크).
+// 운영진 계정으로 열었을 때, 참여하지 않은 모임의 인증 화면을 「읽기만」 보여주려는 용도다 (관리자 화면의 모임 제목 링크).
 // 진짜 권한은 서버(RLS)가 정한다 — 여기는 화면을 열어줄지만 가린다 (is_admin() 의 이메일과 같다)
 let AUTH_EMAIL = '';
 const ADMIN_EMAILS = ['dev@youthvoice.or.kr', 'yv@youthvoice.or.kr'];
 const isAdminUser = () => ADMIN_EMAILS.includes(AUTH_EMAIL);
-// 운영진이 남의 루틴을 구경하는 중인가 (참여자도 끗짱도 아님)
+// 운영진이 남의 모임을 구경하는 중인가 (참여자도 끗짱도 아님)
 const adminOnly = r => !!r && isAdminUser() && !!me && r.led_by !== me.id && !(myPart(r.id) && myPart(r.id).status === 'approved');
 let state = { myIntros:[], introsOn:false, notices:[], routines:[], parts:[], certs:[], stores:[], purchases:[], names:{}, comments:[], reviews:[], settings:{}, notifs:[], nudges:[], likes:[], finishes:[], pages:null, routinePages:{} };
 let tab = 'home';
-// 「우리 기록 보기」로 들어오면 그 루틴만 본다. 아래 탭으로 들어오면 전부 본다
+// 「우리 기록 보기」로 들어오면 그 모임만 본다. 아래 탭으로 들어오면 전부 본다
 let certFocus = null;
 // 지역은 자유 입력으로 두면 '속초' / '강원도 속초시' / '강원속초' 가 섞여
 // 책방 매칭이 깨진다. 시·도는 고르게 하고 시·군·구만 적게 한다
@@ -2613,7 +2613,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const won = n => Number(n||0).toLocaleString('ko-KR');
 const todayKST = () => new Date(Date.now() + 9*3600e3).toISOString().slice(0,10);
-// 신청할 수 있는 루틴인가: 모집 중이거나, **시작하는 날(1일차)** 이다 (2026-10-17 사용자).
+// 신청할 수 있는 모임인가: 모집 중이거나, **시작하는 날(1일차)** 이다 (2026-10-17 사용자).
 // 상태는 시작일 0시 10분에 「진행 중」으로 바뀌지만, 1일차 당일에 신청하는 아이들이 있어서 그날까지는 열어 둔다.
 // 서버(check_participant_insert, migration-141)도 같은 규칙이다
 const joinOpen = r => !!r && (r.status === 'recruit' || (r.status === 'active' && r.start_date === todayKST()));
@@ -2745,7 +2745,7 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
 
 // 앱 안에서 손으로 오른쪽으로 밀면 뒤로 (2026-10-18 사용자).
 //   · 겹쳐 뜬 화면(오버레이·시트)이 있으면 맨 위 것을 닫는다
-//   · 없고, 인증 탭에서 한 루틴을 열어 둔 중이면 「루틴 목록」으로 돌아간다
+//   · 없고, 인증 탭에서 한 모임을 열어 둔 중이면 「모임 목록」으로 돌아간다
 // 【부딪치지 않게】 ① 왼쪽 끝 40px 는 기기의 뒤로가기(아이폰 가장자리 쓸기) 몫이다 — 거기서 시작한 건 건드리지 않는다.
 //   ② 글 칸·캔버스·가로로 밀리는 줄(함께 읽는 친구들 등) 위에서 시작한 건 무시한다.
 //   ③ 겹친 화면에 적던 글이 있으면 닫지 않는다 — 실수로 밀어 적은 걸 잃으면 안 된다.
@@ -2778,7 +2778,7 @@ function toggleMode() { setMode(authMode === 'login' ? 'signup' : 'login'); }
       closeOv(top);
     } else if (tab === 'cert' && certFocus) {
       const r = state.routines.find(x => x.id === certFocus);
-      if (r && isOver(r) && (r.led_by === me.id || myPart(r.id))) { go('my'); }   // 끝난 루틴의 기록은 MY 의 지난 루틴에서 왔다
+      if (r && isOver(r) && (r.led_by === me.id || myPart(r.id))) { go('my'); }   // 끝난 모임의 기록은 MY 의 지난 모임에서 왔다
       else go('cert');
     }
   }, { passive: true });
@@ -3062,7 +3062,7 @@ async function loadMe(user) {
   }
   if (!data) return null;
 
-  // 번호와 생년월일은 같은 루틴 사람에게도 보이면 안 돼서 다른 표에 있다.
+  // 번호와 생년월일은 같은 모임 사람에게도 보이면 안 돼서 다른 표에 있다.
   // 본인만 읽을 수 있고, 여기서 붙여야 me.birth_date 가 앞에서처럼 쓰인다
   let { data: priv, error: privErr } = await sb.from('profiles_private')
     .select('phone,birth_date').eq('id', user.id).maybeSingle();
@@ -3144,18 +3144,18 @@ function renderKkutGate() {
       </div>
       <div class="gate-why" style="margin-top:14px;">
         <b>한끗독서를 홈 화면에 추가해 보세요</b>
-        앱을 홈 화면에 추가하면 승인 알림을 가장 빠르게 확인하고, 매일 독서 루틴에 쉽게 접속할 수 있어요.
+        앱을 홈 화면에 추가하면 승인 알림을 가장 빠르게 확인하고, 매일 독서 모임에 쉽게 접속할 수 있어요.
         <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:10px;background:#fff;"
            href="home-guide.html" target="_blank" rel="noopener">홈 화면에 추가하는 방법 보기</a>
       </div>
       <div class="gate-why" style="margin-top:12px;">
         <b>승인이 완료되면?</b>
-        내가 원하는 독서 루틴을 직접 개설하여, 청소년들에게 독서의 즐거움을 나눠주세요!
+        내가 원하는 독서 모임을 직접 개설하여, 청소년들에게 독서의 즐거움을 나눠주세요!
       </div>
       <a class="btn btn-line" style="display:block;text-align:center;text-decoration:none;margin-top:14px;"
          href="kkut-guide.html" target="_blank" rel="noopener">끗짱 안내문 보기</a>
       ${backable() ? `<button class="btn btn-line" style="margin-top:18px;"
-        onclick="closeKkutGate()">루틴 홈으로 돌아가기</button>` : ''}
+        onclick="closeKkutGate()">모임 홈으로 돌아가기</button>` : ''}
       <div style="text-align:center;margin-top:${backable() ? 14 : 18}px;">
         <b style="font-size:13px;color:var(--ink-3);cursor:pointer;" onclick="reloadKkutGate()">새로고침</b>
       </div>`;
@@ -3271,7 +3271,7 @@ function renderKkutGate() {
         <input type="text" id="kKw1" maxlength="12" value="${esc((state.myKw||[])[1] || '')}" placeholder="예) 시집">
         <input type="text" id="kKw2" maxlength="12" value="${esc((state.myKw||[])[2] || '')}" placeholder="예) 느린 독서">
       </div>
-      <div class="hint">루틴을 보러 온 청소년에게 이름 옆에 보여요. 한 단어씩 짧게 적어주세요. (12자까지)</div>
+      <div class="hint">모임을 보러 온 청소년에게 이름 옆에 보여요. 한 단어씩 짧게 적어주세요. (12자까지)</div>
     </div>
     <div style="margin-top:16px;">
       <div class="field-label">나를 소개해 주세요 <span class="req">* 필수</span></div>
@@ -3293,7 +3293,7 @@ function renderKkutGate() {
     <div style="margin-top:18px;">
       <div class="field-label">청소년 보호 약속 <span class="req">* 필수</span></div>
       <label class="au-chk" style="color:var(--ink);"><input type="checkbox" id="kPl1">
-        <span>끗짱은 내 아이만이 아니라 <b>한 루틴의 여러 청소년과 함께하는 역할</b>이라는 것을 이해했어요.</span></label>
+        <span>끗짱은 내 아이만이 아니라 <b>한 모임의 여러 청소년과 함께하는 역할</b>이라는 것을 이해했어요.</span></label>
       <label class="au-chk" style="color:var(--ink);"><input type="checkbox" id="kPl2">
         <span>청소년에게 <b>개인적으로 연락하거나 사진·정보를 따로 요구하지 않을게요.</b> 불편한 일이 생기면 운영진에게 바로 알릴게요.</span></label>
     </div>
@@ -3301,7 +3301,7 @@ function renderKkutGate() {
     <div class="gate-why" style="margin-top:18px;">
       <b>적어주신 내용은 운영진만 봐요.</b>
       나이·연락처·소속은 청소년에게 보이지 않아요.
-      청소년에게 보이는 소개는 루틴을 만들 때 따로 적어요.
+      청소년에게 보이는 소개는 모임을 만들 때 따로 적어요.
     </div>
 
     <button class="btn btn-primary" id="kSubmit" style="margin-top:18px;" onclick="submitKkutApp()">
@@ -3389,8 +3389,8 @@ async function submitKkutApp() {
   await reloadKkutGate();
 }
 
-// 로그인 없이도 루틴을 둘러볼 수 있다. 청소년의 이름·사진·인증 기록은
-// RLS가 익명에게 막고 있으므로, 게스트에게는 루틴과 책방만 보인다.
+// 로그인 없이도 모임을 둘러볼 수 있다. 청소년의 이름·사진·인증 기록은
+// RLS가 익명에게 막고 있으므로, 게스트에게는 모임과 책방만 보인다.
 const isGuest = () => !me;
 
 async function browseAsGuest() {
@@ -3476,7 +3476,7 @@ async function enter() {
   go('home');
   startNotifPoll();
 
-  // 링크로 들어와 둘러보다 로그인한 사람은 보던 루틴으로 돌아간다. 끗짱 신청서가 먼저면 그쪽이 먼저다
+  // 링크로 들어와 둘러보다 로그인한 사람은 보던 모임으로 돌아간다. 끗짱 신청서가 먼저면 그쪽이 먼저다
   const goR = sessionStorage.getItem('goRoutine');
   if (goR && !sessionStorage.getItem('goKkutApply')) {
     sessionStorage.removeItem('goRoutine');
@@ -3505,7 +3505,7 @@ function hideSplash() {
 
 // ── 데이터 ─────────────────────────────────────────────
 async function loadAll() {
-  // 익명에게 열려 있는 것: 루틴, 책방, 설정, 참여 "인원 수"
+  // 익명에게 열려 있는 것: 모임, 책방, 설정, 참여 "인원 수"
   const pub = await Promise.all([
     sb.from('routines').select('*').order('created_at', { ascending:false }),
     sb.from('bookstores').select('*').order('name'),
@@ -3513,7 +3513,7 @@ async function loadAll() {
     sb.rpc('routine_people_count'),
     sb.rpc('dokseo_reading_stats'),
     sb.rpc('dokseo_pool_status'),
-    // 보이는 루틴의 끗짱 — 닉네임과 키워드만. 로그인 전에도 불린다 (migration-94).
+    // 보이는 모임의 끗짱 — 닉네임과 키워드만. 로그인 전에도 불린다 (migration-94).
     // 아직 마이그레이션을 안 돌렸으면 오류가 와도 그냥 빈 채로 둔다
     sb.rpc('routine_leads'),
   ]);
@@ -3551,7 +3551,7 @@ async function loadAll() {
     sb.from('book_finishes').select('user_id,routine_id,book_key,book_title'),
     // 누적 쪽수(전체·내 것). 마이그레이션 112 가 아직이면 오류가 와도 비워 둔다
     sb.rpc('dokseo_pages_summary'),
-    // 루틴마다 함께 읽은 쪽수. 마이그레이션 115 가 아직이면 오류가 와도 비워 둔다
+    // 모임마다 함께 읽은 쪽수. 마이그레이션 115 가 아직이면 오류가 와도 비워 둔다
     sb.rpc('dokseo_routine_pages'),
     // 홈 공지. 마이그레이션 125 가 아직이면 오류가 와도 비워 둔다 (RLS 가 지금 보이는 것만 준다)
     sb.from('notices').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(20),
@@ -3559,7 +3559,7 @@ async function loadAll() {
     sb.from('routine_intros').select('routine_id').eq('user_id', me.id),
     // 운영진이 손으로 준 나다움 (내 것만, 회수한 건 뺀다). 마이그레이션 153 이 아직이면 오류가 와도 빈 채로 둔다
     sb.from('nadaum_grants').select('id,amount,reason,created_at').eq('user_id', me.id).is('voided_at', null),
-    // 루틴 만들기에서 고르는 일정. 마이그레이션 159 가 아직이면 오류가 와도 빈 채로 둔다
+    // 모임 만들기에서 고르는 일정. 마이그레이션 159 가 아직이면 오류가 와도 빈 채로 둔다
     sb.from('meeting_schedules').select('id,title,start_date,end_date,active').order('start_date'),
     sb.from('online_meetups').select('id,at,label,active').order('at'),
   ]);
@@ -3602,14 +3602,14 @@ async function loadAll() {
 // 참여 인원 수는 로그인 여부와 무관하게 보여준다.
 // 비로그인은 참여자 목록을 못 읽으므로 공개 집계(state.counts)를 쓴다.
 // 참여 인원 수는 공개 집계(routine_people_count)를 쓴다.
-// 남의 루틴 참여자 행은 RLS가 막으므로 partsOf 로는 0명으로 보인다
+// 남의 모임 참여자 행은 RLS가 막으므로 partsOf 로는 0명으로 보인다
 const peopleOf = rid => state.counts[rid] ?? partsOf(rid).length;
 const partsOf   = rid => state.parts.filter(p => p.routine_id === rid && p.status === 'approved');
 const myPart    = rid => me && state.parts.find(p => p.routine_id === rid && p.user_id === me.id);
 // 역할은 두 축이다.
 //   isYouth  나다움·교환권·책을 받는 사람인가
-//   canLead  루틴을 만들 수 있는가 (끗짱)
-// 청소년 끗짱은 둘 다 참이다 — 계속 읽고, 루틴도 만든다
+//   canLead  모임을 만들 수 있는가 (끗짱)
+// 청소년 끗짱은 둘 다 참이다 — 계속 읽고, 모임도 만든다
 // 만 나이. 생일이 지났는지까지 본다
 function ageOf(birth) {
   if (!birth) return null;
@@ -3651,7 +3651,7 @@ function paintTheme(isK) {
 }
 
 const certsOf   = rid => state.certs.filter(c => c.routine_id === rid);
-// 이 루틴에서 내가 읽는 책. 한 번에 세 권까지 (병렬독서)
+// 이 모임에서 내가 읽는 책. 한 번에 세 권까지 (병렬독서)
 const BOOK_MAX  = 3;
 // 그 책을 어디까지 읽었나. 인증마다 책 제목이 따로 있어 책별로 센다
 const pageOf = (rid, title) => {
@@ -3662,7 +3662,7 @@ const pageOf = (rid, title) => {
 const booksOf   = rid => {
   if (!me) return [];
   const rows = (state.rbooks || []).filter(b => b.routine_id === rid && b.user_id === me.id);
-  // 끗짱은 참여자가 아니라 책 목록에 줄이 없다. 루틴을 만들 때 고른 책은 이미 읽고 있는 책이니
+  // 끗짱은 참여자가 아니라 책 목록에 줄이 없다. 모임을 만들 때 고른 책은 이미 읽고 있는 책이니
   // 목록의 첫 줄로 보여준다 (표에 쓰는 건 아니고 보이기만 한다 — 빼는 단추도 없다)
   const r = state.routines.find(x => x.id === rid);
   const kt = r && r.led_by === me.id && !isShared(r) ? (r.kkut_book_title || '').trim() : '';
@@ -3677,7 +3677,7 @@ const booksOf   = rid => {
 // 인증 탭에서 '내 기록만' 걸어둔 상태. 탭을 옮겨도 남는다
 let certOnlyMine = false;
 function setCertMine(v) { certOnlyMine = v; certWho = {}; render(); }
-// 동그라미를 누르면 그 사람의 인증만 본다. 루틴마다 따로 기억하고, 같은 동그라미를 다시 누르면 풀린다
+// 동그라미를 누르면 그 사람의 인증만 본다. 모임마다 따로 기억하고, 같은 동그라미를 다시 누르면 풀린다
 let certWho = {};
 function setCertWho(rid, uid) {
   certOnlyMine = false;
@@ -3694,7 +3694,7 @@ function avatarHtml(uid, extraCls) {
   return u ? `<div class="f-av has-img ${extraCls || ''}"><img src="${esc(u)}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('has-img');this.parentNode.textContent='${esc((nm || '?')[0])}'"></div>`
            : `<div class="f-av ${extraCls || ''}">${esc((nm || '?')[0])}</div>`;
 }
-// 끗짱. 같은 루틴이 아니어도 읽히는 길(routine_leads)을 먼저 본다. 「익명」은 아무 말도 아니다
+// 끗짱. 같은 모임이 아니어도 읽히는 길(routine_leads)을 먼저 본다. 「익명」은 아무 말도 아니다
 const leadOf    = uid => (state.leads && state.leads[uid]) || null;
 const leadName  = uid => leadOf(uid)?.nick || state.names[uid] || '';
 
@@ -3822,7 +3822,7 @@ async function maybeAskPush() {
     localStorage.setItem(ASK_KEY, '1');
     setTimeout(() => {
       const k = canLead();
-      $('paSub').textContent = st === 'off' ? '알림이 있으면 내일도 한 장을 잊지 않아요. 루틴을 끝까지 완주하는 가장 쉬운 방법이에요.' : '알림을 받으려면 홈 화면에 추가해 주세요.';
+      $('paSub').textContent = st === 'off' ? '알림이 있으면 내일도 한 장을 잊지 않아요. 모임을 끝까지 완주하는 가장 쉬운 방법이에요.' : '알림을 받으려면 홈 화면에 추가해 주세요.';
       $('paBody').innerHTML = st === 'off'
         ? `<ul class="pa-l">${(k ? ['새 친구가 들어올 때', '오늘 인증을 깜빡하지 않게', '운영진의 이벤트와 공지']
                                 : ['오늘 인증을 깜빡하지 않게', '후기 기한과 공유회 소식', '책 받는 날과 이벤트 소식']).map(t => `<li>${t}</li>`).join('')}</ul>
@@ -3847,7 +3847,7 @@ async function showWelcome() {
   const per = state.settings.points_per_voucher || 150;
   $('wlBody').innerHTML = `
     ${verifyBlocked() ? `<div class="card" style="margin:0 0 12px;"><div style="font-weight:800;font-size:14.5px;">🪪 먼저 청소년 확인을 해 주세요</div>
-      <div class="hint" style="margin:6px 0 0;line-height:1.7;">루틴에 참여하고 인증하려면 한 번 필요해요. 서류 사진만 올리면 돼요.</div></div>
+      <div class="hint" style="margin:6px 0 0;line-height:1.7;">모임에 참여하고 인증하려면 한 번 필요해요. 서류 사진만 올리면 돼요.</div></div>
     <button class="btn btn-primary" style="margin-bottom:12px;" onclick="closeSheet('shWelcome');openVerify()">청소년 확인하러 가기</button>` : ''}
     <div class="card" style="margin:0 0 12px;"><div style="font-weight:800;font-size:14.5px;">🔔 알림을 켜면 매일 한 장을 잊지 않아요</div>
       <div class="hint" style="margin:6px 0 0;line-height:1.7;">${st === 'needs-install'
@@ -4029,7 +4029,7 @@ async function refreshNotifs() {
   if (isOvOpen('ovNotif')) openNotif();   // 알림함을 열어둔 채라면 거기도 새로
 
   // 알림이 왔다는 건 **나에 관한 무언가가 바뀜다**는 뜻이다 — 청소년
-  // 확인이 끝났거나, 루틴에 들어갔거나, 끗짱이 됐거나. 알림만 새로 읽고
+  // 확인이 끝났거나, 모임에 들어갔거나, 끗짱이 됐거나. 알림만 새로 읽고
   // 화면을 그대로 두면 「승인됐다」는 알림 밑에 「확인하고 있어요」가 남는다
   const after = ((state.notifs || [])[0] || {}).id || 0;
   if (after > before) { await reloadMine(); }
@@ -4068,8 +4068,8 @@ const notifGo = link => {
   return { routine: pick('routine'), tab: pick('tab'), cert: pick('cert') };
 };
 
-// 알림이 가리키는 곳으로 간다. 우선순위는 인증 한 장 > 인증 탭 > 루틴 소개 > 그 탭.
-// 인증·댓글·좋아요 알림은 「그 인증」이 목적지다 — 전에는 루틴 소개 화면으로 가서 댓글이 안 보였다 (2026-10-09 사용자)
+// 알림이 가리키는 곳으로 간다. 우선순위는 인증 한 장 > 인증 탭 > 모임 소개 > 그 탭.
+// 인증·댓글·좋아요 알림은 「그 인증」이 목적지다 — 전에는 모임 소개 화면으로 가서 댓글이 안 보였다 (2026-10-09 사용자)
 async function openCertDeep(certId, rid) {
   let c = state.certs.find(x => x.id === certId);
   if (!c) { await loadAll(); c = state.certs.find(x => x.id === certId); }   // 방금 올라온 인증은 아직 목록에 없을 수 있다
@@ -4134,7 +4134,7 @@ async function markAllRead() {
 
 const myRoutines = () => me ? state.routines.filter(r => {
   const p = myPart(r.id);
-  // 청소년 끗짱은 자기가 만든 루틴과 참여한 루틴을 둘 다 본다.
+  // 청소년 끗짱은 자기가 만든 모임과 참여한 모임을 둘 다 본다.
   // 전에는 끗짱이 되는 순간 참여 기록이 통째로 사라졌다
   return (canLead() && r.led_by === me.id) || (p && p.status === 'approved');
 }) : [];
@@ -4153,7 +4153,7 @@ const allDoneToday = rid => booksOf(rid).length
   : didToday(rid);
 
 // 잔액 = (내 인증 수 × 인증당 적립액) − 정산 완료된 구매 합계
-// 서버 dokseo_points() 와 같은 식. 나다움은 루틴을 가리지 않고 계정에 쌓인다.
+// 서버 dokseo_points() 와 같은 식. 나다움은 모임을 가리지 않고 계정에 쌓인다.
 // 정산 대기 중인 구매도 교환권을 이미 쓴 것으로 센다 (중복 사용 방지)
 function myPoints() {
   const per = state.settings.points_per_voucher || 150;
@@ -4202,7 +4202,7 @@ function myPoints() {
   const from_review = mineRv.filter(v => v.kind === 'routine').length * pr
                     + mineRv.filter(v => v.kind === 'book').length * pb;
 
-  // 공유회: 끗짱이 「왔어요」로 표시한 루틴마다 한 번
+  // 공유회: 끗짱이 「왔어요」로 표시한 모임마다 한 번
   const from_meetup = state.parts.filter(p => p.user_id === me.id && p.met_at
     && state.routines.find(r => r.id === p.routine_id)?.meetup_required).length * pmt;
 
@@ -4257,12 +4257,12 @@ function guestWall() {
   </div>`;
 }
 
-// 루틴 카드는 대표 사진이 붙어 커서, 목록은 전부 2열로 깐다
+// 모임 카드는 대표 사진이 붙어 커서, 목록은 전부 2열로 깐다
 const routineGrid = list => `<div class="r-grid">${list.map(routineCard).join('')}</div>`;
 
 // 카드에 붙는 해시태그. 끗짱이 따로 적지 않고 이미 가진 값에서 뽑는다.
 // 장르는 아직 넣지 않는다 — 어떤 장르가 필요한지는 책이 쌓여야 알 수 있고,
-// 장르는 루틴이 아니라 '책'의 속성이라 한 루틴 안에서도 제각각이다
+// 장르는 모임이 아니라 '책'의 속성이라 한 모임 안에서도 제각각이다
 function routineTags(r) {
   const t = [];
   const d = routineDay(r);
@@ -4275,16 +4275,16 @@ function routineTags(r) {
 // 「지금 고를 수 있는 것」이라 다른 자리와 바탕을 달리해 띠로 세운다.
 // 흰 카드가 연한 초록 위에 얹히면 저절로 앞으로 나온다
 function recruitSection(list) {
-  // 모집이 끝나고 달리는 루틴(진행 중)도 보이게 한다 — 구경은 하되 들어갈 수는 없다 (2026-10-16 사용자).
+  // 모집이 끝나고 달리는 모임(진행 중)도 보이게 한다 — 구경은 하되 들어갈 수는 없다 (2026-10-16 사용자).
   // 모집 중인 것이 위, 진행 중인 것은 아래 따로
-  // 「매일 한끗」(상시 루틴)은 모집 중 목록 맨 앞에 늘 고정한다 (2026-10-22 사용자). 참여한 아이에게는 「참여 중」으로 보인다
+  // 「매일 한끗」(상시 모임)은 모집 중 목록 맨 앞에 늘 고정한다 (2026-10-22 사용자). 참여한 아이에게는 「참여 중」으로 보인다
   const og = ongoingRoutine();
   const open = [...(og ? [og] : []), ...list.filter(joinOpen)], run = list.filter(r => !joinOpen(r));
   const n = open.length;
-  return `<div class="recruit-h"><b>지금 모집 중인 루틴</b>${n ? `<i>${n}</i>` : ''}</div>
+  return `<div class="recruit-h"><b>지금 모집 중인 모임</b>${n ? `<i>${n}</i>` : ''}</div>
     ${n ? routineGrid(open)
-        : `<div class="empty">아직 열린 루틴이 없어요.<br>곧 새 루틴이 올라올 거예요.</div>`}
-    ${run.length ? `<div class="recruit-h"><b>진행 중인 루틴</b><i>${run.length}</i></div>
+        : `<div class="empty">아직 열린 모임이 없어요.<br>곧 새 모임이 올라올 거예요.</div>`}
+    ${run.length ? `<div class="recruit-h"><b>진행 중인 모임</b><i>${run.length}</i></div>
       <div class="hint" style="margin:-4px 0 10px;">모집이 끝나서 새로 들어갈 수는 없어요.</div>
       ${routineGrid(run)}` : ''}`;
 }
@@ -4307,7 +4307,7 @@ function routineCard(r) {
       </div>
     </div>`;
   }
-  // 상태 뱃지는 뗐다. 위 제목이 「지금 모집 중인 루틴」이라 겹치고,
+  // 상태 뱃지는 뗐다. 위 제목이 「지금 모집 중인 모임」이라 겹치고,
   // 진행 중인지는 아래 「시작 D-3 / 종료 D-15」가 말해 준다.
   // 그 자리는 후원 기업이 쓴다
   const p = myPart(r.id);
@@ -4324,9 +4324,9 @@ function routineCard(r) {
   // 「언제까지 정해야 하나」가 고를 때 제일 궁금한 것이다.
   //
   // ⚠️ 전에는 `n > 0 ? 시작 D-n : 오늘 시작` 이라 **지난 날짜까지 「오늘
-  //    시작」** 으로 떨어졌다. 12일 전에 시작한 루틴이 오늘 시작한다고
+  //    시작」** 으로 떨어졌다. 12일 전에 시작한 모임이 오늘 시작한다고
   //    말했다. 끝날짜도 마찬가지였다.
-  //    승인이 늦거나 지난 날짜로 만들면 실제로 생긴다 (「지난 날짜 루틴 막기」는 미뤄둔 할 일).
+  //    승인이 늦거나 지난 날짜로 만들면 실제로 생긴다 (「지난 날짜 모임 막기」는 미뤄둔 할 일).
   const dd = (() => {
     const t = todayKST();
     const days = d => Math.round((new Date(d + 'T00:00:00') - new Date(t + 'T00:00:00')) / 86400e3);
@@ -4409,9 +4409,9 @@ function statsStrip() {
 }
 
 // 홈은 '오늘 뭘 하지' 에 답하는 화면이다.
-// 전에는 전체 집계 넷 → 루틴 목록 → 눌러서 인증이라, 앱을 열고 두 화면을
-// 지나야 오늘 할 일이 나왔다. 지금 하는 루틴을 맨 위 큰 카드로 올린다.
-// 참여 루틴은 늘 한 개다 (정원 8명 소그룹, 한 번에 하나) — 목록으로 두면
+// 전에는 전체 집계 넷 → 모임 목록 → 눌러서 인증이라, 앱을 열고 두 화면을
+// 지나야 오늘 할 일이 나왔다. 지금 하는 모임을 맨 위 큰 카드로 올린다.
+// 참여 모임은 늘 한 개다 (정원 8명 소그룹, 한 번에 하나) — 목록으로 두면
 // 2열 그리드에 반쪽이 비지만, 주인공으로 두면 그게 정상이 된다
 function todayCard(r) {
   const d    = routineDay(r);
@@ -4422,7 +4422,7 @@ function todayCard(r) {
 
   // 책마다 하루 한 번. 남은 책이 있으면 그 책으로 바로 열어준다
   const rest = leftToday(r.id);
-  // 루틴 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
+  // 모임 대표 사진이 아니라 "내가 읽는 책" 을 보여준다.
   // 두 권 넘게 읽으면(병렬독서) 오른쪽 한 장 대신 막대 아래 한 줄로 내린다 —
   // 오른쪽에 셋을 욱여넣으면 표지가 알아볼 수 없이 작아지고, 사진 줄을
   // 따로 더하면 카드가 다시 길어진다. 자리를 옮기는 것으로 끝낸다
@@ -4449,11 +4449,11 @@ function todayCard(r) {
   const SHOWW = 5;
   // 내가 읽는 책 표지. 검색해서 고른 표지가 있으면 그것을, 없으면 내가 찍어 올린 사진을 (MY 책장과 같은 규칙)
   // 【인증 단추는 표지 밑에 · 2026-10-09 사용자】 책마다 「인증하기」 → 「✓ 인증완료」. 병렬독서에서 어느 책을
-  //   했고 안 했는지 표지와 함께 한눈에 보인다. 한 권일 때도 같다. 끝난 루틴에는 단추를 두지 않는다
+  //   했고 안 했는지 표지와 함께 한눈에 보인다. 한 권일 때도 같다. 끝난 모임에는 단추를 두지 않는다
   const live = !ended && !d?.notYet;
   const perBook = live && books.length > 0;
   const bookDone = b => doneToday(r.id).some(t => loose(t) === loose(b.title));
-  // 【홈은 가볍게 · 2026-10-10 사용자】 표지를 크게 늘어놓으면 한 루틴이 화면 절반을 먹는다. 책 한 권 = 한 줄:
+  // 【홈은 가볍게 · 2026-10-10 사용자】 표지를 크게 늘어놓으면 한 모임이 화면 절반을 먹는다. 책 한 권 = 한 줄:
   //   작은 표지 · 제목과 쪽수 · 오른쪽 끝에 「인증하기」/「✓ 완료」. 표지를 크게 보는 곳은 인증 탭이다
   const bookShelf = d?.notYet || !books.length ? '' : `<div class="tc-rows">${books.map(b => {
     const ok = bookDone(b);
@@ -4512,7 +4512,7 @@ function todayCard(r) {
 }
 
 // 끗짱에게는 '오늘 인증하기' 가 없다. 대신 아이들이 몇 명 했는지가 궁금하다
-// 아이들이 읽는 책 — 이 루틴의 인증에 나온 책 제목을 읽는 아이 수와 함께 모은다.
+// 아이들이 읽는 책 — 이 모임의 인증에 나온 책 제목을 읽는 아이 수와 함께 모은다.
 // 띄어쓰기·문장부호만 다른 제목은 한 권으로 묶는다. 끗짱 본인의 인증은 뺀다 (「아이들」이 읽는 책이다)
 function kidsBooks(rid, withMe) {
   const by = new Map();
@@ -4530,7 +4530,7 @@ function kidsBooks(rid, withMe) {
   };
   // 인증에 쓴 책, 참여할 때 고른 책, 병렬독서로 더한 책 — 아직 인증을 안 한 아이의 책도 보여야 한다
   certsOf(rid).forEach(c => add(c.user_id, c.book_title, c.created_at));
-  // 끗짱은 참여자가 아니라 책 표지가 루틴에 달려 있다. 인증에 쓴 제목과 같은 책이면 그 표지를 잇는다
+  // 끗짱은 참여자가 아니라 책 표지가 모임에 달려 있다. 인증에 쓴 제목과 같은 책이면 그 표지를 잇는다
   const lr = state.routines.find(x => x.id === rid);
   if (lr && lr.led_by && (lr.kkut_book_title || '').trim()) add(lr.led_by, lr.kkut_book_title, lr.created_at, lr.kkut_book_url);
   (state.parts || []).filter(x => x.routine_id === rid && x.status === 'approved')
@@ -4539,18 +4539,18 @@ function kidsBooks(rid, withMe) {
     .forEach(x => add(x.user_id, x.title, x.created_at, x.cover_url, x.found_cover_url));
   return [...by.values()].sort((a, b) => b.readers.size - a.readers.size || b.last.localeCompare(a.last));
 }
-// 루틴마다 단추가 따로 있다(홈에는 카드가 여럿). 단추가 어느 루틴의 것인지는 누를 때 알려 준다
+// 모임마다 단추가 따로 있다(홈에는 카드가 여럿). 단추가 어느 모임의 것인지는 누를 때 알려 준다
 function kidsBooksHtml(rid, withMe, bare) {
   if (!kidsBooks(rid, withMe).length) return '';
   const r = state.routines.find(x => x.id === rid);
   // 책 이름은 여기 늘어놓지 않는다 — 누르면 책 사진과 닉네임이 한 번에 열린다
   return `<div class="kbk${bare ? ' bare' : ''}"><button type="button" class="kbk-go" onclick="event.stopPropagation();openAllKidBooks(${rid}, ${!!withMe})">
-    <span class="kbk-e">📖</span><b>${esc(r ? r.title : '')} 루틴에서 읽는 책</b><i class="ti ti-chevron-right"></i></button></div>`;
+    <span class="kbk-e">📖</span><b>${esc(r ? r.title : '')} 모임에서 읽는 책</b><i class="ti ti-chevron-right"></i></button></div>`;
 }
-// 「읽는 책」을 누르면: 이 루틴에서 읽는 모든 책을 아이별로, 한 줄에 셋씩 (책 사진 + 닉네임 + 책 이름)
+// 「읽는 책」을 누르면: 이 모임에서 읽는 모든 책을 아이별로, 한 줄에 셋씩 (책 사진 + 닉네임 + 책 이름)
 function openAllKidBooks(rid, withMe) {
   const r = state.routines.find(x => x.id === rid);
-  $('kbTitle').textContent = `${r ? r.title : ''} 루틴에서 읽는 책`;
+  $('kbTitle').textContent = `${r ? r.title : ''} 모임에서 읽는 책`;
   $('kbSub').textContent = '친구들이 직접 고른 책이에요';
   const tiles = kidsBooks(rid, withMe).flatMap(b => [...b.readers].map(([uid, rd]) => ({ uid, title: b.title, url: rd.photo || b.found })));
   $('kbBody').innerHTML = `<div class="kb-grid">${tiles.map(t => `<div class="kb-r">
@@ -4559,7 +4559,7 @@ function openAllKidBooks(rid, withMe) {
   showLayer('shKidBook');
 }
 // 끗짱이 지금 읽는 책. 가장 최근에 내가 인증한 책이 먼저고(중간에 책을 바꿔 읽을 수 있다),
-// 인증한 적이 없으면 루틴을 만들 때 고른 책이다. 함께 읽는 글(책 없음)은 없다
+// 인증한 적이 없으면 모임을 만들 때 고른 책이다. 함께 읽는 글(책 없음)은 없다
 function kkutNowBook(r) {
   if (isShared(r)) return null;
   const last = certsOf(r.id).filter(c => c.user_id === me.id && (c.book_title || '').trim())
@@ -4633,7 +4633,7 @@ function kkutTodayCard(r) {
       <span>${esc(nameOf(c.user_id))}</span>
     </div>`).join('')}</div>` : '';
 
-  // 끗짱도 아이들과 같이 읽는다. 그런데 맡은 루틴 카드에만 이 버튼이
+  // 끗짱도 아이들과 같이 읽는다. 그런데 맡은 모임 카드에만 이 버튼이
   // 없어서, 자기 책을 더하려면 인증 화면까지 들어가야 했다.
   // 「오늘 글」은 더 이상했다 — 글을 올릴 사람이 바로 끗짱인데 그 버튼이
   // 참여자 카드에만 있었다
@@ -4642,7 +4642,7 @@ function kkutTodayCard(r) {
     : isOneBook(r) ? ''
     : `<button class="tc-add" onclick="event.stopPropagation();openBookSheet(${r.id})">병렬독서</button>`;
 
-  // 끗짱 자신의 책. 병렬독서로 더한 책 + 루틴을 열 때 고른 책. 아무 것도 없으면 지금 읽는 책 하나라도 보인다
+  // 끗짱 자신의 책. 병렬독서로 더한 책 + 모임을 열 때 고른 책. 아무 것도 없으면 지금 읽는 책 하나라도 보인다
   let ownBooks = isShared(r) ? [] : booksOf(r.id);
   if (!ownBooks.length && !isShared(r) && !waiting && !d?.ended) {
     const nb = kkutNowBook(r);
@@ -4678,13 +4678,13 @@ function kkutTodayCard(r) {
 }
 
 
-// ── 매일 한끗 (상시 루틴) ───────────────────────────────
-// 일반 루틴이 없는 날에도 매일 한 장. 하루 1N, 다른 루틴과 함께 한다. 내 인증은 나만 보고(서버가 막는다),
+// ── 매일 한끗 (상시 모임) ───────────────────────────────
+// 일반 모임이 없는 날에도 매일 한 장. 하루 1N, 다른 모임과 함께 한다. 내 인증은 나만 보고(서버가 막는다),
 // 다른 참여자는 최근에 올린 순서로 닉네임·책 표지·연속일·「오늘」 표시만 보인다 (2026-10-22 사용자)
 const ongoingRoutine = () => state.routines.find(r => r.ongoing && r.status === 'active') || null;
-const OBC = {};         // 루틴 번호 → 내가 받은 응원 {t: 오늘, y: 어제}
-const OB = {};          // 루틴 번호 → 보드 [{nick,cover,streak,last_day,today}]
-const OB_CAP = {};      // 루틴 번호 → 보이는 개수
+const OBC = {};         // 모임 번호 → 내가 받은 응원 {t: 오늘, y: 어제}
+const OB = {};          // 모임 번호 → 보드 [{nick,cover,streak,last_day,today}]
+const OB_CAP = {};      // 모임 번호 → 보이는 개수
 let OB_LOADING = false;
 // 지금 이어지는 내 연속 인증일: 오늘 했으면 오늘부터, 아니면 어제부터 거꾸로 센다
 function myStreak(rid) {
@@ -4772,7 +4772,7 @@ function ongoingDash(r, ov) {
       <div id="obBox${ov ? 'Ov' : ''}${r.id}">${boardHtml(r.id)}</div>`;
 }
 // 홈 카드: 참여했고 오늘 아직 인증 전일 때만 나온다. 오늘 인증을 마치면 홈에서 사라지고,
-//   「지금 모집 중인 루틴」의 고정 카드를 누르면 연속일·보드가 나온다 (2026-10-22 사용자)
+//   「지금 모집 중인 모임」의 고정 카드를 누르면 연속일·보드가 나온다 (2026-10-22 사용자)
 function ongoingHomeCard(r) {
   const joined = !!(myPart(r.id) && myPart(r.id).status === 'approved');
   if (!joined || didToday(r.id)) return '';
@@ -4787,9 +4787,9 @@ function ongoingHomeCard(r) {
 function viewHome() {
   const mine   = myRoutines();
   // 운영진이 열어준 것만 고를 수 있다. done 만 걸러내면 승인 전(pending)
-  // 루틴까지 「지금 모집 중인 루틴」에 끼어든다
+  // 모임까지 「지금 모집 중인 모임」에 끼어든다
   const others = state.routines.filter(r => !mine.includes(r) && !r.ongoing
-    && (r.status === 'recruit' || r.status === 'active'));   // 진행 중인 루틴은 보이되, 들어갈 수는 없다 (recruitSection 이 따로 모은다 · 2026-10-16 사용자)
+    && (r.status === 'recruit' || r.status === 'active'));   // 진행 중인 모임은 보이되, 들어갈 수는 없다 (recruitSection 이 따로 모은다 · 2026-10-16 사용자)
   const recruit = recruitSection(others);
 
   if (isGuest()) {
@@ -4824,35 +4824,35 @@ function viewHome() {
         </div>`;
       }).join('');
     }
-    // 맡은 루틴과 참여 중인 루틴은 다른 카드로 그린다.
+    // 맡은 모임과 참여 중인 모임은 다른 카드로 그린다.
     // 맡은 건 「누가 인증했나」, 참여한 건 「오늘 인증하기」다.
     // 인증 탭은 이미 갈라놨는데 홈이 안 따라가고 있었다
-    // 끝난 루틴은 홈에 두지 않는다. 오늘 할 일이 아니라 지나간 기록이고,
-    // 「오늘 0명 인증」이 끝난 루틴에 붙으면 아무도 안 한 것처럼 보인다.
-    // 지난 것은 MY 의 「지난 루틴」에 모아 둔다
+    // 끝난 모임은 홈에 두지 않는다. 오늘 할 일이 아니라 지나간 기록이고,
+    // 「오늘 0명 인증」이 끝난 모임에 붙으면 아무도 안 한 것처럼 보인다.
+    // 지난 것은 MY 의 「지난 모임」에 모아 둔다
     const led  = mine.filter(r => r.led_by === me.id && !isOver(r));
     const join = mine.filter(r => r.led_by !== me.id);
 
-    // 제목이 없으면 카드만 쌓여 보여서 「남의 루틴인가」 싶어진다
-    if (led.length) h += `<div class="sec-t" style="margin-top:0;">내가 맡은 루틴 <b style="color:var(--pink);">${led.length}</b></div>`;
+    // 제목이 없으면 카드만 쌓여 보여서 「남의 모임인가」 싶어진다
+    if (led.length) h += `<div class="sec-t" style="margin-top:0;">내가 맡은 모임 <b style="color:var(--pink);">${led.length}</b></div>`;
     h += led.map(kkutTodayCard).join('');
-    // 맡은 루틴이 이미 있으면 「루틴 더 만들기」 제목 없이 이전 버튼만 오른쪽에 둔다 (넓은 테두리 버튼은 덜 어울렸다).
+    // 맡은 모임이 이미 있으면 「모임 더 만들기」 제목 없이 이전 버튼만 오른쪽에 둔다 (넓은 테두리 버튼은 덜 어울렸다).
     // 처음 오는 끗짱에게는 안내가 필요해서 제목을 그대로 둔다
     h += `<div style="display:flex;align-items:center;justify-content:${led.length ? 'flex-end' : 'space-between'};margin:${led.length ? '14px 0 6px' : '22px 0 10px'};">
-      ${led.length ? '' : `<span class="sec-t" style="margin:0;">내가 이끄는 루틴</span>`}
-      <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 루틴 만들기</button>
+      ${led.length ? '' : `<span class="sec-t" style="margin:0;">내가 이끄는 모임</span>`}
+      <button onclick="openMake()" style="background:var(--pink);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">+ 모임 만들기</button>
     </div>`;
-    if (!led.length) h += `<div class="empty">아직 맡은 루틴이 없어요.<br>위에서 새 루틴을 만들어보세요.</div>`;
+    if (!led.length) h += `<div class="empty">아직 맡은 모임이 없어요.<br>위에서 새 모임을 만들어보세요.</div>`;
 
     if (join.length) {
-      h += `<div class="sec-t">내가 참여 중인 루틴</div>`;
+      h += `<div class="sec-t">내가 참여 중인 모임</div>`;
       h += join.map(todayCard).join('');
     }
 
-    // 끗짱에게도 열려 있는 루틴을 보여준다.
+    // 끗짱에게도 열려 있는 모임을 보여준다.
     // 【전에는 어른 끗짱에게 감췄다】 「고를 수도 없는 목록」이라고 봤는데,
-    //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 루틴을 어떻게 여는지가
-    //   제 루틴을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
+    //   고르는 것만 보는 이유가 아니다 — 다른 끗짱이 어떤 모임을 어떻게 여는지가
+    //   제 모임을 만들 때 가장 좋은 참고다. 둘러보는 사람도 보는 목록이다
     // 끗짱 홈에서도 「함께 짓는 한끗 책의 도시」 줄을 뺀다 (2026-10-13 사용자)
     return noticeBar() + h + pickSection() + (others.length ? recruitSection(others) : '');
   }
@@ -4871,31 +4871,31 @@ function viewHome() {
     </div>`;
   }
 
-  // 끝난 루틴 카드는 후기를 쓸 수 있는 동안(종료 다음 날부터 7일)만 홈에 둔다 (2026-10-18 사용자).
+  // 끝난 모임 카드는 후기를 쓸 수 있는 동안(종료 다음 날부터 7일)만 홈에 둔다 (2026-10-18 사용자).
   //   기한 안에 후기를 쓰면 바로 빠진다. 안 써도 기한이 지나면 빠진다.
-  //   빠진 루틴은 MY 의 「지난 루틴」에서 계속 본다
+  //   빠진 모임은 MY 의 「지난 모임」에서 계속 본다
   const homeMine = mine.filter(r => !r.ongoing && (!routineEnded(r) || (!myRoutineReview(r.id) && (reviewLeft(r) ?? -1) >= 0)));
   const mineReg = mine.filter(r => !r.ongoing);
   if (homeMine.length) {
     h += homeMine.map(todayCard).join('');
     const p = myPoints();
     // 홈의 「23N 다음 책까지 150N」 줄은 뺐다 (2026-10-13 사용자). 나다움은 MY 의 「내 독서 나다움」에서 본다
-    // 7일 루틴을 다 해도 135N이라 그것만으로는 책을 못 받는다. 루틴이 끝났는데
+    // 7일 모임을 다 해도 135N이라 그것만으로는 책을 못 받는다. 모임이 끝났는데
     // 교환권이 없는 사람에게는 숫자만 두면 '모자라다'로 읽힌다. 한 줄을 붙인다
     if (p.left === 0 && homeMine.some(routineEnded))
-      h += `<div class="tc-keep">나다움은 사라지지 않아요. 다음 루틴에서 이어서 채워져요.</div>`;
+      h += `<div class="tc-keep">나다움은 사라지지 않아요. 다음 모임에서 이어서 채워져요.</div>`;
   } else if (mineReg.length) {
-    // 해 본 루틴은 있는데 지금 홈에 둘 카드가 없다 — 「첫 루틴」이 아니다. 지난 루틴이 어디 있는지 알려 준다
+    // 해 본 모임은 있는데 지금 홈에 둘 카드가 없다 — 「첫 모임」이 아니다. 지난 모임이 어디 있는지 알려 준다
     h += `<div class="card" style="text-align:center;padding:24px 20px;">
       <div style="font-size:30px;">🌱</div>
-      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">지금 하고 있는 루틴이 없어요</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">지금 하고 있는 모임이 없어요</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.7;">
-        아래에서 새 루틴을 골라 보세요.<br>끝난 루틴의 기록은 MY의 「지난 루틴」에서 볼 수 있어요.</div>
-      <button class="btn btn-line" style="margin-top:14px;" onclick="go('my')">지난 루틴 보기</button>
+        아래에서 새 모임을 골라 보세요.<br>끝난 모임의 기록은 MY의 「지난 모임」에서 볼 수 있어요.</div>
+      <button class="btn btn-line" style="margin-top:14px;" onclick="go('my')">지난 모임 보기</button>
     </div>`;
   } else if (kkutPending()) {
     // MY 까지 안 가도 보이게 홈 맨 위에 세운다. 둘러보는 건 그대로 두되,
-    // 「루틴을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
+    // 「모임을 여는 건 승인 뒤」라는 걸 여기서 미리 알려 준다
     h += `<div class="card" onclick="openKkutApply()" style="text-align:center;padding:26px 20px;cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
       <div style="font-size:15.5px;font-weight:800;">⏳ 끗짱 승인 대기 중입니다</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:8px;line-height:1.6;">
@@ -4905,13 +4905,13 @@ function viewHome() {
   } else {
     h += `<div class="card" style="text-align:center;padding:26px 20px;">
       <div style="font-size:30px;">📚</div>
-      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">첫 루틴을 골라볼까요?</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">첫 모임을 골라볼까요?</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;">
         끗짱과 매일 한 장씩. 읽은 만큼 나다움이 쌓여요.</div>
     </div>`;
   }
   // 청소년 홈에서는 「함께 짓는 한끗 책의 도시」 줄을 뺀다 (2026-10-13 사용자). 끗짱 홈에는 그대로 있다
-  // 상시 루틴(매일 한끗): 일반 루틴 카드 아래, 모집 중 목록 위. 아직 안 들어왔으면 참여 카드, 들어왔으면 인증·연속일·보드
+  // 상시 모임(매일 한끗): 일반 모임 카드 아래, 모집 중 목록 위. 아직 안 들어왔으면 참여 카드, 들어왔으면 인증·연속일·보드
   const og = ongoingRoutine();
   if (og && isYouth() && !canLead()) h += ongoingHomeCard(og);
   return noticeBar() + h + pickSection() + recruit;
@@ -4967,51 +4967,51 @@ async function fillPickCovers() {
 
 function viewCert() {
   // 【인증 탭 = 우리 기록 보기 · 2026-10-09 사용자】 홈은 「오늘 할 일」, 여기는 「기록 보관함」이다.
-  //   루틴이 둘 이상이면 먼저 목록이 나오고, 하나를 누르면 그 루틴의 기록 화면이 열린다.
+  //   모임이 둘 이상이면 먼저 목록이 나오고, 하나를 누르면 그 모임의 기록 화면이 열린다.
   //   하나뿐이면 목록을 건너뛰고 바로 연다 — 대부분의 아이가 그렇고, 한 번 더 누르게 하면 불편하다.
-  //   끝난 루틴도 이 목록의 「지난 루틴」에 모인다.
+  //   끝난 모임도 이 목록의 「지난 모임」에 모인다.
   const led  = canLead() ? state.routines.filter(r => r.led_by === me.id) : [];
   const join = state.routines.filter(r => {
     const p = myPart(r.id); return p && p.status === 'approved' && r.led_by !== me.id;
   });
   const all  = [...led, ...join];
 
-  // 운영진이 관리자 화면의 루틴 제목을 눌러 왔을 때: 참여하지 않은 루틴도 읽기만 보여준다
+  // 운영진이 관리자 화면의 모임 제목을 눌러 왔을 때: 참여하지 않은 모임도 읽기만 보여준다
   const peek = certFocus && !all.find(r => r.id === certFocus) && isAdminUser()
     ? state.routines.find(r => r.id === certFocus) : null;
   if (peek) {
-    return `<button class="only-one" onclick="go('cert')"><i class="ti ti-arrow-left"></i>루틴 목록</button>
+    return `<button class="only-one" onclick="go('cert')"><i class="ti ti-arrow-left"></i>모임 목록</button>
       <div class="card" style="padding:10px 14px;margin-bottom:12px;font-size:13px;color:var(--ink-2,#6B6558);">
       👀 운영진 보기 — 읽기만 할 수 있어요</div>${allPostsHtml(peek)}${youthCertBlock([peek])}`;
   }
-  // 운영진 계정이면 내 루틴 말고도 진행 중인 모든 루틴의 인증글을 볼 수 있다 (2026-10-18 사용자). 읽기만 한다
+  // 운영진 계정이면 내 모임 말고도 진행 중인 모든 모임의 인증글을 볼 수 있다 (2026-10-18 사용자). 읽기만 한다
   const peekList = isAdminUser()
     ? state.routines.filter(r => r.status === 'active' && !r.canceled && !isOver(r) && !all.some(x => x.id === r.id)) : [];
 
   if (!all.length) return peekList.length ? adminPeekHtml(peekList)
-    : `<div class="empty">${canLead() ? '맡은 루틴이 없어요'
-             : '참여 중인 루틴이 없어요.<br>홈에서 루틴을 먼저 찾아보세요.'}</div>`;
+    : `<div class="empty">${canLead() ? '맡은 모임이 없어요'
+             : '참여 중인 모임이 없어요.<br>홈에서 모임을 먼저 찾아보세요.'}</div>`;
 
-  // 「우리 기록 보기」나 목록의 카드를 눌러 들어왔으면 그 루틴. 하나뿐이어도 그 루틴.
-  // 【끝난 루틴 하나뿐이면 바로 열지 않는다 · 2026-10-15 사용자】 인증 탭은 「오늘 인증」을 하러 오는 곳이라, 끝난 루틴의 기록이
-  //   바로 열리면 어색하다. 끝났으면 「지난 루틴」 목록을 먼저 보이고, 누르면 그 루틴의 기록이 열린다
+  // 「우리 기록 보기」나 목록의 카드를 눌러 들어왔으면 그 모임. 하나뿐이어도 그 모임.
+  // 【끝난 모임 하나뿐이면 바로 열지 않는다 · 2026-10-15 사용자】 인증 탭은 「오늘 인증」을 하러 오는 곳이라, 끝난 모임의 기록이
+  //   바로 열리면 어색하다. 끝났으면 「지난 모임」 목록을 먼저 보이고, 누르면 그 모임의 기록이 열린다
   const one = (certFocus && all.find(r => r.id === certFocus)) || (all.length === 1 && !isOver(all[0]) && !peekList.length ? all[0] : null);
   if (one) {
-    // 끝난 루틴의 기록은 MY 의 「지난 루틴」에서 들어온다 — 돌아갈 곳도 MY
+    // 끝난 모임의 기록은 MY 의 「지난 모임」에서 들어온다 — 돌아갈 곳도 MY
     const back = isOver(one) ? `<button class="only-one" onclick="go('my')">
-        <i class="ti ti-arrow-left"></i>지난 루틴</button>`
+        <i class="ti ti-arrow-left"></i>지난 모임</button>`
       : (all.length > 1 || peekList.length) ? `<button class="only-one" onclick="go('cert')">
-        <i class="ti ti-arrow-left"></i>루틴 목록</button>` : '';
+        <i class="ti ti-arrow-left"></i>모임 목록</button>` : '';
     return back + (one.led_by === me.id ? kkutCertBlock([one]) : youthCertBlock([one]));
   }
-  return adminPeekHtml(peekList) + certListHtml(all);   // 운영진이 보려는 것은 대개 다른 루틴이라 맨 위에 둔다 (2026-10-18 사용자)
+  return adminPeekHtml(peekList) + certListHtml(all);   // 운영진이 보려는 것은 대개 다른 모임이라 맨 위에 둔다 (2026-10-18 사용자)
 }
 
-// 운영진 보기: 내가 참여하지 않은, 진행 중인 루틴의 목록. 누르면 그 루틴의 인증 화면이 읽기 전용으로 열린다
+// 운영진 보기: 내가 참여하지 않은, 진행 중인 모임의 목록. 누르면 그 모임의 인증 화면이 읽기 전용으로 열린다
 function adminPeekHtml(list) {
   if (!list.length) return '';
   const md = d => d ? d.slice(5).replace('-', '.') : '';
-  return `<div style="margin-bottom:20px;"><div class="sec-t" style="margin-top:0;">👀 운영진 보기 · 진행 중인 루틴 <span class="sec-n">${list.length}</span></div>
+  return `<div style="margin-bottom:20px;"><div class="sec-t" style="margin-top:0;">👀 운영진 보기 · 진행 중인 모임 <span class="sec-n">${list.length}</span></div>
     ${list.map(r => {
       const n = new Set(certsOf(r.id).filter(c => c.cert_date === todayKST()).map(c => c.user_id)).size;
       return `<button class="rl-c" onclick="go('cert', ${r.id})">
@@ -5022,8 +5022,8 @@ function adminPeekHtml(list) {
     }).join('')}</div>`;
 }
 
-// 인증 탭의 루틴 목록. 카드는 가볍게: 이름 · 기간 · 내 오늘 인증 (끗짱은 오늘 몇 명)
-function certListHtml(all, mode) {   // mode: 'past' = 끝난 루틴 카드만 (MY 의 「지난 루틴」이 쓴다), 없으면 진행 중인 것만 (인증 탭)
+// 인증 탭의 모임 목록. 카드는 가볍게: 이름 · 기간 · 내 오늘 인증 (끗짱은 오늘 몇 명)
+function certListHtml(all, mode) {   // mode: 'past' = 끝난 모임 카드만 (MY 의 「지난 모임」이 쓴다), 없으면 진행 중인 것만 (인증 탭)
   const active = all.filter(r => !isOver(r));
   const past   = all.filter(r =>  isOver(r))
     .sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
@@ -5032,7 +5032,7 @@ function certListHtml(all, mode) {   // mode: 'past' = 끝난 루틴 카드만 (
     const range = (r.start_date && r.end_date)
       ? `${r.start_date.slice(5).replace('-', '.')} – ${r.end_date.slice(5).replace('-', '.')}` : '';
     let status = '', meta = routineLine(r, d);
-    // 끝난 루틴은 「내 결과」를 보인다 (2026-10-15 사용자). 완주 = 기간의 70% 이상 인증한 날 (관리자 통계와 같은 기준).
+    // 끝난 모임은 「내 결과」를 보인다 (2026-10-15 사용자). 완주 = 기간의 70% 이상 인증한 날 (관리자 통계와 같은 기준).
     //   완주하지 못했으면 인증한 날까지만 말한다. 끗짱은 함께한 청소년 수와 완주한 수
     if (over && !r.canceled && d && !d.notYet && r.status !== 'pending') {
       const need = Math.ceil(d.total * 0.7);
@@ -5057,7 +5057,7 @@ function certListHtml(all, mode) {   // mode: 'past' = 끝난 루틴 카드만 (
         status = `<span class="rl-s${ok ? ' on' : ''}">${ok ? '✓ 오늘 인증했어요' : '오늘 인증 전'}</span>`;
       }
     }
-    // 폐강한 루틴(migration-136)은 열리지 못한 것이라 기록 화면이 없다. 결과 문구도 말하지 않고 부드럽게 알린다
+    // 폐강한 모임(migration-136)은 열리지 못한 것이라 기록 화면이 없다. 결과 문구도 말하지 않고 부드럽게 알린다
     if (r.canceled) return `<div class="rl-c" style="cursor:default;">
       <div class="rl-b">
         <div class="rl-t">${esc(r.emoji || '📚')} ${esc(r.title)}</div>
@@ -5075,13 +5075,13 @@ function certListHtml(all, mode) {   // mode: 'past' = 끝난 루틴 카드만 (
     </button>`;
   };
   if (mode === 'past') return past.map(card).join('');
-  // 진행 중인 루틴이 없는 청소년은 다음 할 일이 없다 — 홈의 모집 중 루틴으로 이어 준다
+  // 진행 중인 모임이 없는 청소년은 다음 할 일이 없다 — 홈의 모집 중 모임으로 이어 준다
   const findNew = !active.length && !canLead()
-    ? `<button class="btn btn-primary" style="margin-top:16px;" onclick="go('home')">새 루틴 찾아보기</button>` : '';
-  // 지난 루틴은 MY 로 옮겼다 (2026-10-18 사용자). 여기에는 가는 길만 둔다
+    ? `<button class="btn btn-primary" style="margin-top:16px;" onclick="go('home')">새 모임 찾아보기</button>` : '';
+  // 지난 모임은 MY 로 옮겼다 (2026-10-18 사용자). 여기에는 가는 길만 둔다
   const pastNote = past.length
-    ? `<button class="store-more" onclick="go('my')"><span>지난 루틴 ${past.length}개는 MY에서 볼 수 있어요</span><i class="ti ti-chevron-right"></i></button>` : '';
-  return (active.length ? `<div class="sec-t" style="margin-top:0;">내 루틴 <span class="sec-n">${active.length}</span></div>${active.map(card).join('')}` : '')
+    ? `<button class="store-more" onclick="go('my')"><span>지난 모임 ${past.length}개는 MY에서 볼 수 있어요</span><i class="ti ti-chevron-right"></i></button>` : '';
+  return (active.length ? `<div class="sec-t" style="margin-top:0;">내 모임 <span class="sec-n">${active.length}</span></div>${active.map(card).join('')}` : '')
        + pastNote + findNew;
 }
 
@@ -5116,7 +5116,7 @@ function togetherCard(r, cs, total) {
   const pct   = d ? Math.round((d.ended ? d.total : d.n) / Math.max(d.total, 1) * 100) : 0;
   const live  = d && !d.notYet && !d.ended && r.status !== 'done' && r.status !== 'pending';
   // 【인증·댓글·읽은 책 숫자는 뺐다 · 2026-10-10 사용자】 이 화면의 목적은 「같이 쌓은 양」이다. 한 문장으로 말한다.
-  //   쪽수가 하나도 없으면(글 루틴에서 아무도 안 적었을 때) 이 줄은 두지 않는다
+  //   쪽수가 하나도 없으면(글 모임에서 아무도 안 적었을 때) 이 줄은 두지 않는다
   const pages = (state.routinePages || {})[r.id] || 0;
   let cheer = '';
   if (d?.ended)            cheer = `함께 ${d.total}일을 완주했어요 🎉`;
@@ -5196,7 +5196,7 @@ function kkutCertBlock(mine) {
 // 청소년 몫 — 내 기록
 function youthCertBlock(mine) {
   return mine.map(r => {
-    // 상시 루틴: 기간·참여자·함께 쌓은 기록이 없다. 연속일과 내 인증만
+    // 상시 모임: 기간·참여자·함께 쌓은 기록이 없다. 연속일과 내 인증만
     if (r.ongoing) {
       const cs0 = certsOf(r.id);
       return `<div class="sec-t" style="margin-top:0;">${r.emoji||'🌱'} ${esc(r.title)}</div>
@@ -5213,7 +5213,7 @@ function youthCertBlock(mine) {
       .sort((a, b) => (b.self === true) - (a.self === true));
     if (r.led_by && r.led_by !== me.id && !ps.some(x => x.user_id === r.led_by))
       ps.splice(ps.some(x => x.self) ? 1 : 0, 0, { user_id: r.led_by, lead: true });
-    // 이 루틴을 이끄는 끗짱 한 줄 — 닉네임과 키워드. 누르면 루틴 소개로 간다 (내가 끗짱인 루틴에는 없다)
+    // 이 모임을 이끄는 끗짱 한 줄 — 닉네임과 키워드. 누르면 모임 소개로 간다 (내가 끗짱인 모임에는 없다)
     const L = r.led_by && r.led_by !== me.id ? leadOf(r.led_by) : null;
     const nm = r.led_by && r.led_by !== me.id ? leadName(r.led_by) : '';
     const leadLine = (L || nm) ? `<div class="lead-line" onclick="openRoutine(${r.id})">
@@ -5238,7 +5238,7 @@ function certGrid(all, rid) {
   const cs   = who ? all.filter(c => c.user_id === who) : certOnlyMine ? mine : all;
   const whoNm = who ? (who === me.id ? '나' : nameOf(who)) : '';
 
-  // 상시 루틴(매일 한끗)은 내 인증만 읽힌다(RLS). 「우리」도 「전체/내 인증」 구분도 「내 인증」 표시도 필요 없다
+  // 상시 모임(매일 한끗)은 내 인증만 읽힌다(RLS). 「우리」도 「전체/내 인증」 구분도 「내 인증」 표시도 필요 없다
   const og = !!(rid && (state.routines.find(x => x.id === rid) || {}).ongoing);
   const head = og ? `<div class="cg-head"><span>내 인증</span></div>` : `<div class="cg-head">
     <span>${who ? `${esc(whoNm)} 인증 <b>${cs.length}</b><button class="cg-who-clr" onclick="setCertWho(${rid},'${who}')">전체 보기</button>`
@@ -5274,10 +5274,10 @@ function certGrid(all, rid) {
   }).join('')}</div>`;
 }
 
-// 루틴이 며칠짜리고 오늘이 며칠째인지
+// 모임이 며칠짜리고 오늘이 며칠째인지
 // 기간 줄. 「8일째 · 15일 중」인데 상태가 done 이면 열려 있는 것처럼 보인다 —
 // 종료일이 아직 안 지났는데 사람이 닫은 경우다. 그럴 땐 닫혔다고 말한다
-// 끝난 루틴 — 기간을 다 채웠거나 사람이 먼저 닫았거나
+// 끝난 모임 — 기간을 다 채웠거나 사람이 먼저 닫았거나
 const isOver = r => { const d = routineDay(r); return r.status === 'done' || !!(d && d.ended); };
 
 function routineLine(r, d) {
@@ -5296,7 +5296,7 @@ function routineDay(r) {
   const td = new Date(todayKST() + 'T00:00:00');
   const total = Math.round((d1 - d0) / 86400e3) + 1;
   const n = Math.round((td - d0) / 86400e3) + 1;
-  // 시작 전에도 1일째로 보였다. 그래서 아직 안 연 루틴에 인증이 올라갔다
+  // 시작 전에도 1일째로 보였다. 그래서 아직 안 연 모임에 인증이 올라갔다
   return { total, n: Math.min(total, Math.max(1, n)), ended: n > total,
            notYet: n < 1, dLeft: 1 - n };
 }
@@ -5337,7 +5337,7 @@ function balanceBlock() {
   //   전에는 정산 대기(pending)가 있으면 교환 단추를 숨겼다. 아이에게 교환은 끝난 일이고
   //   정산은 유스보이스 안쪽 사정이다. 교환권은 구매가 생기는 순간 이미 줄어 있으니
   //   (used = pending+settled) 남은 교환권이 있으면 쓸 수 있어야 한다. (migration-93)
-  // 【책 후기는 닫았다 · 2026-10-08 사용자】 후기는 루틴 후기와 책 교환 인증(사진 + 고른 이유)
+  // 【책 후기는 닫았다 · 2026-10-08 사용자】 후기는 모임 후기와 책 교환 인증(사진 + 고른 이유)
   //   둘이면 된다. 같은 책에 글을 두 번 쓰게 하지 않는다. 이미 쓰인 책 후기는 지우지 않고
   //   후기 탭에서만 가린다 (관리자 월간 보고서가 읽는다). 되살리려면 이 자리에 rvBtn 을 다시 둔다
   const rvBtn = '';
@@ -5380,14 +5380,14 @@ function balanceBlock() {
     </div>`;
 }
 
-// 인증 카드 한 장. 루틴 상세와 '모두' 탭에서 같이 쓴다
-// 그 루틴 참여자들의 기록. 8명이 서로 보고 댓글 다는 게 이 프로그램의 동력이라
-// 피드는 '모든 기록'이 아니라 '우리 루틴'이어야 한다
+// 인증 카드 한 장. 모임 상세와 '모두' 탭에서 같이 쓴다
+// 그 모임 참여자들의 기록. 8명이 서로 보고 댓글 다는 게 이 프로그램의 동력이라
+// 피드는 '모든 기록'이 아니라 '우리 모임'이어야 한다
 function routineFeed(r) {
   if (isGuest()) return '';
   const p = myPart(r.id);
   if (!(p && p.status === 'approved') && r.led_by !== me.id) return '';
-  // 인증글을 여기 줄줄이 늘어놓지 않는다 — 루틴 소개를 보러 온 화면이다. 기록은 인증 탭에서 보고 댓글도 거기서 단다
+  // 인증글을 여기 줄줄이 늘어놓지 않는다 — 모임 소개를 보러 온 화면이다. 기록은 인증 탭에서 보고 댓글도 거기서 단다
   const n = state.certs.filter(c => c.routine_id === r.id).length;
   return `<div class="sec-t">우리 인증${n ? ` <span class="sec-n">${n}</span>` : ''}</div>` + (n
     ? `<button class="btn btn-primary" style="display:flex;align-items:center;justify-content:center;gap:8px;"
@@ -5582,8 +5582,8 @@ async function shareCert(id) {
   toast('사진으로 저장했어요');
 }
 
-// ── 루틴 마무리 카드 ───────────────────────────────────
-// 루틴이 끝나면 「함께 쌓은 기록」을 한 장으로 만든다. 이름은 넣지 않는다 — 밖으로 나가는 그림이다.
+// ── 모임 마무리 카드 ───────────────────────────────────
+// 모임이 끝나면 「함께 쌓은 기록」을 한 장으로 만든다. 이름은 넣지 않는다 — 밖으로 나가는 그림이다.
 // 숫자는 인증 탭의 「함께 쌓은 기록」과 같은 셈이다 (사진 표지는 넣지 않는다 — 바깥 그림은 캔버스를 막는다)
 let wrapBlob = null, wrapName = '';
 function wrapStats(r) {
@@ -5671,7 +5671,7 @@ async function openWrap(rid) {
   try {
     wrapBlob = await buildWrapCard(r);
     if (!wrapBlob) throw new Error('카드를 만들지 못했어요');
-    wrapName = `한끗독서_${String(r.title || '루틴').replace(/\s+/g, '')}_마무리.png`;
+    wrapName = `한끗독서_${String(r.title || '모임').replace(/\s+/g, '')}_마무리.png`;
     $('wrapBody').innerHTML = `<img src="${URL.createObjectURL(wrapBlob)}" alt="우리의 기록 카드"
       style="width:100%;max-width:340px;border-radius:16px;box-shadow:0 4px 18px rgba(0,0,0,.18);">`;
     $('wrapShare').style.display = '';
@@ -5714,7 +5714,7 @@ function myOfficialCovers(max) {
     .forEach(b => { const k = loose(b.title || ''); if (k && !seen.has(k) && out.length < max) { seen.add(k); out.push(b.found_cover_url); } });
   return out;
 }
-// 카드에 놓을 수 있는 공식 표지 목록 — 내가 읽는 책의 것만. 청소년은 내가 읽은 책, 끗짱은 루틴을 열 때 고른 책과 내가 읽은 책.
+// 카드에 놓을 수 있는 공식 표지 목록 — 내가 읽는 책의 것만. 청소년은 내가 읽은 책, 끗짱은 모임을 열 때 고른 책과 내가 읽은 책.
 // (끗짱 카드에 아이들이 읽은 책 표지가 뜨던 것을 고쳤다. 다른 책은 「+ 표지 찾기」로 직접 고른다)
 function recordCoverChoices(kind) {
   const out = myOfficialCovers(8);
@@ -5773,7 +5773,7 @@ async function buildRecordCard(kind, coverUrl) {
     setFont(x, 'bold', 78); x.fillText(k.kids ? `${won(k.kids)}명의 청소년이` : '청소년과 함께', PAD, 610);
     setFont(x, 'normal', 52); x.fillStyle = 'rgba(255,255,255,.85)';
     x.fillText(k.days ? `${won(k.days)}일 동안 책을 읽었어요` : '책을 읽을 준비를 하고 있어요', PAD, 690);
-    cells = [[k.books, '권', '함께 읽은 책'], [k.pages, '쪽', '함께 읽은 쪽'], [k.routines, '개', '맡은 루틴']];
+    cells = [[k.books, '권', '함께 읽은 책'], [k.pages, '쪽', '함께 읽은 쪽'], [k.routines, '개', '맡은 모임']];
   } else {
     const { pages: pg, days, books } = myRecStats();
     const m = personalMetaphor(pg);
@@ -5913,9 +5913,9 @@ async function shareWrap() {
   toast('사진으로 저장했어요');
 }
 
-// '모두' 탭 — 루틴을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
+// '모두' 탭 — 모임을 넘어 다 같이 보는 곳. 이름은 빼고 문장만 모은다
 // ── 후기 ───────────────────────────────────────────────
-// 루틴 후기 30N · 책인증후기 30N. 15일 완주 235N 에 후기 30N이 붙어야
+// 모임 후기 30N · 책인증후기 30N. 15일 완주 235N 에 후기 30N이 붙어야
 // 문턱을 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
 const RV_PR = () => state.settings.points_per_review ?? 30;
 // 댓글 나다움. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20N을 기다린다
@@ -5924,7 +5924,7 @@ const CMT_P   = () => state.settings.points_per_comment ?? 1;
 const CMT_CAP = () => state.settings.comment_daily_cap ?? 5;
 const RV_PB = () => state.settings.points_per_bookreview ?? 30;
 
-// 루틴 후기 기한. 서버 review_due() 와 같은 식으로 센다 —
+// 모임 후기 기한. 서버 review_due() 와 같은 식으로 센다 —
 // max(종료일, 기능 켠 날) + 7일. 일찍 종료돼도 종료일까지는 기다려준다
 function reviewDue(r) {
   if (!r?.end_date) return null;
@@ -5940,7 +5940,7 @@ function reviewLeft(r) {
   return Math.round((new Date(due + 'T00:00:00') - new Date(todayKST() + 'T00:00:00')) / 86400e3);
 }
 
-// 루틴이 끝났나 — 서버 트리거와 같은 기준 (status='done' 이거나 종료일이 지났거나)
+// 모임이 끝났나 — 서버 트리거와 같은 기준 (status='done' 이거나 종료일이 지났거나)
 function routineEnded(r) {
   if (!r) return false;
   if (r.status === 'done') return true;
@@ -5974,7 +5974,7 @@ function reviewCard(v) {
   return `<div class="card" style="padding:15px 16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
       <div style="min-width:0;">
-        <span class="chip ${isBook ? 'c-recruit' : 'c-active'}">${isBook ? '책 후기' : '루틴 후기'}</span>
+        <span class="chip ${isBook ? 'c-recruit' : 'c-active'}">${isBook ? '책 후기' : '모임 후기'}</span>
         <span style="font-size:12.5px;color:var(--ink-3);margin-left:7px;">${esc(nameOf(v.user_id))}</span>
       </div>
       ${own ? `<button class="f-act" title="고치기" onclick="openReview('${v.kind}', ${isBook ? v.purchase_id : v.routine_id})">✏️</button>` : ''}
@@ -6003,9 +6003,9 @@ function faData(kind) {
       ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
       <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title || '')}</div></div>`;
   const D = {
-    rv:  { sub: '후기', title: '📝 루틴 후기',      list: () => state.reviews.filter(v => v.kind !== 'book'), card: reviewCard },
+    rv:  { sub: '후기', title: '📝 모임 후기',      list: () => state.reviews.filter(v => v.kind !== 'book'), card: reviewCard },
     qt:  { sub: '후기', title: '💬 함께 나누고 싶은 문장', list: () => sharedQuotes(), card: quote },
-    mrv: { sub: '내가 남긴 글', title: '📝 내 루틴 후기',   list: () => state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id), card: reviewCard },
+    mrv: { sub: '내가 남긴 글', title: '📝 내 모임 후기',   list: () => state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id), card: reviewCard },
     mqt: { sub: '내가 남긴 글', title: '💬 내가 남긴 문장', list: () => state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim()), card: quote },
   };
   return D[kind];
@@ -6046,7 +6046,7 @@ function viewFeed() {
     ${todo.map(t => `<div class="card rv-todo" onclick="openReview('${t.kind}', ${t.id})">
       <div style="min-width:0;">
         <div style="font-weight:700;font-size:14px;">${t.emoji} ${t.kind === 'routine'
-          ? `${esc(t.title)} 루틴이 끝났어요` : '받은 책 후기를 남겨주세요'}</div>
+          ? `${esc(t.title)} 모임이 끝났어요` : '받은 책 후기를 남겨주세요'}</div>
         <div style="font-size:12px;color:var(--ink-3);margin-top:3px;">${t.kind === 'routine'
           ? (t.days ? `${t.days}일 동안 어땠는지 적어주세요` : '어땠는지 적어주세요')
           : (t.title ? esc(t.title) : '어떤 책이었는지 적어주세요')}</div>
@@ -6058,17 +6058,17 @@ function viewFeed() {
       </div>
     </div>`).join('')}` : '';
 
-  // 끗짱은 본인이 이끄는 루틴의 글만 읽을 수 있다(서버 규칙). 비어 있어도 이상한 게 아니라는 걸 말해 준다 (2026-11-11 QA)
+  // 끗짱은 본인이 이끄는 모임의 글만 읽을 수 있다(서버 규칙). 비어 있어도 이상한 게 아니라는 걸 말해 준다 (2026-11-11 QA)
   const kk = canLead();
   const kkNote = t => `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${t}</div>`;
-  const listHtml = secHead('📝 루틴 후기', list.length, 'rv') + (kk ? kkNote('내가 연 루틴의 청소년들이 남긴 글만 보여요') : '') + (list.length
+  const listHtml = secHead('📝 모임 후기', list.length, 'rv') + (kk ? kkNote('내가 연 모임의 청소년들이 남긴 글만 보여요') : '') + (list.length
     ? `<div class="hs-row">${list.slice(0, feedCap.rv).map(reviewCard).join('')}</div>`
-    : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 후기를 남기면 여기에 모여요.' : '아직 올라온 후기가 없어요.<br>루틴이 끝나면 여기에 쌓여요.'}</div>`);
+    : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 후기를 남기면 여기에 모여요.' : '아직 올라온 후기가 없어요.<br>모임이 끝나면 여기에 쌓여요.'}</div>`);
 
   const allQuotes = sharedQuotes();
   const quotes = allQuotes.slice(0, feedCap.qt);
   const quoteHtml = secHead('💬 함께 나누고 싶은 문장', allQuotes.length, 'qt')
-    + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${kk ? '내가 연 루틴의 청소년들이 남긴 문장만 보여요. 밖에는 공개되지 않아요.' : '우리 루틴 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.'}</div>` + (quotes.length
+    + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${kk ? '내가 연 모임의 청소년들이 남긴 문장만 보여요. 밖에는 공개되지 않아요.' : '우리 모임 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.'}</div>` + (quotes.length
     ? `<div class="hs-row">${quotes.map(c => `<div class="card" style="padding:15px 16px;">
         ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
@@ -6097,11 +6097,11 @@ function openReview(kind, id) {
     : state.routines.find(x => x.id === id);
   rvCtx = { kind, id, review: existing || null };
 
-  $('ovRvLabel').textContent = isBook ? '책인증후기' : '루틴 후기';
+  $('ovRvLabel').textContent = isBook ? '책인증후기' : '모임 후기';
   $('ovRvTitle').textContent = existing ? '후기 고치기' : '후기 쓰기';
   $('rvIntro').innerHTML = isBook
     ? `받은 책을 읽고 어땠는지 적어주세요. 올리면 <b>+${RV_PB()}N</b>이에요.<br>
-       <span style="color:var(--ink-3);">같은 루틴 친구들에게만 보여요.</span>`
+       <span style="color:var(--ink-3);">같은 모임 친구들에게만 보여요.</span>`
     : `<b>${esc(r ? r.title : '')}</b> 어땠나요?<br>
        처음과 지금이 뭐가 달라졌는지, 어떤 날이 기억에 남는지 적어주세요.
        올리면 <b>+${RV_PR()}N</b>이에요.${existing ? '' : rvDueLine(r)}`;
@@ -6109,11 +6109,11 @@ function openReview(kind, id) {
   $('rvBookWrap').style.display = isBook ? '' : 'none';
   $('rvBook').value = existing?.book_title || '';
   $('rvContent').value = existing?.content || '';
-  // 루틴 길이는 7·15·30일이 섞여 있다. 15일을 박아두면 4일짜리에도 15일이라 나온다
+  // 모임 길이는 7·15·30일이 섞여 있다. 15일을 박아두면 4일짜리에도 15일이라 나온다
   const rvDays = isBook ? 0 : (routineDay(r)?.total || 0);
   $('rvContent').placeholder = isBook
     ? '어떤 책이었는지, 읽고 나서 어땠는지 적어주세요.'
-    : `${rvDays ? rvDays + '일 동안' : '루틴 하는 동안'} 어땠는지 적어주세요. 잘 안 읽힌 날 이야기도 괜찮아요.`;
+    : `${rvDays ? rvDays + '일 동안' : '모임 하는 동안'} 어땠는지 적어주세요. 잘 안 읽힌 날 이야기도 괜찮아요.`;
   $('rvDelete').style.display = existing ? '' : 'none';
   $('rvSubmit').textContent = existing ? '고치기' : '올리기';
   checkReview();
@@ -6139,7 +6139,7 @@ async function saveReview() {
     user_id: me.id,
     kind: rvCtx.kind,
     content: $('rvContent').value.trim(),
-    // 루틴 후기는 routine_id, 책 후기는 purchase_id 로 건다.
+    // 모임 후기는 routine_id, 책 후기는 purchase_id 로 건다.
     // 책 후기의 routine_id 는 서버 트리거가 구매 기록에서 채운다
     routine_id: isBook
       ? (state.purchases.find(b => b.id === rvCtx.id)?.routine_id ?? null)
@@ -6177,7 +6177,7 @@ async function deleteReview() {
 // 끗짱은 가입할 때 고르는 역할이 아니라 여기서 신청한다.
 // 15·30·66일 사다리가 여기로 이어진다
 // ── 청소년 확인 ────────────────────────────────────────
-// 【2026-10-27 사용자: 서류를 안 낸 아이도 인증이 되던 것을 막는다】 확인 서류를 낸 뒤에야 루틴에 참여하고 인증한다.
+// 【2026-10-27 사용자: 서류를 안 낸 아이도 인증이 되던 것을 막는다】 확인 서류를 낸 뒤에야 모임에 참여하고 인증한다.
 //   서류를 낸 상태(pending)는 통과 — 운영진이 보는 동안 기다리게 하지 않는다. 서버도 같은 식으로 막는다 (migration-150).
 //   운영진·끗짱·어른은 대상이 아니다. 설정 require_verify 를 끄면 예전처럼 열린다.
 //   아래 옛 주석(책 받을 때만 묻는다)은 이 날짜 전의 결정이다
@@ -6193,7 +6193,7 @@ function verifyHomeCard() {
     <div class="vf-i">🪪</div>
     <div class="vf-t">
       <b>${rej ? '서류를 다시 내주세요' : '청소년 확인부터 해 주세요'}</b>
-      <span>${rej ? esc(me.verify_reason || '다시 올려주세요.') : '루틴 참여와 인증 전에 한 번 필요해요. 서류 사진만 올리면 돼요.'}</span>
+      <span>${rej ? esc(me.verify_reason || '다시 올려주세요.') : '모임 참여와 인증 전에 한 번 필요해요. 서류 사진만 올리면 돼요.'}</span>
       <button class="btn btn-line" style="margin-top:10px;" onclick="openVerify()">확인하러 가기</button>
     </div>
   </div>`;
@@ -6203,12 +6203,12 @@ function verifyHomeCard() {
 // 읽는 건 누구나 하게 두고, 책을 받는 순간에만 확인한다 —
 // 가입 직후부터 서류를 요구하면 시작을 못 한다
 // ⚠️ 2026-10-06(migration-82) 로 참여 문이 열렸다. 확인은 이제 **책을 받을 때**
-//   필요하다. 「루틴에 참여하려면」이라고 적으면 읽기도 전에 기다리게 만든다
+//   필요하다. 「모임에 참여하려면」이라고 적으면 읽기도 전에 기다리게 만든다
 const VERIFY = {
-  none:     ['🪪', '청소년 확인이 필요해요', '루틴에 참여하고 인증하려면 한 번 확인해야 해요.'],
+  none:     ['🪪', '청소년 확인이 필요해요', '모임에 참여하고 인증하려면 한 번 확인해야 해요.'],
   pending:  ['🕰️', '확인하고 있어요',       '운영진이 보고 있어요. 하루 이틀이면 끝나요.'],
   rejected: ['✉️', '다시 내주세요',          ''],
-  approved: ['✅', '청소년 확인이 끝났어요',  '루틴 참여도, 책 받기도 할 수 있어요 🌱'],
+  approved: ['✅', '청소년 확인이 끝났어요',  '모임 참여도, 책 받기도 할 수 있어요 🌱'],
 };
 
 // 카드 한 장을 쓰던 자리다. 담긴 건 상태 한 줄뿐이라 프로필 밑으로 옮긴다.
@@ -6232,7 +6232,7 @@ function verifyLine() {
   const [ico, title] = VERIFY[st] || VERIFY.none;
   const sub = st === 'rejected' ? esc(me.verify_reason || '다시 올려주세요.')
             : st === 'pending'  ? '확인하는 동안에도 참여하고 인증할 수 있어요'
-            : '루틴 참여와 인증에 필요해요. 서류 사진만 올리면 돼요';
+            : '모임 참여와 인증에 필요해요. 서류 사진만 올리면 돼요';
   return `<div class="vline ${st}" onclick="openVerify()">
       <span>${ico}</span>
       <div><b>${title}</b><i>${sub}</i></div>
@@ -6335,7 +6335,7 @@ async function submitVerify() {
   toast('냈어요. 운영진이 확인하면 알려드릴게요');
 }
 
-// 【문을 옮겼다】 2026-10-06. 전에는 확인이 끝나야 루틴에 들어올 수 있었다.
+// 【문을 옮겼다】 2026-10-06. 전에는 확인이 끝나야 모임에 들어올 수 있었다.
 //   승인이 하루 밀리면 아이는 그 하루를 통째로 기다렸다. 이제 먼저 들어와
 //   읽기 시작하고, 확인은 **책을 받을 때** 필요하다 (migration-82).
 //   그래서 이 칸은 막는 벽이 아니라 미리 일러두는 쪽지다
@@ -6434,12 +6434,12 @@ function kkutCard() {
     <div class="card" onclick="openKkutApply()" style="cursor:pointer;background:#fff4f8;border:1px solid #ffd9e6;">
       <div style="font-weight:700;">📖 끗짱을 신청할 수 있어요</div>
       <div style="font-size:12.5px;color:var(--ink-2);margin-top:4px;line-height:1.6;">
-        ${el.days ? `${el.days}일을 읽었어요. ` : ''}직접 루틴을 열고 함께 읽을 사람을 모을 수 있어요.<br>
+        ${el.days ? `${el.days}일을 읽었어요. ` : ''}직접 모임을 열고 함께 읽을 사람을 모을 수 있어요.<br>
         <span style="color:var(--ink-3);">끗짱이 되어도 지금처럼 읽고 나다움을 모을 수 있어요.</span></div>
     </div>`;
 }
 
-// 내가 읽은 책 — 루틴에 참여할 때 올린 표지 사진을 그대로 쓴다
+// 내가 읽은 책 — 모임에 참여할 때 올린 표지 사진을 그대로 쓴다
 function myBooks() {
   if (!me) return [];
   const m = new Map();
@@ -6463,7 +6463,7 @@ function myBooks() {
   const official = u => (u && !/\/storage\/v1\/object\//.test(u)) ? u : null;
   state.parts.filter(x => x.user_id === me.id)
     .forEach(x => add(x.book_title, foundOf(x.book_title), x.joined_at));
-  // 끗짱은 참여 기록이 없다. 루틴을 열 때 고른 책이 곧 읽는 책이다
+  // 끗짱은 참여 기록이 없다. 모임을 열 때 고른 책이 곧 읽는 책이다
   state.routines.filter(r => r.led_by === me.id && r.kkut_book_title)
     .forEach(r => add(r.kkut_book_title, official(r.kkut_book_url), r.created_at));
   // 중간에 책을 바꿨으면 인증에만 남아 있다
@@ -6531,9 +6531,9 @@ async function poke(rid, uid, btn) {
 // 병렬독서까지 얽혀 있어서 따로 쓰면 반드시 어긋난다
 // inTab: 인증 탭에서 부를 때. 책별 인증은 홈 카드가 맡는다 — 여기서는 「도 인증하기」를 두지 않는다 (2026-10-09 사용자)
 function certAction(r, cls = 'btn-primary', style = '', inTab = false) {
-  if (adminOnly(r)) return '';   // 운영진이 구경만 하는 루틴에는 인증 단추가 없다
+  if (adminOnly(r)) return '';   // 운영진이 구경만 하는 모임에는 인증 단추가 없다
   if (routineEnded(r) || r.status === 'pending') return '';
-  // 아직 안 연 루틴이다. 첫날부터 세야 「15일」이 15일이다
+  // 아직 안 연 모임이다. 첫날부터 세야 「15일」이 15일이다
   if (routineDay(r)?.notYet) return '';
   if (!didToday(r.id))
     return `<button class="btn ${cls}" style="${style}" onclick="openCert(${r.id})">오늘 인증하기</button>`;
@@ -6571,17 +6571,17 @@ function kkutStatBlock() {
   // 청소년에게 보이는 이름(닉네임, 없으면 이름)으로 부른다
   const who = esc(myName());
   const body = !kids.size
-    ? `맡은 루틴 <b>${won(led.length)}개</b>에 아직 함께한 청소년이 없어요.
+    ? `맡은 모임 <b>${won(led.length)}개</b>에 아직 함께한 청소년이 없어요.
        <div class="kstat-s">첫 친구가 오면 여기에 기록이 쌓여요.</div>`
     // 들어와 있지만 아직 한 장도 안 올렸다. 「0일 동안 읽었어요」는 어색하다
     : !days
     ? `<b>${who}</b>님과 함께 <b>${won(kids.size)}명</b>의 청소년이
        첫 인증을 기다리고 있어요.
-       <div class="kstat-s">맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`
+       <div class="kstat-s">맡은 모임은 <b>${won(led.length)}개</b>예요.</div>`
     : `<b>${who}</b>님과 함께 <b>${won(kids.size)}명</b>의 청소년이
        <b>${won(days)}일</b> 동안 책을 읽었어요.
        <div class="kstat-s">읽은 책은 <b>${won(kbooks.size)}권</b>${kidPages ? `, 읽은 쪽수는 <b>${won(kidPages)}쪽</b>` : ''},
-       맡은 루틴은 <b>${won(led.length)}개</b>예요.</div>`;
+       맡은 모임은 <b>${won(led.length)}개</b>예요.</div>`;
   // 숫자 세 칸만 보인다. 카드 그림은 「공유」를 누르면 나온다 (그림이 MY 의 자리를 너무 차지해서 · 2026-10-14 사용자).
   // 아직 함께한 청소년이 없거나 한 장도 안 올렸으면 위 줄글을 그대로 보인다
   const strip = kids.size && days
@@ -6606,25 +6606,25 @@ function myRecordBlock() {
     <div class="rec-hint">📤를 누르면 내 기록 카드를 이미지로 저장해서 자랑할 수 있어요</div>`;
 }
 
-// 끗짱이 맡았다가 끝난 루틴. 홈에서 뺀 것들이 여기 쌓인다 —
+// 끗짱이 맡았다가 끝난 모임. 홈에서 뺀 것들이 여기 쌓인다 —
 // 지워지는 게 아니라 옮겨 간다는 걸 보여야 한다
-// 루틴을 한 번도 안 해본 사람의 MY 는 0 만 늘어놓은 화면이 된다.
+// 모임을 한 번도 안 해본 사람의 MY 는 0 만 늘어놓은 화면이 된다.
 // 무엇을 하면 되는지 한 줄이 있어야 한다
 function noRoutineBlock() {
   if (!me || myRoutines().length || state.routines.some(r => r.led_by === me.id)) return '';
   const open = state.routines.filter(r => joinOpen(r) && !routineEnded(r)).length;
   return `<div class="card" style="text-align:center;padding:24px 20px;">
       <div style="font-size:30px;">📚</div>
-      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">아직 루틴이 없어요</div>
+      <div style="font-size:15.5px;font-weight:800;margin-top:10px;">아직 모임이 없어요</div>
       <div style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.7;">
         ${open ? `지금 <b>${open}개</b>가 열려 있어요. 하나 골라 오늘부터 한 장씩.`
-               : '새 루틴이 열리면 홈에 보여드릴게요.'}</div>
+               : '새 모임이 열리면 홈에 보여드릴게요.'}</div>
       ${open ? `<button class="btn btn-primary" style="margin-top:16px;max-width:220px;margin-left:auto;margin-right:auto;"
-        onclick="go('home')">루틴 보러 가기</button>` : ''}
+        onclick="go('home')">모임 보러 가기</button>` : ''}
     </div>`;
 }
 
-// 끝난 루틴. 맡았던 것도 참여했던 것도 여기 쌓인다 —
+// 끝난 모임. 맡았던 것도 참여했던 것도 여기 쌓인다 —
 // 홈에서 빠진 것들이 지워진 게 아니라 옮겨 갔다는 걸 보여야 한다
 function pastBlock() {
   if (!me) return '';
@@ -6637,11 +6637,11 @@ function pastBlock() {
   }).sort((a, b) => String(b.end_date || '').localeCompare(String(a.end_date || '')));
   if (!past.length) return '';
 
-  // 【지난 루틴은 MY 로 · 2026-10-18 사용자】 전에는 인증 탭(2026-10-10)에 모았는데, MY 가 「내 기록 보관함」이라 여기로 옮겼다.
-  //   누르면 그동안 했던 루틴이 펼쳐지고, 카드마다 내가 얼마나 인증했는지(「7일 중 5일 인증 · 🎉 완주」)가 보인다. 카드를 누르면 그 루틴의 기록
+  // 【지난 모임은 MY 로 · 2026-10-18 사용자】 전에는 인증 탭(2026-10-10)에 모았는데, MY 가 「내 기록 보관함」이라 여기로 옮겼다.
+  //   누르면 그동안 했던 모임이 펼쳐지고, 카드마다 내가 얼마나 인증했는지(「7일 중 5일 인증 · 🎉 완주」)가 보인다. 카드를 누르면 그 모임의 기록
   // 최근 3개를 먼저 보이고, 나머지는 「더 보기」로 펼친다 (2026-10-18 사용자). 눌러야 보이던 것을 바로 보이게 바꿨다
   const shown = PAST_OPEN ? past : past.slice(0, 3);
-  return `<div class="sec-t">지난 루틴 <span class="sec-n">${past.length}</span></div>
+  return `<div class="sec-t">지난 모임 <span class="sec-n">${past.length}</span></div>
     ${certListHtml(shown, 'past')}
     ${past.length > 3 ? `<button class="store-more" onclick="togglePast()">
       <span>${PAST_OPEN ? '접기' : '더 보기'}</span>${PAST_OPEN ? '' : `<em>${past.length - 3}개</em>`}<i class="ti ti-chevron-${PAST_OPEN ? 'up' : 'down'}"></i></button>` : ''}`;
@@ -6713,7 +6713,7 @@ function calBlock() {
 // 인증 횟수로만 오른다. 남과 견주지 않고 내가 쌓은 것만 센다.
 // 이름은 책 읽는 일에서 따왔다 — 첫 장에서 시작해 책숲까지.
 //
-// 【문턱을 낮게 시작한다】 5번이면 벌써 둘째 칸이다. 한 루틴(15일)을 마치면
+// 【문턱을 낮게 시작한다】 5번이면 벌써 둘째 칸이다. 한 모임(15일)을 마치면
 //   셋째 칸에 닿는다. 처음 몇 칸이 빨라야 다음 칸이 궁금해진다.
 // 【내려가지 않는다】 인증을 지우면 숫자는 줄지만, 레벨을 뺏는 화면은 만들지 않는다
 const myCertCount = () => (state.certs || []).filter(c => c.user_id === me.id).length;
@@ -7138,8 +7138,8 @@ async function saveProfile() {
   toast('바꿨어요');
 }
 
-// ── 루틴 상세 ──────────────────────────────────────────
-let curRid = null;   // 지금 열려 있는 루틴. 머리의 공유 단추가 쓴다
+// ── 모임 상세 ──────────────────────────────────────────
+let curRid = null;   // 지금 열려 있는 모임. 머리의 공유 단추가 쓴다
 // 함께 읽는 친구들 — 닉네임과 공식 표지만 (migration-129). 청소년 확인이 끝난 회원·끗짱·운영진에게만 보인다.
 // 참여 여부와 상관없이 신청 전에도 본다. 못 불러오면 조용히 숨긴다
 const MEMBERS = {};
@@ -7189,8 +7189,8 @@ async function loadMembers(rid) {
   if (curRid === rid) { const box = $('rmBox'); if (box) box.innerHTML = membersHtml(rid); }
 }
 
-// 온라인 공유회 — 일시는 모두에게, Zoom 링크는 루틴이 열린 뒤 그 루틴의 끗짱·승인된 참여자에게만 (서버 meeting_zoom, migration-159).
-// 책 받는 조건도 나다움 보너스도 없는 루틴이다
+// 온라인 공유회 — 일시는 모두에게, Zoom 링크는 모임이 열린 뒤 그 모임의 끗짱·승인된 참여자에게만 (서버 meeting_zoom, migration-159).
+// 책 받는 조건도 나다움 보너스도 없는 모임이다
 function onlineMeetCard(r) {
   const m = (state.onlineMeetups || []).find(x => x.id === r.online_meetup_id);
   if (!m) return '';
@@ -7213,14 +7213,14 @@ function openRoutine(id) {
   const r = state.routines.find(x => x.id === id); if (!r) return;
   curRid = id;
   $('rtEdit').style.display = me && r.led_by === me.id ? '' : 'none';   // 수정은 만든 끗짱에게만, 머리에
-  // 상시 루틴(매일 한끗): 기간·인원·신청서가 없다. 소개와 참여 단추만
+  // 상시 모임(매일 한끗): 기간·인원·신청서가 없다. 소개와 참여 단추만
   if (r.ongoing) {
     const joined = !!(myPart(id) && myPart(id).status === 'approved');
     $('ovRTitle').textContent = `${r.emoji || '🌱'} ${r.title}`;
     // 위에는 요약(상시·참여 인원·1N·인증 방법)을 짧게, 그 아래에 내 연속일·인증과 참여한 친구들 보드 (2026-10-22 사용자)
     $('ovRBody').innerHTML = `<div class="og-sum">
         <div class="t">${r.emoji || '🌱'} ${esc(r.title)}<span class="c">상시</span><span class="c">참여 ${peopleOf(id)}명</span><span class="c">하루 ${won(r.points_per_cert || 1)}N</span></div>
-        <div class="d">루틴이 없는 날에도 매일 한 장.<br>읽는 책을 <b>그 자리에서 찍어</b> 올려요(앨범 사진은 안 돼요).<br>다른 루틴과 함께 해도 돼요.</div>
+        <div class="d">모임이 없는 날에도 매일 한 장.<br>읽는 책을 <b>그 자리에서 찍어</b> 올려요(앨범 사진은 안 돼요).<br>다른 모임과 함께 해도 돼요.</div>
       </div>
       ${joined ? `<div class="og-card" style="margin-top:0;">${ongoingDash(r, true)}</div>` : ''}
       ${isGuest() ? `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`
@@ -7260,7 +7260,7 @@ function openRoutine(id) {
       const hasBook = r.kkut_book_url || r.kkut_book_title;
       if (!r.led_by && !r.description) return '';
       const kws = (L?.keywords || []).map(k => `<span class="kk-kw">#${esc(k)}</span>`).join('');
-      return `<div class="sec-t">이 루틴을 이끄는 끗짱</div>
+      return `<div class="sec-t">이 모임을 이끄는 끗짱</div>
       <div class="card">
         ${r.led_by ? `<div class="kk-top"><b class="kk-nm">${esc(nm || '끗짱')}</b>${kws}</div>` : ''}
         <div class="kkut-card">
@@ -7283,7 +7283,7 @@ function openRoutine(id) {
     ${(() => {
       const st = storeOf(r); if (!st) return '';
       return `<div class="sec-t">🏠 함께하는 책방</div>
-        <!-- 【눌러도 아무 일이 없던 자리 · 2026-10-08 사용자】 전에는 go('store') 였다. 지금 열린 루틴 화면이
+        <!-- 【눌러도 아무 일이 없던 자리 · 2026-10-08 사용자】 전에는 go('store') 였다. 지금 열린 모임 화면이
              서점 탭을 덮고 있어서, 뒤에서만 이동하고 눈에는 아무 일도 안 보였다.
              서점 탭이 쓰는 책방 정보 창(주소·영업시간·길찾기→카카오맵)을 그대로 연다 -->
         <div class="card one-book" onclick="openStoreInfo(${st.id})" style="cursor:pointer;">
@@ -7296,14 +7296,14 @@ function openRoutine(id) {
     ${/* 들어갈지 정하기 바로 앞에 둔다. 조건은 마지막에 읽혀야 한다 */''}
     ${needsMeet(r) ? meetCard(r) : ''}
     ${r.meetup_kind === 'online' && r.online_meetup_id ? onlineMeetCard(r) : ''}
-    ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
-        : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="closeOv('ovRoutine'); go('cert', ${r.id})">👀 인증글 보기 (운영진)</button>` : '')}`
+    ${isGuest() ? (r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 모임이에요' : '종료된 모임이에요'}</div>`
+        : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 모임이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="closeOv('ovRoutine'); go('cert', ${r.id})">👀 인증글 보기 (운영진)</button>` : '')}`
         : `<button class="btn btn-primary" onclick="closeOv('ovRoutine');needLogin('로그인하면 참여할 수 있어요')">로그인하고 참여하기</button>`)
       : p && p.status==='approved' ? (
           r.status === 'done'
-            ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '이번에는 인원이 모이지 않아 열리지 못했어요. 다음 루틴에서 만나요 🌱' : '끝난 루틴이에요. 함께해줘서 고마워요 🌱'}</div>`
+            ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '이번에는 인원이 모이지 않아 열리지 못했어요. 다음 모임에서 만나요 🌱' : '끝난 모임이에요. 함께해줘서 고마워요 🌱'}</div>`
             : routineDay(r)?.notYet
-              ? recruitBlock(r)   /* 아직 안 연 루틴이다. 첫날부터 세야 「15일」이 15일이다 */
+              ? recruitBlock(r)   /* 아직 안 연 모임이다. 첫날부터 세야 「15일」이 15일이다 */
             : !didToday(r.id)
               ? `<button class="btn btn-primary" onclick="goFromOv('ovRoutine', () => openCert(${r.id}))">오늘 인증하기</button>`
               : leftToday(r.id).length
@@ -7315,8 +7315,8 @@ function openRoutine(id) {
       : p && p.status==='pending' ? `<div class="card" style="text-align:center;color:#8A5A16;font-weight:700;">확인 중이에요</div>`
       : p && p.status==='rejected' ? `<div class="card" style="text-align:center;color:var(--ink-3);">이번에는 함께하지 못했어요</div>`
       : !isYouth() ? ''
-      : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 루틴이에요' : '종료된 루틴이에요'}</div>`
-      : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 루틴이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="closeOv('ovRoutine'); go('cert', ${r.id})">👀 인증글 보기 (운영진)</button>` : '')}`
+      : r.status==='done' ? `<div class="card" style="text-align:center;color:var(--ink-3);">${r.canceled ? '열리지 못한 모임이에요' : '종료된 모임이에요'}</div>`
+      : r.status==='active' && !joinOpen(r) ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 끝나고 진행 중인 모임이에요</div>${(adminOnly(r) ? `<button class="btn btn-line" style="margin-top:10px;" onclick="closeOv('ovRoutine'); go('cert', ${r.id})">👀 인증글 보기 (운영진)</button>` : '')}`
       : full ? `<div class="card" style="text-align:center;color:var(--ink-3);">모집이 마감됐어요</div>`
       : verifyBlocked() ? verifyNote()
       : `<div>
@@ -7344,11 +7344,11 @@ function openRoutine(id) {
                <input type="file" id="apBookInput" accept="image/*" style="display:none;" onchange="pickApplyBook(event)">
                <div class="hint">내가 가진 책을 <b>세로로</b> 찍어 올려도 좋아요. 안 올려도 돼요.</div>`}
           <div class="field-label" style="margin-top:16px;">참여 각오 <span class="req">* 필수</span></div>
-          <textarea id="applyNote" rows="3" placeholder="이 루틴에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
+          <textarea id="applyNote" rows="3" placeholder="이 모임에 참여하는 이유를 적어주세요." maxlength="300" oninput="checkApply()"></textarea>
           ${rewardBox(r)}
           ${needsMeet(r) ? `<label class="meet-agree">
             <input type="checkbox" id="apMeet" onchange="checkApply()">
-            <span>이 루틴은 <b>공유회에 참석해야</b> 책을 받아요.
+            <span>이 모임은 <b>공유회에 참석해야</b> 책을 받아요.
               안 오면 모은 나다움이 사라져요.<br>
               ${meetWhen(r)}${r.meetup_place ? ` · ${esc(r.meetup_place)}` : ''}
               <i>갈 수 있는지 확인했어요</i></span></label>` : ''}
@@ -7394,7 +7394,7 @@ function applyBookOk() {
 function checkApply() {
   const b = $('apSubmit'); if (!b) return;
   const note = $('applyNote')?.value.trim();
-  // 공유회가 걸린 루틴은 약속을 확인해야 단추가 켜진다
+  // 공유회가 걸린 모임은 약속을 확인해야 단추가 켜진다
   const meetOk = !$('apMeet') || $('apMeet').checked;
   const hasTitle = !$('applyBookTitle') || !!$('applyBookTitle').value.trim();
   b.disabled = !meetOk || !note || !hasTitle || !applyBookOk();
@@ -7643,8 +7643,8 @@ const meetMapUrl = r => (r?.meetup_lat && r?.meetup_lng)
   ? `https://map.kakao.com/link/to/${encodeURIComponent(r.meetup_place || '공유회')},${r.meetup_lat},${r.meetup_lng}`
   : null;
 
-// ── 루틴 만들기 (끗짱) ──────────────────────────────────
-// 루틴 기획은 끗짱이, 예산은 유스보이스가 맡는다.
+// ── 모임 만들기 (끗짱) ──────────────────────────────────
+// 모임 기획은 끗짱이, 예산은 유스보이스가 맡는다.
 // 인증 1회당 나다움은 끗짱이 고르지 않는다 — dokseo_settings.points_per_cert 를
 // 서버 트리거가 자동으로 붙인다.
 let makeId = null;
@@ -7754,8 +7754,8 @@ function toggleMeetFields() {
   $('mOnlineWrap').style.display = makeMeet === 'online' ? '' : 'none';
 }
 
-// ── 루틴 만들기: 1페이지(루틴 주체) → 2페이지(루틴 정보) (2026-11-11 개편) ──
-//   · 일반 끗짱: 개인으로서 온라인 루틴. 오프라인 공유회는 잠긴다(공간이 있는 파트너만)
+// ── 모임 만들기: 1페이지(모임 주체) → 2페이지(모임 정보) (2026-11-11 개편) ──
+//   · 일반 끗짱: 개인으로서 온라인 모임. 오프라인 공유회는 잠긴다(공간이 있는 파트너만)
 //   · 파트너 끗짱: 파트너 기관·서점 기반. 온라인·오프라인 중 하나를 고른다 (책방 고르기도 이쪽에만)
 //   · 일정은 운영진이 미리 등록해 둔 것 중에서 고른다. 시작일·기간을 직접 적지 않는다
 //   · 온라인 공유회는 책 받는 조건도 나다움 보너스도 없다 → meetup_required 는 오프라인일 때만 켠다
@@ -7781,7 +7781,7 @@ function mkShowPage(n) {
     const r = makeId ? state.routines.find(x => x.id === makeId) : null;
     const partner = makeHost === 'partner';
     $('mStoreWrap').style.display = partner ? '' : 'none';
-    // 오프라인은 파트너만. 이미 오프라인으로 만들어 둔 루틴을 고치는 건 그대로 열어 둔다.
+    // 오프라인은 파트너만. 이미 오프라인으로 만들어 둔 모임을 고치는 건 그대로 열어 둔다.
     // 공유회는 만들 때만 켜진다(들어온 뒤에 「사실 공유회도 와야 해」가 되면 안 된다) — 서버도 같은 규칙
     const offOk = (partner || !!(r && r.meetup_required)) && !(r && !r.meetup_required);
     $('mMeetOffline').disabled = !offOk;
@@ -7810,13 +7810,13 @@ function mkPeopleCheck() {
 function buildSchedule(r) {
   const t = todayKST(), sel = $('mSchedule');
   const list = (state.schedules || []).filter(s => s.active && (s.start_date >= t || s.id === r?.schedule_id));
-  const legacy = !!(r && !r.schedule_id && r.start_date);   // 일정표가 생기기 전에 만든 루틴
+  const legacy = !!(r && !r.schedule_id && r.start_date);   // 일정표가 생기기 전에 만든 모임
   sel.innerHTML = `<option value="">일정을 골라주세요</option>`
     + (legacy ? `<option value="keep" selected>지금 일정 그대로 · ${fmtDay(r.start_date)} ~ ${fmtDay(r.end_date)}</option>` : '')
     + list.map(s => `<option value="${s.id}"${s.id === r?.schedule_id ? ' selected' : ''}>${esc(s.title)} · ${fmtDay(s.start_date)} ~ ${fmtDay(s.end_date)}</option>`).join('');
   sel.classList.toggle('ph', !sel.value);
   $('mSchedHint').textContent = (list.length || legacy) ? ''
-    : '운영진이 아직 루틴 일정을 등록하지 않았어요. 등록되면 여기에서 고를 수 있어요.';
+    : '운영진이 아직 모임 일정을 등록하지 않았어요. 등록되면 여기에서 고를 수 있어요.';
 }
 function buildOnline(r) {
   const now = Date.now(), sel = $('mOnline');
@@ -7825,15 +7825,15 @@ function buildOnline(r) {
     + list.map(m => `<option value="${m.id}"${m.id === r?.online_meetup_id ? ' selected' : ''}>${fmtMeetAt(m.at)}${m.label ? ` · ${esc(m.label)}` : ''}</option>`).join('');
   sel.classList.toggle('ph', !sel.value);
   $('mOnlineHint').textContent = list.length
-    ? '※ 루틴 개설이 완료되면 유스보이스가 지정한 온라인 공유회 Zoom 링크가 화면에 자동으로 노출됩니다.'
+    ? '※ 모임 개설이 완료되면 유스보이스가 지정한 온라인 공유회 Zoom 링크가 화면에 자동으로 노출됩니다.'
     : '유스보이스가 아직 온라인 공유회 일정을 등록하지 않았어요. 등록되면 여기에서 고를 수 있어요.';
 }
 
 function openMake(id) {
   makeId = id || null;
   const r = id ? state.routines.find(x => x.id === id) : null;
-  $('ovMakeTitle').textContent = r ? '루틴 수정' : '루틴 만들기';
-  $('mSubmit').textContent = r ? '수정하기' : '루틴 만들기';
+  $('ovMakeTitle').textContent = r ? '모임 수정' : '모임 만들기';
+  $('mSubmit').textContent = r ? '수정하기' : '모임 만들기';
   // 새로 만들 때는 1페이지(주체 고르기)부터. 고칠 때는 이미 정한 주체로 바로 2페이지
   makeHost = r ? (r.host_kind || (r.meetup_required ? 'partner' : 'general')) : null;
   $('mHostGeneral').classList.remove('on'); $('mHostPartner').classList.remove('on');
@@ -7848,10 +7848,10 @@ function openMake(id) {
     (state.stores || []).filter(s => s.active || s.id === r?.bookstore_id).map(s =>
       `<option value="${s.id}"${s.id === r?.bookstore_id ? ' selected' : ''}>${esc(s.name)}${
         s.region ? ` (${esc(s.region)})` : ''}</option>`).join('');
-  // 이미 만든 루틴은 종류를 못 바꾼다. 바꾸면 쌓인 인증이 붕 뜬다
+  // 이미 만든 모임은 종류를 못 바꾼다. 바꾸면 쌓인 인증이 붕 뜬다
   pickKind(r?.kind || 'book');
   $('mKindBook').disabled = $('mKindOne').disabled = $('mKindShared').disabled = !!r;
-  // 수정 화면에서 각자 읽는 책은 굳이 안 보여준다. 나머지는 어떤 루틴인지
+  // 수정 화면에서 각자 읽는 책은 굳이 안 보여준다. 나머지는 어떤 모임인지
   // 알아야 아래 칸들이 왜 이렇게 생겼는지 이해가 된다
   $('mKindWrap').style.display = r && r.kind === 'book' ? 'none' : '';
   $('mGuide').value = r?.cert_guide || '';
@@ -7895,7 +7895,7 @@ function openMake(id) {
   openOv('ovMake');
   mkShowPage(r ? 2 : 1);
   if (r) {
-    // 저장된 방식으로 공유회를 고른다 (옛 루틴은 오프라인 공유회 여부로 가른다)
+    // 저장된 방식으로 공유회를 고른다 (옛 모임은 오프라인 공유회 여부로 가른다)
     const mk = r.meetup_kind || (r.meetup_required ? 'offline' : null);
     if (mk) pickMeet(mk); else toggleMeetFields();
   } else toggleMeetFields();
@@ -7915,7 +7915,7 @@ function paintMakeLock(r) {
   $('mBookTitle').disabled = one;
   const lines = [];
   if (on) {
-    lines.push('루틴이 시작돼서 <b>일정과 책방</b>은 바꿀 수 없어요. 모집 인원은 지금 함께하는 친구 수보다 적게는 못 줄여요.');
+    lines.push('모임이 시작돼서 <b>일정과 책방</b>은 바꿀 수 없어요. 모집 인원은 지금 함께하는 친구 수보다 적게는 못 줄여요.');
     if (one) lines.push('함께 읽는 책도 바꿀 수 없어요.');
   }
   const note = $('mLockNote');
@@ -7947,10 +7947,10 @@ async function submitMake() {
 
   const title = $('mTitle').value.trim(), desc = $('mDesc').value.trim();
   const cur0 = makeId ? state.routines.find(x => x.id === makeId) : null;
-  if (!title) return authError('루틴 이름을 적어주세요', 'mTitle');
+  if (!title) return authError('모임 이름을 적어주세요', 'mTitle');
   // 이모지만 띄우면 카드가 허전하다. 청소년이 제일 먼저 보는 그림이다
   if (!cover && !coverUrl) return authError('대표 사진을 올려주세요', 'mCoverBox');
-  if (!desc) return authError('루틴 및 끗짱 소개를 적어주세요', 'mDesc');
+  if (!desc) return authError('모임 및 끗짱 소개를 적어주세요', 'mDesc');
   const people = parseInt($('mPeople').value || '0', 10);
   if (!(people >= 4) && !(cur0 && people === cur0.max_people && people >= 1)) {
     $('mPeopleErr').style.display = '';
@@ -7962,7 +7962,7 @@ async function submitMake() {
     return authError('읽을 책 제목을 적어주세요', 'mBookTitle');
   if (!$('mGuide').value.trim()) return authError('인증 방식을 적어주세요', 'mGuide');
   const sv = $('mSchedule').value;
-  if (!sv) return authError('루틴 운영 일정을 골라주세요', 'mSchedule');
+  if (!sv) return authError('모임 운영 일정을 골라주세요', 'mSchedule');
   if (!makeMeet) return authError('공유회 방식을 골라주세요', 'mMeetBox');
   if (makeMeet === 'online' && !$('mOnline').value) return authError('온라인 공유회 일정을 골라주세요', 'mOnline');
   // 오프라인 공유회를 켜놓고 비워 두면 아이가 「언제 어디서」를 모른 채 약속만 진다
@@ -7971,15 +7971,15 @@ async function submitMake() {
     if (!$('mMeetTime').value) return authError('공유회 시각을 골라주세요', 'mMeetTime');
     if (!$('mMeetPlace').value.trim()) return authError('공유회 장소를 적어주세요', 'mMeetPlace');
   }
-  // 일정은 운영진이 등록한 것에서 가져온다. 옛 루틴(「지금 일정 그대로」)은 저장된 날짜를 그대로 쓴다
+  // 일정은 운영진이 등록한 것에서 가져온다. 옛 모임(「지금 일정 그대로」)은 저장된 날짜를 그대로 쓴다
   const sch = sv === 'keep' ? null : (state.schedules || []).find(x => String(x.id) === sv);
-  if (sv !== 'keep' && !sch) return authError('루틴 운영 일정을 다시 골라주세요', 'mSchedule');
+  if (sv !== 'keep' && !sch) return authError('모임 운영 일정을 다시 골라주세요', 'mSchedule');
   const s = sch ? sch.start_date : cur0.start_date, e = sch ? sch.end_date : cur0.end_date;
 
   const btn = $('mSubmit'); const label = btn.textContent;
   btn.disabled = true; btn.textContent = '저장 중…';
 
-  // 새로 고른 사진이 있으면 먼저 올린다. 실패하면 루틴 저장까지 막지 않고 사진만 건너뛴다
+  // 새로 고른 사진이 있으면 먼저 올린다. 실패하면 모임 저장까지 막지 않고 사진만 건너뛴다
   let coverSaved = coverUrl;
   if (cover) {
     const path = `${me.id}/cover_${Date.now()}.jpg`;
@@ -8022,7 +8022,7 @@ async function submitMake() {
     meetup_lat:     mp ? mp.lat : null,
     meetup_lng:     mp ? mp.lng : null,
     meetup_note:  off ? ($('mMeetNote').value.trim()  || null) : null,
-    // 필사·「그 자리에서 찍은 사진만」은 이 화면에서 더 묻지 않는다. 새 루틴은 필사 끔·사진 켬, 고칠 때는 있던 값 그대로
+    // 필사·「그 자리에서 찍은 사진만」은 이 화면에서 더 묻지 않는다. 새 모임은 필사 끔·사진 켬, 고칠 때는 있던 값 그대로
     quote_required: makeKind === 'shared' ? false : (cur0 ? !!cur0.quote_required : false),
     camera_only: cur0 ? !!cur0.camera_only : true,
     cover_url: coverSaved,
@@ -8032,13 +8032,13 @@ async function submitMake() {
     kkut_book_authors:   kb.authors   || null,
     kkut_book_publisher: kb.publisher || null,
     led_by: me.id,
-    // 새 칸(migration-159). 만들 때만 정하는 것: 루틴 주체·최소 인원
+    // 새 칸(migration-159). 만들 때만 정하는 것: 모임 주체·최소 인원
     meetup_kind: makeMeet,
     schedule_id: sch ? sch.id : (cur0 ? (cur0.schedule_id || null) : null),
     online_meetup_id: makeMeet === 'online' ? parseInt($('mOnline').value, 10) : null,
     ...(cur0 ? {} : { host_kind: makeHost, min_people: 4 }),
   };
-  // 시작한 루틴은 잠긴 칸을 원래 값으로 되돌려 보낸다 (서버도 같은 규칙으로 지킨다)
+  // 시작한 모임은 잠긴 칸을 원래 값으로 되돌려 보낸다 (서버도 같은 규칙으로 지킨다)
   const wasLocked = routineLocked(cur0);
   if (wasLocked) {
     row.start_date = cur0.start_date;
@@ -8074,9 +8074,9 @@ async function submitMake() {
 // ── 인증 ───────────────────────────────────────────────
 let certRid = null, photos = [], certEditId = null, keptUrls = [];
 
-// 인증 칸의 생김새는 루틴 갈래가 정한다.
+// 인증 칸의 생김새는 모임 갈래가 정한다.
 // 【왜 함수로 뺐나】 전에는 openCert 만 이걸 했고 editCert 는 안 했다.
-//   칸들은 DOM 에 그대로 남으므로, 글 루틴 인증을 한 번 연 뒤 책 루틴 인증을
+//   칸들은 DOM 에 그대로 남으므로, 글 모임 인증을 한 번 연 뒤 책 모임 인증을
 //   고치면 책·쪽수 칸이 숨은 채로 「필수」라 단추가 영영 안 열렸다.
 //   새로 쓸 때와 고칠 때가 같은 함수를 봐야 한쪽만 틀리지 않는다
 function certFields(r) {
@@ -8092,12 +8092,12 @@ function certFields(r) {
   $('cBookWrap').style.display = sh ? 'none' : '';
   $('cSharedPage').style.display = sh ? '' : 'none';
   $('cTodayPost').innerHTML    = sh ? postCard(r, true) : '';
-  // 글 루틴에는 찍을 책이 없다. 화면에 뜬 글을 읽는 거라 사진은 선택이다
+  // 글 모임에는 찍을 책이 없다. 화면에 뜬 글을 읽는 거라 사진은 선택이다
   $('cPhLabel').innerHTML = sh
     ? '오늘의 한 장 <span class="opt">선택 · 최대 3장</span>'
     : '책 읽는 순간 <span class="req">* 필수</span> <span class="opt">최대 3장</span>';
   // 「마음에 남은 문장」은 책에서 옮겨 적는 칸이라 MY 의 「모은 문장」에 쌓인다.
-  // 글 루틴에서 거기에 소감을 적으면 남의 문장인 척 섞인다. 칸을 아예 접고
+  // 글 모임에서 거기에 소감을 적으면 남의 문장인 척 섞인다. 칸을 아예 접고
   // 「남기고 싶은 말」을 필수로 받는다
   $('cQuoteWrap').style.display = sh ? 'none' : '';
   const q = !sh && !og && !!r.quote_required;
@@ -8118,7 +8118,7 @@ function certFields(r) {
     : '오늘 읽으면서 든 생각이 있다면.';
   $('cMemoCnt').style.display = og ? '' : 'none';
   // 【매일 한끗은 책이 먼저다 · 2026-11-05 사용자】 오늘 읽은 책 → 책 읽는 순간 → 마음에 남는 문장 → 오늘의 한마디.
-  //   책은 매번 새로 고른다(병렬독서 칩·완독 도장 없음). 다른 루틴은 원래 순서 그대로다
+  //   책은 매번 새로 고른다(병렬독서 칩·완독 도장 없음). 다른 모임은 원래 순서 그대로다
   if (og) $('cPhWrap').before($('cBookWrap')); else $('cQuoteWrap').after($('cBookWrap'));
   $('cBookLabel').innerHTML = og ? '오늘 읽은 책 <span class="req">* 필수</span>' : '읽는 책 <span class="req">* 필수</span>';
   $('cFinRow').style.display = og ? 'none' : '';
@@ -8129,7 +8129,7 @@ function certFields(r) {
 }
 
 // ── 첫 인증의 자기소개 ──────────────────────────────────
-// 루틴마다 처음 인증할 때 한 번 (사진 + 한 줄). 끗짱은 받지 않는다. 이미 인증한 사람은 묻지 않는다 — 켜기 전에 시작한 루틴 때문이다
+// 모임마다 처음 인증할 때 한 번 (사진 + 한 줄). 끗짱은 받지 않는다. 이미 인증한 사람은 묻지 않는다 — 켜기 전에 시작한 모임 때문이다
 let introPhoto = null;
 function introNeeded(rid) {
   const r = state.routines.find(x => x.id === rid);
@@ -8156,9 +8156,9 @@ const introMissing = () => $('cIntro') && $('cIntro').style.display !== 'none'
 function openCert(rid, pickTitle) {
   const r = state.routines.find(x => x.id === rid); if (!r) return;
   if (verifyBlocked()) return askVerify();   // 서류를 내기 전에는 인증도 막는다 (migration-150)
-  // 알림·링크로도 이 창이 열린다. 시작 전 루틴에는 인증이 올라가면 안 된다 (서버도 막는다 — migration-119)
+  // 알림·링크로도 이 창이 열린다. 시작 전 모임에는 인증이 올라가면 안 된다 (서버도 막는다 — migration-119)
   if (routineDay(r)?.notYet) return toast(`아직 시작 전이에요. ${fmtDay(r.start_date)}부터 인증할 수 있어요`);
-  if (routineEnded(r)) return toast('끝난 루틴이라 더 인증할 수 없어요');   // 종료일 당일까지만
+  if (routineEnded(r)) return toast('끝난 모임이라 더 인증할 수 없어요');   // 종료일 당일까지만
   certRid = rid; photos = []; keptUrls = []; certEditId = null;
   $('ovCLabel').textContent = '오늘의 인증';
   $('cSubmit').textContent = '인증하기';
@@ -8176,8 +8176,8 @@ function openCert(rid, pickTitle) {
   const last = myCerts(rid).find(c => c.book_title);
   $('cQuote').value = ''; $('cMemo').value = '';
   // 함께 읽는 책이면 제목이 정해져 있다. 고쳐 쓰면 같은 책이 갈라진다
-  // 【끗짱의 책 · 2026-10-08 사용자】 끗짱이 직접 이끄는 루틴에는 참여 기록(myPart)이 없어서
-  //   루틴을 만들 때 고른 책이 이 순서에 없었다 — 인증 화면이 비어 있었다.
+  // 【끗짱의 책 · 2026-10-08 사용자】 끗짱이 직접 이끄는 모임에는 참여 기록(myPart)이 없어서
+  //   모임을 만들 때 고른 책이 이 순서에 없었다 — 인증 화면이 비어 있었다.
   //   끗짱이면 맨 끝에 그 책을 둔다 (직전 인증에서 읽던 책이 있으면 그게 먼저다)
   const leadBook = (me && r.led_by === me.id) ? (r.kkut_book_title || '') : '';
   $('cBook').value = one ? (r.kkut_book_title || '')
@@ -8197,7 +8197,7 @@ let sbRid = null, sbCover = null, sbFromCert = false;
 // 책을 더하면 시트를 닫고 그 책을 골라둔 채로 돌려보낸다 —
 // 더해놓고 「어디 갔지」 가 되면 안 된다
 function openBookSheet(rid, fromCert) {
-  // 한 권을 다 같이 읽는 루틴에는 더할 책이 없다. 단추도 안 보이지만 한 번 더 막는다
+  // 한 권을 다 같이 읽는 모임에는 더할 책이 없다. 단추도 안 보이지만 한 번 더 막는다
   if (isOneBook(state.routines.find(x => x.id === rid))) return;
   sbRid = rid; sbCover = null; sbFromCert = !!fromCert; delete bookPick['sbTitle'];
   drawBookSheet();
@@ -8214,10 +8214,10 @@ function drawBookSheet() {
         onclick="dropBook('${esc(b.title).replace(/'/g, "\\'")}')">−</button>`}
     </div>`).join('') || '<div class="empty" style="padding:18px;">아직 등록한 책이 없어요.</div>';
 
-  // 끝난 루틴에 책을 더할 일은 없다. 잘못 넣은 걸 빼는 길만 남긴다
+  // 끝난 모임에 책을 더할 일은 없다. 잘못 넣은 걸 빼는 길만 남긴다
   const r = state.routines.find(x => x.id === sbRid);
   const add = r && routineEnded(r)
-    ? `<div class="hint" style="margin-top:14px;">끝난 루틴이라 책을 더할 수는 없어요.
+    ? `<div class="hint" style="margin-top:14px;">끝난 모임이라 책을 더할 수는 없어요.
          잘못 넣은 책은 뺄 수 있어요.</div>`
     : books.length < BOOK_MAX ? `
     <div style="margin-top:16px;">
@@ -8377,7 +8377,7 @@ function delPhoto(i) { photos.splice(i,1); drawPhotos(); }
 
 // 진도가 뒤로 가거나 하루에 너무 많이 뛰면 물어보되, 막지는 않는다
 // (다른 책을 시작했거나 몰아 읽은 날일 수 있어서 — 판단은 사람이 한다)
-// 사진 · (필사 루틴이면) 문장 · 읽은 쪽이 다 있어야 인증할 수 있다
+// 사진 · (필사 모임이면) 문장 · 읽은 쪽이 다 있어야 인증할 수 있다
 function checkCert() {
   const r  = state.routines.find(x => x.id === certRid);
   const sh = isShared(r);
@@ -8446,7 +8446,7 @@ function editCert(id) {
     ? `<div style="background:#F2EEE6;border-radius:12px;padding:12px 14px;">
          <div style="font-size:12px;color:var(--ink-3);margin-bottom:4px;">🎯 이렇게 인증해 주세요</div>
          <div style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${esc(r.cert_guide)}</div></div>` : '';
-  if (r) certFields(r);   // 칸 생김새를 이 루틴 갈래에 맞춘다
+  if (r) certFields(r);   // 칸 생김새를 이 모임 갈래에 맞춘다
   $('cQuote').value = c.quote || '';
   $('cBook').value  = c.book_title || '';
   delete bookPick['cBook']; $('cBookFind').innerHTML = ''; $('cBookFindGot').innerHTML = '';
@@ -8471,14 +8471,14 @@ async function delCert(id) {
   toast('삭제했어요');
 }
 
-// 교환권은 계정 전체로 쌓이지만 구매는 루틴에 달린다.
-// 공유회가 걸린 루틴은 다녀와야 쓸 수 있으니, 쓸 수 있는 루틴을 골라 준다
-const buyRoutine  = () => myRoutines().find(r => !r.ongoing && (!needsMeet(r) || myMet(r.id))) || null;   // 상시 루틴은 책 받는 루틴이 아니다
+// 교환권은 계정 전체로 쌓이지만 구매는 모임에 달린다.
+// 공유회가 걸린 모임은 다녀와야 쓸 수 있으니, 쓸 수 있는 모임을 골라 준다
+const buyRoutine  = () => myRoutines().find(r => !r.ongoing && (!needsMeet(r) || myMet(r.id))) || null;   // 상시 모임은 책 받는 모임이 아니다
 const meetPending = () => myRoutines().some(r => needsMeet(r) && !myMet(r.id));
 
 // ── 오프라인 공유회 ────────────────────────────────────
-// 어떤 루틴은 마지막에 다 같이 모여 이야기 나누는 게 핵심이다.
-// 그런 루틴은 **공유회에 와야 책을 받는다** — 읽기만 하고 안 오면 반쪽이다.
+// 어떤 모임은 마지막에 다 같이 모여 이야기 나누는 게 핵심이다.
+// 그런 모임은 **공유회에 와야 책을 받는다** — 읽기만 하고 안 오면 반쪽이다.
 // 들어가기 전에 「무엇을 받고, 언제 받나」를 한자리에 모아 보여 준다.
 // 여기저기 흩어져 있으면 아이는 결국 아무것도 모른 채 들어온다
 function rewardBox(r) {
@@ -8495,16 +8495,16 @@ function rewardBox(r) {
       ? `<li><em>공유회 당일에만</em> 교환권을 사용할 수 있어요.
            그날 책방에서 바로 받아가면 돼요.</li>
          <li>공유회에 참석하면 <em>+${won(MEET_P())}N</em>을 적립해드려요!</li>
-         <li>공유회에 <em>안 오면</em> 이 루틴에서 모은 나다움은 사라져요.</li>`
+         <li>공유회에 <em>안 오면</em> 이 모임에서 모은 나다움은 사라져요.</li>`
       : `<li>모으면 아무 때나 함께하는 책방에 가서 받으면 돼요.</li>`}
   </div>`;
 }
 
-// 이 루틴과 함께하는 책방. 후원 기업과도, 공유회 장소와도 다른 것이다
+// 이 모임과 함께하는 책방. 후원 기업과도, 공유회 장소와도 다른 것이다
 const storeOf = r => r?.bookstore_id
   ? (state.stores || []).find(s => s.id === r.bookstore_id) || null : null;
 
-// 시작 전 루틴의 홈 카드. 인증 자리에 「모집 중」을 대신 세운다
+// 시작 전 모임의 홈 카드. 인증 자리에 「모집 중」을 대신 세운다
 function recruitBlock(r) {
   const now = peopleOf(r.id), left = Math.max(0, (r.max_people || 0) - now);
   return `<div class="tc-wait">
@@ -8516,7 +8516,7 @@ function recruitBlock(r) {
       링크 보내서 친구 부르기</button>` : ''}`;
 }
 
-// 루틴 하나를 가리키는 주소. 열면 바로 그 루틴 화면이 뜬다.
+// 모임 하나를 가리키는 주소. 열면 바로 그 모임 화면이 뜬다.
 // 기기 공유창에 맡기면 그걸 닫아버린 사람에게는 아무것도 안 남는다 —
 // 복사 단추를 눈에 보이게 두고, 공유창은 그 옆에 둔다
 let shareLink = null;
@@ -8551,7 +8551,7 @@ async function nativeShare() {
   try { await navigator.share(shareLink); } catch (e) { /* 닫으면 그만이다 */ }
 }
 
-// 공유회 시각이 지났는데 참석 표시가 없다. 그 루틴에서 모은 건 못 쓴다.
+// 공유회 시각이 지났는데 참석 표시가 없다. 그 모임에서 모은 건 못 쓴다.
 // 끗짱이 뒤늦게 체크하면 거짓으로 돌아오고 나다움도 같이 돌아온다
 const meetMissed = r => !!(r?.meetup_required && r.meetup_at
   && new Date(r.meetup_at) < new Date() && !myPart(r.id)?.met_at);
@@ -8594,13 +8594,13 @@ function meetCard(r) {
       <div class="meet-f">${met
         ? `다녀왔으니 <b>+${won(MEET_P())}N</b> 들어갔어요. 교환권을 쓸 수 있어요.`
         : meetMissed(r)
-          ? `공유회에 오지 않아 이 루틴에서 모은 나다움은 <b>쓸 수 없게</b> 됐어요.
+          ? `공유회에 오지 않아 이 모임에서 모은 나다움은 <b>쓸 수 없게</b> 됐어요.
              끗짱이 참석을 늦게 표시하면 돌아와요.`
         : myPart(r.id)?.status === 'approved'
           ? `<b>공유회 당일에만</b> 교환권을 사용할 수 있어요.
              공유회에 참석하면 <b>+${won(MEET_P())}N</b>을 적립해드려요!<br>
-             <b>안 오면</b> 이 루틴에서 모은 나다움은 사라져요.`
-          : `이 루틴은 <b>공유회에 참석해야 하는</b> 루틴이에요.<br>
+             <b>안 오면</b> 이 모임에서 모은 나다움은 사라져요.`
+          : `이 모임은 <b>공유회에 참석해야 하는</b> 모임이에요.<br>
              <b>공유회 당일에만</b> 교환권을 사용할 수 있고, 참석하면
              <b>+${won(MEET_P())}N</b>을 적립해드려요!
              <b>안 오면 모은 나다움이 사라져요.</b>`}</div>
@@ -8657,9 +8657,9 @@ async function toggleMet(rid, uid, btn) {
 
 // ── 함께 읽는 글 ───────────────────────────────────────
 // 끗짱이 매일 글 한 편을 올리고, 아이들은 그 글을 읽고 소감을 남긴다.
-// 각자 책을 읽는 루틴과 달리 책 제목도 쪽수도 없다 — 있으면 가짜가 된다.
+// 각자 책을 읽는 모임과 달리 책 제목도 쪽수도 없다 — 있으면 가짜가 된다.
 const isShared   = r => (r?.kind || 'book') === 'shared';
-// 한 권을 다 같이 읽는 루틴. 책은 끗짱이 정하고 청소년은 고르지 않는다 —
+// 한 권을 다 같이 읽는 모임. 책은 끗짱이 정하고 청소년은 고르지 않는다 —
 // 그래서 신청 화면의 책 칸도, 병렬독서도 없다
 const isOneBook  = r => (r?.kind || 'book') === 'one_book';
 const postOf     = (rid, day) => (state.posts || [])
@@ -8686,7 +8686,7 @@ function postCard(r, forCert) {
     </div>`;
 }
 
-// 운영진은 그 루틴의 글을 모든 날 짜별로 읽는다 (2026-10-20 사용자). 오늘 글만 보이는 청소년·끗짱 화면과 달리 지난 글도 보인다
+// 운영진은 그 모임의 글을 모든 날 짜별로 읽는다 (2026-10-20 사용자). 오늘 글만 보이는 청소년·끗짱 화면과 달리 지난 글도 보인다
 function allPostsHtml(r) {
   if (!isShared(r)) return '';
   const list = (state.posts || []).filter(p => p.routine_id === r.id).sort((a, b) => String(b.day).localeCompare(String(a.day)));
@@ -8787,7 +8787,7 @@ let stampT = null;
 
 function showStamp(day, pts, pg) {
   const el = $('stamp'); if (!el) return;
-  // 도장 안에 이미 「오늘 한 장」이 있다. 기간이 없는 루틴이면 이 줄은 비운다
+  // 도장 안에 이미 「오늘 한 장」이 있다. 기간이 없는 모임이면 이 줄은 비운다
   $('stampDay').textContent = day ? `${won(day)}일째` : '';
   $('stampPt').innerHTML    = pts ? `<small>나다움</small>+${pts}N` : '';
   $('stampPt').style.display = pts ? '' : 'none';
@@ -8861,7 +8861,7 @@ async function submitCert() {
   const row = {
     quote: $('cQuote').value.trim() || null,
     book_title: sharedNow ? null : ($('cBook').value.trim() || null),
-    // 책 루틴은 「그 책의 어디까지」, 함께 읽는 글은 「오늘 읽은 분량」(선택). 뜻이 달라 칸도 따로다
+    // 책 모임은 「그 책의 어디까지」, 함께 읽는 글은 「오늘 읽은 분량」(선택). 뜻이 달라 칸도 따로다
     page_end: sharedNow ? (Math.min(100, parseInt($('cPageS').value || '0', 10)) || null)
                         : (parseInt($('cPage').value||'0',10) || null),
     content: $('cMemo').value.trim() || null,
@@ -9365,7 +9365,7 @@ async function sendReport() {
 const finishedBy = (uid, rid, title) => !!title && (state.finishes || [])
   .some(f => f.user_id === uid && f.routine_id === rid && f.book_key === loose(title));
 const iFinished = (rid, title) => !!me && finishedBy(me.id, rid, title);
-// 내 책장은 루틴을 가리지 않는다. 어느 루틴에서든 끝냈으면 그 책은 끝낸 책이다
+// 내 책장은 모임을 가리지 않는다. 어느 모임에서든 끝냈으면 그 책은 끝낸 책이다
 const iFinishedAny = title => !!me && !!title && (state.finishes || []).some(f => f.user_id === me.id && f.book_key === loose(title));
 const FIN_BADGE = '<i class="fin-b">완독</i>';
 
@@ -9523,7 +9523,7 @@ function openOv(id) {
 function closeOv(id) { hideLayer(id); }
 
 // ── 겹친 화면 바꿔 끼우기 ──────────────────────────────
-// 【무엇이 잘못됐나】 「루틴 수정하기」는 closeOv('ovRoutine') 뒤에
+// 【무엇이 잘못됐나】 「모임 수정하기」는 closeOv('ovRoutine') 뒤에
 //   openMake() 를 불렀다. history.back() 은 바로 돌지 않고 줄을 서는데
 //   그 사이에 pushState 가 끼어들어, 뒤늦게 돈 back 이 방금 연 화면까지
 //   걷어냈다. 수정 화면이 열렸다가 홈으로 떨어졌다.
@@ -9540,7 +9540,7 @@ function swapOv(from, to) {
   history.replaceState({ layers: layers.length }, '');
 }
 
-// 열다 말고 돌아가는 길(루틴을 못 찾는다든지)이 있어도 깃발이 안 남게 한다
+// 열다 말고 돌아가는 길(모임을 못 찾는다든지)이 있어도 깃발이 안 남게 한다
 function goFromOv(from, fn) {
   swapFrom = from;
   try { fn(); } finally { swapFrom = null; }
@@ -9672,7 +9672,7 @@ function enterDemo(role) {
   me = { id: uid, name: isK ? '민지' : '서연',
          role: isK ? 'adult' : 'youth', can_lead: isK, region: '강원 속초' };
   const y1  = isK ? 'u1' : uid;      // 청소년 본인. 끗짱으로 볼 땐 서연이 따로 있다
-  const kid = isK ? uid  : 'demo-k'; // 루틴을 이끄는 끗짱
+  const kid = isK ? uid  : 'demo-k'; // 모임을 이끄는 끗짱
 
   state.settings = { book_fund_rate: 0.8, points_per_cert: 10, points_per_comment: 1, comment_daily_cap: 5, points_per_voucher: 150, voucher_max_amount: 20000, points_per_milestone: 10, bonus_milestones: [10,30,66,100,200], points_per_meetup: 50 };
   state.stores = [
@@ -9691,8 +9691,8 @@ function enterDemo(role) {
     { id:902, title:'아무튼, 독서', emoji:'🌙', description:'좋아하는 걸 오래 들여다보는 15일.',
       cert_guide:null, start_date:dstr(-3), end_date:dstr(-18),
       max_people:10, points_per_cert:10, camera_only:true, status:'recruit', led_by:'demo-k2' },
-    // 끝난 루틴 — 후기 화면을 보여주려고 둔다
-    { id:903, title:'겨울의 초입, 15일', emoji:'❄️', description:'첫 루틴이었어요.',
+    // 끝난 모임 — 후기 화면을 보여주려고 둔다
+    { id:903, title:'겨울의 초입, 15일', emoji:'❄️', description:'첫 모임이었어요.',
       cert_guide:null, start_date:dstr(40), end_date:dstr(24),
       max_people:8, points_per_cert:10, camera_only:true, status:'done', led_by: kid },
   ];
@@ -9787,11 +9787,11 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // 공유 링크(`app.html?routine=12`)나 알림 링크(`?tab=my`)로 앱이 **새로 열릴 때** 이 값을 읽는다.
-// 전에는 아무 데서도 읽지 않아서 받은 사람은 루틴이 아니라 홈을 봤다.
+// 전에는 아무 데서도 읽지 않아서 받은 사람은 모임이 아니라 홈을 봤다.
 // (앱이 이미 열려 있을 때의 알림은 서비스워커가 notif-navigate 로 따로 처리한다)
 function openDeepRoutine(id) {
   if (!state.routines.find(x => x.id === id)) {
-    return toast('지금은 볼 수 없는 루틴이에요');   // 지워졌거나, 아직 열리지 않았다
+    return toast('지금은 볼 수 없는 모임이에요');   // 지워졌거나, 아직 열리지 않았다
   }
   openRoutine(id);
 }
@@ -9803,7 +9803,7 @@ function openDeepRoutine(id) {
   const deepRoutine = /^\d+$/.test(q.get('routine') || '') ? Number(q.get('routine')) : null;
   const deepTab = ['home', 'cert', 'feed', 'store', 'my'].includes(q.get('tab')) ? q.get('tab') : null;
   const deepCert = /^\d+$/.test(q.get('cert') || '') ? Number(q.get('cert')) : null;
-  // 주소에서 걷는다. 안 걷으면 새로고침할 때마다 같은 루틴이 다시 열린다
+  // 주소에서 걷는다. 안 걷으면 새로고침할 때마다 같은 모임이 다시 열린다
   if (deepRoutine || deepTab || deepCert) history.replaceState(history.state, '', location.pathname);
 
   const { data: { session } } = await sb.auth.getSession();
@@ -9815,7 +9815,7 @@ function openDeepRoutine(id) {
     history.replaceState(null, '', location.pathname + location.search);
     return showAuth('login');
   }
-  // 로그인 전이라면 가입하고 돌아와도 같은 루틴으로 이어지게 기억해 둔다 (enter 가 꺼내 쓴다)
+  // 로그인 전이라면 가입하고 돌아와도 같은 모임으로 이어지게 기억해 둔다 (enter 가 꺼내 쓴다)
   if (!session && deepRoutine) sessionStorage.setItem('goRoutine', String(deepRoutine));
   if (session) await enter();
   else await browseAsGuest();   // 로그인 없이 바로 둘러보기

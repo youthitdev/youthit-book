@@ -524,7 +524,7 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
           <div class="feat-t">혼자가 아니라<br>친구들과 함께 읽어요</div>
           <p class="feat-p">'끗짱'이 이끄는 모임에서 또래 친구들이 현재 읽는 책과 매일의 기록을 둘러보고, 댓글과 좋아요로 응원을 주고받습니다.</p>
         </div>
-        <div class="feat-ph"><div class="phone"><img src="app-shots/app-2-friends.jpg" alt="루틴에서 함께 읽는 친구들의 닉네임과 책 표지가 보이는 화면" loading="lazy"></div></div>
+        <div class="feat-ph"><div class="phone"><img src="app-shots/app-2-friends.jpg" alt="모임에서 함께 읽는 친구들의 닉네임과 책 표지가 보이는 화면" loading="lazy"></div></div>
       </div>
 
       <div class="feat-row">
@@ -804,7 +804,7 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
       document.getElementById('reviews').innerHTML = reviews.map(x =>
         `<div class="voice"><p>${esc(x.content)}</p>
           <cite style="display:block;font-style:normal;font-size:12px;color:var(--ink-3);margin:12px 4px 0">${
-            x.kind === 'book' && x.book_title ? '📗 ' + esc(x.book_title) : '📚 루틴 후기'}</cite></div>`).join('');
+            x.kind === 'book' && x.book_title ? '📗 ' + esc(x.book_title) : '📚 모임 후기'}</cite></div>`).join('');
       document.getElementById('reviewBlock').style.display = '';
       document.getElementById('voiceSec').style.display = '';
     }

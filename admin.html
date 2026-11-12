@@ -80,7 +80,7 @@ header { background:var(--card); border-bottom:1px solid var(--line); position:s
 .tbl { overflow-x:auto; }
 /* 겹치는 창 안의 표. 기본 min-width:720px 이라 그대로 두면 오른쪽이 잘린다 */
 .tbl.narrow table { min-width:0; }
-/* 루틴 표는 열이 아홉이다. 기본 720px 로는 칸마다 눌린다 */
+/* 모임 표는 열이 아홉이다. 기본 720px 로는 칸마다 눌린다 */
 .tbl.wide table { min-width:980px; }
 .tbl.narrow th, .tbl.narrow td { padding-left:13px; padding-right:13px; }
 table { width:100%; min-width:720px; border-collapse:collapse; }
@@ -112,7 +112,7 @@ tr:hover td { background:#fcfcfd; }
 .btn-pink { background:var(--pink); color:#fff; }
 .btn-dark { background:var(--ink); color:#fff; }
 .btn-line { background:var(--card); border:1px solid var(--line); color:var(--ink-2); }
-/* 루틴 지우기. 어찌다 한 번 쓰는 것이라 조용히 둔다 — 알톡이 아니라 장전 */
+/* 모임 지우기. 어찌다 한 번 쓰는 것이라 조용히 둔다 — 알톡이 아니라 장전 */
 .r-del { color:var(--ink-3); padding-left:10px; padding-right:10px; font-size:15px; line-height:1; }
 .r-del:hover { color:#8E3527; border-color:#E0BDB3; }
 .btn-danger { background:#fff; border:1px solid #EDC6BC; color:#8E3527; }
@@ -258,7 +258,7 @@ tr:hover td { background:#fcfcfd; }
 .fund > div:first-child b { color:var(--pink); font-size:23px; }
 .fund > div span { display:block; font-size:11.5px; color:var(--ink-3); margin-top:2px; font-weight:600; }
 .fund p { flex-basis:100%; font-size:12.5px; color:var(--ink-2); line-height:1.6; margin:0; }
-/* 열어달라고 기다리는 루틴 한 건 */
+/* 열어달라고 기다리는 모임 한 건 */
 .rw { display:flex; align-items:flex-start; gap:12px; padding:12px 0; }
 .rw + .rw { border-top:1px solid var(--line); }
 .rw-t { flex:1; min-width:0; }
@@ -320,7 +320,7 @@ tr:hover td { background:#fcfcfd; }
 .rp-sec + .btn-s, .rp-text + .btn-s { margin-left:20px; }
 @media (max-width:640px) { .rp-grid { grid-template-columns:repeat(3,1fr); } }
 
-/* 루틴 대표 사진 고르개 */
+/* 모임 대표 사진 고르개 */
 .re-cover { position:relative; height:150px; border:1px dashed var(--line); border-radius:12px;
   background:var(--bg); display:flex; align-items:center; justify-content:center;
   cursor:pointer; overflow:hidden; }
@@ -467,7 +467,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 .warn { background:#FAECE8; border:1px solid #ffd3de; color:#b00038; border-radius:12px; padding:12px 15px; font-size:12.5px; margin-bottom:16px; }
 @media (max-width:820px){ .sum { grid-template-columns:repeat(2,1fr); } }
 
-/* 루틴 참여자 창의 읽는 책 — 표지 작은 그림과 제목 */
+/* 모임 참여자 창의 읽는 책 — 표지 작은 그림과 제목 */
 .pb-row{display:flex;gap:6px;flex-wrap:wrap}
 .pb{width:44px;text-align:center}
 .pb img,.pb .pb-ph{width:44px;height:62px;border-radius:5px;object-fit:cover;display:flex;align-items:center;justify-content:center;background:#EFEBE1;font-size:17px;box-shadow:0 1px 4px rgba(0,0,0,.18)}
@@ -591,7 +591,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <!-- 하는 일 기준 다섯 묶음 (2026-10-13 사용자). 묶음 단추에는 처리할 일 수가 붙는다 -->
   <div class="grp">
     <button class="grp-b on" data-grp="members"  onclick="switchGroup('members')">👥 회원<i id="cntGMembers"></i></button>
-    <button class="grp-b"    data-grp="routines" onclick="switchGroup('routines')">📚 루틴<i id="cntGRoutines"></i></button>
+    <button class="grp-b"    data-grp="routines" onclick="switchGroup('routines')">📚 모임<i id="cntGRoutines"></i></button>
     <button class="grp-b"    data-grp="msgs"     onclick="switchGroup('msgs')">🔔 알림<i id="cntInboxG"></i></button>
     <button class="grp-b"    data-grp="site"     onclick="switchGroup('site')">🏠 홈페이지</button>
     <button class="grp-b"    data-grp="money"    onclick="switchGroup('money')">💰 정산<i id="cntGMoney"></i></button>
@@ -604,9 +604,9 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="nadaum" onclick="switchTab('nadaum')">나다움 지급</button>
   </div>
   <div class="tabs" id="tabsRoutines" style="display:none;">
-    <button class="tab" data-tab="routines" onclick="switchTab('routines')">루틴<i id="cntRoutines"></i></button>
+    <button class="tab" data-tab="routines" onclick="switchTab('routines')">모임<i id="cntRoutines"></i></button>
     <button class="tab" data-tab="reports" onclick="switchTab('reports')">인증 신고<i id="cntReports"></i></button>
-    <button class="tab" data-tab="schedules" onclick="switchTab('schedules')">루틴 일정</button>
+    <button class="tab" data-tab="schedules" onclick="switchTab('schedules')">모임 일정</button>
   </div>
   <div class="tabs" id="tabsMsgs" style="display:none;">
     <button class="tab" data-tab="inbox" onclick="switchTab('inbox')">받은 알림<i id="cntInbox"></i></button>
@@ -671,11 +671,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
-<!-- 루틴 참여자 -->
+<!-- 모임 참여자 -->
 <div class="overlay" id="rtOverlay">
   <div class="modal" style="max-width:640px;">
     <div class="modal-hd">
-      <div class="modal-t" id="rtTitle">루틴 결과 리포트</div>
+      <div class="modal-t" id="rtTitle">모임 결과 리포트</div>
       <div class="modal-d">후원 기업·외부에 공유하는 A4 한 장짜리예요. 청소년 이름·사진·지역·금액은 담기지 않아요.</div>
     </div>
     <div class="modal-bd" id="rtBody"><div class="empty">불러오는 중…</div></div>
@@ -709,11 +709,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
-<!-- 루틴 수정 -->
+<!-- 모임 수정 -->
 <div class="overlay" id="routineEditOverlay">
   <div class="modal" style="max-width:560px;">
     <div class="modal-hd">
-      <div class="modal-t" id="reTitleTop">루틴 수정</div>
+      <div class="modal-t" id="reTitleTop">모임 수정</div>
       <div class="modal-d" id="reDescTop">끗짱이 잘못 적은 것을 운영진이 바로잡아요.
         수정해도 승인 상태는 그대로예요.</div>
     </div>
@@ -726,11 +726,11 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
 </div>
 
 <div class="overlay" id="kkutOverlay">
-  <!-- 맡은 루틴 표까지 들어가야 해서 기본 460px 로는 좁다 -->
+  <!-- 맡은 모임 표까지 들어가야 해서 기본 460px 로는 좁다 -->
   <div class="modal" style="max-width:560px;">
     <div class="modal-hd">
       <div class="modal-t" id="kkutInfoTitle">끗짱</div>
-      <div class="modal-d">끗짱 신청서에 적힌 내용과 맡은 루틴이에요.</div>
+      <div class="modal-d">끗짱 신청서에 적힌 내용과 맡은 모임이에요.</div>
     </div>
     <div class="modal-bd" id="kkutInfoBody"></div>
     <div class="modal-ft">
@@ -739,7 +739,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
-<!-- 루틴별 인증 내용과 읽고 있는 책 (운영진용). 청소년이 올린 글·사진이 그대로 보인다 -->
+<!-- 모임별 인증 내용과 읽고 있는 책 (운영진용). 청소년이 올린 글·사진이 그대로 보인다 -->
 <div class="overlay" id="certsOverlay">
   <div class="modal" style="max-width:760px;">
     <div class="modal-hd">
@@ -757,8 +757,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-t" id="peopleTitle">참여자</div>
-      <div class="modal-d">이 루틴에 참여한 청소년이에요. 나다움은 계정 전체 누적이고,
-        이 루틴만의 것이 아니에요.</div>
+      <div class="modal-d">이 모임에 참여한 청소년이에요. 나다움은 계정 전체 누적이고,
+        이 모임만의 것이 아니에요.</div>
     </div>
     <div class="modal-bd" id="peopleBody"></div>
     <div class="modal-ft">
@@ -859,7 +859,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
           <input type="checkbox" id="sActive" checked style="width:16px;height:16px;">
           현재 파트너 서점
         </label>
-        <div class="hint">체크를 풀면(숨김) 청소년 앱의 책방 목록과 새 루틴의 책방 선택에서 빠져요. 기존 루틴은 그대로 유지돼요. 표의 「숨기기」 단추와 같은 값이에요.</div>
+        <div class="hint">체크를 풀면(숨김) 청소년 앱의 책방 목록과 새 모임의 책방 선택에서 빠져요. 기존 모임은 그대로 유지돼요. 표의 「숨기기」 단추와 같은 값이에요.</div>
       </div>
     </div>
     <div class="modal-ft">
@@ -884,7 +884,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       <div class="field" id="mkAdultField" style="display:none;">
         <div class="label">청소년인가요, 어른인가요 <span>*</span></div>
         <select id="mkAdult">
-          <option value="1">어른 — 루틴만 만들어요. 나다움·교환권·책은 받지 않아요</option>
+          <option value="1">어른 — 모임만 만들어요. 나다움·교환권·책은 받지 않아요</option>
           <option value="0">청소년 — 계속 읽고 나다움도 쌓아요</option>
         </select>
       </div>
@@ -1122,7 +1122,7 @@ function renderSummary() {
   document.getElementById('summary').innerHTML = grp !== 'money'
     ? todoCard('청소년', waitV, '명', '서류를 낸 사람')
       + todoCard('끗짱',   waitK, '건', '신청서를 낸 분')
-      + todoCard('루틴',   waitR, '건', '승인을 기다리는')
+      + todoCard('모임',   waitR, '건', '승인을 기다리는')
     : card('책이 된 금액', won(p.spent), '원', false)
       + card('정산 대기', p.pending, '건', p.pending,
              (n => n ? `⚠️ ${CLAIM_WARN_DAYS}일↑ ${n}건` : '')((DB.purchases || []).filter(overdue).length))
@@ -1180,11 +1180,11 @@ function renderPanel() {
 }
 
 // ── 통계 (migration-133) ────────────────────────────────────
-// 한끗루틴 관리자의 통계처럼: 숫자 카드, 지역·재학 상태·루틴 상태 그림, 루틴별 완주율 표(체크한 것만 CSV).
-// 숫자는 서버가 한 번에 세어 준다(admin_stats). 완주 = 그 루틴 기간의 70% 이상 인증한 날이 있는 참여자
+// 한끗루틴 관리자의 통계처럼: 숫자 카드, 지역·재학 상태·모임 상태 그림, 모임별 완주율 표(체크한 것만 CSV).
+// 숫자는 서버가 한 번에 세어 준다(admin_stats). 완주 = 그 모임 기간의 70% 이상 인증한 날이 있는 참여자
 let STATS = null, STATS_ERR = '';
 const ST_PCT = 70, ST_SEL = new Set();
-// 루틴별 표의 상태 걸러보기. 카드(진행 중·종료된 루틴)를 누르면 그 상태로 걸러서 표로 내려간다
+// 모임별 표의 상태 걸러보기. 카드(진행 중·종료된 모임)를 누르면 그 상태로 걸러서 표로 내려간다
 let ST_FILTER = 'all';
 const stKey = r => r.canceled ? 'canceled' : r.status;
 function stVisible() { const rows = stRows(); return ST_FILTER === 'all' ? rows : rows.filter(r => stKey(r) === ST_FILTER); }
@@ -1200,14 +1200,14 @@ async function loadStats() {
                 region: [{ r: '서울', n: 10 }, { r: '경기', n: 9 }, { r: '대구', n: 2 }, { r: '인천', n: 1 }] },
               kkut: { total: 9, pending: 2 }, certs: { total: 54, days: 48, kkut: 9, month: 31 }, routines: { recruit: 1, active: 1, done: 3, other: 0 },
               withdrawn: { total: 3, recent: 0 },
-              rows: [{ id: 1, title: '[데모] 하루 10장 독서 루틴', status: 'active', start: '2026-10-07', end: '2026-10-21', days: 15, people: 4, done: 0, today: 2 },
+              rows: [{ id: 1, title: '[데모] 하루 10장 독서 모임', status: 'active', start: '2026-10-07', end: '2026-10-21', days: 15, people: 4, done: 0, today: 2 },
                      { id: 2, title: '[데모] 오늘의 한 끼 기록', status: 'done', start: '2026-09-07', end: '2026-09-15', days: 9, people: 4, done: 3 }] };
     return;
   }
   const { data, error } = await sb.rpc('admin_stats', { p_pct: ST_PCT });
   if (error) { STATS = null; STATS_ERR = error.message || '알 수 없는 오류'; return; }
   STATS = data;
-  // 매일 한끗(상시 루틴)의 숫자. 마이그레이션 147 이 아직이면 이 구역만 빠진다
+  // 매일 한끗(상시 모임)의 숫자. 마이그레이션 147 이 아직이면 이 구역만 빠진다
   try { const og = await sb.rpc('admin_ongoing_stats'); STATS.ongoing = og.error ? null : og.data; } catch (e) { STATS.ongoing = null; }
 }
 function stDonut(items) {
@@ -1220,7 +1220,7 @@ function stDonut(items) {
   return `<div class="st-don"><svg viewBox="0 0 120 120" aria-hidden="true">${arcs}</svg>
     <div class="st-lg">${rows.map(i => `<div><b style="background:${i.color}"></b>${esc(i.label)}<em>${won(i.n)}명 · ${Math.round(i.n / tot * 100)}%</em></div>`).join('')}</div></div>`;
 }
-// 루틴 하나에 올라온 인증 전체(청소년·끗짱 모두) — 루틴 탭의 「인증」 숫자와 같다
+// 모임 하나에 올라온 인증 전체(청소년·끗짱 모두) — 모임 탭의 「인증」 숫자와 같다
 const stCerts = id => (DB.certs || []).filter(c => c.routine_id === id).length;
 function stRows() { return (STATS && STATS.rows) || []; }
 function stRate(r) { return r.status === 'done' && !r.canceled && r.people ? Math.round(r.done / r.people * 100) : null; }
@@ -1228,12 +1228,12 @@ function stToggle(id) { if (ST_SEL.has(id)) ST_SEL.delete(id); else ST_SEL.add(i
 function stToggleAll(on) { stVisible().forEach(r => on ? ST_SEL.add(r.id) : ST_SEL.delete(r.id)); renderPanel(); }
 function stCsv() {
   const all = stVisible(), pick = all.filter(r => ST_SEL.has(r.id)), rows = pick.length ? pick : all;
-  if (!rows.length) return alert('내려받을 루틴이 없어요.');
-  downloadCsv(`루틴별완주율_${todayStamp()}.csv`, ['루틴', '상태', '시작일', '종료일', '일수', '전체 인증', '참여인원', '완주인원', '완주율(%)'],
+  if (!rows.length) return alert('내려받을 모임이 없어요.');
+  downloadCsv(`모임별완주율_${todayStamp()}.csv`, ['모임', '상태', '시작일', '종료일', '일수', '전체 인증', '참여인원', '완주인원', '완주율(%)'],
     rows.map(r => [r.title, (r.canceled ? '폐강' : ({ recruit: '모집 중', active: '진행 중', done: '종료' }[r.status] || r.status)), r.start, r.end, r.days, stCerts(r.id), r.people, r.status === 'done' && !r.canceled ? r.done : '', stRate(r) ?? '']));
 }
-// 루틴 제목 링크: 청소년 앱의 실제 화면으로 간다. 모집 중이면 모집 페이지, 진행 중·종료는 그 루틴의 인증 화면 (새 탭).
-// 폐강한 루틴은 인증 화면이 없어서 소개 화면(「열리지 못했어요」)으로 간다
+// 모임 제목 링크: 청소년 앱의 실제 화면으로 간다. 모집 중이면 모집 페이지, 진행 중·종료는 그 모임의 인증 화면 (새 탭).
+// 폐강한 모임은 인증 화면이 없어서 소개 화면(「열리지 못했어요」)으로 간다
 function stTitleLink(r, emoji) {
   const q = (r.status === 'recruit' || r.canceled) ? `routine=${r.id}` : `tab=cert&routine=${r.id}`;
   const t = (r.status === 'recruit' && !r.canceled) ? '모집 페이지 열기 (청소년 앱)' : '인증 페이지 열기 (청소년 앱)';
@@ -1251,7 +1251,7 @@ function viewStats() {
   const dn = doneRows.reduce((a, r) => a + r.done, 0), pn = doneRows.reduce((a, r) => a + r.people, 0);
   const overall = pn ? Math.round(dn / pn * 100) : null;
   const out = sc['학교밖'] || 0;
-  const card = (l, v, u, sub, hl, go) => `<div class="st-c${hl ? ' hl' : ''}${go ? ' go' : ''}"${go ? ` role="button" tabindex="0" onclick="${go}" title="루틴 목록 보기"` : ''}><div class="st-l">${l}${go ? ' <span class="st-go">목록 ›</span>' : ''}</div><div class="st-v num">${v}<small>${u}</small></div><div class="st-s">${sub}</div></div>`;
+  const card = (l, v, u, sub, hl, go) => `<div class="st-c${hl ? ' hl' : ''}${go ? ' go' : ''}"${go ? ` role="button" tabindex="0" onclick="${go}" title="모임 목록 보기"` : ''}><div class="st-l">${l}${go ? ' <span class="st-go">목록 ›</span>' : ''}</div><div class="st-v num">${v}<small>${u}</small></div><div class="st-s">${sub}</div></div>`;
 
   const regs = (y.region || []), top = regs.slice(0, 12), rest = regs.slice(12).reduce((a, b) => a + b.n, 0), mx = Math.max(1, ...top.map(x => x.n));
   const bars = top.length ? top.map(x => `<div class="st-bar"><span title="${esc(x.r)}">${esc(x.r)}</span><div class="st-bt"><i style="width:${Math.round(x.n / mx * 100)}%"></i></div><em>${x.n}</em></div>`).join('')
@@ -1264,14 +1264,14 @@ function viewStats() {
                         { label: '종료', n: ro.done || 0, color: '#83CA00' }, { label: '폐강', n: ro.canceled || 0, color: '#B9B2A3' },
                         { label: '그 밖', n: ro.other || 0, color: '#D9D5CA' }]
     .map(x => ({ ...x }));
-  // 루틴 그림은 「개」 단위라 donut 의 「명」을 바꿔 쓴다
+  // 모임 그림은 「개」 단위라 donut 의 「명」을 바꿔 쓴다
   const routineDonut = stDonut(routineItems).replace(/명 ·/g, '개 ·');
 
   const act = rows.filter(r => r.status === 'active');
   const prog = act.length ? act.map(r => `<div class="st-prog"><b>${stTitleLink(r)}</b>
       <span>참여 ${r.people}명 · 오늘 인증 ${r.today || 0}명</span>
       <div class="st-pb"><i style="width:${r.people ? Math.round((r.today || 0) / r.people * 100) : 0}%"></i></div></div>`).join('')
-    : '<div class="empty">진행 중인 루틴이 없어요</div>';
+    : '<div class="empty">진행 중인 모임이 없어요</div>';
 
   const shown = stVisible();
   const cnt = k2 => k2 === 'all' ? rows.length : rows.filter(r => stKey(r) === k2).length;
@@ -1282,7 +1282,7 @@ function viewStats() {
   const tbl = shown.length ? `<table class="st-tbl"><tr>
       <th>상태</th>
       <th style="width:34px;"><input type="checkbox" ${allOn ? 'checked' : ''} onchange="stToggleAll(this.checked)"></th>
-      <th>루틴</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th><th></th></tr>
+      <th>모임</th><th>기간</th><th class="r">전체 인증</th><th class="r">참여인원</th><th class="r">완주 인원</th><th class="r">완주율</th><th></th></tr>
     ${shown.map(r => `<tr><td><span class="st-pl ${r.canceled ? 'canceled' : r.status}">${r.canceled ? '폐강' : (stLabel[r.status] || r.status)}</span></td>
       <td><input type="checkbox" ${ST_SEL.has(r.id) ? 'checked' : ''} onchange="stToggle(${r.id})"></td><td>${stTitleLink(r)}</td>
       <td class="num">${esc(String(r.start || '').slice(0, 10))} ~ ${esc(String(r.end || '').slice(0, 10))}</td>
@@ -1291,7 +1291,7 @@ function viewStats() {
       <td class="num r">${r.status === 'done' && !r.canceled ? r.done + '명' : '—'}</td>
       <td class="num r"><b>${stRate(r) === null ? '—' : stRate(r) + '%'}</b></td>
       <td class="r" style="white-space:nowrap;"><button class="btn btn-line" onclick="openRoutinePeople(${r.id})" title="참여한 청소년 보기">참여자</button>${r.canceled || r.status === 'recruit' ? '' : ` <button class="btn btn-line" onclick="openRoutineDaily(${r.id})" title="날짜별 인증 현황">일별</button> <button class="btn btn-line" onclick="rtOpen(${r.id})" title="후원 기업·외부에 공유하는 한 장짜리 결과 리포트">📄 리포트</button>`}</td></tr>`).join('')}</table>`
-    : `<div class="empty">${rows.length ? '이 상태의 루틴이 없어요' : '아직 루틴이 없어요'}</div>`;
+    : `<div class="empty">${rows.length ? '이 상태의 모임이 없어요' : '아직 모임이 없어요'}</div>`;
 
   return `<div class="st-wrap">
   <div class="st-gl">👥 회원</div>
@@ -1304,9 +1304,9 @@ function viewStats() {
   <div class="st-gl">📊 활동</div>
   <div class="st-cards c4">
     ${card('전체 인증', won((S.certs || {}).total || 0), '건', `하루 한 번 기준 ${won((S.certs || {}).days || 0)}번 · 이번 달 ${won((S.certs || {}).month || 0)}건`)}
-    ${card('진행 중 루틴', won(ro.active || 0), '개', `모집 중 ${won(ro.recruit || 0)}개`, false, "stSetFilter('active', true)")}
-    ${card('종료된 루틴', won(ro.done || 0), '개', ro.canceled ? `폐강 ${won(ro.canceled)}개는 따로 세요` : '끝까지 진행한 루틴', false, "stSetFilter('done', true)")}
-    ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 루틴이 아직 없어요' : `종료 루틴 ${doneRows.length}개 기준`)}
+    ${card('진행 중 모임', won(ro.active || 0), '개', `모집 중 ${won(ro.recruit || 0)}개`, false, "stSetFilter('active', true)")}
+    ${card('종료된 모임', won(ro.done || 0), '개', ro.canceled ? `폐강 ${won(ro.canceled)}개는 따로 세요` : '끝까지 진행한 모임', false, "stSetFilter('done', true)")}
+    ${card('전체 완주율', overall === null ? '—' : overall, overall === null ? '' : '%', overall === null ? '끝난 모임이 아직 없어요' : `종료 모임 ${doneRows.length}개 기준`)}
   </div>
   ${S.ongoing ? `<div class="st-gl">🌱 매일 한끗</div>
   <div class="st-cards c4">
@@ -1315,21 +1315,21 @@ function viewStats() {
     ${card('평균 연속일', String(S.ongoing.avg_streak || 0), '일', `3일 이상 ${won(S.ongoing.streak3 || 0)}명 · 7일 이상 ${won(S.ongoing.seven || 0)}명`)}
     ${card('이번 주 응원', won(S.ongoing.cheers_week || 0), '건', `이번 주 인증한 사람 ${won(S.ongoing.week_users || 0)}명 · 하루 평균 ${S.ongoing.week_avg || 0}명`)}
   </div>` : ''}
-  <div class="st-box"><h3>진행 중인 루틴 현황</h3>${prog}</div>
+  <div class="st-box"><h3>진행 중인 모임 현황</h3>${prog}</div>
   <div class="st-grid">
     <div class="st-box"><h3>지역별 청소년 분포</h3>${bars}</div>
     <div class="st-box"><h3>재학 상태 비율<small>가입할 때 고른 값</small></h3>${stDonut(schoolItems)}</div>
-    <div class="st-box"><h3>루틴 상태 분포</h3>${routineDonut}</div>
+    <div class="st-box"><h3>모임 상태 분포</h3>${routineDonut}</div>
   </div>
   <div class="st-box" id="stTbl">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
-      <h3 style="margin:0;">루틴별 완주율</h3>
+      <h3 style="margin:0;">모임별 완주율</h3>
       <div class="st-fl">${fl}</div>
-      <button class="btn btn-dark" onclick="stCsv()">📥 ${ST_SEL.size ? '체크한 루틴 CSV' : '전체 루틴 CSV'}</button>
+      <button class="btn btn-dark" onclick="stCsv()">📥 ${ST_SEL.size ? '체크한 모임 CSV' : '전체 모임 CSV'}</button>
     </div>
     <div style="overflow-x:auto;">${tbl}</div>
-    <div class="st-note">완주 = 그 루틴 기간 중 <b>${S.pct || ST_PCT}% 이상</b> 인증한 날이 있는 참여자예요. 끗짱은 빼고 청소년만 세요. 인증은 하루에 한 번만 세요.
-      완주율은 <b>종료된 루틴</b>만 계산해요. 진행 중인 루틴은 아직 끝나지 않았고, <b>폐강한 루틴</b>은 열리지 못했으니 뺐어요.</div>
+    <div class="st-note">완주 = 그 모임 기간 중 <b>${S.pct || ST_PCT}% 이상</b> 인증한 날이 있는 참여자예요. 끗짱은 빼고 청소년만 세요. 인증은 하루에 한 번만 세요.
+      완주율은 <b>종료된 모임</b>만 계산해요. 진행 중인 모임은 아직 끝나지 않았고, <b>폐강한 모임</b>은 열리지 못했으니 뺐어요.</div>
   </div>
   </div>`;
 }
@@ -1752,10 +1752,10 @@ async function voidGrant(id) {
 }
 
 
-// ── 루틴 일정 (migration-159, 2026-11-11 요청) ──────────────────────
-//   끗짱이 루틴을 만들 때 시작일·기간을 직접 적지 않고 여기 등록해 둔 일정에서 고른다 (예: 12월 루틴).
+// ── 모임 일정 (migration-159, 2026-11-11 요청) ──────────────────────
+//   끗짱이 모임을 만들 때 시작일·기간을 직접 적지 않고 여기 등록해 둔 일정에서 고른다 (예: 12월 모임).
 //   온라인 공유회도 유스보이스가 정한 일시와 Zoom 링크를 여기서 미리 등록한다.
-//   Zoom 링크는 루틴이 열린 뒤 그 루틴의 끗짱·승인된 참여자에게만 보인다 (서버 meeting_zoom).
+//   Zoom 링크는 모임이 열린 뒤 그 모임의 끗짱·승인된 참여자에게만 보인다 (서버 meeting_zoom).
 let MSC = null, mscBusy = false;
 async function mscLoad() {
   if (mscBusy) return; mscBusy = true;
@@ -1784,7 +1784,7 @@ function viewSchedules() {
         <td>${x.active ? '고를 수 있음' : '숨김'}</td>
         <td class="right"><button class="btn btn-line" onclick="mscToggle('meeting_schedules', ${x.id}, ${!x.active})">${x.active ? '숨기기' : '다시 보이기'}</button>
           <button class="btn btn-line" onclick="mscDel('meeting_schedules', ${x.id}, '${esc(x.title).replace(/'/g, "\\'")}')">삭제</button></td></tr>`).join('')}
-    </table></div>` : `<div class="empty">아직 등록한 루틴 일정이 없어요.</div>`;
+    </table></div>` : `<div class="empty">아직 등록한 모임 일정이 없어요.</div>`;
   const mt = MSC.mt.length ? `<div class="tbl"><table>
       <tr><th>일시</th><th>이름(선택)</th><th>Zoom 링크</th><th>상태</th><th></th></tr>
       ${MSC.mt.map(x => `<tr${x.active ? '' : ' class="voided"'}>
@@ -1797,14 +1797,14 @@ function viewSchedules() {
     </table></div>` : `<div class="empty">아직 등록한 온라인 공유회가 없어요.</div>`;
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">루틴 일정</div>
-    <div class="panel-d">끗짱이 루틴을 만들 때 여기 등록한 일정에서 골라요. 달마다 미리 등록해 두세요.<br>
+    <div><div class="panel-t">모임 일정</div>
+    <div class="panel-d">끗짱이 모임을 만들 때 여기 등록한 일정에서 골라요. 달마다 미리 등록해 두세요.<br>
       아직 시작하지 않은 일정만 끗짱에게 보여요.${MSC.err ? `<br><b style="color:#b00038;">불러오지 못했어요: ${esc(MSC.err)} (마이그레이션 159 를 돌렸는지 확인해 주세요)</b>` : ''}</div></div>
   </div>
   <div style="padding:6px 20px 8px;">
-    <div class="panel-t" style="font-size:15px;margin:8px 0;">루틴 운영 일정</div>
+    <div class="panel-t" style="font-size:15px;margin:8px 0;">모임 운영 일정</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
-      <div><div class="muted">이름</div><input type="text" id="mscTitle" placeholder="예) 12월 루틴" maxlength="30" style="width:170px;"></div>
+      <div><div class="muted">이름</div><input type="text" id="mscTitle" placeholder="예) 12월 모임" maxlength="30" style="width:170px;"></div>
       <div><div class="muted">시작일</div><input type="date" id="mscStart"></div>
       <div><div class="muted">종료일</div><input type="date" id="mscEnd"></div>
       <button class="btn btn-dark" onclick="mscAddSchedule()">일정 추가</button>
@@ -1862,7 +1862,7 @@ async function mscToggle(tbl, id, on) {
   MSC = null; renderPanel();
 }
 async function mscDel(tbl, id, name) {
-  if (!confirm(`「${name}」을(를) 삭제할까요?\n\n이미 이 일정으로 만든 루틴은 그대로 남아요.`)) return;
+  if (!confirm(`「${name}」을(를) 삭제할까요?\n\n이미 이 일정으로 만든 모임은 그대로 남아요.`)) return;
   const { error } = await sb.from(tbl).delete().eq('id', id);
   if (error) return alert('지우지 못했어요.\n\n' + error.message);
   MSC = null; renderPanel();
@@ -1883,7 +1883,7 @@ function vqRows() {
   const right = rows.filter(r => r.role === 'adult' || (r.status || 'none') === 'approved');
 
   // 서류를 낸 사람이 맨 위. 그다음이 반려, 아직 안 낸 사람은 아래.
-  // 같은 상태끼리는 새로 가입한 사람이 위로 — 늦게 처리될수록 루틴 신청이 밀린다
+  // 같은 상태끼리는 새로 가입한 사람이 위로 — 늦게 처리될수록 모임 신청이 밀린다
   const ord = { pending:0, rejected:1, none:2 };
   const newest = (a, b) => String(b.joined_at || '').localeCompare(String(a.joined_at || ''));
   left.sort((a, b) => (ord[a.status || 'none'] ?? 9) - (ord[b.status || 'none'] ?? 9) || newest(a, b));
@@ -1994,9 +1994,9 @@ async function revokeLead(userId) {
   if (reason === null) return;
   if (!reason.trim()) return alert('사유를 적어주세요.');
   if (!confirm(`${r.name} 님의 끗짱 자격을 거둘까요?\n\n`
-      + `· 새 루틴을 만들 수 없어요\n`
-      + `· 아직 모집 중이던 루틴은 닫혀요\n`
-      + `· 진행 중인 루틴과 청소년 기록은 그대로예요\n\n`
+      + `· 새 모임을 만들 수 없어요\n`
+      + `· 아직 모집 중이던 모임은 닫혀요\n`
+      + `· 진행 중인 모임과 청소년 기록은 그대로예요\n\n`
       + `사유: ${reason.trim()}`)) return;
   if (!LIVE) { alert('데모 모드에서는 저장되지 않아요.'); return; }
 
@@ -2033,7 +2033,7 @@ async function decideVerify(userId, approve) {
       : `${r.name} 님을 청소년으로 확인할까요?\n\n서류 파일은 바로 지워져요. 되돌릴 수 없어요.`)) return;
   } else {
     // 이미 확인된 사람을 되돌리는 건 그냥 반려와 무게가 다르다.
-    // 루틴 참여와 책 받기가 다시 막히므로 그렇게 말해 준다
+    // 모임 참여와 책 받기가 다시 막히므로 그렇게 말해 준다
     const undo = r.status === 'approved';
     reason = prompt(undo
       ? `${r.name} 님의 청소년 확인을 취소해요.\n사유를 적어주세요 — 앱 화면에 그대로 보여요.`
@@ -2041,7 +2041,7 @@ async function decideVerify(userId, approve) {
     if (reason === null) return;
     if (!reason.trim()) return alert('사유를 적어주세요.');
     if (undo && !confirm(`${r.name} 님의 확인을 취소할까요?\n\n`
-        + `· 루틴에 새로 참여할 수 없어요\n`
+        + `· 모임에 새로 참여할 수 없어요\n`
         + `· 교환권으로 책을 받을 수 없어요\n`
         + `· 이미 받아 간 책과 기록은 그대로예요\n\n`
         + `사유: ${reason.trim()}`)) return;
@@ -2069,7 +2069,7 @@ async function nfCount() {
   if (!box) return;
   const t = document.getElementById('nfTarget').value;
   const rid = document.getElementById('nfRoutine')?.value;
-  if (t === 'routine' && !rid) { box.textContent = '루틴을 골라주세요'; nfReach = null; return; }
+  if (t === 'routine' && !rid) { box.textContent = '모임을 골라주세요'; nfReach = null; return; }
   if (!LIVE) { box.textContent = '데모 모드 — 실제로는 구독자 수가 나와요'; nfReach = 0; return; }
   box.textContent = '세는 중…';
   // 인자를 빼면 PostgREST 가 「0-인자 push_reach」를 찾다가 못 찾는다.
@@ -2104,12 +2104,12 @@ async function nfSubmit() {
   const at    = document.getElementById('nfAt').value;
 
   if (!title) return alert('제목을 적어주세요.');
-  if (t === 'routine' && !rid) return alert('루틴을 골라주세요.');
+  if (t === 'routine' && !rid) return alert('모임을 골라주세요.');
   if (later && !at) return alert('언제 보낼지 골라주세요.');
   if (later && new Date(at) <= new Date()) return alert('지난 시각으로는 예약할 수 없어요.');
   if (!LIVE) return alert('데모 모드에서는 보내지지 않아요.');
 
-  const who = t === 'all' ? '전체' : (DB.routines || []).find(r => r.id === rid)?.title || '그 루틴';
+  const who = t === 'all' ? '전체' : (DB.routines || []).find(r => r.id === rid)?.title || '그 모임';
   const when = later ? `\n\n보낼 때: ${at.replace('T', ' ')}` : '\n\n지금 바로 나가요. 되돌릴 수 없어요.';
   if (!confirm(`${who} · ${nfReach != null ? nfReach + '명' : '구독자'}에게 보내요.\n\n${title}\n${body}${when}`)) return;
 
@@ -2151,7 +2151,7 @@ function viewNotify() {
   const sched  = (DB.scheduled || []).filter(n => !n.sent_at);
   const sent   = (DB.scheduled || []).filter(n => n.sent_at).slice(0, 10);
   const whoOf  = n => n.target === 'all' ? '전체'
-    : ((DB.routines || []).find(r => r.id === n.routine_id)?.title || '루틴 ' + n.routine_id);
+    : ((DB.routines || []).find(r => r.id === n.routine_id)?.title || '모임 ' + n.routine_id);
   const when   = v => String(v).slice(0, 16).replace('T', ' ');
 
   const row = (n, done) => `<div class="vq">
@@ -2184,11 +2184,11 @@ function viewNotify() {
       <label>보낼 사람</label>
       <select id="nfTarget" onchange="nfTargetChange()">
         <option value="all">전체</option>
-        <option value="routine">특정 루틴에 참여 중인 사람</option>
+        <option value="routine">특정 모임에 참여 중인 사람</option>
       </select>
     </div>
     <div class="nf-f" id="nfRoutineWrap" style="display:none;">
-      <label>루틴</label>
+      <label>모임</label>
       <select id="nfRoutine" onchange="nfCount()">
         <option value="">고르기</option>
         ${rs.map(r => `<option value="${r.id}">${esc(r.title)}</option>`).join('')}
@@ -2266,7 +2266,7 @@ function viewReport() {
     ${num(d.certs, '건', '인증')}
     ${num(d.books, '권', '전해진 책')}
     ${num(d.new_readers, '명', '처음 인증한 사람')}
-    ${num(d.joins, '건', '루틴 참여')}
+    ${num(d.joins, '건', '모임 참여')}
     <!-- 「책값」 칸은 뺐다 (2026-10-15 사용자) -->
   </div>
 
@@ -2286,7 +2286,7 @@ function viewReport() {
   <div class="rp-sec">아이들의 후기 <i>${(d.reviews || []).length}</i>
     <small>공개로 켠 것만</small></div>
   <div>${(d.reviews || []).length ? d.reviews.map((r, i) => `<div class="rp-q"><p>${esc(r.content)}</p>
-            <cite>${r.kind === 'book' ? '📗 ' + esc(r.book_title || '') : '📚 루틴 후기'}</cite>
+            <cite>${r.kind === 'book' ? '📗 ' + esc(r.book_title || '') : '📚 모임 후기'}</cite>
             <label class="rp-use"><input type="checkbox" ${RP.pick.rv.includes(i) ? 'checked' : ''} onchange="rpPick('rv', ${i}, this)"> 인포그래픽에 넣기</label></div>`).join('') : ''}${(d.reviews || []).length ? '' : list(d.reviews,
     r => '',
     '공개로 켠 후기가 없어요. 「문장 고르기」 탭에서 골라주세요.')}</div>
@@ -2334,8 +2334,8 @@ async function rpLoad() {
   render();
 }
 
-// ── 루틴별 결과 리포트 (후원 기업·외부 공유용 · A4 한 장 · migration-138) ────────
-// 통계의 루틴별 표에서 「📄 리포트」를 누르면 그 루틴의 성과를 모아 보여 주고, 문장·후기를 2개씩 고른 뒤 PDF 로 저장한다.
+// ── 모임별 결과 리포트 (후원 기업·외부 공유용 · A4 한 장 · migration-138) ────────
+// 통계의 모임별 표에서 「📄 리포트」를 누르면 그 모임의 성과를 모아 보여 주고, 문장·후기를 2개씩 고른 뒤 PDF 로 저장한다.
 let RT = { id: 0, data: null, pick: { rv: [], qt: [] }, showDone: true };   // showDone = 리포트에 완주 숫자를 넣을지
 async function rtOpen(id) {
   RT = { id, data: null, pick: { rv: [], qt: [] }, showDone: true };
@@ -2356,7 +2356,7 @@ function rtRender() {
   const ended = r.status === 'done';
   const num = (v, u, l) => `<div class="rp-n"><b>${won(v)}<small>${u}</small></b><span>${l}</span></div>`;
   const li = (arr, key, kind) => (arr || []).length ? arr.map((x, i) => `<div class="rp-q"><p>${kind === 'qt' ? '“' + esc(x.quote) + '”' : esc(x.content)}</p>
-        <cite>${kind === 'qt' ? esc(x.book_title || '') : (x.kind === 'book' ? '📗 ' + esc(x.book_title || '') : '📚 루틴 후기')}</cite>
+        <cite>${kind === 'qt' ? esc(x.book_title || '') : (x.kind === 'book' ? '📗 ' + esc(x.book_title || '') : '📚 모임 후기')}</cite>
         <label class="rp-use"><input type="checkbox" ${RT.pick[kind].includes(i) ? 'checked' : ''} onchange="rtPick('${kind}', ${i}, this)"> 리포트에 넣기</label></div>`).join('')
     : '<div class="rp-empty">공개로 켠 것이 없어요. 「문장 고르기」 탭에서 골라 주세요.</div>';
   document.getElementById('rtBody').innerHTML = `
@@ -2366,7 +2366,7 @@ function rtRender() {
     </div>
     <label class="rp-opt"><input type="checkbox" ${RT.showDone ? 'checked' : ''} onchange="RT.showDone = this.checked; rtRender()"> 리포트에 <b>완주 숫자</b>(완주 인원·비율) 넣기
       <small>끄면 그 자리에 「인증한 날 합계」가 들어가요</small></label>
-    ${ended ? '' : '<div class="rp-warn">아직 진행 중인 루틴이에요. 지금까지의 결과로 만들어지고, 완주 인원은 빠져요.</div>'}
+    ${ended ? '' : '<div class="rp-warn">아직 진행 중인 모임이에요. 지금까지의 결과로 만들어지고, 완주 인원은 빠져요.</div>'}
     <div class="rp-sec">💬 문장 <i>${(d.quotes || []).length}</i><small>공개로 켠 것 · 2개까지</small></div>${li(d.quotes, 'qt', 'qt')}
     <div class="rp-sec">📝 후기 <i>${(d.reviews || []).length}</i><small>공개로 켠 것 · 2개까지</small></div>${li(d.reviews, 'rv', 'rv')}`;
   document.getElementById('rtGo').disabled = false;
@@ -2404,7 +2404,7 @@ function rtInfographicHtml(d) {
   const dt = x => String(x || '').slice(0, 10).replace(/-/g, '.');
   const hero = d.people
     ? `청소년 <b>${w(d.people)}명</b>이 <b>${w(r.days)}일</b> 동안 <b>${w(d.certs)}번</b> 읽고 기록했어요`
-    : `이 루틴은 아직 기록이 쌓이는 중이에요`;
+    : `이 모임은 아직 기록이 쌓이는 중이에요`;
   const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${v}<small>${u}</small></b><span>${label}</span></div>`;
   const rate = d.people ? Math.round(d.done / d.people * 100) : 0;
   const stats = [stat('🌱', w(d.people), '명', '참여 청소년', 1),
@@ -2424,12 +2424,12 @@ function rtInfographicHtml(d) {
   const side = [`<div><i>💬</i><b>${w(d.comments)}</b><span>개의 응원 댓글</span></div>`, `<div><i>❤️</i><b>${w(d.likes)}</b><span>번의 좋아요</span></div>`,
                 d.meetup ? `<div><i>🤝</i><b>${w(d.meetup.attended)}/${w(d.meetup.people)}명</b><span>공유회 참석</span></div>` : ''].join('');
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>한끗독서 루틴 리포트 ${e(r.title)}</title>
+<title>한끗독서 모임 리포트 ${e(r.title)}</title>
 <style>${INFO_CSS}${RT_CSS}</style></head><body>
 <div class="bar"><span>인쇄 창에서 <b>대상을 「PDF로 저장」</b>으로 고르면 A4 한 장 PDF가 돼요.</span><button onclick="window.print()">다시 인쇄</button></div>
 <div class="page">
   <div class="hd">
-    <small>한끗독서 · 루틴 결과 리포트</small>
+    <small>한끗독서 · 모임 결과 리포트</small>
     <h1>${e(r.emoji || '📚')} ${e(r.title)}</h1>
     <p>${e(dt(r.start))} – ${e(dt(r.end))}${ended ? '' : ' · 진행 중 (지금까지)'}</p>
     ${meta.length ? `<div class="ln">${meta.map(x => `<span>${x}</span>`).join('')}</div>` : ''}
@@ -2446,7 +2446,7 @@ function rtInfographicHtml(d) {
   </div>
   ${(pickQt.length || pickRv.length) ? `<div class="say ${pickQt.length && pickRv.length ? 'both' : 'solo'}">
     ${pickQt.length ? `<div class="sec"><h2>💬 아이들이 고른 문장</h2><div class="qs1">${pickQt.map(q => `<div class="q"><p>${e(cut(q.quote, 90))}</p>${q.book_title ? `<cite>${e(q.book_title)}</cite>` : ''}</div>`).join('')}</div></div>` : ''}
-    ${pickRv.length ? `<div class="sec"><h2>📝 아이들의 후기</h2><div class="qs1">${pickRv.map(v => `<div class="q"><p>${e(cut(v.content, 110))}</p><cite>${v.kind === 'book' ? e(v.book_title || '') : '루틴 후기'}</cite></div>`).join('')}</div></div>` : ''}
+    ${pickRv.length ? `<div class="sec"><h2>📝 아이들의 후기</h2><div class="qs1">${pickRv.map(v => `<div class="q"><p>${e(cut(v.content, 110))}</p><cite>${v.kind === 'book' ? e(v.book_title || '') : '모임 후기'}</cite></div>`).join('')}</div></div>` : ''}
   </div>` : ''}
   <div class="ft"><img src="${SITE}/logo-yv-white.png" alt="YouthVoice"><span>사단법인 유스보이스 · book.youthvoice.or.kr<br>청소년 개인정보는 담기지 않았습니다</span></div>
 </div>
@@ -2570,7 +2570,7 @@ function rpInfographicHtml(d) {
   const stat = (ico, v, u, label, tone) => `<div class="c t${tone}"><i>${ico}</i><b>${w(v)}<small>${u}</small></b><span>${label}</span></div>`;
   const stats = [stat('🌱', d.readers || 0, '명', '읽은 청소년', 1), stat('✍️', d.certs || 0, '번', '독서 기록', 2),
                  stat('📚', d.books || 0, '권', '전해진 책', 3), stat('✨', d.new_readers || 0, '명', '처음 인증한 사람', 4),
-                 stat('🤝', d.joins || 0, '건', '루틴 참여', 5)].join('');
+                 stat('🤝', d.joins || 0, '건', '모임 참여', 5)].join('');
   const books = (d.books_read || []).slice(0, 12);
   const stores = (d.stores || []).slice(0, 6), smax = Math.max(1, ...stores.map(x => x.books || 0));
   // 관리자가 골라 둔 후기·문장 (월간 보고의 「인포그래픽에 넣기」) — 각각 2개까지
@@ -2604,7 +2604,7 @@ function rpInfographicHtml(d) {
   </div>
   ${(pickQt.length || pickRv.length) ? `<div class="say ${pickQt.length && pickRv.length ? 'both' : 'solo'}">
     ${pickQt.length ? `<div class="sec"><h2>💬 아이들이 고른 문장</h2><div class="qs1">${pickQt.map(q => `<div class="q"><p>${e(cut(q.quote, 90))}</p>${q.book_title ? `<cite>${e(q.book_title)}</cite>` : ''}</div>`).join('')}</div></div>` : ''}
-    ${pickRv.length ? `<div class="sec"><h2>📝 아이들의 후기</h2><div class="qs1">${pickRv.map(r => `<div class="q"><p>${e(cut(r.content, 110))}</p><cite>${r.kind === 'book' ? e(r.book_title || '') : '루틴 후기'}</cite></div>`).join('')}</div></div>` : ''}
+    ${pickRv.length ? `<div class="sec"><h2>📝 아이들의 후기</h2><div class="qs1">${pickRv.map(r => `<div class="q"><p>${e(cut(r.content, 110))}</p><cite>${r.kind === 'book' ? e(r.book_title || '') : '모임 후기'}</cite></div>`).join('')}</div></div>` : ''}
   </div>` : ''}
   <div class="ft"><img src="${SITE}/logo-yv-white.png" alt="YouthVoice"><span>book.youthvoice.or.kr<br>청소년 개인정보는 담기지 않았습니다</span></div>
 </div>
@@ -2653,9 +2653,9 @@ function rpCopy() {
     .catch(() => alert('복사하지 못했어요. 직접 선택해서 복사해주세요.'));
 }
 
-// 루틴 관리.
+// 모임 관리.
 // 전에는 상태를 바꾸려면 SQL 을 쳐야 했다 (UPDATE routines SET status=...).
-// 끗짱이 만든 루틴이라도 운영진은 다 볼 수 있어야 하고, 종료 처리는
+// 끗짱이 만든 모임이라도 운영진은 다 볼 수 있어야 하고, 종료 처리는
 // 사람이 눌러야 한다 — 종료일이 지나도 상태를 바꿔주는 장치가 없다
 const R_STATUS = { pending: ['승인 대기', 'c-wait'], recruit: ['모집 중', 'st-pl recruit'],
                    active: ['진행 중', 'st-pl active'], done: ['종료', 'st-pl done'] };
@@ -2706,21 +2706,21 @@ function rOverdue(r) {
 function viewRoutines() {
   const rows = DB.routines || [];
   const late = rows.filter(rOverdue);
-  // 끗짱이 만든 루틴은 열어주기 전까지 아이들에게 안 보인다
+  // 끗짱이 만든 모임은 열어주기 전까지 아이들에게 안 보인다
   const wait = rows.filter(r => r.status === 'pending');
 
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">루틴</div>
-    <div class="panel-d">끗짱이 만든 루틴은 열어줘야 청소년에게 보여요.
+    <div><div class="panel-t">모임</div>
+    <div class="panel-d">끗짱이 만든 모임은 열어줘야 청소년에게 보여요.
       상태를 바꾸면 청소년 앱에 바로 반영돼요.<br>
       <b>볼 것</b> — 소개가 청소년이 읽기에 괜찮은지 · 인증 방법이 분명한지 ·
       읽을 책이 적당한지 · 공유회가 있으면 언제·어디서가 적혀 있는지.</div></div>
-    <button class="btn btn-line" onclick="openRoutineEdit(null)">+ 루틴 만들기</button>
+    <button class="btn btn-line" onclick="openRoutineEdit(null)">+ 모임 만들기</button>
   </div>
 
   ${wait.length ? `<div class="preview" style="margin-bottom:14px;border-color:#E5C795;background:#FFFBF0;">
-    <div class="preview-t">열어달라고 기다리는 루틴 ${wait.length}건</div>
+    <div class="preview-t">열어달라고 기다리는 모임 ${wait.length}건</div>
     ${wait.map(r => `<div class="rw">
       <div class="rw-img">${r.cover_url
         ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">` : (r.emoji || '📚')}</div>
@@ -2759,7 +2759,7 @@ function viewRoutines() {
   </div>` : ''}
 
   ${late.length ? `<div class="preview" style="margin-bottom:14px;">
-    <div class="preview-t">종료일이 지났는데 아직 안 닫힌 루틴</div>
+    <div class="preview-t">종료일이 지났는데 아직 안 닫힌 모임</div>
     ${late.map(r => `<div class="preview-row">
       <span><b>${esc(r.title)}</b> <span class="muted">${fmtDate(r.end_date)}에 끝났어요</span></span>
       <button class="btn btn-dark" onclick="setRoutineStatus(${r.id}, 'done')">종료 처리</button>
@@ -2767,7 +2767,7 @@ function viewRoutines() {
   </div>` : ''}
 
   ${rows.length ? `<div class="tbl wide"><table>
-    <tr><th>상태</th><th>루틴</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>함께하는 책방</th><th>후원 기업</th><th class="right"></th></tr>
+    <tr><th>상태</th><th>모임</th><th>끗짱</th><th>기간</th><th class="right">참여</th><th class="right">인증</th><th>함께하는 책방</th><th>후원 기업</th><th class="right"></th></tr>
     ${rows.map(r => `<tr>
       <td>${r.status === 'pending'
         ? `<span class="chip c-wait">승인 대기</span>`
@@ -2797,15 +2797,15 @@ function viewRoutines() {
         <button class="btn btn-line" onclick="openRoutineCerts(${r.id})">인증 보기</button>
         ${(r.kind || 'book') === 'shared' ? `<button class="btn btn-line" onclick="openRoutinePosts(${r.id})" title="끗짱이 올린 글을 날짜별로 봅니다">글 보기</button>` : ''}
         ${r.status !== 'pending' && !r.canceled ? `<button class="btn btn-line" onclick="cancelRoutine(${r.id})" title="인원이 모이지 않아 열지 못했어요">폐강</button>` : ''}
-        <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="루틴 지우기">−</button></td>
+        <button class="btn btn-line r-del" onclick="delRoutine(${r.id})" title="모임 지우기">−</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">아직 만들어진 루틴이 없어요.</div>`}`;
+  </table></div>` : `<div class="empty">아직 만들어진 모임이 없어요.</div>`}`;
 }
 
 const R_KIND = { book: '각자 읽는 책', one_book: '함께 읽는 책', shared: '함께 읽는 글' };
 
-// 루틴을 승인하려면 만든 사람이 누군지 알아야 한다. 끗짱 승인 탭까지
-// 갔다 오지 않게, 이름을 누르면 신청서와 맡은 루틴을 여기서 보여준다
+// 모임을 승인하려면 만든 사람이 누군지 알아야 한다. 끗짱 승인 탭까지
+// 갔다 오지 않게, 이름을 누르면 신청서와 맡은 모임을 여기서 보여준다
 function openKkut(uid) {
   const a  = (DB.kkutApps || []).find(x => x.user_id === uid);
   const rs = (DB.routines || []).filter(r => r.led_by === uid)
@@ -2813,7 +2813,7 @@ function openKkut(uid) {
 
   const mine = rs.length
     ? `<div class="tbl narrow"><table>
-         <tr><th>루틴</th><th>기간</th><th class="right">참여</th></tr>
+         <tr><th>모임</th><th>기간</th><th class="right">참여</th></tr>
          ${rs.map(r => `<tr>
            <td><b>${r.emoji || '📚'} ${esc(r.title)}</b>
                <div class="muted">${R_KIND[r.kind || 'book']} ·
@@ -2823,7 +2823,7 @@ function openKkut(uid) {
            <td class="num right">${rParts(r.id).length}/${r.max_people}</td>
          </tr>`).join('')}
        </table></div>`
-    : `<div class="empty">아직 만든 루틴이 없어요.</div>`;
+    : `<div class="empty">아직 만든 모임이 없어요.</div>`;
 
   document.getElementById('kkutInfoTitle').textContent = rName(uid);
   document.getElementById('kkutInfoBody').innerHTML = a
@@ -2840,7 +2840,7 @@ function openKkut(uid) {
            <div><b>연락처</b><span>${esc(kkutPhone(uid) || '없음')}</span></div>
            <div><b>이메일</b><span>${esc(a.email || '없음')}</span></div>
            <div><b>신청일</b><span>${a.applied_at ? fmtDate(a.applied_at) : '—'}</span></div>
-           <div><b>만든 루틴</b><span>${rs.length}개</span></div>
+           <div><b>만든 모임</b><span>${rs.length}개</span></div>
          </div>
          <div class="kk-q"><b>키워드</b><p>${kwHtml(a)}</p></div>
          ${a.intro  ? `<div class="kk-q"><b>소개</b><p>${esc(a.intro)}</p></div>` : ''}
@@ -2849,7 +2849,7 @@ function openKkut(uid) {
          ${a.status === 'rejected' && a.reject_reason
            ? `<div class="kk-q no"><b>반려 사유</b><p>${esc(a.reject_reason)}</p></div>` : ''}
        </div>
-       <div class="panel-t" style="margin-top:16px;">맡은 루틴</div>${mine}`
+       <div class="panel-t" style="margin-top:16px;">맡은 모임</div>${mine}`
     : `<div class="kk" style="border:0;padding:0;">
          <div class="kk-h">
            <div>
@@ -2859,12 +2859,12 @@ function openKkut(uid) {
          </div>
          <div class="kk-g">
            <div><b>연락처</b><span>${esc(kkutPhone(uid) || '없음')}</span></div>
-           <div><b>만든 루틴</b><span>${rs.length}개</span></div>
+           <div><b>만든 모임</b><span>${rs.length}개</span></div>
          </div>
          <div class="hint">끗짱 신청서가 없어요. 승인제를 들이기 전에 등록됐거나
            운영진이 직접 올린 계정이에요.</div>
        </div>
-       <div class="panel-t" style="margin-top:16px;">맡은 루틴</div>${mine}`;
+       <div class="panel-t" style="margin-top:16px;">맡은 모임</div>${mine}`;
   document.getElementById('kkutOverlay').classList.add('on');
 }
 
@@ -2908,7 +2908,7 @@ function rWhere(uid) {
   return w.length ? ` <span class="muted">(${esc(w.join(' · '))})</span>` : '';
 }
 
-// 공유회가 걸린 루틴은 언제·어디서가 비어 있으면 안 된다
+// 공유회가 걸린 모임은 언제·어디서가 비어 있으면 안 된다
 function rMeet(r) {
   const bits = [];
   if (r.meetup_at) {
@@ -3046,11 +3046,11 @@ function dataToBlob(d) {
   return new Blob([u], { type: (head.match(/:(.*?);/) || [, 'image/jpeg'])[1] });
 }
 
-// ── 루틴 수정 ──────────────────────────────────────────
+// ── 모임 수정 ──────────────────────────────────────────
 // 끗짱이 시각을 오전/오후 거꾸로 넣거나 장소를 빼먹는 일이 있다. 승인하려고
 // 보다가 발견하면 돌려보내는 것보다 여기서 고치는 게 빠르다.
 //
-// 【대표 사진은 여기서도 올린다】 운영진이 루틴을 만들면 올려 줄 끗짱이 없다.
+// 【대표 사진은 여기서도 올린다】 운영진이 모임을 만들면 올려 줄 끗짱이 없다.
 //   책 표지는 그대로 둔다 — 그건 끗짱이 「실제로 들고 있는 책」이라는 표시라
 //   남이 끼워 넣으면 뜻이 사라진다.
 //
@@ -3106,9 +3106,9 @@ function openRoutineEdit(id) {
   const parts = isNew ? 0 : rParts(id).length;
   const leads = leadOptions(r.led_by);
 
-  document.getElementById('reTitleTop').textContent = isNew ? '루틴 만들기' : '루틴 수정';
+  document.getElementById('reTitleTop').textContent = isNew ? '모임 만들기' : '모임 수정';
   document.getElementById('reDescTop').innerHTML = isNew
-    ? '운영진이 루틴을 만들고 끗짱을 정해요. 만들면 바로 <b>모집 중</b>이 됩니다.'
+    ? '운영진이 모임을 만들고 끗짱을 정해요. 만들면 바로 <b>모집 중</b>이 됩니다.'
     : '끗짱이 잘못 적은 것을 운영진이 바로잡아요. 수정해도 승인 상태는 그대로예요.';
 
   document.getElementById('routineEditBody').innerHTML = `
@@ -3116,7 +3116,7 @@ function openRoutineEdit(id) {
       <span class="muted"> · ${esc(rName(r.led_by))} · ${R_KIND[r.kind || 'book']}</span></div>`}
 
     <div class="field">
-      <div class="label">끗짱 ${r.ongoing ? '<span style="font-weight:600;">(상시 루틴은 없어도 돼요)</span>' : '<span>*</span>'}</div>
+      <div class="label">끗짱 ${r.ongoing ? '<span style="font-weight:600;">(상시 모임은 없어도 돼요)</span>' : '<span>*</span>'}</div>
       ${leads.length > 6 ? `<input type="text" id="reLeadFind" placeholder="이름·소속으로 걸러보기"
         autocomplete="off" oninput="leadFilter()" style="margin-bottom:8px;">` : ''}
       <select id="reLead">
@@ -3137,7 +3137,7 @@ function openRoutineEdit(id) {
     </div>` : ''}
 
     <div class="field">
-      <div class="label">루틴 이름 <span>*</span></div>
+      <div class="label">모임 이름 <span>*</span></div>
       <input type="text" id="reTitle" maxlength="40" value="${v(r.title)}">
     </div>
     <div style="display:flex;gap:10px;">
@@ -3176,7 +3176,7 @@ function openRoutineEdit(id) {
       <textarea id="reGuide" rows="3" maxlength="200" oninput="reGuideMark()">${v(r.cert_guide)}</textarea>
       <!-- 【예시를 누르면 채워지고, 채운 뒤에도 고칠 수 있다 · 2026-10-08 사용자】
            아이들은 이 글을 인증 화면에서 그대로 읽는다. 「매일 하루」처럼 방법이 아닌 말이 들어가면
-           뭘 찍어야 하는지 알 수 없다. 앱의 끗짱 루틴 만들기는 드롭다운인데 「기타」를 골라야만
+           뭘 찍어야 하는지 알 수 없다. 앱의 끗짱 모임 만들기는 드롭다운인데 「기타」를 골라야만
            고칠 수 있어서, 문구를 조금씩 바꿔 쓰는 운영진에게는 이쪽이 낫다 -->
       <div class="ex-row"><span class="ex-l">예시</span>${
         GUIDE_EX.map(([label], i) => `<button type="button" class="ex-b" data-i="${i}" onclick="reGuideEx(${i})">${label}</button>`).join('')}</div>
@@ -3188,7 +3188,7 @@ function openRoutineEdit(id) {
         <input type="date" id="reStart" value="${v(r.start_date || (isNew ? ymd(0) : ''))}">
       </div>
       <div class="field" style="flex:1;min-width:0;">
-        <div class="label">종료일 ${r.ongoing ? '<span style="font-weight:600;">(상시 루틴은 비워 두세요)</span>' : '<span>*</span>'}</div>
+        <div class="label">종료일 ${r.ongoing ? '<span style="font-weight:600;">(상시 모임은 비워 두세요)</span>' : '<span>*</span>'}</div>
         <input type="date" id="reEnd" value="${v(r.end_date || (isNew ? ymd(14) : ''))}">
       </div>
     </div>
@@ -3285,7 +3285,7 @@ function reGuideEx(i) {
 }
 
 // ── 끗짱 책 검색 ───────────────────────────────────────
-// 앱의 끗짱 루틴 만들기와 같은 검색(book-search)이다. 관리자 화면에는 글자 칸뿐이었다.
+// 앱의 끗짱 모임 만들기와 같은 검색(book-search)이다. 관리자 화면에는 글자 칸뿐이었다.
 // 검색이 죽어도 칸은 그대로 되고, 검색에 없는 책(독립출판·절판·교재)은 적은 제목대로 저장한다
 let reBookPick = null, reBookFound = [], reBookT = null, reBookSeq = 0;
 const bkLoose = t => String(t || '').toLowerCase().replace(/[\s\u2018\u2019\u201c\u201d'"(),.\-\u2013\u2014:;!?\u300c\u300d\u300e\u300f]/g, '');
@@ -3371,15 +3371,15 @@ async function saveRoutineEdit() {
   if (!r) return;
   const g = id => document.getElementById(id);
   const lead = g('reLead').value;
-  if (!lead && !r.ongoing) return alert('끗짱을 골라주세요.');   // 상시 루틴(매일 한끗)은 끗짱이 없다
+  if (!lead && !r.ongoing) return alert('끗짱을 골라주세요.');   // 상시 모임(매일 한끗)은 끗짱이 없다
   const title = g('reTitle').value.trim();
   const desc  = g('reDesc').value.trim();
   const guide = g('reGuide').value.trim();
   const s0 = g('reStart').value, e0 = g('reEnd').value;
-  if (!title) return alert('루틴 이름을 적어주세요.');
+  if (!title) return alert('모임 이름을 적어주세요.');
   if (!desc)  return alert('끗짱 소개를 적어주세요.');
   if (!guide) return alert('인증 안내를 적어주세요.');
-  if (!s0 || (!e0 && !r.ongoing)) return alert('시작일과 종료일을 골라주세요.');   // 상시 루틴은 종료일이 없다
+  if (!s0 || (!e0 && !r.ongoing)) return alert('시작일과 종료일을 골라주세요.');   // 상시 모임은 종료일이 없다
   if (e0 && e0 < s0) return alert('종료일이 시작일보다 빠를 수 없어요.');
 
   const meet = g('reMeet').checked;
@@ -3435,7 +3435,7 @@ async function saveRoutineEdit() {
     meetup_lat:     kept ? (r.meetup_lat ?? null) : null,
     meetup_lng:     kept ? (r.meetup_lng ?? null) : null,
   };
-  // 운영진이 만든 루틴은 승인해 줄 사람이 없다. 바로 모집 중으로 연다.
+  // 운영진이 만든 모임은 승인해 줄 사람이 없다. 바로 모집 중으로 연다.
   // 종류는 만들 때만 고른다 — 서버도 뒤에는 옛 값을 되돌린다
   if (isNew) {
     row.kind = g('reKind').value || 'book';
@@ -3477,11 +3477,11 @@ async function setSponsor(id) {
   render();
 }
 
-// 폐강 — 인원이 모이지 않아 열지 못한 루틴 (migration-136). 종료 처리와 폐강 표시를 한 번에 하고 참여자에게 알린다
+// 폐강 — 인원이 모이지 않아 열지 못한 모임 (migration-136). 종료 처리와 폐강 표시를 한 번에 하고 참여자에게 알린다
 async function cancelRoutine(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   const n = rParts(id).length;
-  if (!confirm(`「${r.title}」을(를) 폐강할까요?\n\n· 루틴이 종료되고 「폐강」으로 표시돼요 (통계의 완주율에서 빠져요)\n· 참여한 청소년 ${n}명에게 「이번 루틴은 열리지 못했어요」 알림이 가요\n· 되돌릴 수 없어요`)) return;
+  if (!confirm(`「${r.title}」을(를) 폐강할까요?\n\n· 모임이 종료되고 「폐강」으로 표시돼요 (통계의 완주율에서 빠져요)\n· 참여한 청소년 ${n}명에게 「이번 모임은 열리지 못했어요」 알림이 가요\n· 되돌릴 수 없어요`)) return;
   if (!LIVE) { r.status = 'done'; r.canceled = true; render(); return; }
   const { data, error } = await sb.rpc('admin_cancel_routine', { p_id: id });
   if (error) return alert('폐강하지 못했어요: ' + error.message + '\n(마이그레이션 136을 돌렸는지 확인해 주세요)');
@@ -3528,10 +3528,10 @@ async function decideRoutine(id, open) {
 // 【나다움은 서버에 물어본다】 인증·댓글·이정표·후기·공유회가 다 섞여 있어
 //   관리자 화면에서 다시 계산하면 두 벌이 생기고, 두 벌은 언젠가 어긋난다.
 //   dokseo_points() 는 운영진에게 열려 있으니 사람마다 한 번씩 부른다.
-//   한 루틴에 많아야 50명이고 한꺼번에 보내니 기다릴 만하다.
-// 루틴별 인증 내용·읽고 있는 책. 운영진이 「이 루틴에서 무슨 일이 일어나고 있나」를 볼 자리
+//   한 모임에 많아야 50명이고 한꺼번에 보내니 기다릴 만하다.
+// 모임별 인증 내용·읽고 있는 책. 운영진이 「이 모임에서 무슨 일이 일어나고 있나」를 볼 자리
 let CERTV = null;   // { id, certs, books, who }
-// 「함께 읽는 글」 루틴: 끗짱이 매일 올린 글을 날짜별로 본다. 안 올라온 날도 표시한다 (읽기만)
+// 「함께 읽는 글」 모임: 끗짱이 매일 올린 글을 날짜별로 본다. 안 올라온 날도 표시한다 (읽기만)
 async function openRoutinePosts(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   document.getElementById('certsTitle').textContent = `${r.emoji || '📚'} ${r.title} · 끗짱이 올린 글`;
@@ -3696,13 +3696,13 @@ async function openRoutinePeople(id) {
     const { data, error } = await sb.rpc('dokseo_points', { p_user: p.user_id });
     return error ? null : data;
   }));
-  // 그새 다른 루틴을 열었으면 덮어쓰지 않는다
+  // 그새 다른 모임을 열었으면 덮어쓰지 않는다
   if (document.getElementById('peopleTitle').textContent === `${r.emoji || '📚'} ${r.title}`) draw(pts);
 }
 
 // 일별 인증 현황 (2026-10-27 요청: 한끗루틴처럼 일별 진행상황 모니터링).
 //   가로 날짜 × 세로 참여 청소년. 인증한 날은 체크, 한 번도 안 한 날은 옅은 분홍, 합류 전·앞으로 올 날은 비워 둔다.
-//   「매일 한끗」은 끝이 없어 최근 14일만 보여 준다. 인증은 루틴 하나에서 하루 한 번만 센다
+//   「매일 한끗」은 끝이 없어 최근 14일만 보여 준다. 인증은 모임 하나에서 하루 한 번만 센다
 async function openRoutineDaily(id) {
   const r = (DB.routines || []).find(x => x.id === id); if (!r) return;
   const kst = ms => new Date(ms + 9 * 3600e3).toISOString().slice(0, 10);
@@ -3713,7 +3713,7 @@ async function openRoutineDaily(id) {
   document.getElementById('dailyBody').innerHTML = '<div class="empty">불러오는 중…</div>';
   document.getElementById('dailyOverlay').classList.add('on');
 
-  // 인증은 이 루틴 것만, 날짜와 사람만 받는다. 1000줄씩 이어서
+  // 인증은 이 모임 것만, 날짜와 사람만 받는다. 1000줄씩 이어서
   let certs = [];
   if (LIVE) {
     for (let from = 0; from < 30000; from += 1000) {
@@ -3724,7 +3724,7 @@ async function openRoutineDaily(id) {
       if (!data || data.length < 1000) break;
     }
   } else certs = rCerts(id);
-  if (document.getElementById('dailyTitle').textContent !== title) return;   // 그새 다른 루틴을 열었다
+  if (document.getElementById('dailyTitle').textContent !== title) return;   // 그새 다른 모임을 열었다
 
   const ps = rParts(id).filter(p => p.user_id !== r.led_by);
   const body = document.getElementById('dailyBody');
@@ -3796,7 +3796,7 @@ async function openRoutineDaily(id) {
 
 // 끗짱 승인.
 // 청소년과 한 그룹에 들어가는 어른이라, 돈보다 먼저 봐야 하는 화면이라 첫 탭에 둔다.
-// 승인 전에는 루틴을 못 만들고 아이들 기록이 있는 화면도 열리지 않는다
+// 승인 전에는 모임을 못 만들고 아이들 기록이 있는 화면도 열리지 않는다
 function viewKkut() {
   const rows = DB.kkutApps || [];
   // 심사 대기인데 반려 사유가 남아 있으면 「재심사」 — 반려했다가 다시 올린 신청이다 (migration-122). 맨 위에 둔다
@@ -3847,7 +3847,7 @@ function viewKkut() {
           <div><b>연락처</b><span>${esc(a.contact)}</span></div>
           <div><b>이메일</b><span>${esc(a.email)}</span></div>
           <div><b>신청일</b><span>${fmtDate(a.applied_at)}</span></div>
-          <div><b>만든 루틴</b><span>${a.routine_count}개</span></div>
+          <div><b>만든 모임</b><span>${a.routine_count}개</span></div>
         </div>
         <div class="kk-q"><b>키워드 <span class="muted" style="font-weight:500;">· 청소년에게 이름 옆에 보여요</span></b>
           <p>${kwHtml(a)}</p></div>
@@ -3864,7 +3864,7 @@ function viewKkut() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">끗짱 승인</div>
-    <div class="panel-d">승인해야 루틴을 만들 수 있고, 청소년 기록 화면이 열려요.
+    <div class="panel-d">승인해야 모임을 만들 수 있고, 청소년 기록 화면이 열려요.
       연락처로 한 번 통화해 보고 누르시길 권해요.<br>
       <b>14세부터</b> 신청할 수 있고 그 밖의 조건은 없어요.
       소속·나이·지원동기를 보고 판단해 주세요.</div></div>
@@ -3898,7 +3898,7 @@ function exportKkut() {
   const ST = { pending: '심사 대기', approved: '승인', rejected: '반려' };
   downloadCsv(`끗짱신청_${todayStamp()}.csv`,
     ['상태', '이름', '나이', '소속', '지역', '연락처', '이메일', '신청일', '소개', '지원 동기',
-     '청소년과 함께한 경험', '추천·활동 링크', '보호 약속 동의일', '키워드', '만든 루틴', '반려 사유'],
+     '청소년과 함께한 경험', '추천·활동 링크', '보호 약속 동의일', '키워드', '만든 모임', '반려 사유'],
     rows.map(a => [(a.status === 'pending' && (a.reject_reason || '').trim()) ? '재심사' : (ST[a.status] || a.status), a.name, a.age, a.affiliation, a.region, a.contact, a.email,
       fmtDate(a.applied_at), a.intro, a.motive, a.experience, a.referrer,
       a.pledge_at ? fmtDate(a.pledge_at) : '', (a.keywords || []).join(' '), a.routine_count, a.reject_reason]),
@@ -3997,13 +3997,13 @@ async function decideKkut(userId, approve) {
 
   let adult = null;
   if (approve) {
-    if (!confirm(`${who} 님을 끗짱으로 승인할까요?\n\n승인하면 루틴을 만들고 청소년 기록을 볼 수 있게 돼요.`)) return;
+    if (!confirm(`${who} 님을 끗짱으로 승인할까요?\n\n승인하면 모임을 만들고 청소년 기록을 볼 수 있게 돼요.`)) return;
     // 청소년인지 어른인지는 여기서만 정해진다. 어른은 나다움·교환권·책을 못 받는다.
     // 도서기금은 청소년에게 쓰는 돈이고 기부금 사용명세에도 그렇게 적힌다
     const age = a?.age ? `${a.age}세 · ` : '';
     adult = confirm(
       `${who} 님(${age}${a?.affiliation || '소속 미상'})은 어른인가요?\n\n` +
-      `[확인] 어른 — 루틴만 만들어요. 나다움·교환권·책은 받지 않아요.\n` +
+      `[확인] 어른 — 모임만 만들어요. 나다움·교환권·책은 받지 않아요.\n` +
       `[취소] 청소년 — 계속 읽고 나다움도 쌓아요.`);
   } else {
     reason = prompt(`${who} 님에게 전할 반려 사유를 적어주세요.\n신청자 화면에 그대로 보여요.`);
@@ -4122,7 +4122,7 @@ function viewPhotos() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">프로필 사진</div>
-    <div class="panel-d">회원이 올린 사진이에요. 같은 루틴 친구들에게 보여요. 부적절하면 <b>내리기</b>를 눌러 주세요 —
+    <div class="panel-d">회원이 올린 사진이에요. 같은 모임 친구들에게 보여요. 부적절하면 <b>내리기</b>를 눌러 주세요 —
       이름 첫 글자 동그라미로 돌아가고, 사진 파일도 지워져요.</div></div>
   </div>
   ${rows.length ? `<div class="av-grid">${rows.map(u => `<div class="av-c">
@@ -4155,7 +4155,7 @@ function viewQuotes() {
   <div class="panel-hd">
     <div><div class="panel-t">문장 · 후기 고르기</div>
     <div class="panel-d">여기서 <b>「공개」를 켠 것만 홈페이지와 후원자 화면</b>(로그인 없이 보는 곳)에 나가요.
-      앱 안의 후기·문장은 <b>같은 루틴 친구들끼리 보는 것</b>이라 이 설정과 별개예요.
+      앱 안의 후기·문장은 <b>같은 모임 친구들끼리 보는 것</b>이라 이 설정과 별개예요.
       지금 문장 ${on}개, 후기 ${rvOn}개 공개 중이에요.</div></div>
   </div>
 
@@ -4164,7 +4164,7 @@ function viewQuotes() {
     <tr><th>후기</th><th>종류</th><th>책</th><th>날짜</th><th class="right">홈페이지·후원자 공개</th></tr>
     ${rv.map(r => `<tr>
       <td style="max-width:420px;white-space:pre-wrap;">${esc(r.content)}</td>
-      <td class="muted">${r.kind === 'book' ? '책' : '루틴'}</td>
+      <td class="muted">${r.kind === 'book' ? '책' : '모임'}</td>
       <td class="muted">${esc(r.book_title) || '-'}</td>
       <td class="num muted">${fmtDate(r.created_at)}</td>
       <td class="right">
@@ -4228,7 +4228,7 @@ function viewStores() {
     <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>서점</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th>연결된 루틴</th><th>상태</th><th class="right"></th></tr>
+    <tr><th>서점</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th>연결된 모임</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(s => `<tr${s.active ? '' : ' style="opacity:.55;"'}>
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}${s.pick_title
         ? `<div class="muted" style="margin-top:4px;">💛 『${esc(s.pick_title)}』${s.pick_line ? ` ${esc(s.pick_line)}` : ''}
@@ -4243,9 +4243,9 @@ function viewStores() {
         <button class="btn btn-line" onclick="storeLink(${s.id}, this)">책방 주소</button>
         <button class="btn btn-line" onclick="storeGuide(${s.id})">안내문</button>
         <button class="btn btn-line" onclick="openStore(${s.id})">수정</button>
-        <button class="btn btn-line" onclick="toggleStoreActive(${s.id})" title="${s.active ? '앱의 책방 목록과 새 루틴의 책방 선택에서 뺍니다' : '다시 앱에 보이게 합니다'}">${s.active ? '숨기기' : '다시 보이기'}</button></td>
+        <button class="btn btn-line" onclick="toggleStoreActive(${s.id})" title="${s.active ? '앱의 책방 목록과 새 모임의 책방 선택에서 뺍니다' : '다시 앱에 보이게 합니다'}">${s.active ? '숨기기' : '다시 보이기'}</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 루틴에 연결할 수 있어요.</div>`}`;
+  </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 모임에 연결할 수 있어요.</div>`}`;
 }
 
 // 책방지기의 한 줄 추천 (migration-110). 부적절한 글이면 운영진이 내린다
@@ -4301,8 +4301,8 @@ function openStore(id) {
   document.getElementById('storeOverlay').classList.add('on');
 }
 
-// 루틴을 지우면 딸린 것이 전부 같이 지워진다 (ON DELETE CASCADE).
-// 되돌릴 수 없으니 무엇이 없어지는지 세어서 보여 주고, 기록이 쌓인 루틴은
+// 모임을 지우면 딸린 것이 전부 같이 지워진다 (ON DELETE CASCADE).
+// 되돌릴 수 없으니 무엇이 없어지는지 세어서 보여 주고, 기록이 쌓인 모임은
 // 이름까지 받아 한 번 더 붙잡는다 — 문턱은 잃는 것의 크기에 맞춘다.
 //
 // ⚠️ 정산이 끝난 구매가 있으면 서버가 막는다 (migration-60). 화면에서도 미리
@@ -4330,7 +4330,7 @@ async function delRoutine(id) {
     + `여기에 달린 댓글·후기·읽는 책·공유 글도 같이 사라져요.\n되돌릴 수 없어요.`)) return;
 
   if (parts || certs) {
-    const typed = prompt(`정말 지우려면 루틴 이름을 그대로 적어주세요.\n\n${r.title}`);
+    const typed = prompt(`정말 지우려면 모임 이름을 그대로 적어주세요.\n\n${r.title}`);
     if (typed === null) return;
     if (typed.trim() !== r.title.trim()) { alert('이름이 달라서 지우지 않았어요.'); return; }
   }
@@ -4366,12 +4366,12 @@ async function deleteStore() {
   render();
 }
 
-// 서점을 앱에서 숨기거나 다시 보인다. 지우는 게 아니다 — 기존 루틴·정산 기록은 그대로다 (「현재 파트너 서점」 체크와 같은 값)
+// 서점을 앱에서 숨기거나 다시 보인다. 지우는 게 아니다 — 기존 모임·정산 기록은 그대로다 (「현재 파트너 서점」 체크와 같은 값)
 async function toggleStoreActive(id) {
   const st = (DB.bookstores || []).find(x => x.id === id); if (!st) return;
   const to = !st.active;
   if (!confirm(to ? `「${st.name}」을 다시 앱에 보이게 할까요?`
-                  : `「${st.name}」을 숨길까요?\n\n청소년 앱의 책방 목록과 새 루틴의 책방 선택에서 빠져요.\n이미 연결된 루틴과 정산 기록은 그대로예요.`)) return;
+                  : `「${st.name}」을 숨길까요?\n\n청소년 앱의 책방 목록과 새 모임의 책방 선택에서 빠져요.\n이미 연결된 모임과 정산 기록은 그대로예요.`)) return;
   if (LIVE) {
     const { error } = await sb.from('bookstores').update({ active: to }).eq('id', id);
     if (error) return alert('바꾸지 못했어요: ' + error.message);
@@ -4418,7 +4418,7 @@ function viewPending() {
   </div>
   ${overdueBanner(rows)}
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>사진</th><th>청소년</th><th>루틴 / 서점</th><th>책 받은 날</th><th>랜딩 공개</th><th class="right">정산</th></tr>
+    <tr><th>사진</th><th>청소년</th><th>모임 / 서점</th><th>책 받은 날</th><th>랜딩 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b></td>
@@ -4978,7 +4978,7 @@ async function loadLive() {
     const nm = id => { const p = (ps || []).find(x => x.id === id); return (p && (p.nick || p.name)) || '이름 없음'; };
     DB.reports = (cs || []).map(c => ({
       cert: c, author: nm(c.user_id),
-      routine: (DB.routines || []).find(r => r.id === c.routine_id)?.title || '루틴',
+      routine: (DB.routines || []).find(r => r.id === c.routine_id)?.title || '모임',
       reports: rp.data.filter(r => r.cert_id === c.id).map(r => ({ reason: r.reason, note: r.note, who: nm(r.reporter_id), created_at: r.created_at })),
     }));
   }
