@@ -571,7 +571,7 @@ async function up(blob, tag) {
   const path = `${TOKEN ? 't' + TOKEN.slice(0, 8) : picked}/${tag}_${Date.now()}.jpg`;
   const { error } = await sb.storage.from('store-proofs')
     .upload(path, blob, { contentType: 'image/jpeg' });
-  if (error) throw new Error('사진을 올리지 못했어요: ' + error.message);
+  if (error) throw new Error('사진 올리기에서 막혔어요: ' + error.message);
   return path;
 }
 
@@ -612,7 +612,7 @@ async function send() {
     const { data: res, error } = TOKEN
       ? await sb.rpc('redeem_qr_confirm', { p_token: TOKEN, p_code: savedCode(), ...common })
       : await sb.rpc('store_submit',      { p_key: KEY, p_purchase_id: picked, ...common });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error('요청을 보내다 막혔어요: ' + error.message);
     if (res && res.ok === false) throw new Error(res.message || '보내지 못했어요');
     picked = null; photo = null;
     const both = !!ph;
@@ -641,7 +641,7 @@ async function sendProof() {
     const ph = await up(photo, 'photo');
     const { data: res, error } = await sb.rpc('store_add_proof',
       { p_key: KEY, p_purchase_id: picked, p_receipt: null, p_photo: ph });
-    if (error) throw new Error(error.message);
+    if (error) throw new Error('사진 올리기에서 막혔어요: ' + error.message);
     if (res && res.ok === false) throw new Error(res.message || '올리지 못했어요');
     picked = null; receipt = null; photo = null;
     await load();
