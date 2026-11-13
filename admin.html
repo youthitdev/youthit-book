@@ -915,6 +915,12 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
         <textarea id="sIntro" rows="2" placeholder="어떤 책방인지 짧게 소개해 주세요."></textarea>
       </div>
       <div class="field">
+        <div class="label">책방 사진 <span class="opt">선택</span></div>
+        <div id="sPhotoBox"></div>
+        <input type="file" id="sPhotoFile" accept="image/*" style="display:none" onchange="storePhotoPick(this)">
+        <div class="hint">청소년 앱의 책방 정보 창 오른쪽에 보여요. 가게 앞이나 안쪽이 잘 보이는 사진이 좋아요. 없으면 집 모양 아이콘이 나와요.</div>
+      </div>
+      <div class="field">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;">
           <input type="checkbox" id="sActive" checked style="width:16px;height:16px;">
           현재 파트너 책방
@@ -4324,7 +4330,22 @@ async function clearStorePick(id) {
   render();
 }
 
-let storeEditId = null;
+let storeEditId = null, sPhoto = null, sPhotoUrl = null, sPhotoChanged = false;   // 새로 고른 사진(data URL) / 걸려 있는 주소 / 바꿨는지
+function storePhotoDraw() {
+  const src = sPhoto || sPhotoUrl;
+  document.getElementById('sPhotoBox').innerHTML = src
+    ? `<img src="${esc(src)}" alt="책방 사진" style="width:140px;height:140px;object-fit:cover;border-radius:12px;display:block;margin-bottom:8px;">
+       <button type="button" class="btn btn-line" onclick="document.getElementById('sPhotoFile').click()">사진 바꾸기</button>
+       <button type="button" class="btn btn-line" onclick="storePhotoClear()">빼기</button>`
+    : `<button type="button" class="btn btn-line" onclick="document.getElementById('sPhotoFile').click()">+ 사진 고르기</button>`;
+}
+async function storePhotoPick(input) {
+  const f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  try { sPhoto = await shrink(f, 1000); } catch (e) { return alert(e.message); }
+  sPhotoChanged = true; storePhotoDraw();
+}
+function storePhotoClear() { sPhoto = null; sPhotoUrl = null; sPhotoChanged = true; storePhotoDraw(); }
 const STORE_FIELDS = { sName:'name', sRegion:'region', sAddress:'address', sHours:'hours',
                        sClosed:'closed_days', sPhone:'phone', sLink:'link', sIntro:'intro' };
 
@@ -4349,6 +4370,7 @@ function openStore(id) {
   document.getElementById('storeModalTitle').textContent = s ? '책방 수정' : '책방 등록';
   Object.entries(STORE_FIELDS).forEach(([el, key]) => document.getElementById(el).value = s ? (s[key] || '') : '');
   document.getElementById('sActive').checked = s ? !!s.active : true;
+  sPhoto = null; sPhotoUrl = s ? (s.photo_url || null) : null; sPhotoChanged = false; storePhotoDraw();
   document.getElementById('sCode').value = s ? (s.code || '') : '';
   // 새 책방은 아직 id 가 없어 번호를 못 붙인다. 저장한 뒤 다시 열어 넣는다
   document.getElementById('sCode').disabled = !s;
@@ -4449,6 +4471,20 @@ async function submitStore() {
   Object.entries(STORE_FIELDS).forEach(([el, key]) => payload[key] = document.getElementById(el).value.trim() || null);
   payload.active = document.getElementById('sActive').checked;
   if (!payload.name) { alert('책방 이름은 필수예요.'); return; }
+
+  // 사진은 바꿨을 때만 칸에 넣는다 (마이그레이션 171 전에도 다른 저장이 막히지 않게)
+  if (sPhotoChanged) {
+    if (sPhoto && LIVE) {
+      if (!MY_UID) return alert('로그인 정보를 찾지 못했어요. 새로고침해 주세요.');
+      const path = `${MY_UID}/store_${Date.now()}.jpg`;
+      const { error: up } = await sb.storage.from('routine-covers')
+        .upload(path, dataToBlob(sPhoto), { contentType: 'image/jpeg', cacheControl: '31536000' });
+      if (up) return alert('사진을 올리지 못했어요: ' + up.message);
+      payload.photo_url = sb.storage.from('routine-covers').getPublicUrl(path).data.publicUrl;
+    } else {
+      payload.photo_url = sPhoto || null;      // 데모 모드는 화면에만 건다 / 빼기는 비운다
+    }
+  }
 
   if (LIVE) {
     const q = storeEditId

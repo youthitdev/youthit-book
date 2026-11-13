@@ -1546,6 +1546,12 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .store-i { font-size:13px; color:var(--ink-2); line-height:1.6; margin-bottom:10px; }
 .store-row { display:flex; gap:7px; align-items:flex-start; font-size:13px; color:#444; line-height:1.5; margin-top:5px; }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
+/* 책방 정보 창: 영업시간 줄은 왼쪽, 책방 사진(없으면 집 이모지)은 오른쪽 (2026-11-13) */
+.store-top { display:flex; gap:12px; align-items:flex-start; }
+.store-rows { flex:1; min-width:0; }
+.store-ph { flex:none; width:104px; height:104px; border-radius:14px; overflow:hidden; background:#F1EFE8;
+  display:flex; align-items:center; justify-content:center; font-size:44px; margin-top:5px; }
+.store-ph img { width:100%; height:100%; object-fit:cover; display:block; }
 .store-btns { display:flex; gap:8px; margin-top:16px; }
 .store-btns a { display:grid; place-items:center; height:44px; border-radius:12px; text-decoration:none; }
 .sb-go { flex:1; background:var(--green); color:#fff; font-size:14px; font-weight:700; }
@@ -9277,9 +9283,12 @@ function openStoreInfo(id) {
   $('shStoreBody').innerHTML = `
     ${b.pick_title ? `<div class="store-pick"><em>💛 사장님 추천</em><b>『${esc(b.pick_title)}』</b>${b.pick_line ? `<p>“${esc(b.pick_line)}”</p>` : ''}</div>` : ''}
     ${b.intro ? `<div class="store-i">${esc(b.intro)}</div>` : ''}
-    ${rows.length
-      ? rows.map(([i,t]) => `<div class="store-row"><i class="ti ${i}"></i><span>${t}</span></div>`).join('')
-      : `<div class="store-row"><i class="ti ti-info-circle"></i><span>자세한 정보를 준비하고 있어요</span></div>`}
+    <div class="store-top">
+      <div class="store-rows">${rows.length
+        ? rows.map(([i,t]) => `<div class="store-row"><i class="ti ${i}"></i><span>${t}</span></div>`).join('')
+        : `<div class="store-row"><i class="ti ti-info-circle"></i><span>자세한 정보를 준비하고 있어요</span></div>`}</div>
+      <div class="store-ph">${b.photo_url ? `<img src="${esc(b.photo_url)}" alt="${esc(b.name)} 사진" loading="lazy">` : '🏠'}</div>
+    </div>
     ${(map||b.link) ? `<div class="store-btns">
       ${map ? `<a class="sb-go" href="${map}" target="_blank" rel="noopener">길찾기</a>` : ''}
       ${b.link ? (() => {
