@@ -795,6 +795,55 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
+<!-- 교환 직접 등록 (migration-169) -->
+<div class="overlay" id="manualOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-hd">
+      <div class="modal-t">교환 직접 등록</div>
+      <div class="modal-d">QR 오류 등으로 앱에 기록이 없는데 책방에 책값을 정산한 건을 넣어요. 등록하면 「서점 입금」에 정산 완료 건으로 보이고, 이 청소년의 교환권이 1장 줄어요.</div>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <div class="label">청소년 <span class="req">*</span></div>
+        <input type="search" id="mnFind" placeholder="이름 · 닉네임으로 찾기" oninput="mnFill()" autocomplete="off">
+        <select id="mnUser" style="margin-top:8px;" onchange="mnHint()"></select>
+        <div class="hint" id="mnUserHint"></div>
+      </div>
+      <div class="field">
+        <div class="label">책을 준 책방 <span class="req">*</span></div>
+        <select id="mnStore"></select>
+      </div>
+      <div class="field">
+        <div class="label">책값 (원) <span class="req">*</span></div>
+        <input type="number" id="mnAmt" min="1" inputmode="numeric" placeholder="예) 16500">
+        <div class="hint" id="mnCap"></div>
+      </div>
+      <div class="field">
+        <div class="label">책 받은 날 <span class="req">*</span></div>
+        <input type="date" id="mnDay">
+      </div>
+      <div class="field">
+        <div class="label">입금일 <span class="opt">선택</span></div>
+        <input type="date" id="mnPaid">
+        <div class="hint">책방에 입금까지 끝났으면 날짜를 넣어요. 비우면 입금 전으로 남아요.</div>
+      </div>
+      <div class="field">
+        <div class="label">책 이름 <span class="opt">선택</span></div>
+        <input type="text" id="mnBook" maxlength="80">
+      </div>
+      <div class="field">
+        <div class="label">메모 <span class="opt">선택</span></div>
+        <input type="text" id="mnNote" maxlength="100" placeholder="예) QR 오류로 현장 정산">
+      </div>
+      <div class="hint" style="line-height:1.7;">⚠️ 이미 「나다움 지급」에서 이 청소년의 나다움을 <b>차감</b>해 둔 적이 있으면, 이중으로 줄지 않게 먼저 그 차감을 「차감 취소」한 뒤 등록하세요.</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-line" onclick="closeModal('manualOverlay')">취소</button>
+      <button class="btn btn-dark" id="mnGo" onclick="submitManual()">등록하기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 일별 인증 현황 -->
 <div class="overlay" id="dailyOverlay">
   <div class="modal" style="max-width:960px;">
@@ -4607,6 +4656,7 @@ function viewSettled() {
     <div><div class="panel-t">서점 입금</div>
     <div class="panel-d">청소년은 돈 없이 책을 가져가요. 책값은 유스보이스가 서점에 보내요 — 매월 15일과 말일에, 그 전날까지 올라온 청구를 모아서.<br>
       <b>다음 입금일 ${nextPayday()}</b> · 정산을 마친 뒤에도 사진 공개는 여기서 할 수 있어요.</div></div>
+    <button class="btn btn-line" onclick="openManual()" title="QR 오류 등으로 앱에 기록이 없는 정산을 직접 넣어요">+ 직접 등록</button>
   </div>
 
   ${wait.length ? `<div class="preview" style="margin-bottom:14px;">
@@ -4631,7 +4681,7 @@ function viewSettled() {
     </tr>` : `<tr>
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b><div class="muted">${esc(g.routine)}</div></td>
-      <td>${esc(g.bookstore)}</td>
+      <td>${esc(g.bookstore)}${isManualBuy(g) ? ' <span class="chip c-wait">직접 등록</span>' : ''}</td>
       <td class="right num"><b>${won(g.amount)}원</b></td>
       <td class="num">${fmtDate(g.settled_at)}</td>
       <td>${sharePhotoCell(g)}</td>
@@ -4830,6 +4880,73 @@ async function submitSettle() {
   render();
 }
 
+// ── 교환 직접 등록 (migration-169, 2026-11-13 QA) ───────
+// 앱 밖에서 정산한 건(QR 오류 등)을 기록으로 남긴다. 청소년의 교환권도 같이 줄어든다
+const isManualBuy = g => String(g.note || '').startsWith('[운영진 직접 등록]');
+function openManual() {
+  document.getElementById('mnFind').value = '';
+  mnFill();
+  document.getElementById('mnStore').innerHTML = (DB.bookstores || [])
+    .map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join('');
+  document.getElementById('mnAmt').value = '';
+  document.getElementById('mnDay').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('mnPaid').value = '';
+  document.getElementById('mnBook').value = '';
+  document.getElementById('mnNote').value = '';
+  document.getElementById('mnCap').textContent = `한 권 최대 ${won(voucherCap())}원`;
+  document.getElementById('manualOverlay').classList.add('on');
+}
+function mnFill() {
+  const q = document.getElementById('mnFind').value.trim().toLowerCase();
+  const rows = vqPool().filter(r => r.role !== 'adult' && (!q
+    || (r.name || '').toLowerCase().includes(q) || (r.nick || '').toLowerCase().includes(q))).slice(0, 60);
+  document.getElementById('mnUser').innerHTML = rows.length
+    ? rows.map(r => `<option value="${r.user_id}">${esc(r.name)}${r.nick && r.nick !== r.name ? ` (${esc(r.nick)})` : ''}</option>`).join('')
+    : '<option value="">찾는 청소년이 없어요</option>';
+  mnHint();
+}
+function mnHint() {
+  const uid = document.getElementById('mnUser').value;
+  const pt = (DB.points || {})[uid];
+  document.getElementById('mnUserHint').textContent = !uid ? ''
+    : pt ? `지금 교환권 ${pt.remain || 0}장 · 나다움 ${won(pt.points)}N` : '교환권 정보를 불러오지 못했어요';
+}
+async function submitManual() {
+  const uid = document.getElementById('mnUser').value;
+  const store = Number(document.getElementById('mnStore').value);
+  const amt = parseInt(document.getElementById('mnAmt').value || '0', 10);
+  const day = document.getElementById('mnDay').value;
+  const paid = document.getElementById('mnPaid').value || null;
+  if (!uid) return alert('청소년을 골라 주세요.');
+  if (!store) return alert('책방을 골라 주세요.');
+  if (!(amt > 0)) return alert('책값을 적어 주세요.');
+  if (amt > voucherCap()) return alert(`교환권 한도 ${won(voucherCap())}원을 넘어요.`);
+  if (!day) return alert('책 받은 날을 골라 주세요.');
+  const pt = (DB.points || {})[uid];
+  const who = document.getElementById('mnUser').selectedOptions[0].textContent;
+  const sName = document.getElementById('mnStore').selectedOptions[0].textContent;
+  if (pt && (pt.remain || 0) < 1 && !confirm(`${who}은(는) 남은 교환권이 없어요.\n그래도 등록할까요?`)) return;
+  if (!confirm(`${who} · ${sName} · ${won(amt)}원 · ${day}\n\n등록하면 이 청소년의 교환권이 1장 줄어요. 등록할까요?`)) return;
+  const btn = document.getElementById('mnGo'); btn.disabled = true;
+  try {
+    if (LIVE) {
+      const { error } = await sb.rpc('admin_add_purchase', {
+        p_user: uid, p_store: store, p_amount: amt, p_day: day,
+        p_book: document.getElementById('mnBook').value.trim() || null,
+        p_paid_on: paid, p_note: document.getElementById('mnNote').value.trim() || null });
+      if (error) return alert('등록하지 못했어요: ' + error.message);
+      await loadLive();
+    } else {
+      const r = vqPool().find(x => x.user_id === uid) || {};
+      DB.purchases.push({ id: Math.max(0, ...DB.purchases.map(g => g.id)) + 1, user_id: uid, name: r.name || '-', nick: r.nick || '',
+        routine: '-', bookstore: sName, status: 'settled', created_at: day, settled_at: day, paid_at: paid, amount: amt,
+        note: '[운영진 직접 등록]', code_ok: false, allocs: [] });
+    }
+    closeModal('manualOverlay');
+    render();
+  } finally { btn.disabled = false; }
+}
+
 // ── 후원 입력 ───────────────────────────────────────────
 function openCharge() {
   ['cNick','cEmail','cAmount','cRef'].forEach(id => document.getElementById(id).value = '');
@@ -4936,6 +5053,7 @@ async function loadLive() {
     settled_at: p.settled_at, paid_at: p.paid_at, amount: p.amount, photo_path: p.proof_photo_url || null,
     book_photo: p.book_photo_url || null, photo_public: !!p.photo_public, landing_ok: !!p.landing_ok,
     code_ok: !!p.code_ok,
+    note: p.note || null,
     receipt: p.receipt_url || null,
     // 책방이 직접 올린 것 (migration-85). 금액은 제안이고 확정은 amount 다
     store_amount: p.store_amount ?? null, store_note: p.store_note || null,
