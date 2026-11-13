@@ -292,6 +292,13 @@ body.kkut header.k .h-title { color:var(--blue); }
 .hs-row::-webkit-scrollbar { display:none; }
 .hs-row > .card { flex:0 0 82%; margin:0; scroll-snap-align:start; box-sizing:border-box; }
 .hs-row > .bk { flex:0 0 30%; scroll-snap-align:start; min-width:0; }
+/* 후기 탭 「책 교환 인증」 — 운영진이 올린 사진. 이름 없이 책방과 날짜만 (2026-11-13) */
+.ex-c { min-width:0; }
+.hs-row > .ex-c { flex:0 0 40%; max-width:170px; scroll-snap-align:start; }
+.ex-c img { display:block; width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; background:var(--line); cursor:pointer; }
+.ex-s { font-size:12.5px; font-weight:700; margin-top:6px; line-height:1.4; }
+.ex-d { font-size:11.5px; color:var(--ink-3); }
+.ex-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 .hs-row .clamp6 { -webkit-line-clamp:5; }
 .hs-row .clamp-more { display:none; }
 /* 바닥에 붙이지 않고 띄운다. 아이폰 홈 인디케이터와 겹치지 않게
@@ -3606,13 +3613,13 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = [];
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchange = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt, exr] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3641,8 +3648,20 @@ async function loadAll() {
     // 모임 만들기에서 고르는 일정. 마이그레이션 159 가 아직이면 오류가 와도 빈 채로 둔다
     sb.from('meeting_schedules').select('id,title,start_date,end_date,active').order('start_date'),
     sb.from('online_meetups').select('id,at,label,active').order('at'),
+    // 후기 탭 「책 교환 인증」 — 운영진이 올린 사진. 마이그레이션 170 이 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('exchange_posts').select('id,photo_path,store_name,day').eq('active', true)
+      .order('day', { ascending: false }).order('id', { ascending: false }).limit(60),
   ]);
   state.grants = grn.error ? [] : (grn.data || []);
+  // 비공개 저장소라 서명 주소로 본다 (한 시간). 주소를 못 받은 사진은 뺀다
+  state.exchange = exr.error ? [] : (exr.data || []);
+  if (state.exchange.length) {
+    try {
+      const { data: su } = await sb.storage.from('exchange-photos').createSignedUrls(state.exchange.map(x => x.photo_path), 3600);
+      const m = {}; (su || []).forEach(x => { if (x.signedUrl) m[x.path] = x.signedUrl; });
+      state.exchange = state.exchange.filter(x => m[x.photo_path]).map(x => ({ ...x, url: m[x.photo_path] }));
+    } catch (e) { state.exchange = []; }
+  }
   state.schedules = msc.error ? [] : (msc.data || []);
   state.onlineMeetups = omt.error ? [] : (omt.data || []);
   state.introsOn = !ints.error;
@@ -5480,6 +5499,8 @@ function closePhoto() { closeOv('ovPhoto'); }
 document.addEventListener('click', e => {
   const kb = e.target.closest && e.target.closest('.kb-c img');
   if (kb) return openPhoto([kb.getAttribute('src')], 0);
+  const ex = e.target.closest && e.target.closest('.ex-c img');
+  if (ex) { const all = [...ex.closest('.hs-row, .ex-grid').querySelectorAll('.ex-c img')]; return openPhoto(all.map(x => x.getAttribute('src')), all.indexOf(ex)); }
   const img = e.target.closest && e.target.closest('.f-photos img'); if (!img) return;
   const all = [...img.closest('.f-photos').querySelectorAll('img')];
   openPhoto(all.map(x => x.getAttribute('src')), all.indexOf(img));
@@ -6152,7 +6173,7 @@ function reviewCard(v) {
 
 // 후기 탭이 무한히 길어지지 않게 (2026-10-21 사용자): 구역마다 가로 한 줄에 몇 개만 보이고, 「전체보기」를 누르면 그 구역 전체가 새 화면에서 열린다.
 //   새 화면도 20개씩만 보이고 「더 보기」로 20개씩 늘어난다. 긴 글은 여섯 줄까지만 보이고 눌러서 펼친다
-const FEED_SHOW = { rv: 6, qt: 6 };            // 후기 탭에 처음 보이는 개수
+const FEED_SHOW = { rv: 6, qt: 6, ex: 8 };            // 후기 탭에 처음 보이는 개수
 const FEED_PAGE = 20;                                 // 새 화면에서 한 번에 보이는 개수
 const feedCap = FEED_SHOW;
 let FA = { kind: null, cap: FEED_PAGE };
@@ -6162,6 +6183,10 @@ let FA = { kind: null, cap: FEED_PAGE };
 // 내 매일 한끗 문장은 MY 의 「내가 남긴 문장」에 그대로 모인다
 const sharedQuotes = () => state.certs.filter(c => c.quote && c.quote.trim()
   && !(state.routines.find(r => r.id === c.routine_id) || {}).ongoing);
+// 운영진이 올린 책 교환 사진. 청소년 이름·닉네임은 담기지 않는다 — 책방 이름과 날짜만
+const exDay = d => { const [, m, dd] = String(d || '').split('-'); return m ? `${Number(m)}월 ${Number(dd)}일` : ''; };
+const exCard = p => `<div class="ex-c"><img src="${esc(p.url)}" alt="${esc(p.store_name)}에서 책을 받은 사진" loading="lazy">
+    <div class="ex-s">${esc(p.store_name)}</div><div class="ex-d">${exDay(p.day)}</div></div>`;
 function faData(kind) {
   const quote = c => `<div class="card" style="padding:15px 16px;">
       ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
@@ -6169,6 +6194,7 @@ function faData(kind) {
   const D = {
     rv:  { sub: '후기', title: '📝 모임 후기',      list: () => state.reviews.filter(v => v.kind !== 'book'), card: reviewCard },
     qt:  { sub: '후기', title: '💬 함께 나누고 싶은 문장', list: () => sharedQuotes(), card: quote },
+    ex:  { sub: '후기', title: '📚 책 교환 인증', list: () => state.exchange || [], card: exCard, grid: true },
     mrv: { sub: '내가 남긴 글', title: '📝 내 모임 후기',   list: () => state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id), card: reviewCard },
     mqt: { sub: '내가 남긴 글', title: '💬 내가 남긴 문장', list: () => state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim()), card: quote },
   };
@@ -6181,7 +6207,7 @@ function drawFeedAll() {
   const all = d.list(), shown = all.slice(0, FA.cap), left = all.length - shown.length;
   $('ovFaSub').textContent = d.sub;
   $('ovFaTitle').textContent = `${d.title} · ${all.length}`;
-  $('ovFaBody').innerHTML = shown.map(d.card).join('')
+  $('ovFaBody').innerHTML = (d.grid ? `<div class="ex-grid">${shown.map(d.card).join('')}</div>` : shown.map(d.card).join(''))
     + (left > 0 ? `<button class="store-more" onclick="feedAllMore()"><span>더 보기</span><em>${Math.min(left, FEED_PAGE)}개 더 · 남은 ${left}개</em><i class="ti ti-chevron-down"></i></button>` : '');
 }
 // 구역 제목 + 오른쪽 「전체보기 ›」. 내용이 하나도 없으면 눌러 볼 게 없으니 단추를 뺀다
@@ -6239,7 +6265,12 @@ function viewFeed() {
       </div>`).join('')}</div>`
     : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 문장을 남기면 여기에 모여요.' : '아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.'}</div>`);
 
-  return todoHtml + listHtml + quoteHtml;
+  // 운영진이 올린 책 교환 사진. 올라온 게 없으면 칸 자체를 두지 않는다
+  const exs = state.exchange || [];
+  const exHtml = exs.length
+    ? secHead('📚 책 교환 인증', exs.length, 'ex') + `<div class="hs-row">${exs.slice(0, feedCap.ex).map(exCard).join('')}</div>` : '';
+
+  return todoHtml + listHtml + quoteHtml + exHtml;
 }
 
 // ── 후기 쓰기 ──────────────────────────────────────────
@@ -9885,6 +9916,12 @@ function enterDemo(role) {
     { id:7001, user_id:'u2', kind:'routine', routine_id:903, purchase_id:null, book_title:null,
       content:'처음엔 15일이 너무 길어 보였는데, 하루에 한 장이라고 생각하니까 할 만했어요.\n안 읽은 날도 있었지만 그 다음 날 또 찍었습니다. 그게 제일 마음에 들었어요.',
       is_public:false, created_at:day(22) },
+  ];
+  // 후기 탭 「책 교환 인증」 데모 — 운영진이 올린 사진 (그림은 자리표시)
+  state.exchange = [
+    { id:1, store_name:'OO책방', day:day(3).slice(0, 10), url:"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23E4EFEA'/%3E%3Ctext x='150' y='175' font-size='90' text-anchor='middle'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" },
+    { id:2, store_name:'△△책방', day:day(9).slice(0, 10), url:"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23F1E7D3'/%3E%3Ctext x='150' y='175' font-size='90' text-anchor='middle'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" },
+    { id:3, store_name:'□□책방', day:day(15).slice(0, 10), url:"data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect width='300' height='300' fill='%23E6E3F2'/%3E%3Ctext x='150' y='175' font-size='90' text-anchor='middle'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E" },
   ];
   state.counts = { 901:3, 902:0, 903:2 };
   state.stats = { students_total:31, cert_total:412, books_bought:47, sponsors_count:23 };

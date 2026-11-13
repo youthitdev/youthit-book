@@ -434,6 +434,13 @@ select { -webkit-appearance:none; appearance:none; padding-right:40px;
   padding-right:28px; background-position:right 9px center; background-size:15px; }
 input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink-3); }
 .hint { font-size:11.5px; color:var(--ink-3); margin-top:5px; }
+.ex-form { background:var(--card,#fff); border:1px solid var(--line); border-radius:12px; padding:16px; display:grid; gap:12px; max-width:520px; margin-bottom:18px; }
+.ex-prev { max-width:200px; max-height:200px; border-radius:10px; display:block; }
+.ex-g { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; }
+.ex-r { background:var(--card,#fff); border:1px solid var(--line); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px; }
+.ex-r img { width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; background:var(--line); }
+.ex-r.off img { opacity:.45; }
+.ex-b { display:flex; gap:6px; }
 /* 책 검색 후보 (앱의 .bk-find 와 같은 모양). 표지가 있어야 같은 제목의 여러 판본을 가른다 */
 .bk-find { border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:7px;
   background:var(--card); max-height:326px; overflow-y:auto; overscroll-behavior:contain; }
@@ -630,6 +637,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
     <button class="tab" data-tab="settled" onclick="switchTab('settled')">책방 입금<i id="cntSettled"></i></button>
     <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 책방<i id="cntStores"></i></button>
+    <button class="tab" data-tab="expost" onclick="switchTab('expost')">책 교환 사진</button>
     <!-- ⏸ 【내려둠 · 2026-10-07 사용자】 후원은 **도너스에서만** 관리하고 앱에는
          넣지 않기로 했다. 입력하지 않을 표를 열어 두면 늘 비어 있고, 거기서
          나오는 「남은 도서기금」이 영영 마이너스로 보인다.
@@ -1216,6 +1224,7 @@ function renderPanel() {
   if (tab === 'pending')  return el.innerHTML = viewPending();
   if (tab === 'settled')  return el.innerHTML = viewSettled();
   if (tab === 'stores')   return el.innerHTML = viewStores();
+  if (tab === 'expost')   return el.innerHTML = viewExp();
   if (tab === 'quotes')   return el.innerHTML = viewQuotes();
   if (tab === 'verify')   return el.innerHTML = viewVerify();
   if (tab === 'notify')   return el.innerHTML = viewNotify();
@@ -4880,6 +4889,114 @@ async function submitSettle() {
   render();
 }
 
+// ── 책 교환 사진 (migration-170, 2026-11-13) ────────────
+// 앱 후기 탭의 「책 교환 인증」에 보이는 사진. 책방이 올린 인증 사진을 운영진이 내려받아 얼굴이 나오지 않는지
+// 확인한 뒤 여기에 올린다. 청소년 이름은 담지 않고 책방 이름과 날짜만 보인다.
+let EXP = null, expUrls = {}, expPrev = null, expStore = '', expDay = '';
+async function loadExp() {
+  if (!LIVE) { EXP = EXP || []; return; }
+  const { data, error } = await sb.from('exchange_posts').select('*')
+    .order('day', { ascending: false }).order('id', { ascending: false });
+  EXP = error ? [] : (data || []);
+  if (error) console.warn('책 교환 사진', error.message);
+  expUrls = {};
+  if (EXP.length) {
+    const { data: u } = await sb.storage.from('exchange-photos').createSignedUrls(EXP.map(x => x.photo_path), 3600);
+    (u || []).forEach(x => { if (x.signedUrl) expUrls[x.path] = x.signedUrl; });
+  }
+}
+function viewExp() {
+  if (EXP === null) {
+    loadExp().then(() => { if (tab === 'expost') renderPanel(); });
+    return `<div class="empty">불러오는 중…</div>`;
+  }
+  if (!expDay) expDay = new Date().toISOString().slice(0, 10);
+  const stores = DB.bookstores || [];
+  return `
+  <div class="panel-hd">
+    <div><div class="panel-t">책 교환 사진</div>
+    <div class="panel-d">앱 <b>후기 탭의 「책 교환 인증」</b>에 보이는 사진이에요. 책방이 올린 인증 사진을 <b>내려받아</b>, 청소년 얼굴이 나오지 않는지 확인한 뒤 여기에 올려요.
+      청소년 이름은 보이지 않고 <b>책방 이름과 날짜</b>만 나와요. 올린 사진은 숨기거나 지울 수 있어요.</div></div>
+  </div>
+  <div class="ex-form">
+    <div class="field">
+      <div class="label">사진 <span class="req">*</span></div>
+      <input type="file" accept="image/*" onchange="expPick(this)">
+      ${expPrev ? `<img class="ex-prev" src="${expPrev}" alt="올릴 사진 미리보기" style="margin-top:8px;">` : ''}
+    </div>
+    <div class="field">
+      <div class="label">책을 준 책방 <span class="req">*</span></div>
+      <select id="expStore" onchange="expStore=this.value">
+        <option value="">책방을 골라 주세요</option>
+        ${stores.map(b => `<option value="${esc(b.name)}"${b.name === expStore ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <div class="label">책 받은 날 <span class="req">*</span></div>
+      <input type="date" id="expDay" value="${expDay}" onchange="expDay=this.value">
+    </div>
+    <button class="btn btn-dark" id="expGo" onclick="submitExp()">올리기</button>
+  </div>
+  <div class="panel-t" style="font-size:15px;margin:4px 0 10px;">올린 사진 ${EXP.length}장</div>
+  ${EXP.length ? `<div class="ex-g">${EXP.map(x => `<div class="ex-r${x.active ? '' : ' off'}">
+      <img src="${esc(expUrls[x.photo_path] || '')}" alt="">
+      <div><b>${esc(x.store_name)}</b><div class="muted">${fmtDate(x.day)}${x.active ? '' : ' · 앱에서 숨김'}</div></div>
+      <div class="ex-b"><button class="btn btn-line" onclick="expToggle(${x.id})">${x.active ? '숨기기' : '다시 보이기'}</button>
+        <button class="btn btn-line r-del" onclick="expDel(${x.id})">지우기</button></div>
+    </div>`).join('')}</div>` : `<div class="empty">아직 올린 사진이 없어요.</div>`}`;
+}
+async function expPick(input) {
+  const f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  try { expPrev = await shrink(f); } catch (e) { return alert(e.message); }
+  renderPanel();
+}
+async function submitExp() {
+  const store = document.getElementById('expStore').value, day = document.getElementById('expDay').value;
+  if (!expPrev) return alert('사진을 골라 주세요.');
+  if (!store) return alert('책방을 골라 주세요.');
+  if (!day) return alert('책 받은 날을 골라 주세요.');
+  if (!confirm('청소년의 얼굴이 나오지 않았는지 확인하셨나요?\n\n올리면 앱 후기 탭에서 로그인한 모두에게 보여요.')) return;
+  const btn = document.getElementById('expGo'); btn.disabled = true; btn.textContent = '올리는 중…';
+  try {
+    if (LIVE) {
+      if (!MY_UID) return alert('로그인 정보를 찾지 못했어요. 새로고침해 주세요.');
+      const path = `${MY_UID}/ex_${Date.now()}.jpg`;
+      const { error: up } = await sb.storage.from('exchange-photos')
+        .upload(path, dataToBlob(expPrev), { contentType: 'image/jpeg', cacheControl: '31536000' });
+      if (up) return alert('사진을 올리지 못했어요: ' + up.message);
+      const { error } = await sb.from('exchange_posts').insert({ photo_path: path, store_name: store, day, created_by: MY_UID });
+      if (error) { await sb.storage.from('exchange-photos').remove([path]); return alert('저장하지 못했어요: ' + error.message); }
+      await loadExp();
+    } else {
+      EXP = EXP || [];
+      const id = Math.max(0, ...EXP.map(x => x.id)) + 1;
+      EXP.unshift({ id, photo_path: 'demo' + id, store_name: store, day, active: true });
+      expUrls['demo' + id] = expPrev;
+    }
+    expPrev = null; expStore = ''; expDay = '';
+    renderPanel();
+  } finally { btn.disabled = false; btn.textContent = '올리기'; }
+}
+async function expToggle(id) {
+  const x = (EXP || []).find(r => r.id === id); if (!x) return;
+  if (LIVE) {
+    const { error } = await sb.from('exchange_posts').update({ active: !x.active }).eq('id', id);
+    if (error) return alert('바꾸지 못했어요: ' + error.message);
+  }
+  x.active = !x.active; renderPanel();
+}
+async function expDel(id) {
+  const x = (EXP || []).find(r => r.id === id); if (!x) return;
+  if (!confirm(`「${x.store_name} · ${x.day}」 사진을 지워요.\n\n사진 파일도 함께 지워지고 되돌릴 수 없어요. 앱에서만 빼려면 「숨기기」를 쓰세요.`)) return;
+  if (LIVE) {
+    const { error } = await sb.from('exchange_posts').delete().eq('id', id);
+    if (error) return alert('지우지 못했어요: ' + error.message);
+    await sb.storage.from('exchange-photos').remove([x.photo_path]);
+  }
+  EXP = EXP.filter(r => r.id !== id); renderPanel();
+}
+
 // ── 교환 직접 등록 (migration-169, 2026-11-13 QA) ───────
 // 앱 밖에서 정산한 건(QR 오류 등)을 기록으로 남긴다. 청소년의 교환권도 같이 줄어든다
 const isManualBuy = g => String(g.note || '').startsWith('[운영진 직접 등록]');
@@ -5120,7 +5237,7 @@ const GROUPS = { members:  ['verify', 'kkut', 'photos', 'nadaum'],
                  routines: ['routines', 'reports', 'schedules'],
                  msgs:     ['inbox', 'notices', 'notify'],
                  site:     ['quotes', 'covers'],
-                 money:    ['pending', 'settled', 'stores', 'charges'],
+                 money:    ['pending', 'settled', 'stores', 'expost', 'charges'],
                  stats:    ['stats', 'report'] };
 const GROUP_ROW = { members: 'tabsMembers', routines: 'tabsRoutines', msgs: 'tabsMsgs', site: 'tabsSite', money: 'tabsMoney', stats: 'tabsStats' };
 const groupOf = t => Object.keys(GROUPS).find(g => GROUPS[g].includes(t)) || 'members';
