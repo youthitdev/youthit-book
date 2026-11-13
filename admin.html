@@ -4278,6 +4278,8 @@ async function deleteQuote(id) {
   render();
 }
 
+// 이 책방을 고른 모임 수. 승인 대기 중인 모임도 이미 이어진 것이라 센다. 반려·폐강은 뺀다
+const linkedRoutines = id => (DB.routines || []).filter(r => r.bookstore_id === id && r.status !== 'rejected' && !r.canceled).length;
 function viewStores() {
   const rows = DB.bookstores || [];
   return `
@@ -4289,7 +4291,7 @@ function viewStores() {
     <button class="btn btn-dark" onclick="openStore()">+ 책방 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>책방</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th>연결된 모임</th><th>상태</th><th class="right"></th></tr>
+    <tr><th>책방</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th class="num">연결된 모임</th><th class="num">교환</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(s => `<tr${s.active ? '' : ' style="opacity:.55;"'}>
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}${s.pick_title
         ? `<div class="muted" style="margin-top:4px;">💛 『${esc(s.pick_title)}』${s.pick_line ? ` ${esc(s.pick_line)}` : ''}
@@ -4298,6 +4300,7 @@ function viewStores() {
           onclick="vqCopy(this, '${esc(s.code || '')}')">${esc(s.code || '—')}</button></td>
       <td class="muted">${esc(s.address) || '-'}</td>
       <td class="muted">${esc(s.hours) || '-'}${s.closed_days ? `<div>${esc(s.closed_days)}</div>` : ''}</td>
+      <td class="num">${linkedRoutines(s.id)}개</td>
       <td class="num">${(DB.purchaseCounts || {})[s.id] || 0}건</td>
       <td>${s.active ? '<span class="chip c-act">운영 중</span>' : '<span class="chip c-wait">숨김</span>'}</td>
       <td class="right" style="white-space:nowrap;">
