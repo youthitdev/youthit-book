@@ -1692,7 +1692,7 @@ function viewNadaum() {
   <div class="panel-hd">
     <div><div class="panel-t">나다움 지급</div>
     <div class="panel-d">행사 참여·특별한 사정 등으로 나다움을 손으로 줄 때 써요. 받은 아이에게 알림이 가고 교환권 계산에도 들어가요.<br>
-      교환권 오류처럼 이미 책을 받았는데 나다움이 남아 있을 때는 「차감」으로 줄여요(150N = 교환권 1장). 청소년에게만, 한 번에 1~1000N까지예요.</div></div>
+      교환권 오류처럼 이미 책을 받았는데 나다움이 남아 있을 때는 「차감」으로 줄여요(200N = 교환권 1장). 청소년에게만, 한 번에 1~1000N까지예요.</div></div>
   </div>
   <div style="padding:14px 20px 8px;">
     <input class="vq-find" type="search" placeholder="이름 · 닉네임으로 찾기" value="${esc(ndFind)}"
@@ -1712,7 +1712,7 @@ function openGrant(uid, deduct) {
     : '받는 청소년에게 알림이 가요. 사유가 그대로 보여요. 잘못 줬으면 지급 내역에서 회수할 수 있어요.';
   document.getElementById('grantAmtLabel').innerHTML = (deduct ? '뺄 나다움 (N)' : '줄 나다움 (N)') + ' <span>*</span>';
   document.getElementById('grantAmtHint').textContent = deduct
-    ? '한 번에 1~1000N. 교환권 한 장은 150N이에요. 지금 가진 것보다 많이는 못 빼요.'
+    ? '한 번에 1~1000N. 교환권 한 장은 200N이에요. 지금 가진 것보다 많이는 못 빼요.'
     : '한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.';
   document.getElementById('grantReason').placeholder = deduct ? '예) 책 교환 완료(QR 오류로 교환권 미반영)' : '예) 공유회 참석 보너스';
   document.getElementById('grantGo').textContent = deduct ? '차감하기' : '지급하기';
