@@ -2063,6 +2063,9 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <textarea id="mMeetNote" rows="3" maxlength="300" placeholder="준비물, 찾아오는 길 등 청소년들에게 전하고 싶은 내용을 작성해 주세요."></textarea>
       <div class="hint">청소년이 모임을 고를 때부터 봐요. 나중에 바꿀 수 있어요.</div>
     </div>
+    <label class="meet-agree" style="margin:6px 0 14px;">
+      <input type="checkbox" id="mCamera" checked>
+      <span style="font-size:13.5px;font-weight:700;color:var(--ink);">실시간 촬영 사진으로만 인증하기</span></label>
     <button class="btn btn-primary" id="mSubmit" onclick="submitMake()">모임 만들기</button>
     </div>
   </div>
@@ -4173,8 +4176,8 @@ function myPoints() {
   const cap = state.settings.comment_daily_cap ?? 3;
   const pm  = state.settings.points_per_milestone ?? 10;
   const ms  = state.settings.bonus_milestones || [10,30,66,100,200];
-  const pr  = state.settings.points_per_review ?? 30;
-  const pb  = state.settings.points_per_bookreview ?? 30;
+  const pr  = state.settings.points_per_review ?? 20;
+  const pb  = state.settings.points_per_bookreview ?? 20;
   const pmt = state.settings.points_per_meetup ?? 50;
   if (!me) return { points:0, cert_count:0, from_cert:0, from_comment:0, from_bonus:0,
                     from_review:0, from_meetup:0, from_manual:0, lost_meetup:0,
@@ -5929,12 +5932,12 @@ async function shareWrap() {
 // ── 후기 ───────────────────────────────────────────────
 // 모임 후기 30N · 책인증후기 30N. 15일 완주 235N 에 후기 30N이 붙어야
 // 문턱을 넘겨 첫 책을 받는다. 그래서 후기는 장식이 아니라 경로다
-const RV_PR = () => state.settings.points_per_review ?? 30;
+const RV_PR = () => state.settings.points_per_review ?? 20;
 // 댓글 나다움. 상한을 같이 보여줘야 한다 — 안 그러면 스무 개 달고 20N을 기다린다
 const MEET_P  = () => state.settings.points_per_meetup ?? 50;
 const CMT_P   = () => state.settings.points_per_comment ?? 1;
 const CMT_CAP = () => state.settings.comment_daily_cap ?? 3;
-const RV_PB = () => state.settings.points_per_bookreview ?? 30;
+const RV_PB = () => state.settings.points_per_bookreview ?? 20;
 
 // 모임 후기 기한. 서버 review_due() 와 같은 식으로 센다 —
 // max(종료일, 기능 켠 날) + 7일. 일찍 종료돼도 종료일까지는 기다려준다
@@ -7846,6 +7849,7 @@ function openMake(id) {
   const r = id ? state.routines.find(x => x.id === id) : null;
   $('ovMakeTitle').textContent = r ? '모임 수정' : '모임 만들기';
   $('mSubmit').textContent = r ? '수정하기' : '모임 만들기';
+  $('mCamera').checked = r ? !!r.camera_only : true;   // 새 모임은 켠 채로 시작
   // 새로 만들 때는 1페이지(주체 고르기)부터. 고칠 때는 이미 정한 주체로 바로 2페이지
   makeHost = r ? (r.host_kind || (r.meetup_required ? 'partner' : 'general')) : null;
   $('mHostGeneral').classList.remove('on'); $('mHostPartner').classList.remove('on');
@@ -8034,9 +8038,10 @@ async function submitMake() {
     meetup_lat:     mp ? mp.lat : null,
     meetup_lng:     mp ? mp.lng : null,
     meetup_note:  off ? ($('mMeetNote').value.trim()  || null) : null,
-    // 필사·「그 자리에서 찍은 사진만」은 이 화면에서 더 묻지 않는다. 새 모임은 필사 끔·사진 켬, 고칠 때는 있던 값 그대로
+    // 필사는 이 화면에서 묻지 않는다 — 청소년 인증에서 필사는 필수가 아닌 선택이다(새 모임은 끔, 고칠 때는 있던 값 그대로).
+    // 「실시간 촬영 사진으로만 인증하기」는 모임 만들기 버튼 위 체크박스로 다시 둔다 (2026-11-13 사용자)
     quote_required: makeKind === 'shared' ? false : (cur0 ? !!cur0.quote_required : false),
-    camera_only: cur0 ? !!cur0.camera_only : true,
+    camera_only: $('mCamera').checked,
     cover_url: coverSaved,
     kkut_book_url:       kkutBookSaved,
     kkut_book_title:     kTitle || null,
