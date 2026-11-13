@@ -419,7 +419,10 @@ tr:hover td { background:#fcfcfd; }
 .modal-ft .btn { flex:1; padding:12px; }
 .field { margin-bottom:16px; }
 .label { font-size:12.5px; font-weight:700; margin-bottom:6px; }
-.label span { color:var(--pink); }
+/* 필수는 빨간 * 하나, 선택은 「선택」 (2026-11-13 사용자 · 앱·관리자·책방 통일) */
+.label span { color:var(--ink-3); font-weight:500; }
+.req, .label .req { color:#D93025; font-size:15px; font-weight:800; line-height:1; margin-left:2px; }
+.opt, .label .opt { color:var(--ink-3); font-size:11px; font-weight:400; margin-left:4px; }
 input, select, textarea { width:100%; padding:11px 13px; border:1px solid var(--line); border-radius:10px; font-size:14px; font-family:inherit; color:var(--ink); background:#fff; }
 /* 기본 화살표는 칸 맨 끝에 붙어 글자와 너무 멀다. 앱과 같은 모양으로 그린다 */
 select { -webkit-appearance:none; appearance:none; padding-right:40px;
@@ -649,17 +652,17 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-bd">
       <div class="target" id="settleTarget"></div>
       <div class="field">
-        <div class="label">서점에 지급할 금액 <span>*</span></div>
+        <div class="label">서점에 지급할 금액 <span class="req">*</span></div>
         <input type="number" id="settleAmount" placeholder="예) 18000" oninput="renderPreview()">
         <div class="hint">교환권 한도 <b id="capHint"></b>원. 초과분은 후원금에서 나갈 수 없어요</div>
       </div>
       <div class="field">
-        <div class="label">증빙 첨부 <span style="font-weight:500;color:var(--ink-3);">(선택)</span></div>
+        <div class="label">증빙 첨부 <span class="opt">선택</span></div>
         <input type="file" id="settleReceipt" accept="image/*,application/pdf">
         <div class="hint">계산서 등 받은 증빙이 있으면 사진이나 PDF로 첨부해요</div>
       </div>
       <div class="field">
-        <div class="label">메모</div>
+        <div class="label">메모 <span class="opt">선택</span></div>
         <textarea id="settleNote" rows="2" placeholder="특이사항이 있으면 적어주세요."></textarea>
       </div>
       <div id="previewBox"></div>
@@ -776,12 +779,12 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     </div>
     <div class="modal-bd">
       <div class="field">
-        <div class="label" id="grantAmtLabel">줄 나다움 (N) <span>*</span></div>
+        <div class="label" id="grantAmtLabel">줄 나다움 (N) <span class="req">*</span></div>
         <input type="number" id="grantAmount" min="1" max="1000" placeholder="예) 10">
         <div class="hint" id="grantAmtHint">한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.</div>
       </div>
       <div class="field">
-        <div class="label">사유 <span>*</span></div>
+        <div class="label">사유 <span class="req">*</span></div>
         <input type="text" id="grantReason" maxlength="60" placeholder="예) 공유회 참석 보너스">
       </div>
     </div>
@@ -815,43 +818,43 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     </div>
     <div class="modal-bd">
       <div class="field">
-        <div class="label">서점 이름 <span>*</span></div>
+        <div class="label">서점 이름 <span class="req">*</span></div>
         <input type="text" id="sName" placeholder="예) OO서점">
       </div>
       <div class="field">
-        <div class="label">지역</div>
+        <div class="label">지역 <span class="opt">선택</span></div>
         <input type="text" id="sRegion" placeholder="예) 서울 성동구">
       </div>
       <div class="field">
-        <div class="label">주소</div>
+        <div class="label">주소 <span class="opt">선택</span></div>
         <input type="text" id="sAddress" placeholder="도로명 주소">
         <div class="hint">이 주소로 카카오맵 길찾기 버튼이 만들어져요.</div>
       </div>
       <div class="field">
-        <div class="label">영업시간</div>
+        <div class="label">영업시간 <span class="opt">선택</span></div>
         <input type="text" id="sHours" placeholder="예) 평일 11:00~19:00">
       </div>
       <div class="field">
-        <div class="label">휴무일</div>
+        <div class="label">휴무일 <span class="opt">선택</span></div>
         <input type="text" id="sClosed" placeholder="예) 매주 월요일 휴무">
       </div>
       <div class="field">
-        <div class="label">전화번호</div>
+        <div class="label">전화번호 <span class="opt">선택</span></div>
         <input type="text" id="sPhone" placeholder="예) 033-000-0000">
       </div>
       <div class="field">
-        <div class="label">책방 고유 번호</div>
+        <div class="label">책방 고유 번호 <span class="opt">선택</span></div>
         <input type="text" id="sCode" maxlength="4" inputmode="numeric"
                placeholder="네 자리" style="letter-spacing:4px;font-weight:800;">
         <div class="hint">책방이 아이 폰에 누르는 번호예요. 등록하면 저절로 하나 생기고,
           새어 나갔다 싶으면 여기서 바꾸세요. 비우면 번호 없이 운영돼요.</div>
       </div>
       <div class="field">
-        <div class="label">인스타그램 · 홈페이지</div>
+        <div class="label">인스타그램 · 홈페이지 <span class="opt">선택</span></div>
         <input type="url" id="sLink" placeholder="https://">
       </div>
       <div class="field">
-        <div class="label">한 줄 소개</div>
+        <div class="label">한 줄 소개 <span class="opt">선택</span></div>
         <textarea id="sIntro" rows="2" placeholder="어떤 서점인지 짧게 소개해 주세요."></textarea>
       </div>
       <div class="field">
@@ -882,23 +885,23 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     </div>
     <div class="modal-bd">
       <div class="field" id="mkAdultField" style="display:none;">
-        <div class="label">청소년인가요, 어른인가요 <span>*</span></div>
+        <div class="label">청소년인가요, 어른인가요 <span class="req">*</span></div>
         <select id="mkAdult">
           <option value="1">어른 — 모임만 만들어요. 나다움·교환권·책은 받지 않아요</option>
           <option value="0">청소년 — 계속 읽고 나다움도 쌓아요</option>
         </select>
       </div>
       <div class="field">
-        <div class="label">나이 <span>*</span></div>
+        <div class="label">나이 <span class="req">*</span></div>
         <input type="number" id="mkAge" min="14" max="100" placeholder="예) 34">
         <div class="hint" id="mkAgeHint">생년월일이 있으면 채워뒀어요.</div>
       </div>
       <div class="field">
-        <div class="label">소속</div>
+        <div class="label">소속 <span class="opt">선택</span></div>
         <input type="text" id="mkAff" placeholder="예) 유스보이스 · 없으면 비워두세요">
       </div>
       <div class="field">
-        <div class="label">옮기는 이유 <span>*</span></div>
+        <div class="label">옮기는 이유 <span class="req">*</span></div>
         <textarea id="mkWhy" rows="3"
           placeholder="예) 구글폼 신청을 확인했어요. / 청소년으로 가입한 어른이라 옮겼어요."></textarea>
         <div class="hint">「끗짱 승인」 탭의 심사 대기에 올라가요. <b>승인은 거기서 따로</b> 눌러야 권한이 생기고, 어른인지 청소년인지도 그때 정해요.</div>
@@ -919,25 +922,25 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     </div>
     <div class="modal-bd">
       <div class="field">
-        <div class="label">후원자 닉네임 <span>*</span></div>
+        <div class="label">후원자 닉네임 <span class="req">*</span></div>
         <input type="text" id="cNick" placeholder="후원자 공간에 표시될 이름">
       </div>
       <div class="field">
-        <div class="label">이메일 <span>*</span></div>
+        <div class="label">이메일 <span class="req">*</span></div>
         <input type="email" id="cEmail" placeholder="donor@example.com">
         <div class="hint">도너스 데이터와 맞추는 기준값이에요.</div>
       </div>
       <div class="field">
-        <div class="label">후원 금액 <span>*</span></div>
+        <div class="label">후원 금액 <span class="req">*</span></div>
         <input type="number" id="cAmount" placeholder="예) 50000">
       </div>
       <div class="field">
-        <div class="label">후원일 <span>*</span></div>
+        <div class="label">후원일 <span class="req">*</span></div>
         <input type="date" id="cDate">
         <div class="hint">도너스에 찍힌 날짜로 적어주세요.</div>
       </div>
       <div class="field">
-        <div class="label">도너스 거래번호</div>
+        <div class="label">도너스 거래번호 <span class="opt">선택</span></div>
         <input type="text" id="cRef" placeholder="선택">
       </div>
     </div>
@@ -1375,8 +1378,8 @@ function viewNotices() {
   </div>
   <div class="nt-f" id="ntForm">
     ${ed ? `<div style="font-size:13px;font-weight:800;color:#9A6A12;">✏️ 공지 수정 중 <span class="muted" style="font-weight:500;">— 고친 뒤 「수정 저장」을 누르세요</span></div>` : ''}
-    <div><label>제목 (80자까지)</label><input type="text" id="ntTitle" maxlength="80" placeholder="예) 10월 공유회 안내" value="${ed ? esc(ed.title) : ''}"></div>
-    <div><label>본문</label><textarea id="ntBody" rows="5" maxlength="2000" placeholder="청소년이 읽을 내용을 적어 주세요.">${ed ? esc(ed.body) : ''}</textarea></div>
+    <div><label>제목 (80자까지) <span class="req">*</span></label><input type="text" id="ntTitle" maxlength="80" placeholder="예) 10월 공유회 안내" value="${ed ? esc(ed.title) : ''}"></div>
+    <div><label>본문 <span class="req">*</span></label><textarea id="ntBody" rows="5" maxlength="2000" placeholder="청소년이 읽을 내용을 적어 주세요.">${ed ? esc(ed.body) : ''}</textarea></div>
     <div><label>보이는 기간</label>
       <select id="ntDays">
         ${ed ? `<option value="keep">${noticeLive(ed) ? '지금 설정 그대로 (' + (ed.ends_at ? fmtDate(ed.ends_at) + '까지' : '내릴 때까지') + ')' : '그대로 두기 (지금은 내려간 상태)'}</option>` : ''}
@@ -1710,7 +1713,7 @@ function openGrant(uid, deduct) {
   document.getElementById('grantDesc').textContent = deduct
     ? '받은 나다움에서 빼요. 해당 청소년에게 알림이 가고 사유가 그대로 보여요. 잘못 뺐으면 지급 내역에서 「차감 취소」로 되돌려요.'
     : '받는 청소년에게 알림이 가요. 사유가 그대로 보여요. 잘못 줬으면 지급 내역에서 회수할 수 있어요.';
-  document.getElementById('grantAmtLabel').innerHTML = (deduct ? '뺄 나다움 (N)' : '줄 나다움 (N)') + ' <span>*</span>';
+  document.getElementById('grantAmtLabel').innerHTML = (deduct ? '뺄 나다움 (N)' : '줄 나다움 (N)') + ' <span class="req">*</span>';
   document.getElementById('grantAmtHint').textContent = deduct
     ? '한 번에 1~1000N. 교환권 한 장은 200N이에요. 지금 가진 것보다 많이는 못 빼요.'
     : '한 번에 1~1000N. 더 줄 일이 있으면 나눠서 주세요.';
@@ -1786,7 +1789,7 @@ function viewSchedules() {
           <button class="btn btn-line" onclick="mscDel('meeting_schedules', ${x.id}, '${esc(x.title).replace(/'/g, "\\'")}')">삭제</button></td></tr>`).join('')}
     </table></div>` : `<div class="empty">아직 등록한 모임 일정이 없어요.</div>`;
   const mt = MSC.mt.length ? `<div class="tbl"><table>
-      <tr><th>일시</th><th>이름(선택)</th><th>Zoom 링크</th><th>상태</th><th></th></tr>
+      <tr><th>일시</th><th>이름 (선택)</th><th>Zoom 링크</th><th>상태</th><th></th></tr>
       ${MSC.mt.map(x => `<tr${x.active ? '' : ' class="voided"'}>
         <td class="num"><b>${mscAt(x.at)}</b></td><td>${esc(x.label || '')}</td>
         <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.zoom ? esc(x.zoom) : '<span class="muted">없음</span>'}</td>
@@ -1804,9 +1807,9 @@ function viewSchedules() {
   <div style="padding:6px 20px 8px;">
     <div class="panel-t" style="font-size:15px;margin:8px 0;">모임 운영 일정</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
-      <div><div class="muted">이름</div><input type="text" id="mscTitle" placeholder="예) 12월 모임" maxlength="30" style="width:170px;"></div>
-      <div><div class="muted">시작일</div><input type="date" id="mscStart"></div>
-      <div><div class="muted">종료일</div><input type="date" id="mscEnd"></div>
+      <div><div class="muted">이름 <span class="req">*</span></div><input type="text" id="mscTitle" placeholder="예) 12월 모임" maxlength="30" style="width:170px;"></div>
+      <div><div class="muted">시작일 <span class="req">*</span></div><input type="date" id="mscStart"></div>
+      <div><div class="muted">종료일 <span class="req">*</span></div><input type="date" id="mscEnd"></div>
       <button class="btn btn-dark" onclick="mscAddSchedule()">일정 추가</button>
     </div>
     ${sch}
@@ -1814,10 +1817,10 @@ function viewSchedules() {
   <div style="padding:14px 20px 20px;">
     <div class="panel-t" style="font-size:15px;margin:8px 0;">온라인 공유회</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
-      <div><div class="muted">날짜</div><input type="date" id="mscMDate"></div>
-      <div><div class="muted">시각</div><input type="time" id="mscMTime" step="1800" value="20:00"></div>
-      <div><div class="muted">이름(선택)</div><input type="text" id="mscMLabel" placeholder="예) 12월 공유회" maxlength="30" style="width:150px;"></div>
-      <div><div class="muted">Zoom 링크</div><input type="url" id="mscMZoom" placeholder="https://zoom.us/j/..." style="width:260px;"></div>
+      <div><div class="muted">날짜 <span class="req">*</span></div><input type="date" id="mscMDate"></div>
+      <div><div class="muted">시각 <span class="req">*</span></div><input type="time" id="mscMTime" step="1800" value="20:00"></div>
+      <div><div class="muted">이름 <span class="opt">선택</span></div><input type="text" id="mscMLabel" placeholder="예) 12월 공유회" maxlength="30" style="width:150px;"></div>
+      <div><div class="muted">Zoom 링크 <span class="req">*</span></div><input type="url" id="mscMZoom" placeholder="https://zoom.us/j/..." style="width:260px;"></div>
       <button class="btn btn-dark" onclick="mscAddMeetup()">공유회 추가</button>
     </div>
     ${mt}
@@ -2188,7 +2191,7 @@ function viewNotify() {
       </select>
     </div>
     <div class="nf-f" id="nfRoutineWrap" style="display:none;">
-      <label>모임</label>
+      <label>모임 <span class="req">*</span></label>
       <select id="nfRoutine" onchange="nfCount()">
         <option value="">고르기</option>
         ${rs.map(r => `<option value="${r.id}">${esc(r.title)}</option>`).join('')}
@@ -2197,11 +2200,11 @@ function viewNotify() {
     <div class="nf-reach" id="nfReach">세는 중…</div>
 
     <div class="nf-f">
-      <label>제목 <span style="color:var(--pink);font-size:11px;">* 필수</span></label>
+      <label>제목 <span class="req">*</span></label>
       <input type="text" id="nfTitle" maxlength="60" placeholder="예: 내일 저녁 7시에 같이 읽어요">
     </div>
     <div class="nf-f">
-      <label>내용 <span class="muted" style="font-size:11px;">선택</span></label>
+      <label>내용 <span class="opt">선택</span></label>
       <textarea id="nfBody" rows="3" maxlength="180" placeholder="알림을 눌렀을 때 아래 줄에 보여요"></textarea>
     </div>
 
@@ -2213,7 +2216,7 @@ function viewNotify() {
       </select>
     </div>
     <div class="nf-f" id="nfAtWrap" style="display:none;">
-      <label>보낼 때</label>
+      <label>보낼 때 <span class="req">*</span></label>
       <input type="datetime-local" id="nfAt" value="${def}">
       <div class="muted" style="font-size:11.5px;margin-top:5px;">정한 시각이 지나면 보내요. <b>5분 안에 나가요.</b></div>
     </div>
@@ -3116,7 +3119,7 @@ function openRoutineEdit(id) {
       <span class="muted"> · ${esc(rName(r.led_by))} · ${R_KIND[r.kind || 'book']}</span></div>`}
 
     <div class="field">
-      <div class="label">끗짱 ${r.ongoing ? '<span style="font-weight:600;">(상시 모임은 없어도 돼요)</span>' : '<span>*</span>'}</div>
+      <div class="label">끗짱 ${r.ongoing ? '<span style="font-weight:600;">(상시 모임은 없어도 돼요)</span>' : '<span class="req">*</span>'}</div>
       ${leads.length > 6 ? `<input type="text" id="reLeadFind" placeholder="이름·소속으로 걸러보기"
         autocomplete="off" oninput="leadFilter()" style="margin-bottom:8px;">` : ''}
       <select id="reLead">
@@ -3129,7 +3132,7 @@ function openRoutineEdit(id) {
         : '<b style="color:#8E3527;">승인된 끗짱이 없어요.</b> 「끗짱 승인」 탭에서 먼저 승인해 주세요.'}</div>
     </div>
     ${isNew ? `<div class="field">
-      <div class="label">어떻게 읽나요 <span>*</span></div>
+      <div class="label">어떻게 읽나요 <span class="req">*</span></div>
       <select id="reKind">
         ${Object.entries(R_KIND).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
       </select>
@@ -3137,27 +3140,27 @@ function openRoutineEdit(id) {
     </div>` : ''}
 
     <div class="field">
-      <div class="label">모임 이름 <span>*</span></div>
+      <div class="label">모임 이름 <span class="req">*</span></div>
       <input type="text" id="reTitle" maxlength="40" value="${v(r.title)}">
     </div>
     <div style="display:flex;gap:10px;">
       <div class="field" style="width:96px;flex:none;">
-        <div class="label">이모지</div>
+        <div class="label">이모지 <span class="opt">선택</span></div>
         <input type="text" id="reEmoji" maxlength="4" style="text-align:center;" value="${v(r.emoji || '📚')}">
       </div>
       <div class="field" style="flex:1;min-width:0;${r.ongoing ? 'display:none;' : ''}">
-        <div class="label">모집 인원 <span>*</span></div>
+        <div class="label">모집 인원 <span class="req">*</span></div>
         <input type="number" id="rePeople" min="1" max="50" value="${r.max_people ?? 8}">
       </div>
     </div>
     <div class="field">
-      <div class="label">대표 사진${isNew ? ' <span>*</span>' : ''}</div>
+      <div class="label">대표 사진${isNew ? ' <span class="req">*</span>' : ''}</div>
       <div id="reCoverBox" class="re-cover" onclick="document.getElementById('reCoverFile').click()"></div>
       <input type="file" id="reCoverFile" accept="image/*" style="display:none" onchange="reCoverPick(this)">
       <div class="hint">모집 카드에 크게 걸려요. 가로로 넓은 사진이 잘 맞아요.</div>
     </div>
     <div class="field">
-      <div class="label">함께하는 책방</div>
+      <div class="label">함께하는 책방 <span class="opt">선택</span></div>
       <select id="reStore">
         <option value="">고르지 않음</option>
         ${(DB.bookstores || []).filter(b => b.active || b.id === r.bookstore_id).map(b =>
@@ -3168,11 +3171,11 @@ function openRoutineEdit(id) {
         후원 기업과도, 공유회 장소와도 다른 칸이에요.</div>
     </div>
     <div class="field">
-      <div class="label">끗짱 소개 <span>*</span></div>
+      <div class="label">끗짱 소개 <span class="req">*</span></div>
       <textarea id="reDesc" rows="4" maxlength="300">${v(r.description)}</textarea>
     </div>
     <div class="field">
-      <div class="label">이렇게 인증해 주세요 <span>*</span></div>
+      <div class="label">이렇게 인증해 주세요 <span class="req">*</span></div>
       <textarea id="reGuide" rows="3" maxlength="200" oninput="reGuideMark()">${v(r.cert_guide)}</textarea>
       <!-- 【예시를 누르면 채워지고, 채운 뒤에도 고칠 수 있다 · 2026-10-08 사용자】
            아이들은 이 글을 인증 화면에서 그대로 읽는다. 「매일 하루」처럼 방법이 아닌 말이 들어가면
@@ -3184,16 +3187,16 @@ function openRoutineEdit(id) {
     </div>
     <div style="display:flex;gap:10px;">
       <div class="field" style="flex:1;min-width:0;">
-        <div class="label">시작일 <span>*</span></div>
+        <div class="label">시작일 <span class="req">*</span></div>
         <input type="date" id="reStart" value="${v(r.start_date || (isNew ? ymd(0) : ''))}">
       </div>
       <div class="field" style="flex:1;min-width:0;">
-        <div class="label">종료일 ${r.ongoing ? '<span style="font-weight:600;">(상시 모임은 비워 두세요)</span>' : '<span>*</span>'}</div>
+        <div class="label">종료일 ${r.ongoing ? '<span style="font-weight:600;">(상시 모임은 비워 두세요)</span>' : '<span class="req">*</span>'}</div>
         <input type="date" id="reEnd" value="${v(r.end_date || (isNew ? ymd(14) : ''))}">
       </div>
     </div>
     <div class="field">
-      <div class="label">${r.kind === 'one_book' ? '함께 읽을 책' : '끗짱이 읽는 책'}</div>
+      <div class="label">${r.kind === 'one_book' ? '함께 읽을 책' : '끗짱이 읽는 책'} <span class="opt">선택</span></div>
       <input type="text" id="reBook" maxlength="60" value="${v(r.kkut_book_title)}"
              placeholder="책 제목을 검색하면 찾아드려요" autocomplete="off" oninput="reBookFind()">
       <div id="reBookFind"></div>
@@ -3220,29 +3223,29 @@ function openRoutineEdit(id) {
          border-top:1px solid var(--line);padding-top:14px;">
       <div style="display:flex;gap:10px;">
         <div class="field" style="flex:1;min-width:0;">
-          <div class="label">공유회 날짜</div>
+          <div class="label">공유회 날짜 <span class="req">*</span></div>
           <input type="date" id="reMeetDate"
                  value="${at ? `${at.getFullYear()}-${p2(at.getMonth()+1)}-${p2(at.getDate())}` : ''}">
         </div>
         <div class="field" style="width:150px;flex:none;">
-          <div class="label">시각</div>
+          <div class="label">시각 <span class="req">*</span></div>
           <input type="time" id="reMeetTime" step="1800"
                  value="${at ? `${p2(at.getHours())}:${p2(at.getMinutes())}` : ''}">
         </div>
       </div>
       <div class="field">
-        <div class="label">장소</div>
+        <div class="label">장소 <span class="req">*</span></div>
         <input type="text" id="reMeetPlace" maxlength="80" value="${v(r.meetup_place)}">
         <div class="hint">${r.meetup_address
           ? `지금 주소 <b>${esc(r.meetup_address)}</b> · 이름을 바꾸면 주소와 길찾기가 지워져요`
           : '주소·길찾기는 끗짱이 앱에서 지도로 골라야 붙어요'}</div>
       </div>
       <div class="field">
-        <div class="label">상세 위치</div>
+        <div class="label">상세 위치 <span class="opt">선택</span></div>
         <input type="text" id="reMeetDetail" maxlength="60" value="${v(r.meetup_detail)}">
       </div>
       <div class="field">
-        <div class="label">안내할 말</div>
+        <div class="label">안내할 말 <span class="opt">선택</span></div>
         <textarea id="reMeetNote" rows="2" maxlength="300">${v(r.meetup_note)}</textarea>
       </div>
     </div>`;

@@ -64,6 +64,9 @@ header .home:active{ opacity:.6; }
 .c-done{ background:#EEF1F4; color:#4A5560; }
 
 label{ display:block; font-size:13.5px; font-weight:700; margin:16px 0 6px; }
+/* 필수는 빨간 * 하나, 선택은 「선택」 (2026-11-13 사용자 · 앱·관리자·책방 통일) */
+.req { color:#D93025; font-size:15px; font-weight:800; line-height:1; margin-left:2px; }
+.opt { color:var(--ink-3); font-size:11.5px; font-weight:400; margin-left:4px; }
 select, input[type=number], input[type=text], textarea{
   width:100%; font-family:inherit; font-size:17px; color:var(--ink);
   background:#fff; border:1px solid var(--line); border-radius:12px;
@@ -236,11 +239,11 @@ async function showLogin(msg) {
       <div class="store-n">책방 로그인</div>
       <div class="store-s" style="margin-top:5px;">이미 함께하는 책방이에요. 이름을 찾아 고르고
         <b>안내문에 적힌 책방 고유 번호 네 자리</b>를 넣어주세요.</div>
-      <label>책방</label>
+      <label>책방 <span class="req">*</span></label>
       <input type="text" id="lgQ" placeholder="책방 이름이나 지역을 입력하세요" autocomplete="off"
              oninput="lgFilter(true)">
       <div class="lg-list" id="lgList"></div>
-      <label>책방 고유 번호</label>
+      <label>책방 고유 번호 <span class="req">*</span></label>
       <input type="text" id="lgCode" inputmode="numeric" maxlength="4" placeholder="● ● ● ●"
              autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()"
              style="text-align:center;letter-spacing:10px;font-size:20px;font-weight:800;">
@@ -351,7 +354,7 @@ function paint() {
 function pickCard() {
   if (!storePick.ready) return '';          // 110 이 아직이면 칸 자체를 보이지 않는다
   return `<div class="card" style="margin-top:14px;">
-    <div class="store-n" style="font-size:16.5px;">${esc(store ? store.name : '책방')} 추천 한 줄 <span style="font-weight:600;color:var(--ink-3);font-size:14px;">(선택)</span></div>
+    <div class="store-n" style="font-size:16.5px;">${esc(store ? store.name : '책방')} 추천 한 줄 <span class="opt">선택</span></div>
     <div class="store-s" style="margin-top:4px;">청소년이 책을 교환할 책방을 고를 때 책방지기의 추천 한 줄이 보여집니다.</div>
     <label>추천하는 책</label>
     <input type="text" id="pkTitle" maxlength="60" placeholder="제목 입력" value="${esc(storePick.title)}"
@@ -435,14 +438,14 @@ function card(r) {
 
 function form() {
   return `
-    <label>책 이름 <span style="font-weight:500;color:var(--ink-3);">(선택)</span></label>
+    <label>책 이름 <span class="opt">선택</span></label>
     <input type="text" id="bk" maxlength="80" placeholder="예) 아몬드" autocomplete="off">
 
-    <label>책 값 (원) <span style="font-weight:600;color:var(--bad);">필수</span></label>
+    <label>책 값 (원) <span class="req">*</span></label>
     <input type="number" id="amt" inputmode="numeric" placeholder="16500" oninput="check()">
     <div class="hint" style="margin-top:6px;">책방에서 요청하는 실제 책 값을 적어주세요.</div>
 
-    <label>책 교환 인증 사진 <span style="font-weight:600;color:var(--bad);">필수</span></label>
+    <label>책 교환 인증 사진 <span class="req">*</span></label>
     <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
@@ -456,7 +459,7 @@ function form() {
 // 요청은 이미 했고 책 교환 인증 사진만 비어 있는 건
 function proofForm(r) {
   return `
-    <label>책 교환 인증 사진</label>
+    <label>책 교환 인증 사진 <span class="req">*</span></label>
     <label class="file" id="phLab">사진 선택
       <input type="file" accept="image/*" onchange="pickFile(event,'photo')"></label>
     <div id="phPrev"></div>
