@@ -275,13 +275,13 @@ h2{font-size:clamp(22px,4.2vw,31px);line-height:1.4;font-weight:800;letter-spaci
   .report-t{text-align:center}.report-t ul{display:inline-block;text-align:left}
   .paper{flex-basis:auto;width:min(270px,100%)}}
 
-/* 서점 */
+/* 책방 */
 .stores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:32px}
 @media(max-width:720px){.stores{grid-template-columns:repeat(2,1fr)}}
 .store{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 14px;text-align:center}
 .store b{display:block;font-size:14px;font-weight:800}
 .store span{font-size:11.5px;color:var(--ink-3)}
-/* 서점 사진이 있는 카드: 사진을 깔고 어둡게 눌러 흰 글씨를 올린다. 사진이 없는 카드는 위 기본 모양 그대로 */
+/* 책방 사진이 있는 카드: 사진을 깔고 어둡게 눌러 흰 글씨를 올린다. 사진이 없는 카드는 위 기본 모양 그대로 */
 .store{aspect-ratio:5/4;display:flex;flex-direction:column;justify-content:center}
 .store.has-img{position:relative;overflow:hidden;border-color:transparent;justify-content:flex-end;padding-bottom:14px;
   background-color:#2b2b28;background-size:cover;background-position:center}
@@ -486,8 +486,8 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
       <div class="step s2">
         <div class="step-n">2</div>
         <div>
-          <h3>독립서점 <span class="where">#오프라인 #책 교환소</span></h3>
-          <p>차곡차곡 쌓인 ‘나다움’ 포인트로 책 한 권을 교환합니다. 우리 동네 독립서점에 방문해 내가 읽고 싶은 책을 직접 고르고, 책방지기와 따뜻한 안부를 나누며 다정한 연결을 경험합니다.</p>
+          <h3>독립책방 <span class="where">#오프라인 #책 교환소</span></h3>
+          <p>차곡차곡 쌓인 ‘나다움’ 포인트로 책 한 권을 교환합니다. 우리 동네 독립책방에 방문해 내가 읽고 싶은 책을 직접 고르고, 책방지기와 따뜻한 안부를 나누며 다정한 연결을 경험합니다.</p>
         </div>
       </div>
       <div class="step s3">
@@ -506,7 +506,7 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   <div class="wrap">
     <div class="sec-label">한끗독서 전용 앱 소개</div>
     <h2>읽고, 나누고, 책으로 받아가는 모든 과정이<br>앱 하나에 담겨있어요</h2>
-    <p class="sec-lead">하루 10분 독서 모임부터 독립서점에서 도서 교환까지, 한끗독서 앱에서 바로 경험해 보세요!</p>
+    <p class="sec-lead">하루 10분 독서 모임부터 독립책방에서 도서 교환까지, 한끗독서 앱에서 바로 경험해 보세요!</p>
 
     <div class="feat">
       <div class="feat-row">
@@ -540,7 +540,7 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
         <div class="feat-txt">
           <div class="feat-no">04 · 책방에서 책 받기</div>
           <div class="feat-t">동네책방에서<br>읽고 싶은 책 한 권을 받아요</div>
-          <p class="feat-p">교환권을 들고 우리 동네 독립서점을 찾아가 원하는 책을 직접 고르세요. 책방지기에게 QR코드만 보여주면 무료로 받아갈 수 있습니다.</p>
+          <p class="feat-p">교환권을 들고 우리 동네 독립책방을 찾아가 원하는 책을 직접 고르세요. 책방지기에게 QR코드만 보여주면 무료로 받아갈 수 있습니다.</p>
         </div>
         <div class="feat-ph"><div class="phone"><img src="app-shots/app-4-qr.jpg" alt="책방 사장님께 보여 주는 교환 QR 화면" loading="lazy"></div></div>
       </div>
@@ -617,7 +617,7 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
         <h3>매월, 한끗독서의 변화가 담긴<br>월간 리포트를 보내드립니다</h3>
         <ul>
           <li>청소년이 한 달간 읽은 책</li>
-          <li>함께 한 독립서점</li>
+          <li>함께 한 독립책방</li>
           <li>청소년이 직접 남긴 후기와 마음에 남은 문장</li>
         </ul>
       </div>
@@ -646,12 +646,12 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
   </div>
 </section>
 
-<!-- 서점 -->
+<!-- 책방 -->
 <section>
   <div class="wrap">
     <div class="sec-label">함께하는 곳</div>
     <h2>청소년이 직접 책을 고르러<br>찾아가는 동네책방</h2>
-    <p class="sec-lead">한끗독서 청소년들에게 책을 교환해 주는 전국 곳곳의 파트너 독립서점입니다.</p>
+    <p class="sec-lead">한끗독서 청소년들에게 책을 교환해 주는 전국 곳곳의 파트너 독립책방입니다.</p>
     <div class="stores">
       <div class="store has-img" style="background-image:url(store-shots/danginui-gangneung.jpg)"><b>당신의강릉</b><span>강원 강릉</span></div>
       <div class="store has-img" style="background-image:url(store-shots/golmok-seoseongida.jpg);background-position:center 62%"><b>골목책방서성이다</b><span>전남 순천</span></div>
@@ -661,7 +661,7 @@ header.scrolled{box-shadow:0 6px 20px rgba(60,50,20,.08)}
       <div class="store has-img" style="background-image:url(store-shots/blank-playground.jpg);background-position:center 45%"><b>빈칸놀이터</b><span>경기 용인</span></div>
     </div>
     <p style="text-align:center;font-size:13px;color:var(--ink-3);margin-top:18px">
-      파트너 독립서점은 상시 모집합니다.
+      파트너 독립책방은 상시 모집합니다.
     </p>
     <div style="text-align:center;margin-top:14px">
       <a class="btn btn-line" href="store-invite.html">우리 동네 책방도 함께하고 싶다면 ›</a>

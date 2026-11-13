@@ -628,8 +628,8 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
   <div class="tabs" id="tabsMoney" style="display:none;">
     <button class="tab" data-tab="pending" onclick="switchTab('pending')">정산 대기<i id="cntPending"></i></button>
-    <button class="tab" data-tab="settled" onclick="switchTab('settled')">서점 입금<i id="cntSettled"></i></button>
-    <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 서점<i id="cntStores"></i></button>
+    <button class="tab" data-tab="settled" onclick="switchTab('settled')">책방 입금<i id="cntSettled"></i></button>
+    <button class="tab" data-tab="stores" onclick="switchTab('stores')">파트너 책방<i id="cntStores"></i></button>
     <!-- ⏸ 【내려둠 · 2026-10-07 사용자】 후원은 **도너스에서만** 관리하고 앱에는
          넣지 않기로 했다. 입력하지 않을 표를 열어 두면 늘 비어 있고, 거기서
          나오는 「남은 도서기금」이 영영 마이너스로 보인다.
@@ -652,7 +652,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
     <div class="modal-bd">
       <div class="target" id="settleTarget"></div>
       <div class="field">
-        <div class="label">서점에 지급할 금액 <span class="req">*</span></div>
+        <div class="label">책방에 지급할 금액 <span class="req">*</span></div>
         <input type="number" id="settleAmount" placeholder="예) 18000" oninput="renderPreview()">
         <div class="hint">교환권 한도 <b id="capHint"></b>원. 초과분은 후원금에서 나갈 수 없어요</div>
       </div>
@@ -800,7 +800,7 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   <div class="modal" style="max-width:480px;">
     <div class="modal-hd">
       <div class="modal-t">교환 직접 등록</div>
-      <div class="modal-d">QR 오류 등으로 앱에 기록이 없는데 책방에 책값을 정산한 건을 넣어요. 등록하면 「서점 입금」에 정산 완료 건으로 보이고, 이 청소년의 교환권이 1장 줄어요.</div>
+      <div class="modal-d">QR 오류 등으로 앱에 기록이 없는데 책방에 책값을 정산한 건을 넣어요. 등록하면 「책방 입금」에 정산 완료 건으로 보이고, 이 청소년의 교환권이 1장 줄어요.</div>
     </div>
     <div class="modal-bd">
       <div class="field">
@@ -858,17 +858,17 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
   </div>
 </div>
 
-<!-- 서점 등록/수정 -->
+<!-- 책방 등록/수정 -->
 <div class="overlay" id="storeOverlay">
   <div class="modal">
     <div class="modal-hd">
-      <div class="modal-t" id="storeModalTitle">서점 등록</div>
+      <div class="modal-t" id="storeModalTitle">책방 등록</div>
       <div class="modal-d">여기 적은 내용이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.</div>
     </div>
     <div class="modal-bd">
       <div class="field">
-        <div class="label">서점 이름 <span class="req">*</span></div>
-        <input type="text" id="sName" placeholder="예) OO서점">
+        <div class="label">책방 이름 <span class="req">*</span></div>
+        <input type="text" id="sName" placeholder="예) OO책방">
       </div>
       <div class="field">
         <div class="label">지역 <span class="opt">선택</span></div>
@@ -904,12 +904,12 @@ input:focus, select:focus, textarea:focus { outline:none; border-color:var(--ink
       </div>
       <div class="field">
         <div class="label">한 줄 소개 <span class="opt">선택</span></div>
-        <textarea id="sIntro" rows="2" placeholder="어떤 서점인지 짧게 소개해 주세요."></textarea>
+        <textarea id="sIntro" rows="2" placeholder="어떤 책방인지 짧게 소개해 주세요."></textarea>
       </div>
       <div class="field">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;">
           <input type="checkbox" id="sActive" checked style="width:16px;height:16px;">
-          현재 파트너 서점
+          현재 파트너 책방
         </label>
         <div class="hint">체크를 풀면(숨김) 청소년 앱의 책방 목록과 새 모임의 책방 선택에서 빠져요. 기존 모임은 그대로 유지돼요. 표의 「숨기기」 단추와 같은 값이에요.</div>
       </div>
@@ -1057,7 +1057,7 @@ let DB = {
       remaining_amount:80000,  status:'active',    charged_at:'2026-09-02', source:'manual' },
   ],
   bookstores: [
-    { id:1, name:'OO서점', region:'강원 속초', address:'강원특별자치도 속초시 OO로 12',
+    { id:1, name:'OO책방', region:'강원 속초', address:'강원특별자치도 속초시 OO로 12',
       hours:'평일 11:00~19:00, 주말 11:00~18:00', closed_days:'매주 월요일 휴무',
       phone:'033-000-0000', link:'https://instagram.com/example',
       intro:'바다 곁에서 오래 책을 팔아온 동네책방이에요.', active:true },
@@ -1079,12 +1079,12 @@ let DB = {
       book_title:'완득이', created_at:'2026-09-10', quote_public:false },
   ],
   purchases: [
-    { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:false },
-    { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:true },
+    { id:11, name:'김OO', routine:'매일 한 장 읽기', bookstore:'OO책방', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:false },
+    { id:12, name:'이OO', routine:'매일 한 장 읽기', bookstore:'OO책방', status:'pending', created_at:'2026-09-11', book_photo:'#', photo_public:true },
     { id:13, name:'박OO', routine:'속초 밤바다 15일', bookstore:'△△책방', status:'pending', created_at:'2026-09-09' },
     { id:9,  name:'최OO', routine:'속초 밤바다 15일', bookstore:'△△책방', status:'settled', created_at:'2026-08-28', settled_at:'2026-09-01',
       amount:17500, paid_at:'2026-09-02' },
-    { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO서점', status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
+    { id:8,  name:'정OO', routine:'매일 한 장 읽기', bookstore:'OO책방', status:'settled', created_at:'2026-08-20', settled_at:'2026-08-25',
       amount:19000, paid_at:null },
   ],
   // 청소년 확인 명단 (데모). 실제로는 verify_queue() 가 준다
@@ -1135,7 +1135,7 @@ function pool() {
     spent,
     pending:    DB.purchases.filter(g => g.status === 'pending').length,
     delivered:  DB.purchases.filter(g => g.status === 'settled').length,
-    // 금액은 확정됐는데 아직 서점에 안 보낸 것. 5영업일 약속을 지키려면 이게 보여야 한다
+    // 금액은 확정됐는데 아직 책방에 안 보낸 것. 5영업일 약속을 지키려면 이게 보여야 한다
     unpaidCnt:  unpaid().length,
     unpaidSum:  unpaid().reduce((n, g) => n + (g.amount || 0), 0),
   };
@@ -1178,7 +1178,7 @@ function renderSummary() {
     : card('책이 된 금액', won(p.spent), '원', false)
       + card('정산 대기', p.pending, '건', p.pending,
              (n => n ? `⚠️ ${CLAIM_WARN_DAYS}일↑ ${n}건` : '')((DB.purchases || []).filter(overdue).length))
-      + card('서점 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
+      + card('책방 입금 대기', won(p.unpaidSum), '원', p.unpaidCnt);
   if (grp === 'stats') document.getElementById('summary').innerHTML = '';   // 통계 화면은 자기 카드를 쓴다
   // 손대야 하는 건(todo)은 분홍 표시로, 그냥 개수는 회색 숫자로.
   // 할 일이 0 이면 아무것도 안 그린다 — 0 을 띄워두면 1 이 안 보인다
@@ -4273,14 +4273,14 @@ function viewStores() {
   const rows = DB.bookstores || [];
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">파트너 서점</div>
+    <div><div class="panel-t">파트너 책방</div>
     <div class="panel-d">여기 적은 주소·영업시간이 청소년 앱의 "책 받으러 갈 곳"에 그대로 보여요.<br>
       <b>책방 고유 번호</b>는 사장님이 QR을 찍은 뒤 <b>제 폰에</b> 한 번 넣는 네 자리예요. 청소년에게는 안 보입니다.<br>
       <b>책방 주소</b>는 사장님이 책 값·사진을 올리는 화면이에요. 한 번 보내드리면 즐겨찾기 해두시면 됩니다.</div></div>
-    <button class="btn btn-dark" onclick="openStore()">+ 서점 등록</button>
+    <button class="btn btn-dark" onclick="openStore()">+ 책방 등록</button>
   </div>
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>서점</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th>연결된 모임</th><th>상태</th><th class="right"></th></tr>
+    <tr><th>책방</th><th class="num">책방 고유 번호</th><th>주소</th><th>영업시간</th><th>연결된 모임</th><th>상태</th><th class="right"></th></tr>
     ${rows.map(s => `<tr${s.active ? '' : ' style="opacity:.55;"'}>
       <td><b>${esc(s.name)}</b>${s.region ? `<div class="muted">${esc(s.region)}</div>` : ''}${s.pick_title
         ? `<div class="muted" style="margin-top:4px;">💛 『${esc(s.pick_title)}』${s.pick_line ? ` ${esc(s.pick_line)}` : ''}
@@ -4297,7 +4297,7 @@ function viewStores() {
         <button class="btn btn-line" onclick="openStore(${s.id})">수정</button>
         <button class="btn btn-line" onclick="toggleStoreActive(${s.id})" title="${s.active ? '앱의 책방 목록과 새 모임의 책방 선택에서 뺍니다' : '다시 앱에 보이게 합니다'}">${s.active ? '숨기기' : '다시 보이기'}</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">등록된 서점이 없어요. 먼저 서점을 등록하면 모임에 연결할 수 있어요.</div>`}`;
+  </table></div>` : `<div class="empty">등록된 책방이 없어요. 먼저 책방을 등록하면 모임에 연결할 수 있어요.</div>`}`;
 }
 
 // 책방지기의 한 줄 추천 (migration-110). 부적절한 글이면 운영진이 내린다
@@ -4334,7 +4334,7 @@ async function saveStoreCode(id) {
 function openStore(id) {
   storeEditId = id || null;
   const s = id ? (DB.bookstores || []).find(x => x.id === id) : null;
-  document.getElementById('storeModalTitle').textContent = s ? '서점 수정' : '서점 등록';
+  document.getElementById('storeModalTitle').textContent = s ? '책방 수정' : '책방 등록';
   Object.entries(STORE_FIELDS).forEach(([el, key]) => document.getElementById(el).value = s ? (s[key] || '') : '');
   document.getElementById('sActive').checked = s ? !!s.active : true;
   document.getElementById('sCode').value = s ? (s.code || '') : '';
@@ -4402,7 +4402,7 @@ async function deleteStore() {
   if (!s) return;
   const used = (DB.purchaseCounts || {})[s.id] || 0;
   if (used > 0) {
-    alert(`거래가 ${used}건 있어 지울 수 없어요.\n\n지우면 지난 정산에서 어느 책방이었는지가 사라져요.\n대신 '현재 파트너 서점' 체크를 풀어 목록에서 빼주세요.`);
+    alert(`거래가 ${used}건 있어 지울 수 없어요.\n\n지우면 지난 정산에서 어느 책방이었는지가 사라져요.\n대신 '현재 파트너 책방' 체크를 풀어 목록에서 빼주세요.`);
     return;
   }
   if (!confirm(`${s.name} 을(를) 지울까요?\n\n되돌릴 수 없어요.\n잠시 쉬는 것뿐이면 체크를 푸는 쪽이 나아요.`)) return;
@@ -4418,7 +4418,7 @@ async function deleteStore() {
   render();
 }
 
-// 서점을 앱에서 숨기거나 다시 보인다. 지우는 게 아니다 — 기존 모임·정산 기록은 그대로다 (「현재 파트너 서점」 체크와 같은 값)
+// 책방을 앱에서 숨기거나 다시 보인다. 지우는 게 아니다 — 기존 모임·정산 기록은 그대로다 (「현재 파트너 책방」 체크와 같은 값)
 async function toggleStoreActive(id) {
   const st = (DB.bookstores || []).find(x => x.id === id); if (!st) return;
   const to = !st.active;
@@ -4436,7 +4436,7 @@ async function submitStore() {
   const payload = {};
   Object.entries(STORE_FIELDS).forEach(([el, key]) => payload[key] = document.getElementById(el).value.trim() || null);
   payload.active = document.getElementById('sActive').checked;
-  if (!payload.name) { alert('서점 이름은 필수예요.'); return; }
+  if (!payload.name) { alert('책방 이름은 필수예요.'); return; }
 
   if (LIVE) {
     const q = storeEditId
@@ -4470,7 +4470,7 @@ function viewPending() {
   </div>
   ${overdueBanner(rows)}
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>사진</th><th>청소년</th><th>모임 / 서점</th><th>책 받은 날</th><th>랜딩 공개</th><th class="right">정산</th></tr>
+    <tr><th>사진</th><th>청소년</th><th>모임 / 책방</th><th>책 받은 날</th><th>랜딩 공개</th><th class="right">정산</th></tr>
     ${rows.map(g => `<tr>
       <td>${photoCell(g)}</td>
       <td><b>${esc(g.name)}</b></td>
@@ -4577,14 +4577,14 @@ async function storeGuide(id) {
 //                    운영진이 확인하는 건 이것 — 서명 URL 로 연다
 //   책인증(공개본)   같은 사진의 사본. 아이가 공개에 동의했을 때만 cert-photos 에
 //                    한 장 더 올라간다. 랜딩에 나가는 건 이쪽 중 운영진이 「랜딩에 올리기」를 한 것뿐이다 (landing_ok)
-//   영수증           서점이 보낸 것을 운영진이 정산할 때 올린다. dokseo-receipts.
+//   영수증           책방이 보낸 것을 운영진이 정산할 때 올린다. dokseo-receipts.
 //                    전에는 올리기만 하고 볼 방법이 없었다
 function photoCell(g) {
   const a = g.photo_path
     ? `<div class="thumb" style="cursor:pointer;" onclick="${/^https?:/.test(g.photo_path) ? `window.open('${esc(g.photo_path)}','_blank','noopener')` : `viewProof('${esc(g.photo_path)}')`}" title="청소년이 책 받고 찍은 사진">책인증</div>`
     : `<div class="thumb">책인증</div>`;
   const b = g.receipt
-    ? `<div class="thumb" style="cursor:pointer;" onclick="viewReceipt('${esc(g.receipt)}')" title="서점이 보낸 영수증">영수증</div>`
+    ? `<div class="thumb" style="cursor:pointer;" onclick="viewReceipt('${esc(g.receipt)}')" title="책방이 보낸 영수증">영수증</div>`
     : '';
   return a + b;
 }
@@ -4647,14 +4647,14 @@ function viewSettled() {
                        .sort((a,b) => (b.settled_at||'').localeCompare(a.settled_at||''));
   const wait = unpaid();
 
-  // 서점별로 묶어야 한 번에 이체할 수 있다
+  // 책방별로 묶어야 한 번에 이체할 수 있다
   const byStore = {};
   wait.forEach(g => { (byStore[g.bookstore] = byStore[g.bookstore] || []).push(g); });
 
   return `
   <div class="panel-hd">
-    <div><div class="panel-t">서점 입금</div>
-    <div class="panel-d">청소년은 돈 없이 책을 가져가요. 책값은 유스보이스가 서점에 보내요 — 매월 15일과 말일에, 그 전날까지 올라온 청구를 모아서.<br>
+    <div><div class="panel-t">책방 입금</div>
+    <div class="panel-d">청소년은 돈 없이 책을 가져가요. 책값은 유스보이스가 책방에 보내요 — 매월 15일과 말일에, 그 전날까지 올라온 청구를 모아서.<br>
       <b>다음 입금일 ${nextPayday()}</b> · 정산을 마친 뒤에도 사진 공개는 여기서 할 수 있어요.</div></div>
     <button class="btn btn-line" onclick="openManual()" title="QR 오류 등으로 앱에 기록이 없는 정산을 직접 넣어요">+ 직접 등록</button>
   </div>
@@ -4668,7 +4668,7 @@ function viewSettled() {
   </div>` : ''}
 
   ${rows.length ? `<div class="tbl"><table>
-    <tr><th>사진</th><th>청소년</th><th>서점</th><th class="right">책값</th><th>정산일</th>
+    <tr><th>사진</th><th>청소년</th><th>책방</th><th class="right">책값</th><th>정산일</th>
         <th>랜딩 공개</th><th>입금</th><th class="right"></th></tr>
     ${rows.map(g => g.status === 'void' ? `<tr class="voided">
       <td>${photoCell(g)}</td>
@@ -4855,7 +4855,7 @@ async function submitSettle() {
   const note = document.getElementById('settleNote').value.trim();
 
   if (LIVE) {
-    // 영수증은 서점이 문자·카톡으로 보내온 것을 운영진이 올린다. 서점에는
+    // 영수증은 책방이 문자·카톡으로 보내온 것을 운영진이 올린다. 책방에는
     // 로그인 화면이 없다. 비공개 버킷이고, 올리다 실패해도 정산은 막지 않는다
     let receiptPath = null;
     const f = document.getElementById('settleReceipt').files[0];

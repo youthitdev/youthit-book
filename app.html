@@ -1507,7 +1507,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .f-cmt-in input { padding:9px 12px; font-size:13.5px; border-radius:10px; }
 .f-cmt-in button { flex-shrink:0; padding:0 15px; border:none; border-radius:10px; background:var(--blue); color:#fff; font-size:13px; font-weight:700; cursor:pointer; }
 
-/* 책방 — 지역을 접고, 서점도 이름만 보이다 눌러야 펼쳐진다 */
+/* 책방 — 지역을 접고, 책방도 이름만 보이다 눌러야 펼쳐진다 */
 .rg { margin-top:12px; }
 .rg > summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:8px;
   padding:9px 2px; font-size:13.5px; font-weight:700; color:var(--green-d); }
@@ -1556,7 +1556,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   cursor:pointer; font-family:inherit; border:none; }
 .si-go  { background:var(--green); color:#fff; }
 .si-see { background:#fff; color:var(--ink-2); border:1px solid var(--line); }
-/* 서점 탭 맨 위 — 지금 갈 수 있나 */
+/* 책방 탭 맨 위 — 지금 갈 수 있나 */
 .sg { background:#f7fbf0; border:1px solid #d8ebb8; border-radius:15px; padding:16px 17px; }
 .sg b { display:block; font-size:14.5px; font-weight:800; }
 .sg span { display:block; font-size:12.5px; color:var(--ink-2); line-height:1.7; margin-top:5px; }
@@ -2257,7 +2257,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
   <div class="ov-b" id="ovAllBody"></div>
 </div>
 
-<!-- 서점 한 곳 (아래에서 올라오는 시트) -->
+<!-- 책방 한 곳 (아래에서 올라오는 시트) -->
 <!-- 청소년 확인 서류. 도서기금은 청소년에게 쓰는 돈이라 책을 받기 전에 한 번 확인한다 -->
 <!-- 공지 (홈의 「📢 공지」 줄을 누르면 올라온다) -->
 <div class="sheet" id="shNotice" onclick="if(event.target===this)closeSheet('shNotice')">
@@ -5860,7 +5860,7 @@ function loadImg(src, cross) {
     im.src = src;
   });
 }
-// 서점 표지는 다른 서버의 그림이라 그림판이 막는다. 먼저 그대로 시도하고, 안 되면 book-search 함수가 대신 받아 준 그림(data URL)을 쓴다
+// 책방 표지는 다른 서버의 그림이라 그림판이 막는다. 먼저 그대로 시도하고, 안 되면 book-search 함수가 대신 받아 준 그림(data URL)을 쓴다
 async function loadCover(url) {
   const direct = await loadImg(url, true);
   if (direct) return direct;
@@ -7449,8 +7449,8 @@ function openRoutine(id) {
       const st = storeOf(r); if (!st) return '';
       return `<div class="sec-t">🏠 함께하는 책방</div>
         <!-- 【눌러도 아무 일이 없던 자리 · 2026-10-08 사용자】 전에는 go('store') 였다. 지금 열린 모임 화면이
-             서점 탭을 덮고 있어서, 뒤에서만 이동하고 눈에는 아무 일도 안 보였다.
-             서점 탭이 쓰는 책방 정보 창(주소·영업시간·길찾기→카카오맵)을 그대로 연다 -->
+             책방 탭을 덮고 있어서, 뒤에서만 이동하고 눈에는 아무 일도 안 보였다.
+             책방 탭이 쓰는 책방 정보 창(주소·영업시간·길찾기→카카오맵)을 그대로 연다 -->
         <div class="card one-book" onclick="openStoreInfo(${st.id})" style="cursor:pointer;">
           <div class="ob-i">🏠</div>
           <div style="flex:1;"><span>책을 받으러 가는 곳</span><b>${esc(st.name)}</b>
@@ -7921,7 +7921,7 @@ function toggleMeetFields() {
 
 // ── 모임 만들기: 1페이지(모임 주체) → 2페이지(모임 정보) (2026-11-11 개편) ──
 //   · 일반 끗짱: 개인으로서 온라인 모임. 오프라인 공유회는 잠긴다(공간이 있는 파트너만)
-//   · 파트너 끗짱: 파트너 기관·서점 기반. 온라인·오프라인 중 하나를 고른다 (책방 고르기도 이쪽에만)
+//   · 파트너 끗짱: 파트너 기관·책방 기반. 온라인·오프라인 중 하나를 고른다 (책방 고르기도 이쪽에만)
 //   · 일정은 운영진이 미리 등록해 둔 것 중에서 고른다. 시작일·기간을 직접 적지 않는다
 //   · 온라인 공유회는 책 받는 조건도 나다움 보너스도 없다 → meetup_required 는 오프라인일 때만 켠다
 let makeHost = null, makeMeet = null;
@@ -9057,7 +9057,7 @@ async function submitCert() {
 }
 
 // ── 책방 ───────────────────────────────────────────────
-// 서점 탭. 교환권을 쓰는 곳이자 이 서비스가 아이를 집 밖으로 부르는 유일한 곳이라
+// 책방 탭. 교환권을 쓰는 곳이자 이 서비스가 아이를 집 밖으로 부르는 유일한 곳이라
 // 탭 자리를 하나 내줬다. 다만 '아직 못 가는 곳 목록' 이 되지 않게 맨 위에 진행도를 둔다
 function storeGoal() {
   if (isGuest()) return `<div class="sg">
@@ -9106,9 +9106,9 @@ function storeRow(b) {
   </button>`;
 }
 
-// 아이가 서점 탭에 오는 이유는 '나는 어디로 가나' 하나다.
+// 아이가 책방 탭에 오는 이유는 '나는 어디로 가나' 하나다.
 // 전국 목록은 그 질문에 답하지 않으므로, 내 근처만 펼쳐 두고 나머지는 접어 보낸다.
-// 서점이 20곳이 되든 200곳이 되든 첫 화면 길이가 같다
+// 책방이 20곳이 되든 200곳이 되든 첫 화면 길이가 같다
 function viewStores() {
   const list = state.stores.filter(s => s.active);
   const head = storeGoal();
@@ -9269,7 +9269,7 @@ function closeSheet(id) { hideLayer(id || 'shStore'); }
 function closeBuy() { qrClear(); closeOv('ovBuy'); }
 
 // ── 책 받았어요 ────────────────────────────────────────
-// 아이는 돈을 내지 않는다. 서점 외상으로 받아오고, 책값은 유스보이스가 서점에 보낸다
+// 아이는 돈을 내지 않는다. 책방 외상으로 받아오고, 책값은 유스보이스가 책방에 보낸다
 let buyRid = null, buyPhoto = null;
 
 // 교환 창 맨 위의 「쓸 수 있는 교환권 N장」. 교환이 끝난 뒤에도 다시 그려야 한다
