@@ -219,6 +219,7 @@ input[type=date]:disabled, select:disabled { background-image:none; }
   color:rgba(255,255,255,.68); }
 .pick-c i { display:block; font-style:normal; font-size:11.5px; margin-top:7px;
   color:rgba(255,255,255,.5); }
+.pick-c i.gift-line { font-size:13px; font-weight:800; color:#FFE27A; margin-top:9px; }
 
 .role-row { display:flex; gap:8px; margin-bottom:10px; }
 .role-btn { flex:1; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.22); background:transparent; color:rgba(255,255,255,.6); font-size:14px; cursor:pointer; }
@@ -1649,6 +1650,7 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <button type="button" class="pick-c" onclick="pickRole('youth')">
         <b>🌱 청소년 <em>14~19세</em></b>
         <span>매일 책을 읽고 인증하면 동네 책방에서 사용 가능한 도서교환권이 발급됩니다.</span>
+        <i class="gift-line" id="giftLine" style="display:none;">🎁 12월 17일까지 가입하면 나다움 50N 선물!</i>
       </button>
       <button type="button" class="pick-c" onclick="pickRole('kkut')">
         <b>💪 끗짱 <em>어른</em></b>
@@ -2684,6 +2686,7 @@ function paintAuth() {
   const on = (id, v) => { const e = $(id); if (e) e.style.display = v ? '' : 'none'; };
   on('authTabs',   step === 'login');
   on('auBack',     step !== 'login');
+  on('giftLine',   Date.now() < Date.parse('2026-12-18T00:00:00+09:00'));   // 가입 선물 안내 — 12월 17일까지 (migration-167과 같은 시점)
   const kk = joinRole === 'kkut' && (step === 'form' || step === 'k2');   // 끗짱 가입 화면
   $('authScr').classList.toggle('kkmode', kk);
   $('authScr').classList.toggle('sumode', step === 'form' || step === 'k2');
