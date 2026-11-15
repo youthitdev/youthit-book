@@ -4548,7 +4548,7 @@ function routineCard(r) {
     <div class="r-cover">
       ${r.cover_url ? `<img src="${esc(r.cover_url)}" loading="lazy" alt="">`
                     : `<div class="r-cover-no">${r.emoji || '📚'}</div>`}
-      ${needsMeet(r) ? `<span class="r-badge">🤝 공유회</span>` : ''}
+      ${needsMeet(r) ? `<span class="r-badge">${r.meetup_kind === 'online' ? '💻 온라인 공유회' : '📍 오프라인 공유회'}</span>` : ''}
       ${waiting ? `<div class="r-over"><span class="r-who c-wait">확인 중</span></div>` : ''}
     </div>
     <div class="r-body">
