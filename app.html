@@ -6787,10 +6787,10 @@ function kkutStatBlock() {
   // 아직 함께한 청소년이 없거나 한 장도 안 올렸으면 위 줄글을 그대로 보인다
   const strip = kids.size && days
     ? `<div class="rec-strip">${recCell(kids.size, '명', '함께한 청소년', '🌱')}${recCell(kbooks.size, '권', '함께 읽은 책', '📚')}${recCell(kidPages, '쪽', '함께 읽은 쪽', '📖')}</div>
-       <div class="rec-hint">📤를 누르면 함께 쌓은 기록을 이미지로 저장해서 나눌 수 있어요</div>`
+       <button class="btn btn-primary" style="margin-top:12px;" onclick="openRecordCard('kkut')"><i class="ti ti-download" style="margin-right:6px;"></i>기록 카드 저장하기</button>
+       <div class="rec-hint">인스타나 단체방에 올려 자랑해 보세요</div>`
     : `<div class="card kstat" style="padding:16px;">${body}</div>`;
-  return `<div class="sec-t" style="display:flex;align-items:center;justify-content:space-between;">함께 쌓은 독서 기록
-      <button class="rc-share" style="position:static;" onclick="openRecordCard('kkut')" aria-label="공유하기" title="공유하기">📤</button></div>
+  return `<div class="sec-t">함께 쌓은 독서 기록</div>
     ${strip}`;
 }
 
