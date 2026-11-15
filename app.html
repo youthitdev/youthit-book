@@ -1548,6 +1548,16 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
 .store-wait { background:#F4F8EC; border-radius:14px; padding:13px 15px; font-size:13.5px; line-height:1.65; color:var(--green-d); margin:10px 0; }
 .store-wait b { font-weight:800; }
+.store-wish { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 15px; margin:10px 0; }
+.store-wish.hl { border-color:#CFE3A8; background:#FBFDF6; }
+.sw-t { font-size:13.5px; font-weight:800; }
+.sw-s { font-size:12.5px; color:var(--ink-3); margin:4px 0 10px; line-height:1.6; }
+.sw-c { margin:8px 0 10px; display:flex; flex-wrap:wrap; gap:6px; }
+.wish-chip { display:inline-flex; align-items:center; gap:6px; background:#F4F8EC; color:var(--green-d); border-radius:99px; padding:6px 12px; font-size:13px; font-weight:700; }
+.wish-chip button { border:none; background:none; color:inherit; font-size:13px; line-height:1; cursor:pointer; padding:0; }
+.wish-pick { display:flex; gap:8px; margin:14px 0 6px; }
+.wish-pick select { flex:1; min-width:0; }
+.wish-pick .btn { flex:none; width:auto; padding:0 16px; }
 /* 책방 정보 창: 영업시간 줄은 왼쪽, 책방 사진(없으면 집 이모지)은 오른쪽 (2026-11-13) */
 .store-top { display:flex; gap:12px; align-items:flex-start; }
 .store-rows { flex:1; min-width:0; }
@@ -2464,6 +2474,27 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <textarea id="rpNote" maxlength="300" rows="2" placeholder="더 알려 주실 게 있으면 적어 주세요 (선택)"
       style="width:100%;margin-top:10px;"></textarea>
     <button class="btn btn-primary" id="rpGo" onclick="sendReport()" style="margin-top:12px;">신고하기</button>
+  </div>
+</div>
+
+<div class="sheet" id="shWish" onclick="if(event.target===this)closeSheet('shWish')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">교환하러 갈 만한 동네</div>
+        <div class="sheet-s">최대 3곳 · 사는 곳은 자동으로 들어 있어요</div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shWish')" aria-label="닫기">✕</button>
+    </div>
+    <div id="wishChips" class="sw-c"></div>
+    <div class="wish-pick">
+      <select id="wsSido" onchange="this.classList.toggle('ph', !this.value); fillGu('wsGu', this.value);"></select>
+      <select id="wsGu"></select>
+      <button class="btn btn-line" type="button" onclick="wishAdd()">추가</button>
+    </div>
+    <div class="hint" id="wishMsg" style="margin:0 0 4px;"></div>
+    <button class="btn btn-primary" id="wishSave" style="margin-top:12px;" onclick="wishSave()">저장</button>
   </div>
 </div>
 
@@ -3643,13 +3674,13 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchange = [];
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchange = []; state.wishes = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt, exr] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt, exr, wsr] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3681,8 +3712,11 @@ async function loadAll() {
     // 후기 탭 「책 교환 인증」 — 운영진이 올린 사진. 마이그레이션 170 이 아직이면 오류가 와도 빈 채로 둔다
     sb.from('exchange_posts').select('id,photo_path,store_name,day').eq('active', true)
       .order('day', { ascending: false }).order('id', { ascending: false }).limit(60),
+    // 교환하러 갈 만한 동네 (내 것만, 최대 3곳). 마이그레이션 173 이 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('region_wishes').select('region').eq('user_id', me.id).order('created_at'),
   ]);
   state.grants = grn.error ? [] : (grn.data || []);
+  state.wishes = wsr.error ? [] : (wsr.data || []);
   // 비공개 저장소라 서명 주소로 본다 (한 시간). 주소를 못 받은 사진은 뺀다
   state.exchange = exr.error ? [] : (exr.data || []);
   if (state.exchange.length) {
@@ -9178,12 +9212,66 @@ async function regionWaiting(region) {
   return (waitCache[region] = error ? 0 : (Number(data) || 0));
 }
 const waitText = (region, n) => `${esc(guOf(region))} 책방을 <b>${won(n)}명</b>의 청소년이 기다리고 있어요.<br>책방이 생기면 알려드릴게요.`;
-async function paintRgWait() {
-  const el = $('rgWait'); const region = String(me?.region || '').trim();
-  if (!el || !region) return;
-  const n = await regionWaiting(region);
-  const box = $('rgWait'); if (!box || !n) return;
-  box.innerHTML = waitText(region, n); box.style.display = '';
+// 책방이 없는 동네마다 한 줄씩 (사는 곳 + 가고 싶은 동네). 숫자가 0 인 동네는 줄을 뺀다
+async function paintRgWait(regions) {
+  if (!$('rgWait') || !regions || !regions.length) return;
+  const ns = await Promise.all(regions.map(regionWaiting));
+  const box = $('rgWait'); if (!box) return;
+  const gus = regions.map(guOf);
+  const lines = regions.map((r, i) => ns[i]
+    ? `${esc(gus.filter(x => x === gus[i]).length > 1 ? r : gus[i])} 책방을 <b>${won(ns[i])}명</b>의 청소년이 기다리고 있어요.` : '').filter(Boolean);
+  if (!lines.length) return;
+  box.innerHTML = lines.join('<br>') + '<br>책방이 생기면 알려드릴게요.'; box.style.display = '';
+}
+
+// ── 교환하러 갈 만한 동네 (migration-173, 2단계) ─────────
+// 사는 곳 말고 책을 받으러 갈 만한 동네를 최대 3곳 골라 두면, 그 동네 책방을 책방 탭에 같이 보여 주고
+// 책방이 없는 동네는 「N명이 기다리고 있어요」 숫자에도 들어간다. 같은 사람은 동네마다 한 번만 센다
+let wishDraft = [];
+function wishCard(mine, homeNoStore) {
+  if (!mine) return '';
+  const w = (state.wishes || []).map(x => x.region);
+  return `<div class="store-wish${homeNoStore ? ' hl' : ''}">
+    <div class="sw-t">${w.length ? '교환하러 갈 만한 동네' : homeNoStore ? '교환하러 갈 만한 다른 동네가 있나요?' : '다른 동네 책방도 보고 싶나요?'}</div>
+    ${w.length ? `<div class="sw-c">${w.map(r => `<span class="wish-chip">💛 ${esc(guOf(r))}</span>`).join('')}</div>`
+               : `<div class="sw-s">최대 3곳 골라 두면 그 동네 책방을 먼저 보여드려요.</div>`}
+    <button class="btn btn-line" onclick="openWish()">${w.length ? '바꾸기' : '동네 고르기'}</button></div>`;
+}
+function openWish() {
+  wishDraft = (state.wishes || []).map(w => w.region);
+  if (!$('wsSido').options.length) fillSido('wsSido');
+  $('wsSido').value = ''; $('wsSido').classList.add('ph'); fillGu('wsGu', '');
+  drawWish(); showLayer('shWish');
+}
+function drawWish() {
+  $('wishChips').innerHTML = wishDraft.length
+    ? wishDraft.map((r, i) => `<span class="wish-chip">💛 ${esc(r)}<button type="button" onclick="wishDel(${i})" aria-label="${esc(r)} 빼기">✕</button></span>`).join('')
+    : `<div class="hint" style="margin:0;">아직 고른 동네가 없어요</div>`;
+  $('wishMsg').textContent = wishDraft.length >= 3 ? '최대 3곳까지 골랐어요' : `${3 - wishDraft.length}곳 더 고를 수 있어요`;
+}
+function wishAdd() {
+  const sido = $('wsSido').value, gu = $('wsGu').value;
+  if (!sido || !gu) return toast('시·도와 시·군·구를 골라 주세요');
+  const r = joinRegion(sido, gu);
+  if (wishDraft.length >= 3) return toast('최대 3곳까지 고를 수 있어요');
+  if (rgNorm(r) === rgNorm(me?.region)) return toast('사는 곳은 이미 들어 있어요');
+  if (wishDraft.some(x => rgNorm(x) === rgNorm(r))) return toast('이미 고른 동네예요');
+  wishDraft.push(r);
+  $('wsSido').value = ''; $('wsSido').classList.add('ph'); fillGu('wsGu', '');
+  drawWish();
+}
+function wishDel(i) { wishDraft.splice(i, 1); drawWish(); }
+async function wishSave() {
+  const btn = $('wishSave'); btn.disabled = true;
+  try {
+    if (!DEMO) {
+      const { error } = await sb.rpc('set_region_wishes', { p_regions: wishDraft });
+      if (error) return toast(/[가-힣]/.test(error.message || '') ? error.message : '저장하지 못했어요. 잠시 뒤 다시 해주세요');
+    }
+    state.wishes = wishDraft.map(region => ({ region }));
+    Object.keys(waitCache).forEach(k => delete waitCache[k]);     // 숫자가 달라졌으니 다시 받는다
+    closeSheet('shWish'); render(); toast('저장했어요');
+  } finally { btn.disabled = false; }
 }
 
 function storeRow(b) {
@@ -9203,9 +9291,17 @@ function viewStores() {
   const head = storeGoal();
   const mine = String(me?.region || '').trim();
   // 내 시·군·구를 맡는 책방이 없으면 「N명이 기다리고 있어요」 (숫자는 불러온 뒤에 채운다)
-  const needWait = !!mine && !!guOf(mine) && !list.some(b => storeCovers(b.region, mine));
-  const wait = needWait ? `<div class="store-wait" id="rgWait" style="display:none;"></div>` : '';
-  if (needWait) setTimeout(paintRgWait, 0);
+  const wishes = (state.wishes || []).map(w => w.region);
+  const homeNoStore = !!mine && !!guOf(mine) && !list.some(b => storeCovers(b.region, mine));
+  // 책방이 없는 동네: 사는 곳 + 가고 싶은 동네 (같은 동네는 한 번만)
+  const waitRegions = [], seenRg = new Set();
+  [mine, ...wishes].forEach(r => {
+    const k = rgNorm(r); if (!r || !guOf(r) || seenRg.has(k)) return; seenRg.add(k);
+    if (!list.some(b => storeCovers(b.region, r))) waitRegions.push(r);
+  });
+  const wait = waitRegions.length ? `<div class="store-wait" id="rgWait" style="display:none;"></div>` : '';
+  if (waitRegions.length) setTimeout(() => paintRgWait(waitRegions), 0);
+  const wishBox = wishCard(mine, homeNoStore);
   if (!list.length) return head + wait +
     `<div class="empty">아직 함께하는 책방이 없어요.<br>곧 늘어날 거예요.</div>`;
 
@@ -9213,6 +9309,12 @@ function viewStores() {
                    .sort((a, b) => regionScore(b.region) - regionScore(a.region)
                                 || String(a.region).localeCompare(String(b.region), 'ko'));
   const rest = list.length - near.length;
+  // 가고 싶다고 고른 동네를 맡는 책방 (사는 동네 책방은 「우리 동네」에서 이미 보인다)
+  const wishStores = list.filter(b => wishes.some(w => storeCovers(b.region, w)));
+  const wishSec = () => {
+    const ws = wishStores.filter(b => regionScore(b.region) !== 2);
+    return ws.length ? `<div class="sec-t" style="margin-top:20px;">💛 가고 싶은 동네 <span class="sec-n">${ws.length}곳</span></div>` + ws.map(storeRow).join('') : '';
+  };
 
   const more = rest > 0
     ? `<button class="store-more" onclick="openAllStores()">
@@ -9239,17 +9341,19 @@ function viewStores() {
     <div class="store-ask">
       <b>${esc(mine)}에는 아직 함께하는 책방이 없어요</b>
       <span>다른 지역 책방은 아래에서 볼 수 있어요.</span>
-    </div>` + wait + more + storeInviteLink(mine);
+    </div>` + wait + wishBox + wishSec() + more + storeInviteLink(mine);
 
   // 같은 동네와 같은 시·도를 한 덩어리로 묶으면 정직하지 않다.
   // 성동구 아이에게 강서구는 지하철 한 시간이다. 계단으로 나눠 보여준다
   const town = near.filter(b => regionScore(b.region) === 2);
-  const far  = near.filter(b => regionScore(b.region) === 1);
+  const wishOnly = wishStores.filter(b => !town.includes(b));
+  const far  = near.filter(b => regionScore(b.region) === 1 && !wishOnly.includes(b));
   const sec  = (icon, label, n) =>
     `<div class="sec-t" style="margin-top:20px;">${icon} ${label} <span class="sec-n">${n}곳</span></div>`;
 
-  return head + wait
+  return head + wait + wishBox
     + (town.length ? sec('📍', '우리 동네', town.length) + town.map(storeRow).join('') : '')
+    + (wishOnly.length ? sec('💛', '가고 싶은 동네', wishOnly.length) + wishOnly.map(storeRow).join('') : '')
     + (far.length  ? sec('🚌', `조금 멀어요 · ${sidoOf(mine)}`, far.length) + far.map(storeRow).join('') : '')
     + more + storeInviteLink(null);
 }
