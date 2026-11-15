@@ -1546,6 +1546,8 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .store-i { font-size:13px; color:var(--ink-2); line-height:1.6; margin-bottom:10px; }
 .store-row { display:flex; gap:7px; align-items:flex-start; font-size:13px; color:#444; line-height:1.5; margin-top:5px; }
 .store-row i { font-size:14px; color:#8aab5c; flex-shrink:0; margin-top:2px; }
+.store-wait { background:#F4F8EC; border-radius:14px; padding:13px 15px; font-size:13.5px; line-height:1.65; color:var(--green-d); margin:10px 0; }
+.store-wait b { font-weight:800; }
 /* 책방 정보 창: 영업시간 줄은 왼쪽, 책방 사진(없으면 집 이모지)은 오른쪽 (2026-11-13) */
 .store-top { display:flex; gap:12px; align-items:flex-start; }
 .store-rows { flex:1; min-width:0; }
@@ -1760,10 +1762,11 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     <input type="tel" id="auPhone" placeholder="휴대폰번호 ('-' 없이)" maxlength="13" inputmode="numeric" autocomplete="tel">
     <div class="kk-lb">지역 선택 <span class="req">*</span></div>
     <div class="au-row">
-      <select id="auSido" onchange="this.classList.toggle('ph', !this.value); fillGu('auGu', this.value);"></select>
-      <select id="auGu" onchange="this.classList.toggle('ph', !this.value)"></select>
+      <select id="auSido" onchange="this.classList.toggle('ph', !this.value); fillGu('auGu', this.value); authRegionWait();"></select>
+      <select id="auGu" onchange="this.classList.toggle('ph', !this.value); authRegionWait();"></select>
     </div>
     <div class="au-hint" id="auSidoHint">가까운 동네책방을 먼저 보여드리는 데 써요</div>
+    <div class="au-hint" id="auWait" style="display:none;color:#FFE27A;line-height:1.65;"></div>
     <div class="kk-lb" id="auSchoolLb">재학 상태 <span class="req">*</span></div>
     <select id="auSchool" class="ph" onchange="this.classList.toggle('ph', !this.value)">
       <option value="">재학 상태</option>
@@ -2688,6 +2691,26 @@ const shortRegion = addr => {
 
 // 저장은 '서울 성북구' 한 줄로. 책방의 region 과 같은 모양이어야 한다
 const joinRegion = (sido, gu) => [String(sido||'').trim(), String(gu||'').trim()].filter(Boolean).join(' ');
+// 가입 화면에서 시·군·구를 고르면, 그 동네에 책방이 없고 이미 기다리는 청소년이 있을 때 한 줄을 보인다.
+// 아직 가입 전이라 숫자에 본인은 들어 있지 않다. 0명이면 보이지 않는다. 책방 목록을 못 불러오면 틀린 말을 하지 않으려고 보이지 않는다
+let authStoreRegions = null;
+async function authRegionWait() {
+  const el = $('auWait'); if (!el) return;
+  el.style.display = 'none';
+  const sido = $('auSido').value, gu = $('auGu').value;
+  if (typeof joinRole !== 'undefined' && joinRole !== 'youth') return;
+  if (!sido || !gu) return;
+  const region = joinRegion(sido, gu);
+  if (authStoreRegions === null) {
+    const { data, error } = await sb.from('bookstores').select('region').eq('active', true);
+    if (error) return;
+    authStoreRegions = (data || []).map(x => x.region);
+  }
+  if (authStoreRegions.some(r => storeCovers(r, region))) return;
+  const n = await regionWaiting(region);
+  if (!n || $('auSido').value !== sido || $('auGu').value !== gu) return;
+  el.innerHTML = waitText(region, n); el.style.display = '';
+}
 const splitRegion = r => {
   const p = String(r || '').trim().split(/\s+/);
   const sido = SIDO.includes(p[0]) ? p[0] : '';
@@ -2941,6 +2964,7 @@ let joinRole = 'youth';
 function setJoinRole(r) {
   joinRole = r;
   const k = r === 'kkut';
+  { const w = $('auWait'); if (w) w.style.display = 'none'; }   // 책방 기다림 안내는 청소년 가입에만 (다시 고르면 다시 뜬다)
   $('roleHint').className = k ? 'au-step au-big' : 'au-step';
   $('roleHint').innerHTML = k
     ? '끗짱 가입을<br>시작합니다'
@@ -9134,6 +9158,34 @@ function regionScore(rg) {
   return myCity && String(rg).startsWith(myCity) ? 1 : 0;
 }
 
+// ── 책방을 기다리는 청소년 (migration-172, 2026-11-13) ───
+// 같은 「시·도 + 시·군·구」에 사는 청소년 수를 「○○ 책방을 N명의 청소년이 기다리고 있어요」로 보여 준다.
+// 그 시·군·구를 맡는 책방이 하나도 없을 때만. 시·도만 적은 책방은 그 시·도 전체를 맡는 것으로 본다 (regionScore 와 같다).
+// 「서산시」와 「서산」처럼 끝의 시·군·구 글자만 다른 표기는 같은 곳으로 맞춘다
+const rgNorm = r => String(r || '').trim().replace(/\s+/g, ' ').replace(/(시|군|구)$/, '');
+function storeCovers(storeRegion, region) {
+  const s = String(storeRegion || '').trim().split(/\s+/), m = String(region || '').trim().split(/\s+/);
+  if (!s[0] || s[0] !== m[0]) return false;
+  if (s.length < 2) return true;
+  return rgNorm(s.slice(1).join(' ')) === rgNorm(m.slice(1).join(' '));
+}
+const waitCache = {};
+async function regionWaiting(region) {
+  if (DEMO) return 12;
+  if (waitCache[region] !== undefined) return waitCache[region];
+  const { data, error } = await sb.rpc('region_waiting', { p_region: region });
+  // 함수가 아직 없으면(마이그레이션 172 전) 0 으로 두고 문구를 보이지 않는다
+  return (waitCache[region] = error ? 0 : (Number(data) || 0));
+}
+const waitText = (region, n) => `${esc(guOf(region))} 책방을 <b>${won(n)}명</b>의 청소년이 기다리고 있어요.<br>책방이 생기면 알려드릴게요.`;
+async function paintRgWait() {
+  const el = $('rgWait'); const region = String(me?.region || '').trim();
+  if (!el || !region) return;
+  const n = await regionWaiting(region);
+  const box = $('rgWait'); if (!box || !n) return;
+  box.innerHTML = waitText(region, n); box.style.display = '';
+}
+
 function storeRow(b) {
   const gu = guOf(b.region);
   return `<button class="store" onclick="openStoreInfo(${b.id})">
@@ -9149,10 +9201,14 @@ function storeRow(b) {
 function viewStores() {
   const list = state.stores.filter(s => s.active);
   const head = storeGoal();
-  if (!list.length) return head +
+  const mine = String(me?.region || '').trim();
+  // 내 시·군·구를 맡는 책방이 없으면 「N명이 기다리고 있어요」 (숫자는 불러온 뒤에 채운다)
+  const needWait = !!mine && !!guOf(mine) && !list.some(b => storeCovers(b.region, mine));
+  const wait = needWait ? `<div class="store-wait" id="rgWait" style="display:none;"></div>` : '';
+  if (needWait) setTimeout(paintRgWait, 0);
+  if (!list.length) return head + wait +
     `<div class="empty">아직 함께하는 책방이 없어요.<br>곧 늘어날 거예요.</div>`;
 
-  const mine = String(me?.region || '').trim();
   const near = list.filter(b => regionScore(b.region) > 0)
                    .sort((a, b) => regionScore(b.region) - regionScore(a.region)
                                 || String(a.region).localeCompare(String(b.region), 'ko'));
@@ -9183,7 +9239,7 @@ function viewStores() {
     <div class="store-ask">
       <b>${esc(mine)}에는 아직 함께하는 책방이 없어요</b>
       <span>다른 지역 책방은 아래에서 볼 수 있어요.</span>
-    </div>` + more + storeInviteLink(mine);
+    </div>` + wait + more + storeInviteLink(mine);
 
   // 같은 동네와 같은 시·도를 한 덩어리로 묶으면 정직하지 않다.
   // 성동구 아이에게 강서구는 지하철 한 시간이다. 계단으로 나눠 보여준다
@@ -9192,7 +9248,7 @@ function viewStores() {
   const sec  = (icon, label, n) =>
     `<div class="sec-t" style="margin-top:20px;">${icon} ${label} <span class="sec-n">${n}곳</span></div>`;
 
-  return head
+  return head + wait
     + (town.length ? sec('📍', '우리 동네', town.length) + town.map(storeRow).join('') : '')
     + (far.length  ? sec('🚌', `조금 멀어요 · ${sidoOf(mine)}`, far.length) + far.map(storeRow).join('') : '')
     + more + storeInviteLink(null);
