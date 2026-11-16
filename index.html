@@ -780,7 +780,7 @@ const esc = t => String(t ?? '').replace(/[&<>"]/g, c =>
       document.getElementById('poolGrid').innerHTML = [
         cell(tot.youth, '명', '함께한 청소년', '🌱', 1),
         cell(tot.kkut,  '명', '함께한 어른',   '🤝', 2),
-        cell(tot.certs, '회', '누적 독서 기록', '✍️', 3),
+        cell(tot.certs, '일', '누적 독서 기록', '✍️', 3),
         cell(tot.books, '권', '읽은 책',        '📚', 4),
       ].join('');
       document.getElementById('nowSec').style.display = '';
