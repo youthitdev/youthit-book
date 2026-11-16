@@ -4931,7 +4931,7 @@ async function submitSettle() {
 // ── 책 교환 사진 (migration-170, 2026-11-13) ────────────
 // 앱 후기 탭의 「책 교환 인증」에 보이는 사진. 책방이 올린 인증 사진을 운영진이 내려받아 얼굴이 나오지 않는지
 // 확인한 뒤 여기에 올린다. 청소년 이름은 담지 않고 책방 이름과 날짜만 보인다.
-let EXP = null, expUrls = {}, expPrev = null, expStore = '', expDay = '';
+let EXP = null, expUrls = {}, expPrev = null, expStore = '', expDay = '', expBook = '', expLanding = true;
 async function loadExp() {
   if (!LIVE) { EXP = EXP || []; return; }
   const { data, error } = await sb.from('exchange_posts').select('*')
@@ -4954,8 +4954,9 @@ function viewExp() {
   return `
   <div class="panel-hd">
     <div><div class="panel-t">책 교환 사진</div>
-    <div class="panel-d">앱 <b>후기 탭의 「책 교환 인증」</b>에 보이는 사진이에요. 책방이 올린 인증 사진을 <b>내려받아</b>, 청소년 얼굴이 나오지 않는지 확인한 뒤 여기에 올려요.
-      청소년 이름은 보이지 않고 <b>책방 이름과 날짜</b>만 나와요. 올린 사진은 숨기거나 지울 수 있어요.</div></div>
+    <div class="panel-d">여기 올린 사진은 앱 <b>후기 탭의 「책 교환 인증」</b>(로그인한 회원)에 보이고, <b>「랜딩에도 보이기」</b>를 켜면 누구나 보는 <b>홈페이지</b>에도 나와요.
+      책방이 올린 인증 사진을 <b>내려받아</b>, <b>얼굴이 나오지 않았거나 동의를 받은 사진</b>만 올려 주세요.
+      청소년 이름은 보이지 않고 책방 이름·날짜(·책 이름)만 나와요. 올린 사진은 숨기거나 지울 수 있어요.</div></div>
   </div>
   <div class="ex-form">
     <div class="field">
@@ -4974,14 +4975,28 @@ function viewExp() {
       <div class="label">책 받은 날 <span class="req">*</span></div>
       <input type="date" id="expDay" value="${expDay}" onchange="expDay=this.value">
     </div>
+    <div class="field">
+      <div class="label">책 이름 <span class="opt">선택</span></div>
+      <input type="text" id="expBook" maxlength="80" value="${esc(expBook)}" oninput="expBook=this.value" placeholder="예) 아몬드">
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px;">
+        <input type="checkbox" id="expLanding" ${expLanding ? 'checked' : ''} onchange="expLanding=this.checked" style="width:16px;height:16px;">
+        랜딩(홈페이지)에도 보이기
+      </label>
+      <div class="hint">체크하면 로그인하지 않은 누구나 볼 수 있어요. 앱 후기 탭에는 항상 보여요.</div>
+    </div>
     <button class="btn btn-dark" id="expGo" onclick="submitExp()">올리기</button>
   </div>
   <div class="panel-t" style="font-size:15px;margin:4px 0 10px;">올린 사진 ${EXP.length}장</div>
   ${EXP.length ? `<div class="ex-g">${EXP.map(x => `<div class="ex-r${x.active ? '' : ' off'}">
       <img src="${esc(expUrls[x.photo_path] || '')}" alt="">
-      <div><b>${esc(x.store_name)}</b><div class="muted">${fmtDate(x.day)}${x.active ? '' : ' · 앱에서 숨김'}</div></div>
+      <div><b>${esc(x.store_name)}</b>${x.book_title ? `<div class="muted">『${esc(x.book_title)}』</div>` : ''}
+        <div class="muted">${fmtDate(x.day)}${x.active ? '' : ' · 앱에서 숨김'}</div>
+        ${x.landing === false ? '' : '<span class="chip c-act">랜딩 공개</span>'}</div>
       <div class="ex-b"><button class="btn btn-line" onclick="expToggle(${x.id})">${x.active ? '숨기기' : '다시 보이기'}</button>
         <button class="btn btn-line r-del" onclick="expDel(${x.id})">지우기</button></div>
+      <button class="btn btn-line" onclick="expLandingToggle(${x.id})">${x.landing === false ? '랜딩에 넣기' : '랜딩에서 빼기'}</button>
     </div>`).join('')}</div>` : `<div class="empty">아직 올린 사진이 없어요.</div>`}`;
 }
 async function expPick(input) {
@@ -4995,7 +5010,8 @@ async function submitExp() {
   if (!expPrev) return alert('사진을 골라 주세요.');
   if (!store) return alert('책방을 골라 주세요.');
   if (!day) return alert('책 받은 날을 골라 주세요.');
-  if (!confirm('청소년의 얼굴이 나오지 않았는지 확인하셨나요?\n\n올리면 앱 후기 탭에서 로그인한 모두에게 보여요.')) return;
+  const lp = document.getElementById('expLanding').checked;
+  if (!confirm('얼굴이 나오지 않았거나 동의를 받은 사진인가요?\n\n올리면 앱 후기 탭에서 로그인한 모두에게 보여요.' + (lp ? '\n랜딩(홈페이지)에는 누구나 볼 수 있어요.' : ''))) return;
   const btn = document.getElementById('expGo'); btn.disabled = true; btn.textContent = '올리는 중…';
   try {
     if (LIVE) {
@@ -5004,16 +5020,16 @@ async function submitExp() {
       const { error: up } = await sb.storage.from('exchange-photos')
         .upload(path, dataToBlob(expPrev), { contentType: 'image/jpeg', cacheControl: '31536000' });
       if (up) return alert('사진을 올리지 못했어요: ' + up.message);
-      const { error } = await sb.from('exchange_posts').insert({ photo_path: path, store_name: store, day, created_by: MY_UID });
+      const { error } = await sb.from('exchange_posts').insert({ photo_path: path, store_name: store, day, created_by: MY_UID, book_title: (document.getElementById('expBook').value.trim() || null), landing: lp });
       if (error) { await sb.storage.from('exchange-photos').remove([path]); return alert('저장하지 못했어요: ' + error.message); }
       await loadExp();
     } else {
       EXP = EXP || [];
       const id = Math.max(0, ...EXP.map(x => x.id)) + 1;
-      EXP.unshift({ id, photo_path: 'demo' + id, store_name: store, day, active: true });
+      EXP.unshift({ id, photo_path: 'demo' + id, store_name: store, day, active: true, landing: lp, book_title: document.getElementById('expBook').value.trim() || null });
       expUrls['demo' + id] = expPrev;
     }
-    expPrev = null; expStore = ''; expDay = '';
+    expPrev = null; expStore = ''; expDay = ''; expBook = '';
     renderPanel();
   } finally { btn.disabled = false; btn.textContent = '올리기'; }
 }
@@ -5024,6 +5040,15 @@ async function expToggle(id) {
     if (error) return alert('바꾸지 못했어요: ' + error.message);
   }
   x.active = !x.active; renderPanel();
+}
+async function expLandingToggle(id) {
+  const x = (EXP || []).find(r => r.id === id); if (!x) return;
+  const to = x.landing === false;
+  if (LIVE) {
+    const { error } = await sb.from('exchange_posts').update({ landing: to }).eq('id', id);
+    if (error) return alert('바꾸지 못했어요: ' + error.message);
+  }
+  x.landing = to; renderPanel();
 }
 async function expDel(id) {
   const x = (EXP || []).find(r => r.id === id); if (!x) return;

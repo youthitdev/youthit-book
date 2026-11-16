@@ -3710,7 +3710,7 @@ async function loadAll() {
     sb.from('meeting_schedules').select('id,title,start_date,end_date,active').order('start_date'),
     sb.from('online_meetups').select('id,at,label,active').order('at'),
     // 후기 탭 「책 교환 인증」 — 운영진이 올린 사진. 마이그레이션 170 이 아직이면 오류가 와도 빈 채로 둔다
-    sb.from('exchange_posts').select('id,photo_path,store_name,day').eq('active', true)
+    sb.from('exchange_posts').select('*').eq('active', true)
       .order('day', { ascending: false }).order('id', { ascending: false }).limit(60),
     // 교환하러 갈 만한 동네 (내 것만, 최대 3곳). 마이그레이션 173 이 아직이면 오류가 와도 빈 채로 둔다
     sb.from('region_wishes').select('region').eq('user_id', me.id).order('created_at'),
@@ -6250,7 +6250,7 @@ const sharedQuotes = () => state.certs.filter(c => c.quote && c.quote.trim()
 // 운영진이 올린 책 교환 사진. 청소년 이름·닉네임은 담기지 않는다 — 책방 이름과 날짜만
 const exDay = d => { const [, m, dd] = String(d || '').split('-'); return m ? `${Number(m)}월 ${Number(dd)}일` : ''; };
 const exCard = p => `<div class="ex-c"><img src="${esc(p.url)}" alt="${esc(p.store_name)}에서 책을 받은 사진" loading="lazy">
-    <div class="ex-s">${esc(p.store_name)}</div><div class="ex-d">${exDay(p.day)}</div></div>`;
+    <div class="ex-s">${esc(p.store_name)}</div>${p.book_title ? `<div class="ex-d">『${esc(p.book_title)}』</div>` : ''}<div class="ex-d">${exDay(p.day)}</div></div>`;
 function faData(kind) {
   const quote = c => `<div class="card" style="padding:15px 16px;">
       ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
