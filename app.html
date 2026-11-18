@@ -1555,6 +1555,13 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .sw-c { margin:8px 0 10px; display:flex; flex-wrap:wrap; gap:6px; }
 .wish-chip { display:inline-flex; align-items:center; gap:6px; background:#F4F8EC; color:var(--green-d); border-radius:99px; padding:6px 12px; font-size:13px; font-weight:700; }
 .wish-chip button { border:none; background:none; color:inherit; font-size:13px; line-height:1; cursor:pointer; padding:0; }
+.sug-in { width:100%; margin-top:10px; }
+.sug-l { margin:14px 0 4px; display:flex; flex-direction:column; gap:8px; }
+.sug-i { display:flex; align-items:center; gap:8px; background:#F4F8EC; border-radius:12px; padding:10px 12px; font-size:13.5px; color:var(--green-d); }
+.sug-i b { font-weight:800; }
+.sug-i span { flex:1; min-width:0; word-break:keep-all; }
+.sug-i em { display:block; font-style:normal; font-weight:400; color:var(--ink-3); font-size:12.5px; margin-top:2px; }
+.sug-i button { border:none; background:none; color:inherit; font-size:14px; cursor:pointer; padding:4px; }
 .wish-pick { display:flex; gap:8px; margin:14px 0 6px; }
 .wish-pick select { flex:1; min-width:0; }
 .wish-pick .btn { flex:none; width:auto; padding:0 16px; }
@@ -2495,6 +2502,25 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
     </div>
     <div class="hint" id="wishMsg" style="margin:0 0 4px;"></div>
     <button class="btn btn-primary" id="wishSave" style="margin-top:12px;" onclick="wishSave()">저장</button>
+  </div>
+</div>
+
+<div class="sheet" id="shSug" onclick="if(event.target===this)closeSheet('shSug')">
+  <div class="sheet-in">
+    <div class="sheet-grip"></div>
+    <div class="sheet-hd">
+      <div style="flex:1;min-width:0;">
+        <div class="sheet-t">우리 동네 책방 추천하기</div>
+        <div class="sheet-s" id="sugWhere"></div>
+      </div>
+      <button class="sheet-x" onclick="closeSheet('shSug')" aria-label="닫기">✕</button>
+    </div>
+    <div class="hint" style="margin:0;">책을 받으러 가고 싶은 <b>동네 책방</b>의 이름을 알려 주세요. 운영진이 연락해 볼게요. 추천한다고 꼭 함께하게 되는 건 아니에요.</div>
+    <input type="text" id="sugName" class="sug-in" maxlength="30" placeholder="책방 이름">
+    <input type="text" id="sugNote" class="sug-in" maxlength="60" placeholder="한 줄 이유 (선택) · 예: 집 앞이라 자주 가요">
+    <div class="hint" id="sugMsg" style="margin:8px 0 0;"></div>
+    <button class="btn btn-primary" id="sugGo" style="margin-top:12px;" onclick="sugSend()">추천하기</button>
+    <div id="sugList" class="sug-l"></div>
   </div>
 </div>
 
@@ -3674,13 +3700,13 @@ async function loadAll() {
   state.stats = { ...(pub[4].data || {}), ...(pub[5].data || {}) };
 
   if (isGuest()) {
-    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchange = []; state.wishes = [];
+    state.parts = []; state.certs = []; state.purchases = []; state.comments = []; state.reviews = []; state.rbooks = []; state.names = {}; state.notifs = []; state.nudges = []; state.exchange = []; state.wishes = []; state.suggests = [];
     return;
   }
 
   await loadKkutApp();
 
-  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt, exr, wsr] = await Promise.all([
+  const [p, c, bp, cm, rv, rb, po, nt, nd, lk, fn, pg, rpg, nc, ints, grn, msc, omt, exr, wsr, sgr] = await Promise.all([
     sb.from('routine_participants').select('*'),
     sb.from('certifications').select('*').order('created_at', { ascending:false }).limit(300),
     sb.from('book_purchases').select('*'),
@@ -3714,9 +3740,12 @@ async function loadAll() {
       .order('day', { ascending: false }).order('id', { ascending: false }).limit(60),
     // 교환하러 갈 만한 동네 (내 것만, 최대 3곳). 마이그레이션 173 이 아직이면 오류가 와도 빈 채로 둔다
     sb.from('region_wishes').select('region').eq('user_id', me.id).order('created_at'),
+    // 내가 추천한 동네 책방 (최대 3곳). 마이그레이션 175 가 아직이면 오류가 와도 빈 채로 둔다
+    sb.from('store_suggestions').select('id,store_name,note').eq('user_id', me.id).order('created_at'),
   ]);
   state.grants = grn.error ? [] : (grn.data || []);
   state.wishes = wsr.error ? [] : (wsr.data || []);
+  state.suggests = sgr.error ? [] : (sgr.data || []);
   // 비공개 저장소라 서명 주소로 본다 (한 시간). 주소를 못 받은 사진은 뺀다
   state.exchange = exr.error ? [] : (exr.data || []);
   if (state.exchange.length) {
@@ -9274,6 +9303,55 @@ async function wishSave() {
   } finally { btn.disabled = false; }
 }
 
+// ── 우리 동네 책방 추천하기 (migration-175, 2026-11-18) ───
+// 사는 동네에 책방이 없을 때, 알고 있는 동네 책방 이름을 알려 준다 (최대 3곳). 운영진이 관리자에서 모아 보고 연락한다
+function suggestCard() {
+  const n = (state.suggests || []).length;
+  return `<div class="store-wish">
+    <div class="sw-t">알고 있는 동네 책방이 있나요?</div>
+    ${n ? `<div class="sw-c">${state.suggests.map(x => `<span class="wish-chip">📚 ${esc(x.store_name)}</span>`).join('')}</div>`
+        : `<div class="sw-s">이름만 알려 주세요. 운영진이 연락해 볼게요.</div>`}
+    <button class="btn btn-line" onclick="openSug()">${n ? (n >= 3 ? '추천한 책방 보기' : '더 추천하기') : '책방 추천하기'}</button></div>`;
+}
+function openSug() {
+  $('sugName').value = ''; $('sugNote').value = '';
+  $('sugWhere').textContent = me?.region ? `${me.region} 기준` : '';
+  drawSug(); showLayer('shSug');
+}
+function drawSug() {
+  const l = state.suggests || [];
+  $('sugList').innerHTML = l.map(x => `<div class="sug-i"><span><b>${esc(x.store_name)}</b>${x.note ? `<em>${esc(x.note)}</em>` : ''}</span>
+    <button type="button" onclick="sugDel(${x.id})" aria-label="${esc(x.store_name)} 추천 지우기">✕</button></div>`).join('');
+  $('sugMsg').textContent = l.length >= 3 ? '3곳을 모두 추천했어요. 바꾸려면 ✕로 지우고 다시 해 주세요' : `${3 - l.length}곳 더 추천할 수 있어요`;
+  $('sugGo').disabled = l.length >= 3;
+}
+let sugDemoId = 0;
+async function sugSend() {
+  const name = $('sugName').value.trim().replace(/\s+/g, ' '), note = $('sugNote').value.trim();
+  if (!name) return toast('책방 이름을 적어 주세요');
+  if ((state.suggests || []).length >= 3) return toast('추천은 최대 3곳까지 할 수 있어요');
+  const btn = $('sugGo'); btn.disabled = true;
+  try {
+    let id = -(++sugDemoId);     // 데모에서만 쓰는 임시 번호
+    if (!DEMO) {
+      const { data, error } = await sb.rpc('suggest_store', { p_name: name, p_note: note || null });
+      if (error) return toast(/[가-힣]/.test(error.message || '') ? error.message : '보내지 못했어요. 잠시 뒤 다시 해주세요');
+      id = data && data.id;
+    }
+    (state.suggests = state.suggests || []).push({ id, store_name: name, note: note || null });
+    $('sugName').value = ''; $('sugNote').value = '';
+    toast('알려 주셔서 고마워요');
+  } finally { btn.disabled = false; drawSug(); }
+}
+async function sugDel(id) {
+  if (!DEMO) {
+    const { error } = await sb.from('store_suggestions').delete().eq('id', id).eq('user_id', me.id);
+    if (error) return toast('지우지 못했어요. 잠시 뒤 다시 해주세요');
+  }
+  state.suggests = (state.suggests || []).filter(x => x.id !== id);
+  drawSug();
+}
+
 function storeRow(b) {
   const gu = guOf(b.region);
   return `<button class="store" onclick="openStoreInfo(${b.id})">
@@ -9301,8 +9379,8 @@ function viewStores() {
   });
   const wait = waitRegions.length ? `<div class="store-wait" id="rgWait" style="display:none;"></div>` : '';
   if (waitRegions.length) setTimeout(() => paintRgWait(waitRegions), 0);
-  const wishBox = wishCard(mine, homeNoStore);
-  if (!list.length) return head + wait +
+  const wishBox = wishCard(mine, homeNoStore) + (homeNoStore ? suggestCard() : '');
+  if (!list.length) return head + wait + (homeNoStore ? suggestCard() : '') +
     `<div class="empty">아직 함께하는 책방이 없어요.<br>곧 늘어날 거예요.</div>`;
 
   const near = list.filter(b => regionScore(b.region) > 0)

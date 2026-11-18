@@ -4315,7 +4315,93 @@ function viewStores() {
         <button class="btn btn-line" onclick="openStore(${s.id})">수정</button>
         <button class="btn btn-line" onclick="toggleStoreActive(${s.id})" title="${s.active ? '앱의 책방 목록과 새 모임의 책방 선택에서 뺍니다' : '다시 앱에 보이게 합니다'}">${s.active ? '숨기기' : '다시 보이기'}</button></td>
     </tr>`).join('')}
-  </table></div>` : `<div class="empty">등록된 책방이 없어요. 먼저 책방을 등록하면 모임에 연결할 수 있어요.</div>`}`;
+  </table></div>` : `<div class="empty">등록된 책방이 없어요. 먼저 책방을 등록하면 모임에 연결할 수 있어요.</div>`}
+  ${sugSection()}`;
+}
+
+// ── 청소년이 추천한 책방 (migration-175, 2026-11-18) ────────
+// 책방이 없는 동네의 청소년이 앱 책방 탭에서 알려 준 이름. 같은 동네·같은 이름은 한 줄로 모아 「추천 N명」으로 보여 준다.
+// 연락을 시작했으면 「연락했어요」로 표시해 두고, 엉뚱한 글이면 지운다. 청소년에게 알림은 가지 않는다
+let SUG = null;
+const sugKey = n => String(n || '').replace(/\s+/g, '').toLowerCase().replace(/(책방|서점)$/, '');
+const sugRg  = r => String(r || '').trim().replace(/\s+/g, ' ').replace(/(시|군|구)$/, '');
+async function loadSug() {
+  if (!LIVE) {
+    SUG = SUG || [
+      { id: 9001, user_id: 'd1', region: '서울 강동구', store_name: '달빛책방', note: '집 앞이라 자주 가요', handled: false, created_at: '2026-11-17T09:00:00Z', _nick: '하늘', _wait: 12 },
+      { id: 9002, user_id: 'd2', region: '서울 강동구', store_name: '달빛 책방', note: null, handled: false, created_at: '2026-11-17T10:00:00Z', _nick: '바다', _wait: 12 },
+      { id: 9003, user_id: 'd3', region: '충남 서산시', store_name: '서산서점', note: '동화책이 많아요', handled: true, created_at: '2026-11-16T10:00:00Z', _nick: '들꽃', _wait: 3 },
+    ];
+    return;
+  }
+  const { data, error } = await sb.from('store_suggestions').select('*').order('created_at', { ascending: false });
+  if (error) { console.warn('책방 추천', error.message); SUG = []; return; }
+  SUG = data || [];
+  const ids = [...new Set(SUG.map(x => x.user_id))];
+  const nick = {};
+  if (ids.length) {
+    const { data: profs } = await sb.from('profiles').select('id, name, nick').in('id', ids);
+    (profs || []).forEach(pr => nick[pr.id] = pr.nick || pr.name);
+  }
+  const rgs = [...new Set(SUG.map(x => x.region))], wait = {};
+  await Promise.all(rgs.map(async r => { const w = await sb.rpc('region_waiting', { p_region: r }); wait[r] = w.error ? null : w.data; }));
+  SUG.forEach(x => { x._nick = nick[x.user_id] || '(알 수 없음)'; x._wait = wait[x.region]; });
+}
+function sugGroups() {
+  const m = {};
+  (SUG || []).forEach(x => {
+    const k = sugRg(x.region) + '|' + sugKey(x.store_name);
+    const g = m[k] || (m[k] = { region: x.region, name: x.store_name, rows: [], wait: x._wait });
+    g.rows.push(x);
+  });
+  return Object.values(m).map(g => ({ ...g, handled: g.rows.every(r => r.handled) }))
+    .sort((a, b) => (a.handled - b.handled) || (b.rows.length - a.rows.length) || String(a.region).localeCompare(String(b.region), 'ko'));
+}
+function sugSection() {
+  if (SUG === null) {
+    loadSug().then(() => { if (tab === 'stores') renderPanel(); });
+    return '';
+  }
+  const gs = sugGroups();
+  if (!gs.length) return '';
+  const open = gs.filter(g => !g.handled).length;
+  return `<div class="panel-hd" style="margin-top:28px;">
+    <div><div class="panel-t">청소년이 추천한 책방 <em style="font-style:normal;color:var(--ink-3);font-weight:600;">${gs.length}곳 · 아직 연락 전 ${open}곳</em></div>
+    <div class="panel-d">책방이 없는 동네의 청소년이 앱 「책방」 탭에서 알려 준 이름이에요. <b>추천이 많은 곳</b>부터 보여요. 연락을 시작했으면 「연락했어요」를 눌러 두세요. 청소년에게 알림은 가지 않아요.</div></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>동네</th><th>책방</th><th class="num">추천</th><th class="num">기다리는 청소년</th><th>이유 · 추천한 사람</th><th>상태</th><th class="right"></th></tr>
+    ${gs.map(g => { const ids = g.rows.map(r => r.id).join(',');
+      return `<tr${g.handled ? ' style="opacity:.55;"' : ''}>
+      <td>${esc(g.region)}</td>
+      <td><b>${esc(g.name)}</b></td>
+      <td class="num">${g.rows.length}명</td>
+      <td class="num">${g.wait == null ? '-' : g.wait + '명'}</td>
+      <td class="muted">${g.rows.map(r => `${esc(r._nick)}${r.note ? ` — ${esc(r.note)}` : ''}`).join('<br>')}</td>
+      <td>${g.handled ? '<span class="chip c-act">연락했어요</span>' : '<span class="chip c-wait">연락 전</span>'}</td>
+      <td class="right" style="white-space:nowrap;">
+        <button class="btn btn-line" onclick="sugHandled('${ids}', ${!g.handled})">${g.handled ? '되돌리기' : '연락했어요'}</button>
+        <button class="btn btn-line" onclick="sugDel('${ids}')">지우기</button></td></tr>`; }).join('')}
+  </table></div>`;
+}
+async function sugHandled(ids, to) {
+  const list = ids.split(',').map(Number);
+  if (LIVE) {
+    const { error } = await sb.from('store_suggestions').update({ handled: to }).in('id', list);
+    if (error) return alert('바꾸지 못했어요: ' + error.message);
+  }
+  SUG.forEach(x => { if (list.includes(x.id)) x.handled = to; });
+  renderPanel();
+}
+async function sugDel(ids) {
+  const list = ids.split(',').map(Number);
+  if (!confirm(`이 추천 ${list.length}건을 지울까요? 되돌릴 수 없어요.`)) return;
+  if (LIVE) {
+    const { error } = await sb.from('store_suggestions').delete().in('id', list);
+    if (error) return alert('지우지 못했어요: ' + error.message);
+  }
+  SUG = SUG.filter(x => !list.includes(x.id));
+  renderPanel();
 }
 
 // 책방지기의 한 줄 추천 (migration-110). 부적절한 글이면 운영진이 내린다
