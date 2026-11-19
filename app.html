@@ -219,7 +219,6 @@ input[type=date]:disabled, select:disabled { background-image:none; }
   color:rgba(255,255,255,.68); }
 .pick-c i { display:block; font-style:normal; font-size:11.5px; margin-top:7px;
   color:rgba(255,255,255,.5); }
-.pick-c i.gift-line { font-size:13px; font-weight:800; color:#FFE27A; margin-top:9px; }
 
 .role-row { display:flex; gap:8px; margin-bottom:10px; }
 .role-btn { flex:1; padding:12px; border-radius:12px; border:1.5px solid rgba(255,255,255,.22); background:transparent; color:rgba(255,255,255,.6); font-size:14px; cursor:pointer; }
@@ -1671,11 +1670,6 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
 .tt-hc { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:13.5px; font-weight:800; line-height:1.4; }
 .tt-hb { flex:none; background:#1F4E46; color:#fff; font-size:13px; font-weight:800; padding:7px 16px; border-radius:99px; animation:ttPulse 1.4s ease-in-out infinite; }
 .tt-home .tt-ln { background:#E9E3D8; }
-.tut-num { font-size:60px; font-weight:900; line-height:1.1; letter-spacing:-1px; color:#FFE27A; }
-.tut-prog { display:flex; flex-direction:column; gap:8px; }
-.tut-bar { height:12px; border-radius:99px; background:rgba(255,255,255,.2); overflow:hidden; }
-.tut-fill { height:100%; border-radius:99px; background:#FFE27A; }
-.tut-prog span { font-size:13px; color:rgba(255,255,255,.78); font-weight:600; }
 
 /* 아래에서 올라오는 시트 */
 .sheet { position:fixed; inset:0; z-index:60; display:none; align-items:flex-end; justify-content:center;
@@ -1745,7 +1739,6 @@ input.ro { background:#F2EEE6; color:var(--ink-2); }
       <button type="button" class="pick-c" onclick="pickRole('youth')">
         <b>🌱 청소년 <em>14~19세</em></b>
         <span>매일 책을 읽고 인증하면 동네 책방에서 사용 가능한 도서교환권이 발급됩니다.</span>
-        <i class="gift-line" id="giftLine" style="display:none;">🎁 12월 17일까지 가입하면 나다움 50N 선물!</i>
       </button>
       <button type="button" class="pick-c" onclick="pickRole('kkut')">
         <b>💪 끗짱 <em>어른</em></b>
@@ -2842,7 +2835,6 @@ function paintAuth() {
   const on = (id, v) => { const e = $(id); if (e) e.style.display = v ? '' : 'none'; };
   on('authTabs',   step === 'login');
   on('auBack',     step !== 'login');
-  on('giftLine',   Date.now() < Date.parse('2026-12-18T00:00:00+09:00'));   // 가입 선물 안내 — 12월 17일까지 (migration-167과 같은 시점)
   const kk = joinRole === 'kkut' && (step === 'form' || step === 'k2');   // 끗짱 가입 화면
   $('authScr').classList.toggle('kkmode', kk);
   $('authScr').classList.toggle('sumode', step === 'form' || step === 'k2');
@@ -4040,11 +4032,10 @@ async function maybeAskPush() {
 async function askEnablePush() { closeSheet('shPushAsk'); await enablePush(); }
 
 // ── 웰컴 튜토리얼 (2026-11-13) ─────────────────────────
-// 가입하고 처음 들어온 청소년에게 한 번, 4장: ① 서비스 가치 ② 홈 화면에 추가 ③ 알림 켜기 ④ 웰컴 보상.
+// 가입하고 처음 들어온 청소년에게 한 번, 4장: ① 서비스 가치 ② 홈 화면에 추가 ③ 알림 켜기 ④ 시작 인사 (가입 선물 장은 2026-11-19 뺐다 — 1월 이벤트 때 다시 만든다).
 // 이미 홈 화면에서 열었으면(standalone) ②는 건너뛴다. 아이폰은 홈 화면에 추가해야 알림이 되므로 ②가 ③보다 앞에 온다.
 // 「MY › 설정 › 시작 안내 다시 보기」로 언제든 다시 열 수 있다 (그때는 force)
 let tutI = 0, tutKeys = [], tutOS = 'android', tutPushSt = 'off', tutHelp = false;
-const tutGift = () => (state.grants || []).find(g => /^가입 선물/.test(g.reason || ''));
 
 async function showWelcome(force) {
   if (!me || isGuest()) return;
@@ -4113,14 +4104,7 @@ function paintTut() {
          <button class="tut-sub" style="border:none;color:rgba(255,255,255,.7);" onclick="tutNext()">나중에 할게요</button>`
       : `<button class="tut-go" onclick="tutNext()">다음</button>`;
   } else {
-    const g = tutGift(), amt = g ? g.amount : 0;
-    body = g ? `<div class="tut-eb">🎁 가입 이벤트 선물</div>
-        <div class="tut-h">가입 축하 웰컴 포인트<br>지급 완료! 🎉</div>
-        <div class="tut-num">+${won(amt)}N</div>
-        <div class="tut-p">첫 회원가입 선물로 +${won(amt)}N을 드렸어요. 첫 도서 교환권(${won(per)}N)까지 앞으로 매일 읽어보세요!</div>
-        <div class="tut-prog"><div class="tut-bar"><div class="tut-fill" style="width:${Math.min(100, Math.round(amt / per * 100))}%"></div></div>
-          <span>첫 교환권까지 ${won(amt)} / ${won(per)}N</span></div>`
-      : `<div class="tut-ic">🎉</div>
+    body = `<div class="tut-ic">🎉</div>
         <div class="tut-h">한끗독서에 오신 걸<br>환영해요!</div>
         <div class="tut-p">매일 한 장 읽고 인증하면 나다움이 쌓여요. ${won(per)}N이 모이면 동네책방에서 책 한 권을 골라요.</div>`;
     if (verifyBlocked()) body += `<div class="tt-note"><b>🪪 먼저 청소년 확인을 해 주세요</b><br>모임에 참여하고 인증하려면 한 번 필요해요. 서류 사진만 올리면 돼요.</div>`;
