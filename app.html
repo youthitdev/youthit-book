@@ -3689,7 +3689,16 @@ async function loadAll() {
     // 보이는 모임의 끗짱 — 닉네임과 키워드만. 로그인 전에도 불린다 (migration-94).
     // 아직 마이그레이션을 안 돌렸으면 오류가 와도 그냥 빈 채로 둔다
     sb.rpc('routine_leads'),
+    // 후기 탭 — 로그인 없이도 보이는 후기·문장·교환 사진 (migration-177 · 174). 함수가 아직 없으면 오류가 와도 빈 채로 둔다
+    sb.rpc('public_reviews', { p_limit: 60 }),
+    sb.rpc('public_quotes', { p_limit: 60 }),
+    sb.rpc('dokseo_exchange_photos', { p_limit: 30 }),
   ]);
+  state.pubRv = pub[7]?.error ? [] : (pub[7]?.data || []);
+  state.pubQt = pub[8]?.error ? [] : (pub[8]?.data || []);
+  state.pubEx = pub[9]?.error ? [] : (pub[9]?.data || []).map(x => ({
+    photo_path: x.photo_path, store_name: x.store_name, day: x.day, book_title: x.book_title,
+    url: sb.storage.from('exchange-photos').getPublicUrl(x.photo_path).data.publicUrl }));
   state.routines = pub[0].data || [];
   state.leads = {};
   (pub[6]?.data || []).forEach(x => { state.leads[x.user_id] = { nick: x.nick, keywords: x.keywords || [] }; });
@@ -4513,7 +4522,7 @@ function render() {
   const b = $('tabBody');
   paintBell();
   // 홈 말고는 로그인해야 볼 수 있다. 청소년의 이름·사진·기록이 들어 있어서
-  if (isGuest() && tab !== 'home' && tab !== 'store') { b.innerHTML = guestWall(); return; }
+  if (isGuest() && tab !== 'home' && tab !== 'store' && tab !== 'feed') { b.innerHTML = guestWall(); return; }
   if (tab === 'home') { b.innerHTML = verifyHomeCard() + '<div id="pushNudge"></div>' + viewHome(); paintPushNudge(); fillPickCovers(); }
   else if (tab === 'cert') b.innerHTML = viewCert();
   else if (tab === 'feed') b.innerHTML = viewFeed();
@@ -4524,7 +4533,7 @@ function render() {
 }
 
 function guestWall() {
-  const t = { cert:'인증은 참여자만 할 수 있어요', feed:'기록은 참여자끼리만 볼 수 있어요', my:'내 정보를 보려면 로그인이 필요해요' }[tab];
+  const t = { cert:'인증은 참여자만 할 수 있어요', my:'내 정보를 보려면 로그인이 필요해요' }[tab];
   return `<div class="empty" style="padding:60px 24px;">
     <div style="font-size:36px;margin-bottom:14px;">🌱</div>
     <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:8px;">${t}</div>
@@ -6253,13 +6262,13 @@ function reviewCard(v) {
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
       <div style="min-width:0;">
         <span class="chip ${isBook ? 'c-recruit' : 'c-active'}">${isBook ? '책 후기' : '모임 후기'}</span>
-        <span style="font-size:12.5px;color:var(--ink-3);margin-left:7px;">${esc(nameOf(v.user_id))}</span>
+        ${v.pub ? '' : `<span style="font-size:12.5px;color:var(--ink-3);margin-left:7px;">${esc(nameOf(v.user_id))}</span>`}
       </div>
       ${own ? `<button class="f-act" title="고치기" onclick="openReview('${v.kind}', ${isBook ? v.purchase_id : v.routine_id})">✏️</button>` : ''}
     </div>
     ${clampText(v.content, 'font-size:14.5px;line-height:1.8;margin-top:10px;white-space:pre-wrap;')}
     <div style="font-size:11.5px;color:var(--ink-3);margin-top:9px;">
-      ${isBook ? `📖 ${esc(v.book_title || '')}` : `${r ? esc(r.title) : ''}`} · ${timeAgo(v.created_at)}
+      ${isBook ? `📖 ${esc(v.book_title || '')}` : `${esc(r ? r.title : (v.routine_title || ''))}`} · ${timeAgo(v.created_at)}
     </div>
   </div>`;
 }
@@ -6274,8 +6283,21 @@ let FA = { kind: null, cap: FEED_PAGE };
 // 후기 탭의 「함께 나누고 싶은 문장」. 매일 한끗은 나만 보는 기록이라 여기에 섞지 않는다 —
 // 서버가 남의 것은 주지 않아도, 내 비공개 글이 「친구들이 남긴 문장」 칸에 보이면 공개된 줄 안다 (2026-11-05 QA).
 // 내 매일 한끗 문장은 MY 의 「내가 남긴 문장」에 그대로 모인다
-const sharedQuotes = () => state.certs.filter(c => c.quote && c.quote.trim()
-  && !(state.routines.find(r => r.id === c.routine_id) || {}).ongoing);
+// 내 모임 안에서 보이는 것(닉네임 있음)에, 밖에 공개된 다른 모임의 글(닉네임 없음)을 더한다. 로그인 전에는 공개된 것만
+const sharedQuotes = () => {
+  const own = state.certs.filter(c => c.quote && c.quote.trim()
+    && !(state.routines.find(r => r.id === c.routine_id) || {}).ongoing);
+  const ids = new Set(own.map(c => c.id));
+  return own.concat((state.pubQt || []).filter(q => !ids.has(q.id)).map(q => ({ ...q, pub: true })))
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+};
+const feedReviews = () => {
+  const own = state.reviews.filter(v => v.kind !== 'book');     // 이미 쓰인 책 후기는 지우지 않고 여기서만 가린다
+  const ids = new Set(own.map(v => v.id));
+  return own.concat((state.pubRv || []).filter(v => !ids.has(v.id)).map(v => ({ ...v, kind: 'routine', pub: true })))
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+};
+const feedExchange = () => (state.exchange && state.exchange.length) ? state.exchange : (state.pubEx || []);
 // 운영진이 올린 책 교환 사진. 청소년 이름·닉네임은 담기지 않는다 — 책방 이름과 날짜만
 const exDay = d => { const [, m, dd] = String(d || '').split('-'); return m ? `${Number(m)}월 ${Number(dd)}일` : ''; };
 const exCard = p => `<div class="ex-c"><img src="${esc(p.url)}" alt="${esc(p.store_name)}에서 책을 받은 사진" loading="lazy">
@@ -6285,9 +6307,9 @@ function faData(kind) {
       ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
       <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title || '')}</div></div>`;
   const D = {
-    rv:  { sub: '후기', title: '📝 모임 후기',      list: () => state.reviews.filter(v => v.kind !== 'book'), card: reviewCard },
+    rv:  { sub: '후기', title: '📝 모임 후기',      list: () => feedReviews(), card: reviewCard },
     qt:  { sub: '후기', title: '💬 함께 나누고 싶은 문장', list: () => sharedQuotes(), card: quote },
-    ex:  { sub: '후기', title: '📚 책 교환 인증', list: () => state.exchange || [], card: exCard, grid: true },
+    ex:  { sub: '후기', title: '📚 책 교환 인증', list: () => feedExchange(), card: exCard, grid: true },
     mrv: { sub: '내가 남긴 글', title: '📝 내 모임 후기',   list: () => state.reviews.filter(v => v.kind !== 'book' && v.user_id === me.id), card: reviewCard },
     mqt: { sub: '내가 남긴 글', title: '💬 내가 남긴 문장', list: () => state.certs.filter(c => c.user_id === me.id && c.quote && c.quote.trim()), card: quote },
   };
@@ -6320,9 +6342,8 @@ function clampText(text, style) {
 }
 
 function viewFeed() {
-  const todo = reviewTodos();
-  // 이미 쓰인 책 후기는 지우지 않고 여기서만 가린다
-  const list = state.reviews.filter(v => v.kind !== 'book');
+  const todo = isGuest() ? [] : reviewTodos();
+  const list = feedReviews();
 
   const todoHtml = todo.length ? `
     <div class="sec-t" style="margin-top:0;">✍️ 쓸 수 있는 후기</div>
@@ -6344,26 +6365,32 @@ function viewFeed() {
   // 끗짱은 본인이 이끄는 모임의 글만 읽을 수 있다(서버 규칙). 비어 있어도 이상한 게 아니라는 걸 말해 준다 (2026-11-11 QA)
   const kk = canLead();
   const kkNote = t => `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${t}</div>`;
-  const listHtml = secHead('📝 모임 후기', list.length, 'rv') + (kk ? kkNote('내가 연 모임의 청소년들이 남긴 글만 보여요') : '') + (list.length
+  const listHtml = secHead('📝 모임 후기', list.length, 'rv') + kkNote('누구나 볼 수 있는 후기예요. 닉네임은 같은 모임 친구들에게만 보여요.') + (list.length
     ? `<div class="hs-row">${list.slice(0, feedCap.rv).map(reviewCard).join('')}</div>`
     : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 후기를 남기면 여기에 모여요.' : '아직 올라온 후기가 없어요.<br>모임이 끝나면 여기에 쌓여요.'}</div>`);
 
   const allQuotes = sharedQuotes();
   const quotes = allQuotes.slice(0, feedCap.qt);
   const quoteHtml = secHead('💬 함께 나누고 싶은 문장', allQuotes.length, 'qt')
-    + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${kk ? '내가 연 모임의 청소년들이 남긴 문장만 보여요. 밖에는 공개되지 않아요.' : '우리 모임 친구들이 남긴 문장이에요. 밖에는 공개되지 않아요.'}</div>` + (quotes.length
+    + `<div style="font-size:12px;color:var(--ink-3);margin:-4px 2px 10px;">${isGuest() ? '운영진이 골라 공개한 문장이에요.' : '우리 모임 친구들의 문장과, 운영진이 골라 공개한 문장이에요. 공개로 고른 문장만 밖에서도 보여요.'}</div>` + (quotes.length
     ? `<div class="hs-row">${quotes.map(c => `<div class="card" style="padding:15px 16px;">
         ${clampText('“' + c.quote + '”', 'font-size:14.5px;line-height:1.75;')}
         <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px;">📖 ${esc(c.book_title||'')}</div>
       </div>`).join('')}</div>`
-    : `<div class="empty" style="padding:14px 0 18px;">${kk ? '참여한 청소년이 문장을 남기면 여기에 모여요.' : '아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.'}</div>`);
+    : `<div class="empty" style="padding:14px 0 18px;">${isGuest() ? '아직 공개된 문장이 없어요.' : kk ? '참여한 청소년이 문장을 남기면 여기에 모여요.' : '아직 남긴 문장이 없어요.<br>오늘 읽은 책에서 나누고 싶은 문장을 남겨 보세요.'}</div>`);
 
   // 운영진이 올린 책 교환 사진. 올라온 게 없으면 칸 자체를 두지 않는다
-  const exs = state.exchange || [];
+  const exs = feedExchange();
   const exHtml = exs.length
     ? secHead('📚 책 교환 인증', exs.length, 'ex') + `<div class="hs-row">${exs.slice(0, feedCap.ex).map(exCard).join('')}</div>` : '';
 
-  return todoHtml + listHtml + quoteHtml + exHtml;
+  // 로그인 전: 후기·문장은 읽을 수 있고, 쓰려면 로그인
+  const guestHtml = isGuest() ? `<div class="store-wish hl" style="text-align:center;margin-top:18px;">
+    <div class="sw-t">나도 후기와 문장을 남기고 싶다면</div>
+    <div class="sw-s">모임에 참여하면 후기를 쓸 수 있어요.</div>
+    <button class="btn btn-primary" onclick="showAuth()">로그인 · 회원가입</button></div>` : '';
+
+  return todoHtml + listHtml + quoteHtml + exHtml + guestHtml;
 }
 
 // ── 후기 쓰기 ──────────────────────────────────────────
@@ -6392,7 +6419,8 @@ function openReview(kind, id) {
        <span style="color:var(--ink-3);">같은 모임 친구들에게만 보여요.</span>`
     : `<b>${esc(r ? r.title : '')}</b> 어땠나요?<br>
        처음과 지금이 뭐가 달라졌는지, 어떤 날이 기억에 남는지 적어주세요.
-       올리면 <b>+${RV_PR()}N</b>이에요.${existing ? '' : rvDueLine(r)}`;
+       올리면 <b>+${RV_PR()}N</b>이에요.${existing ? '' : rvDueLine(r)}<br>
+       <span style="color:var(--ink-3);">올린 후기는 <b>로그인하지 않아도 누구나</b> 볼 수 있어요. 닉네임은 같은 모임 친구들에게만 보여요. 실명·학교·연락처는 적지 마세요.</span>`;
 
   $('rvBookWrap').style.display = isBook ? '' : 'none';
   $('rvBook').value = existing?.book_title || '';
